@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 # encoding: utf-8 
 
+#TODO: 
+#title and header: https://github.com/matthew-brett/vim-rst-sections/tree/master/ftplugin
+#do it similarly to atom https://atom.io/packages/rst-snippets
+#remove space at end of line
+#paragaphs reflow using docutils parser
+#https://github.com/nvie/vim-rst-tables/pull/26
+
 #test with
 #py.test --doctest-modules reflow.py
 

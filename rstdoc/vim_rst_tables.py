@@ -4,7 +4,10 @@
 import vim
 
 from vim_bridge import bridged
-from reflow import ReformatTable, ReflowTable
+from .reflow import ReformatTable, ReflowTable, get_bounds
+
+def get_table_bounds():
+    return get_bounds(vim.current.buffer,*vim.current.window.cursor)
 
 @bridged #makes ReformatTable vim function
 def reformat_table():
