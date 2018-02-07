@@ -1,8 +1,8 @@
 # Mock out the vim library
 import sys
 sys.path = ['..','./mocks','test/mocks'] + sys.path
-import vim
 import mock
+import vim
 
 vimvar = {}
 
@@ -42,7 +42,7 @@ class TestRSTTableFormatter(unittest.TestCase):
         vim.current.window.cursor = (row, col)
 
     def read_fixture(self, name):
-        with open(os.path.join('test/fixtures/', name + '.txt')) as fp:
+        with open(os.path.join('test/fixtures/', name + '.txt'),encoding='utf-8') as fp:
             return fp.read().split('\n')
 
     def load_fixture_in_vim(self, name):
@@ -332,8 +332,11 @@ a line ending.
 +----------------+---------------------------------------------------------------+
 |                | habitasse platea dictumst. Phasellus pretium iaculis.         |
 +----------------+---------------------------------------------------------------+
-""".rstrip().split('\n')
-        self.assertEqual(expect, draw_table('', parse_table(raw_lines)))
+            """.rstrip().splitlines()
+        #expect
+        pt = parse_table(raw_lines)
+        dt = draw_table('', pt)
+        self.assertEqual(expect, dt)
 
     def testReflowTable(self):
         self.load_fixture_in_vim('reflow')
@@ -357,6 +360,7 @@ This is paragraph text *before* the table.
 
 This is paragraph text *after* the table, with
 a line ending.
+
 """.split('\n')
         reflow_table()
         self.assertEqual(expect, vim.current.buffer)
