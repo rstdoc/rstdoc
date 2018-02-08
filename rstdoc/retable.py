@@ -9,10 +9,10 @@
 #https://github.com/nvie/vim-rst-tables/pull/26
 
 #test with
-#py.test --doctest-modules reflow.py
+#py.test --doctest-modules retable.py
 
 """
-Reflow paragraphs and tables to use the available space.
+Reformat or reflow tables to use the available space.
 
 Regarding tables the rst reader is not tolerant. 
 Displacing a ``|`` below will produce errors.
@@ -63,7 +63,7 @@ which was not available outside Vim.
 ... | s   | o |
 ... +-----+---+
 ... '''.splitlines()
->>> reflow(data)
+>>> retable(data)
 '''
 
 
@@ -345,13 +345,7 @@ def ReflowTable(lines,row,col):
     slice_ = draw_table(indent, table, widths)
     lines[upper - 1:lower] = slice_
 
-def ReflowParagraph(lines, row, col):
-    upper, lower, indent = get_bounds(lines,row,col)
-    slice_ = lines[upper - 1:lower]
-    slice_ = textwrap.wrap(' '.join(slice_).replace('\n',' '),max_width)
-    lines[upper - 1:lower] = slice_
-
-def reflow(data):
+def retable(data):
     pass
 
 if __name__ == '__main__':
@@ -364,11 +358,21 @@ if __name__ == '__main__':
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
     sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
 
-    parser = argparse.ArgumentParser(prog="rstreflow", description='''Reflow RST document.''')
+    parser = argparse.ArgumentParser(prog="rstretable", description='''Reflow tables RST document.''')
     parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
     args = parser.parse_args()
     for infile in args.INPUT:
         data = infile.readlines()
-        for ln in reflow(data):
+        for ln in retable(data):
             sys.stdout.write(ln)
 
+
+#playground
+
+import docutils.parsers.rst as rstp
+
+dir(rstp)
+
+import docutils
+
+dir(docutils.writers.Writer)
