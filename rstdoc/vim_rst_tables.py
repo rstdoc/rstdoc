@@ -4,16 +4,20 @@
 import vim
 
 from vim_bridge import bridged
-from .reflow import ReformatTable, ReflowTable, get_bounds
+from .retable import ReformatTable, ReflowTable, get_bounds
 
 def get_table_bounds():
-    return get_bounds(vim.current.buffer,*vim.current.window.cursor)
+    row,col = vim.current.window.cursor
+    row,col,m = get_bounds(vim.current.buffer,row-1,col-1)
+    return row+1,col+1,m
 
 @bridged #makes ReformatTable vim function
 def reformat_table():
-    ReformatTable(vim.current.buffer,*vim.current.window.cursor)
+    row,col = vim.current.window.cursor
+    ReformatTable(vim.current.buffer,row-1,col-1,1)
 
 @bridged #makes ReflowTable vim function
 def reflow_table():
-    ReflowTable(vim.current.buffer,*vim.current.window.cursor)
+    row,col = vim.current.window.cursor
+    ReflowTable(vim.current.buffer,row-1,col-1)
 

@@ -41,36 +41,11 @@ Displacing a ``|`` below will produce errors.
 
 Therefore I've integrated https://github.com/nvie/vim-rst-tables, 
 which was not available outside Vim.
-
->>> data = '''
-... the quick
-... brown fox
-... jumps
-...
-... - over
-... the lazy
-...
-... - dog
-... 
-... +-----+---+
-... | R   | W |
-... | i   | r |
-... |  g   | o |
-... | |h| | n |
-... | t   | g |
-... +=====+===+
-... | ye  | n |
-... | s   | o |
-... +-----+---+
-... '''.splitlines()
->>> retable(data)
-'''
-
-
 """
 
 import re
 import textwrap
+from .untable import untable
 
 max_width = 77
 
@@ -274,7 +249,7 @@ def reflow_row_contents(row, widths):
     return new_row
 
 
-def draw_table(indent, table, manual_widths=None):
+def draw_table(indent, table, manual_widths=None, withheader=1):
     if table == []:
         return []
 
@@ -285,7 +260,7 @@ def draw_table(indent, table, manual_widths=None):
 
     # Reserve room for the spaces
     sep_col_widths = list(map(lambda x: x + 2, col_widths))
-    header_line = table_line(sep_col_widths, header=True)
+    header_line = table_line(sep_col_widths, header=withheader)
     normal_line = table_line(sep_col_widths, header=False)
 
     output = [indent+normal_line]
@@ -314,39 +289,61 @@ def draw_table(indent, table, manual_widths=None):
 def get_bounds(lines,row,col):
     upper = lower = row
     try:
-        while lines[upper - 1].strip():
+        while upper>-1 and lines[upper].strip():
             upper -= 1
     except IndexError:
         pass
     else:
         upper += 1
     try:
-        while lines[lower - 1].strip():
+        while lines[lower].strip():
             lower += 1
     except IndexError:
         pass
     else:
         lower -= 1
-    match = re.match('^(\s*).*$', lines[upper-1])
+    match = re.match('^(\s*).*$', lines[upper])
     return (upper, lower, match.group(1))
 
-def ReformatTable(lines,row,col):
+def ReformatTable(lines,row,col,withheader):
+    print(lines,row,col)
     upper, lower, indent = get_bounds(lines,row,col)
-    slice_ = lines[upper - 1:lower]
+    slice_ = lines[upper:lower+1]
     table = parse_table(slice_)
-    slice_ = draw_table(indent, table)
-    lines[upper - 1:lower] = slice_
+    slice_ = draw_table(indent, table, None, withheader)
+    lines[upper:lower+1] = slice_
 
 def ReflowTable(lines,row,col):
     upper, lower, indent = get_bounds(lines,row,col)
-    slice_ = lines[upper - 1:lower]
+    slice_ = lines[upper:lower+1]
+    withheader = 0
+    for t in slice_:
+        if '+==' in t:
+            withheader = 1
+            break
     widths = get_column_widths_from_border_spec(slice_)
     table = parse_table(slice_)
-    slice_ = draw_table(indent, table, widths)
-    lines[upper - 1:lower] = slice_
+    slice_ = draw_table(indent, table, widths, withheader)
+    lines[upper:lower+1] = slice_
+
+class doretable:
+    def __init__(self):
+        self.tbl = []
+    def __call__(self,row,nColumns,org,islast,withheader):
+        clls = [' '.join(x) for x in row]
+        self.tbl.append(' | '.join(clls))
+        if islast:
+            ReformatTable(self.tbl,0,0,withheader)
+            yield from self.tbl
+            while org and not org[-1].strip():
+                yield '\n'
+                del org[-1]
+        if org:
+            del org[:]
 
 def retable(data):
-    pass
+    drt = doretable()
+    yield from untable(data,drt)
 
 if __name__ == '__main__':
     import codecs
@@ -367,12 +364,3 @@ if __name__ == '__main__':
             sys.stdout.write(ln)
 
 
-#playground
-
-import docutils.parsers.rst as rstp
-
-dir(rstp)
-
-import docutils
-
-dir(docutils.writers.Writer)

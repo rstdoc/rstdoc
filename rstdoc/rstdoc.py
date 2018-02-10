@@ -186,6 +186,8 @@ def links(lns):
 g_counters=defaultdict(dict)
 def linktargets(lns,docnumber):
     #docprefix = str(docnumber)+'.'
+    #docnumber=0
+    #list(linktargets(lns,docnumber))
     docprefix = ' '
     if docnumber not in g_counters:
         g_counters[docnumber] = {".. figure":1,".. math":1,".. table":1,".. code":1} #=list-table,code-block
@@ -193,10 +195,12 @@ def linktargets(lns,docnumber):
     itgts = rindices(r'^\.\. _`?(\w[^:`]*)`?:\s*$',lns)
     lenlns = len(lns)
     for i in itgts:
+        #i=list(itgts)[0]
         tgt = lns[i].strip(' ._:`\n')
         lnkname = tgt
         for j in range(i+2,i+8):
-            if j >= lenlns-1:
+            #j=i+3
+            if j > lenlns-1:
                 break
             lnj = lns[j]
             if retitle.match(lnj):

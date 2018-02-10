@@ -11,28 +11,12 @@ The '-' in ID is removed and the ID is made lower case.
 
 A file produced from a docx without ``list-table`` will need a pre-processing via listtable.py.
 
->>> data = '''        .. list-table::
-...            :widths: 33 33 33
-...            :header-rows: 1
-...    
-...            * - **CCC-DDD-001**
-...              - **General 1**
-...              - This is general
-...                General
-...
-...                General
-...            * - **xXx-010**
-...              - sd
-...              -
-... '''.splitlines()
->>> list(untable(data))
-['.. _`cccddd001`:\\n\\n', ':cccddd001:\\n\\n', '**General 1**\\n', '\\n', 'This is general\\n', 'General\\n', '\\n', 'General\\n', '.. _`xxx010`:\\n\\n', ':xxx010:\\n\\n', 'sd\\n', '\\n', '\\n']
 """
 
 import re
 from textwrap import wrap
 
-def paragraph3(row,nColumns,org):
+def paragraph3(row,nColumns,org,islast,withheader):
     """Sample paragraph function If not transformed to paragraph, then org must be yielded.
 
     This expects 3 columns and the first must have only one line, which holds an ID.
@@ -58,7 +42,6 @@ tblre = [
     ,re.compile(r'^\s+\* -')
     ,re.compile(r'^\s+-')
     ]
-indE = len(".. * -")
 def refindE(res,ln):
     #are=tblre[0]
     for are in res:
@@ -74,6 +57,8 @@ def untable(data,paragraph=paragraph3):
     rowc = None
     org = []
     endT = False
+    indE = len(".. * -")
+    withheader = 0
     for ln in data:
         if hT==-1:
             hT = ln.find('.. list-table')
@@ -86,10 +71,16 @@ def untable(data,paragraph=paragraph3):
             ind = list(refindE(tblre,ln))
             chk = [ind[0] >= hT+indE+1, ind[1] >= hT+3, ind[2] == hT+indE, ind[3] == hT+indE, lnstrp == 0]
             endT = not any(chk)
+            if chk[1]:
+                #ln='ss'
+                hr = ln.split(':header-rows:')
+                if len(hr)>1:
+                    withheader = int(hr[1])
             if endT:
                 if rowc != None:
                     row.append(rowc)
-                    yield from paragraph(row,nColumns,org)
+                    yield from paragraph(row,nColumns,org,True,withheader)
+                withheader = 0
                 hT=-1
                 nColumns=0
                 row=[]
@@ -100,7 +91,7 @@ def untable(data,paragraph=paragraph3):
             elif chk[2]:
                 if rowc != None:
                     row.append(rowc)
-                    yield from paragraph(row,nColumns,org)
+                    yield from paragraph(row,nColumns,org,False,withheader)
                 rowc = [ln[ind[2]+1:]]
                 org.append(ln)
                 row = []
@@ -117,7 +108,7 @@ def untable(data,paragraph=paragraph3):
                 org.append(ln)
     if rowc and not endT:
         row.append(rowc)
-        yield from paragraph(row,nColumns,org)
+        yield from paragraph(row,nColumns,org,True,withheader)
 
 if __name__ == '__main__':
     import codecs

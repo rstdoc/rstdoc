@@ -52,8 +52,14 @@ Notes
 
 import re
 
+combine = {
+        0:lambda e: [''.join([ee.strip() for ee in e]).strip()],
+        1:lambda e: [' '.join([ee.strip() for ee in e]).strip()],
+        2:lambda e: [ee[len(re.split('[^ ]',e[0])[0]):].rstrip() for ee in e]
+        }
+
 def tolisttable(
-        data
+        data #from file.readlines() or str.splitlines(True)
         ,join='012'
         ):
     """convert grid table to list table
@@ -82,11 +88,6 @@ def tolisttable(
             sl.append(line[st:nst])
             st = nst+1
         return sl
-    combine = {
-            0:lambda e: [''.join([ee.strip() for ee in e]).strip()],
-            1:lambda e: [' '.join([ee.strip() for ee in e]).strip()],
-            2:lambda e: [ee[len(re.split('[^ ]',e[0])[0]):].rstrip() for ee in e]
-            }
     for line in data:
         if isgridline(line):
             S = line.split('+')[1:-1]
@@ -120,6 +121,7 @@ def tolisttable(
                 gridtable = []
         else:
             yield line
+
 
 if __name__ == '__main__':
     import argparse

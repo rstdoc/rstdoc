@@ -19,7 +19,7 @@ import os
 import unittest
 
 # Load test subjects
-from rstdoc.reflow import (
+from rstdoc.retable import (
     parse_table, draw_table, table_line, get_column_widths,
     get_column_widths_from_border_spec, pad_fields, unify_table,
     join_rows, partition_raw_lines, split_row_into_lines,
