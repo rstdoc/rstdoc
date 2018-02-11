@@ -1,5 +1,7 @@
+import sys
+sys.path = ['rstdoc','../rstdoc'] + sys.path
 import pytest
-from rstdoc.rstdoc import (
+from rstdoc import (
     g_counters
     ,linktargets
     )

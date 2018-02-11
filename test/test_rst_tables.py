@@ -1,6 +1,6 @@
 # Mock out the vim library
 import sys
-sys.path = ['..','./mocks','test/mocks'] + sys.path
+sys.path = ['rstdoc','../rstdoc','./mocks','test/mocks'] + sys.path
 import mock
 import vim
 
@@ -19,12 +19,12 @@ import os
 import unittest
 
 # Load test subjects
-from rstdoc.retable import (
+from retable import (
     parse_table, draw_table, table_line, get_column_widths,
     get_column_widths_from_border_spec, pad_fields, unify_table,
     join_rows, partition_raw_lines, split_row_into_lines,
     split_table_row, reflow_row_contents)
-from rstdoc.vim_rst_tables import get_table_bounds, reformat_table, reflow_table
+from vim_rst_tables import get_table_bounds, reformat_table, reflow_table, re_title
 
 
 class TestRSTTableFormatter(unittest.TestCase):
@@ -378,3 +378,35 @@ a line ending.
 +====================+===+===+===+
 | VPN Service        | |O| | |O| | |X| |
 +--------------------+---+---+---+""")
+    def testReTitle(self):
+        self.load_fixture_in_vim('retitle')
+        self.set_vim_cursor(1,1)
+        re_title()
+        self.set_vim_cursor(6,0)
+        re_title()
+        self.set_vim_cursor(10,0)
+        re_title()
+        self.set_vim_cursor(12,0)
+        re_title()
+        self.set_vim_cursor(15,0)
+        re_title()
+        expect = """\
+====
+This
+====
+
+----------
+is a title
+----------
+
+Title
+=====
+
+and sub title
+-------------
+
+Qux
+---
+""".split('\n')
+        self.assertEqual(expect, vim.current.buffer)
+

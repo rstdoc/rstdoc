@@ -1,21 +1,15 @@
 #!/usr/bin/env python
 # encoding: utf-8 
 
-#TODO: 
-#title and header: https://github.com/matthew-brett/vim-rst-sections/tree/master/ftplugin
-#do it similarly to atom https://atom.io/packages/rst-snippets
-#remove space at end of line
-#paragaphs reflow using docutils parser
-#https://github.com/nvie/vim-rst-tables/pull/26
-
-#test with
-#py.test --doctest-modules retable.py
-
 """
-Reformat or reflow tables to use the available space.
+retable() transforms list table to grid table.
 
-Regarding tables the rst reader is not tolerant. 
+The rst reader expects properly formated grid tables.
 Displacing a ``|`` below will produce errors.
+This file integrates https://github.com/nvie/vim-rst-tables to reformat tables,
+to be used from Vim.
+
+TODO test reformating the table below.
 
 .. code:: python
 
@@ -28,7 +22,7 @@ Displacing a ``|`` below will produce errors.
         +========================+============+==========+==========+
         | body row 1, column 1   | column 2   | column 3 | column 4 |
         +------------------------+------------+----------+----------+
-        | body row 2             | Cells may span columns.          |
+        | body row 2             |  Cells may span columns.         |
         +------------------------+------------+---------------------+
         | body row 3             | Cells may  | - Table cells       |
         +------------------------+ span rows. | - contain           |
@@ -39,15 +33,20 @@ Displacing a ``|`` below will produce errors.
     parser = docutils.parsers.rst.tableparser.GridTableParser()
     parser.parse(docutils.statemachine.StringList(list(lines)))
 
-Therefore I've integrated https://github.com/nvie/vim-rst-tables, 
-which was not available outside Vim.
 """
 
 import re
 import textwrap
-from .untable import untable
+from untable import untable
 
-max_width = 77
+title_all=list(r'''#*=-^~+_.,"'!$%&\\()/:;<>?@[\]`{|}''')
+titlerex = re.compile('''^([#*=\-^~+_.,"'!$%&\\\(\)/:;<>?@\[\]`{|}])\\1+$''')
+#retitle.match('====')
+#retitle.match('\\\\\\')
+#retitle.match('----')
+#retitle.match('[[[[[[[')
+#retitle.match('@@@@@@@')
+#retitle.match('*******')
 
 def join_rows(rows, sep='\n'):
     """Given a list of rows (a list of lists) this function returns a
@@ -299,14 +298,13 @@ def get_bounds(lines,row,col):
         while lines[lower].strip():
             lower += 1
     except IndexError:
-        pass
+        lower -= 1
     else:
         lower -= 1
     match = re.match('^(\s*).*$', lines[upper])
     return (upper, lower, match.group(1))
 
 def ReformatTable(lines,row,col,withheader):
-    print(lines,row,col)
     upper, lower, indent = get_bounds(lines,row,col)
     slice_ = lines[upper:lower+1]
     table = parse_table(slice_)
@@ -326,22 +324,41 @@ def ReflowTable(lines,row,col):
     slice_ = draw_table(indent, table, widths, withheader)
     lines[upper:lower+1] = slice_
 
+def ReTitle(lines,row,col):
+    upper, lower, indent = get_bounds(lines,row,col)
+    t = None
+    for i in range(upper,lower+1):
+        if not titlerex.match(lines[i]):
+            t = lines[i]
+            break
+    if t == None:
+        return
+    tstrip = t.strip()
+    leni = len(tstrip)
+    for j in range(upper,lower+1):
+        if i==j: 
+            lines[i] = tstrip
+            continue
+        if titlerex.match(lines[j]):
+            lines[j] = lines[j][0]*leni
+
 class doretable:
     def __init__(self):
         self.tbl = []
     def __call__(self,row,nColumns,org,islast,withheader):
-        clls = [' '.join(x) for x in row]
+        clls = [' '.join([ax.strip() for ax in x]) for x in row]
         self.tbl.append(' | '.join(clls))
         if islast:
             ReformatTable(self.tbl,0,0,withheader)
             yield from self.tbl
+            del self.tbl[:]
             while org and not org[-1].strip():
                 yield '\n'
                 del org[-1]
-        if org:
-            del org[:]
+        del org[:]
 
 def retable(data):
+    """transform listtable to gridtable"""
     drt = doretable()
     yield from untable(data,drt)
 

@@ -17,7 +17,7 @@ import re
 from textwrap import wrap
 
 def paragraph3(row,nColumns,org,islast,withheader):
-    """Sample paragraph function If not transformed to paragraph, then org must be yielded.
+    """Sample process_row function If not transformed to paragraph, then org must be yielded.
 
     This expects 3 columns and the first must have only one line, which holds an ID.
     """
@@ -50,7 +50,7 @@ def refindE(res,ln):
             yield m.span()[1]
         else:
             yield -1
-def untable(data,paragraph=paragraph3):
+def untable(data,process_row=paragraph3):
     hT = -1
     nColumns = 0
     row = []
@@ -79,7 +79,7 @@ def untable(data,paragraph=paragraph3):
             if endT:
                 if rowc != None:
                     row.append(rowc)
-                    yield from paragraph(row,nColumns,org,True,withheader)
+                    yield from process_row(row,nColumns,org,True,withheader)
                 withheader = 0
                 hT=-1
                 nColumns=0
@@ -91,7 +91,7 @@ def untable(data,paragraph=paragraph3):
             elif chk[2]:
                 if rowc != None:
                     row.append(rowc)
-                    yield from paragraph(row,nColumns,org,False,withheader)
+                    yield from process_row(row,nColumns,org,False,withheader)
                 rowc = [ln[ind[2]+1:]]
                 org.append(ln)
                 row = []
@@ -108,7 +108,7 @@ def untable(data,paragraph=paragraph3):
                 org.append(ln)
     if rowc and not endT:
         row.append(rowc)
-        yield from paragraph(row,nColumns,org,True,withheader)
+        yield from process_row(row,nColumns,org,True,withheader)
 
 if __name__ == '__main__':
     import codecs

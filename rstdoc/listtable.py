@@ -1,14 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8 
 
-#modified from
-#https://github.com/rackerlabs/docs-rackspace/blob/master/tools/table.py
-#in
-#https://gist.github.com/rpuntaie/c23c1b6af41055df9482f1eecd1a70d9
-
-#test with
-#py.test --doctest-modules listtable.py
-
 """
 Convert RST grid tables to list-tables.
 
@@ -57,68 +49,73 @@ combine = {
         1:lambda e: [' '.join([ee.strip() for ee in e]).strip()],
         2:lambda e: [ee[len(re.split('[^ ]',e[0])[0]):].rstrip() for ee in e]
         }
+_header = lambda line: line.startswith('+==')
+_isgridline = lambda line: line.startswith('+--') or _header(line)
+def row_to_listtable(row,colwidths,withheader,join,tableend):
+    nColumns = len(colwidths)
+    def splitline(lne): 
+        st = 1
+        sl = []
+        for s in colwidths:
+            nst = s+st
+            sl.append(lne[st:nst])
+            st = nst+1
+        return sl
+    output = []
+    output = [combine[int(join[c]if c<len(join)else join[-1])](e) 
+        for c,e in enumerate(zip(*[splitline(lne)
+        for lne in row if not _isgridline(lne)]))]
+    clms = [(('       ' if j else ('     - ' if i else '   * - '))+xx) for i,x in enumerate(output) 
+        for j,xx in enumerate(x)]
+    if len(row)==1:
+        colwidth = str(int(100 / nColumns))
+        colwidth = (' ' + colwidth) * nColumns
+        yield ".. list-table::\n"
+        yield "   :widths:{0}\n".format(colwidth)
+        yield "   :header-rows: {0}\n".format(withheader)
+        clms += ['']
+    for clm in clms:
+        yield clm + '\n'
+    yield '\n'
 
-def tolisttable(
+def gridtable(
         data #from file.readlines() or str.splitlines(True)
         ,join='012'
+        ,process_row = row_to_listtable
         ):
-    """convert grid table to list table
-
-    >>> data = ['line\\n','\\n','+---+---+---+\\n','| A | x | + |\\n','+===+===+===+\\n','| B | y | 2 |\\n','| C | z | 3 |\\n','+---+---+---+\\n']
-    >>> ''.join(tolisttable(data))
-    'line\\n\\n.. list-table::\\n   :widths: 33 33 33\\n   :header-rows: 1\\n\\n\\n   * - A\\n     - x\\n     - +\\n\\n   * - BC\\n     - y z\\n     - 2\\n       3\\n\\n'
-    >>> ''.join(tolisttable(data,join='001'))
-    'line\\n\\n.. list-table::\\n   :widths: 33 33 33\\n   :header-rows: 1\\n\\n\\n   * - A\\n     - x\\n     - +\\n\\n   * - BC\\n     - yz\\n     - 2 3\\n\\n'
-    >>> ''.join(tolisttable(data,join='0'))
-    'line\\n\\n.. list-table::\\n   :widths: 33 33 33\\n   :header-rows: 1\\n\\n\\n   * - A\\n     - x\\n     - +\\n\\n   * - BC\\n     - yz\\n     - 23\\n\\n'
-
+    """Convert grid table to list table with same column number throughout.
     """
     grid = False
     insert = False
-    gridtable = []
-    header = lambda line: line.startswith('+==')
-    withheader = int(any([header(ln) for ln in data]))
-    S = []
-    isgridline = lambda line: line.startswith('+--') or header(line)
-    def splitline(line): 
-        st = 1
-        sl = []
-        for s in S:
-            nst = len(s)+st
-            sl.append(line[st:nst])
-            st = nst+1
-        return sl
-    for line in data:
-        if isgridline(line):
-            S = line.split('+')[1:-1]
+    row = []
+    withheader = 0
+    lendata=len(data)
+    for iL,line in enumerate(data):
+        if _isgridline(line):
             grid = True
             insert = True
-            gridtable.append(line)
-            col_num = line.count('+') - 1
-            col_width = str(int(100 / col_num))
-            col_width = (' ' + col_width) * col_num
-        elif grid and line.startswith('|'):
-            gridtable.append(line)
+            row.append(line)
+        elif grid and line.strip().startswith('|'):
+            row.append(line)
         else:
             grid = False
         if grid:
             if insert:
                 insert = False
-                output = []
-                output = [combine[int(join[c]if c<len(join)else join[-1])](e) 
-                    for c,e in enumerate(zip(*[splitline(line)
-                    for line in gridtable if not isgridline(line)]))]
-                clms = [(('       ' if j else ('     - ' if i else '   * - '))+xx) for i,x in enumerate(output) 
-                    for j,xx in enumerate(x)]
-                if len(gridtable)==1:
-                    yield ".. list-table::\n"
-                    yield "   :widths:{0}\n".format(col_width)
-                    yield "   :header-rows: {0}\n".format(withheader)
-                    clms += ['']
-                for clm in clms:
-                    yield clm + '\n'
-                yield '\n'
-                gridtable = []
+                if len(row)==1:
+                    colwidths = [len(x) for x in line.split('+')[1:-1]]
+                    withheader = 0
+                    for t in range(iL,len(data)):
+                        tL = data[t].strip()
+                        if tL[0]=='+': 
+                            withheader = int(len(tL)>1 and tL[1]=='=')
+                            break
+                tableend = 1
+                try:
+                    tableend = int(data[iL+1].strip()[0] not in '+|')
+                except: pass
+                yield from process_row(row,colwidths,withheader,join,tableend)
+                row = []
         else:
             yield line
 
@@ -140,6 +137,6 @@ if __name__ == '__main__':
     join = args.join
     for infile in args.INPUT:
         data = infile.readlines()
-        for ln in tolisttable(data, join):
+        for ln in gridtable(data, join):
             sys.stdout.write(ln)
 
