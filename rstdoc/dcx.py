@@ -30,7 +30,7 @@ Only create .tags and _links_xxx.rst::
 Create the docs (and .tags and _links_xxx.rst):
 
   $ make html
-  $ make dcx
+  $ make docx
   $ make pdf
 
 ``waf`` build also considers all recursive include dependencies. 
@@ -76,13 +76,12 @@ import os
 import re
 from pathlib import Path
 from urllib import request
-import argparse
 import string
 from functools import reduce
 from collections import OrderedDict,defaultdict
 
 retitle = re.compile(r'^([!"#$%&\'()*+,\-./:;<=>?@[\]^_`{|}~])\1+$')
-reitem = re.compile(r'^:(\w[^:]*):\s.*$')
+reitem = re.compile(r'^:?(\w[^:]*):\s.*$')
 renamed = re.compile(r'^\s*:name:\s*(\w.*)*$')
 
 #>>>> nj
@@ -597,23 +596,8 @@ except:
 
 #==============< for building with WAF
 
-if __name__=='__main__':
-  parser = argparse.ArgumentParser(description='''Sample RST Documentation for HTML and DOCX.
-    Creates |substitution| links and ctags for link targets.
-    ''')
-  parser.add_argument('--init', dest='root', action='store',
-                      help='''create a sample folder structure. 
-                      Afterwards run "make html" or "make docx" form "doc" folder.''')
-  args = parser.parse_args()
-
-  if args.root:
-    thisfile = str(Path(__file__).resolve()).replace('\\','/')
-    try:#win32
-        thisfile = thisfile.split(':')[1]
-    except: pass
-    #{{ stands for {
-    #first line non-empty!
-    tree=[l for l in r'''
+#this is for mktree(): first line of file content must not be empty!
+example_tree = r'''
        src
         ├ code
         │   └ some.h
@@ -629,33 +613,33 @@ if __name__=='__main__':
                 @#include <assert.h>
                 @#include "some.h"
                 @int main()
-                @{{
+                @{
                 */
 
                 /**Test add1()
                 @assert(add1(1)==2);
                 */
                 int add1(int a)
-                {{
+                {
                   return a+1;
-                }}
+                }
 
                 /**Test add2()
                 @assert(add2(1)==3);
                 */
                 int add2(int a)
-                {{
+                {
                   return a+2;
-                }}
+                }
 
                 /*
-                @}}
+                @}
                 */
         │
         └ doc
            ├ _static
            │    └ img.png << https://assets-cdn.github.com/images/modules/logos_page/Octocat.png
-           ├ dcx.py << file://{0}
+           ├ dcx.py << file://__file__
            ├ index.rest
            │  ============
            │  Project Name
@@ -673,9 +657,10 @@ if __name__=='__main__':
            │  
            │  .. _`rz7`:
            │  
-           │  :rz7: Hand-in-hand with SR
-           │        Risk analysis could be generated from a python file,
-           │        where calculation are done.
+           │  rz7: risk calculations
+           │  
+           │  Risk analysis could be a SimpleTemplate (.stpl) file,
+           │  where calculation are done in python while converting to this file.
            │  
            │  Similarly one can have a 
            │  
@@ -699,7 +684,7 @@ if __name__=='__main__':
            │
            │  .. _`s3a`:
            │
-           │  :s3a: brief description
+           │  s3a: brief description
            │
            │    Don't count the ID, since the order will change.
            │    Instead: The IDs have the first letter of the file 
@@ -721,7 +706,7 @@ if __name__=='__main__':
            │  
            │  .. _`dz7`:
            │  
-           │  :dz7: Independent DD IDs
+           │  dz7: Independent DD IDs
            │  
            │    The relation with RS IDs is m-n. Links like |s3a|
            │    can be scattered over more DD entries.  
@@ -761,9 +746,9 @@ if __name__=='__main__':
            │  .. code-block:: cpp
            │     :name:
            │  
-           │     struct xxx{{
+           │     struct xxx{
            │        int yyy; //yyy for zzz
-           │     }}
+           │     }
            │  
            │  Reference |dyi| does not show ``dyi``.
            │  
@@ -772,15 +757,15 @@ if __name__=='__main__':
            │  .. math:: 
            │     :name:
            │  
-           │     V = \frac{{K}}{{r^2}}
+           │     V = \frac{K}{r^2}
            │  
            │  Reference |d9x| does not show ``d9x``.
            │  
            │  .. _`d99`:
            │  
-           │  :SameName: Keep names the same all over.
+           │  OtherName: Keep names the same all over.
            │  
-           │    Here instead of ``:d99:`` we use ``:SameName:``, but now we have two synonyms for the same item.
+           │    Here instead of ``d99:`` we use ``:OtherName:``, but now we have two synonyms for the same item.
            │    This is no good. If possible, keep ``d99`` in the source and in the final docs.
            │  
            │  Reference |d99| does not show ``d99``.
@@ -821,8 +806,8 @@ if __name__=='__main__':
            │
            ├ gen
               #from|to|gen_xxx|kwargs
-              ../code/some.h | _sometst.rst                | tstdoc | {{}}
-              ../code/some.h | ../../build/code/some_tst.c | tst    | {{}}
+              ../code/some.h | _sometst.rst                | tstdoc | {}
+              ../code/some.h | ../../build/code/some_tst.c | tst    | {}
            ├ conf.py
               extensions = ['sphinx.ext.autodoc',
                   'sphinx.ext.todo',
@@ -834,7 +819,7 @@ if __name__=='__main__':
               templates_path = ['_templates']
               source_suffix = '.rest'
               master_doc = 'index'
-              project = 'DocxSample'
+              project = 'docxsample'
               author = project+' Project Team'
               copyright = '2017, '+author
               version = '1.0'
@@ -846,12 +831,12 @@ if __name__=='__main__':
               import sphinx_bootstrap_theme
               html_theme = 'bootstrap'
               html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
-              latex_elements = {{
+              latex_elements = {
                       'preamble':r"""
-                      \usepackage{{caption}}
-                      \captionsetup[figure]{{labelformat=empty}}
+                      \usepackage{caption}
+                      \captionsetup[figure]{labelformat=empty}
                       """
-                      }}
+                      }
               latex_documents = [
                   (master_doc, 'docxsample.tex', project+' Documentation',
                    author, 'manual'),
@@ -863,13 +848,13 @@ if __name__=='__main__':
               SOURCEDIR     = .
               BUILDDIR      = ../../build/doc
               .PHONY: docx help Makefile docxdir pdfdir index
-              docxdir: ${{BUILDDIR}}/docx
-              pdfdir: ${{BUILDDIR}}/pdf
+              docxdir: ${BUILDDIR}/docx
+              pdfdir: ${BUILDDIR}/pdf
               MKDIR_P = mkdir -p
-              ${{BUILDDIR}}/docx:
-              	${{MKDIR_P}} ${{BUILDDIR}}/docx
-              ${{BUILDDIR}}/pdf:
-              	${{MKDIR_P}} ${{BUILDDIR}}/pdf
+              ${BUILDDIR}/docx:
+              	${MKDIR_P} ${BUILDDIR}/docx
+              ${BUILDDIR}/pdf:
+              	${MKDIR_P} ${BUILDDIR}/pdf
               index:
               	python dcx.py
               help:
@@ -879,21 +864,46 @@ if __name__=='__main__':
               %: Makefile index
               	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
               docx: docxdir index
-              	cat ra.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/ra.docx"
               	cat sr.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/sr.docx"
               	cat dd.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/dd.docx"
               	cat tp.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/tp.docx"
+              	cat ra.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/ra.docx"
               pdf: pdfdir index
-              	cat ra.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/ra.pdf"
               	cat sr.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/sr.pdf"
               	cat dd.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/dd.pdf"
               	cat tp.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g'  | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/tp.pdf"
+              	cat ra.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/ra.pdf"
        build
         ├ code/
         └ doc
           ├ html/
           └ docx/
-       '''.format(thisfile).splitlines() if l.strip()]
+'''
+
+def main():
+  import codecs
+  import argparse
+
+  #'≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...
+  #makes problems with pdb, though
+  sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+  sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
+
+  import argparse
+  parser = argparse.ArgumentParser(description='''Sample RST Documentation for HTML and DOCX.
+    Creates |substitution| links and ctags for link targets.
+    ''')
+  parser.add_argument('--init', dest='root', action='store',
+                      help='''create a sample folder structure. 
+                      Afterwards run "make html" or "make docx" form "doc" folder.''')
+  args = parser.parse_args()
+
+  if args.root:
+    thisfile = str(Path(__file__).resolve()).replace('\\','/')
+    try:#win32
+        thisfile = thisfile.split(':')[1]
+    except: pass
+    tree=[l for l in example_tree.replace('__file__',thisfile).splitlines() if l.strip()]
     mkdir(args.root)
     oldd = os.getcwd()
     os.chdir(args.root)
@@ -909,4 +919,8 @@ if __name__=='__main__':
             for f,t,d,kw in genfile(gf):
                 gen(nj(fldr,f),target=nj(fldr,t),fun=d,**kw)
         lnksandtags(fldr,lnktgts,allfiles,alltgts)
+
+
+if __name__=='__main__':
+  main()
 

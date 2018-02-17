@@ -362,7 +362,7 @@ def retable(data):
     drt = doretable()
     yield from untable(data,drt)
 
-if __name__ == '__main__':
+def main():
     import codecs
     import sys
     import argparse
@@ -372,12 +372,15 @@ if __name__ == '__main__':
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
     sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
 
-    parser = argparse.ArgumentParser(prog="rstretable", description='''Reflow tables RST document.''')
+    parser = argparse.ArgumentParser(description='''Reflow tables RST document.''')
     parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
     args = parser.parse_args()
     for infile in args.INPUT:
         data = infile.readlines()
         for ln in retable(data):
             sys.stdout.write(ln)
+
+if __name__ == '__main__':
+    main()
 
 

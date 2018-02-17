@@ -16,22 +16,26 @@ A file produced from a docx without ``list-table`` will need a pre-processing vi
 import re
 from textwrap import wrap
 
-def paragraph3(row,nColumns,org,islast,withheader):
+def paragraph23(row,nColumns,org,islast,withheader):
     """Sample process_row function If not transformed to paragraph, then org must be yielded.
 
     This expects 3 columns and the first must have only one line, which holds an ID.
     """
     #import pdb; pdb.set_trace()
     strp = lambda rr: ' '.join([r.strip() for r in rr])
-    if nColumns == 3 and len(row[0])==1:
+    if (nColumns == 2 or nColumns == 3) and len(row[0])==1:
         id = strp(row[0]).lower().replace('-','').replace('*','')
         yield '.. _`{}`:\n\n'.format(id)
-        yield ':{0}:\n\n'.format(id)
-        l1 = strp(row[1])
-        for w in wrap(l1):
-            yield l1+'\n'
-        yield '\n'
-        for r in row[2]:
+        yield '{0}:\n\n'.format(id)
+        if nColumns == 3:
+            l1 = strp(row[1])
+            for w in wrap(l1):
+                yield l1+'\n'
+            yield '\n'
+            idx = 2
+        else:
+            idx = 1
+        for r in row[idx]:
             yield r.strip()+'\n'
     else:
         yield from org
@@ -50,7 +54,7 @@ def refindE(res,ln):
             yield m.span()[1]
         else:
             yield -1
-def untable(data,process_row=paragraph3):
+def untable(data,process_row=paragraph23):
     hT = -1
     nColumns = 0
     row = []
@@ -110,7 +114,7 @@ def untable(data,process_row=paragraph3):
         row.append(rowc)
         yield from process_row(row,nColumns,org,True,withheader)
 
-if __name__ == '__main__':
+def main():
     import codecs
     import sys
     import argparse
@@ -120,8 +124,7 @@ if __name__ == '__main__':
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
     sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
 
-    #TODO allow options, not just paragraph3
-    parser = argparse.ArgumentParser(prog="table", description='''Converts 3 column list-table entries to paragraphs and leaves the rest unchanged.''')
+    parser = argparse.ArgumentParser(description='''Converts 3 column list-table entries to paragraphs and leaves the rest unchanged.''')
     parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
 
     args = parser.parse_args()
@@ -129,4 +132,7 @@ if __name__ == '__main__':
         data = infile.readlines()
         for ln in untable(data):
             sys.stdout.write(ln)
+
+if __name__ == '__main__':
+    main()
 

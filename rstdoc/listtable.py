@@ -119,8 +119,7 @@ def gridtable(
         else:
             yield line
 
-
-if __name__ == '__main__':
+def main():
     import argparse
     import codecs
     import sys
@@ -128,7 +127,7 @@ if __name__ == '__main__':
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
     sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
 
-    parser = argparse.ArgumentParser(prog="table", description='''Convert RST grid table to list-table.''')
+    parser = argparse.ArgumentParser(description='''Convert RST grid table to list-table.''')
     parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
     parser.add_argument('-j', '--join', action='store', default='012',
             help='''e.g.002. Join method per column: 0="".join; 1=" ".join; 2="\\n".join''')
@@ -140,3 +139,6 @@ if __name__ == '__main__':
         for ln in gridtable(data, join):
             sys.stdout.write(ln)
 
+
+if __name__ == '__main__':
+    main()

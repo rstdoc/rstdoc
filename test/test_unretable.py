@@ -24,7 +24,7 @@ undata = '''\
 undatares='''\
 .. _`cccddd001`:
 
-:cccddd001:
+cccddd001:
 
 **General 1**
 
@@ -34,7 +34,7 @@ General
 General
 .. _`xxx010`:
 
-:xxx010:
+xxx010:
 
 sd
 

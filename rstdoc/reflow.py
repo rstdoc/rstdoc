@@ -16,7 +16,7 @@ _pgrphrex=[
         re.compile(r'\s*\*\s'),
         re.compile(r'\s*\w\.\s'),
         re.compile(r'\s*#\.\s'),
-        re.compile(r'\s*:\w\+:\s'),
+        re.compile(r'\s*:?\w\+:\s'),
         ]
 
 def reflowparagraph(p, sentence=False):
@@ -137,8 +137,7 @@ def reflow(data,join='1',sentence=False):
             ):
         yield ln+'\n'
 
-
-if __name__ == '__main__':
+def main():
     import codecs
     import sys
     import argparse
@@ -148,7 +147,7 @@ if __name__ == '__main__':
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
     sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
 
-    parser = argparse.ArgumentParser(prog="rstreflow", 
+    parser = argparse.ArgumentParser(
         description='''Reflow paragraphs and tables, for the latter using join as for listtable''')
     parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
     parser.add_argument('-j', '--join', action='store', default='012',
@@ -162,4 +161,8 @@ if __name__ == '__main__':
         data = infile.readlines()
         for ln in reflow(data,join):
             sys.stdout.write(ln)
+
+
+if __name__ == '__main__':
+    main()
 

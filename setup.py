@@ -35,7 +35,7 @@ setup(name = 'rstdoc',
         ],
 
     install_requires = [],
-    extras_require = {'develop': ['pytest-coverage']},
+    extras_require = {'develop': ['pytest-coverage'],'conversion':['pypandoc']},
     long_description = read('README.rst'),
     packages=['rstdoc'],
     include_package_data=False,
@@ -43,7 +43,12 @@ setup(name = 'rstdoc',
     tests_require=[],
     entry_points={
          'console_scripts': [
-         'rstdoc = rstdoc.rstdoc:rstdoc',
+              'rstlisttable=rstdoc.listtable:main',
+              'rstreflow=rstdoc.reflow:main',
+              'rstretable=rstdoc.retable:main',
+              'rstdcx=rstdoc.dcx:main',
+              'rstfromdocx=rstdoc.rstfromdocx:main',
+              'rstuntable=rstdoc.untable:main',
               ]
       },
 
