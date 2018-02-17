@@ -586,7 +586,7 @@ try:
                     ,options = bld.options
                     ,**env
                     ) 
-            with open(pt,mode='w',encoding="utf-8") as f: 
+            with open(pt,mode='w',encoding="utf-8",newline="\n") as f: 
                 f.write(st)
         bld.stpl=stpl
         bld.declare_chain('stpl',ext_in=['.stpl'],ext_out=[''],rule=stpl)
