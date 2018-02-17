@@ -1,22 +1,56 @@
-todo: 
+rstdoc
+------
 
-refactor
+When installing via ``pip install rstdoc`` these files::
 
-100% test coverage
+  dcx.py
+  fromdocx.py
+  listtable.py
+  untable.py
+  reflow.py
+  retable.py
+  vim_rst_tables.py
 
-title and header: https://github.com/matthew-brett/vim-rst-sections/tree/master/ftplugin
+and these scripts are installed::
 
-see to atom https://atom.io/packages/rst-snippets
+  rstdcx
+  rstfromdocx
+  rstlisttable
+  rstuntable
+  rstreflow
+  rstretable
 
-scripts in setup.py
+The central tools is ``rstdcx`` or ``dcx.py``.
+Following some conventions, 
+explained by the example produced via ``rstdcx --init tmp``,
+it supports documentation of (software) projects, by
 
-help for the scripts
+- generating RST files from other files
 
-readme.rst
+- generating .tags to jump around using the Vim or Atom editor
 
-cat sr.rst no good on windows.
+- producing numbering for tables, figures and listings 
+  consistent through docx, html and pdf by using ``|id|``
+  defined in the generated ``_links_xxx.rst`` files.
 
-listtable.py sr.rst > sr1.rst
-untable.py sr1.rst > sr2.rst
-reflow.py -j 0 sr2.rst > sr3.rst
+The other files' purpose:
+
+- ``rstfromdocx``: convert from docx using Pandoc, but additionally copying the images and helper files
+- ``rstlisttable``, ``rstuntable``, ``rstreflow``: post-processing a converted file
+- ``rstretable``: RST table tools, used by ``vim_rst_tables`` for Vim
+
+For those not using Vim a good alternative is the Atom editor, with these packages::
+
+  atom-ctags  #better https://github.com/rpuntaie/atom-ctags
+  language-restructuredtext
+  rst-preview-pandoc
+  table-editor
+  rst-snippets
+  atom-build       #better https://github.com/rpuntaie/atom-build
+  atom-build-waf
+  find-and-replace-under-cursor
+
+``atom-build`` and ``atom-ctags`` were modified to allow finding files
+by putting the relevant subdirectory into the project paths.
+
 

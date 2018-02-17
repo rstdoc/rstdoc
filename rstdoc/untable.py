@@ -9,7 +9,8 @@ Convert tables of following format to paragraphs with an ID.
 The '-' in ID is removed and the ID is made lower case.
 **Bold** is removed.
 
-A file produced from a docx without ``list-table`` will need a pre-processing via listtable.py.
+A file produced from a docx using pandoc or ``fromdocx.py`` will
+need a pre-processing via ``listtable.py`` to convert grid tables to ``list-table`` tables.
 
 """
 

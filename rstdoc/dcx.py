@@ -2,7 +2,7 @@
 #encoding: utf-8 
 
 """
-Support script to create final documentation (PDF, HTML, DOCX)
+Support script to create documentation (PDF, HTML, DOCX)
 from restructuredText (RST). 
 
 It creates
@@ -18,14 +18,16 @@ See folder layout at the end of the file.
 Usage
 -----
 
+If installed ``./dcx.py`` can be replaced by ``rstdcx``.
+
 Initialize example tree::
 
-  $ python ./dcx.py --init tmp
+  $ ./dcx.py --init tmp
 
 Only create .tags and _links_xxx.rst::
 
   $ cd tmp/src/doc
-  $ python ./dcx.py
+  $ ./dcx.py
 
 Create the docs (and .tags and _links_xxx.rst):
 
@@ -46,7 +48,7 @@ In wscript::
 
 Hyperlinks work in HTML, DOCX and PDF.
 
-- Open all DOCX in advance to do without the virus warning.
+- Open all DOCX in advance to do without the warning.
 
 - Use ``Alt+<-`` to go back in Acrobat Reader after a jump.
 
@@ -64,10 +66,9 @@ Conventions
 Main files have ``.rest`` extension, converted by Sphinx and Pandoc.
 Included files have extension ``.rst`` ignored by Sphinx (see conf.py).
 
-In the src tree the only files (not folders) start with ``_`` are generated.
+In the src tree the only files (not folders), starting with ``_``, are generated ones.
 
-See further conventions by the example created with ``--init`` 
-(end of this file).
+See further conventions by the example created with ``--init`` at the end of this file.
 
 """
 

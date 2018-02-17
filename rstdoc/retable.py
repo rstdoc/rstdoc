@@ -7,9 +7,9 @@ retable() transforms list table to grid table.
 The rst reader expects properly formated grid tables.
 Displacing a ``|`` below will produce errors.
 This file integrates https://github.com/nvie/vim-rst-tables to reformat tables,
-to be used from Vim.
+to be used from Vim (see ``vim_rst_tables.py``).
 
-TODO test reformating the table below.
+Test: Alter and reformating the table below.
 
 .. code:: python
 

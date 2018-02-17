@@ -12,7 +12,25 @@ import os, os.path
 __version__ = '1.0'
 
 def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    return open(os.path.join(os.path.dirname(__file__), fname),encoding='utf-8').read()
+
+long_description = '\n'.join([
+read('readme.rst')
+,'','rstdcx','='*6,''
+,read('rstdoc/dcx.py').split('\n"""')[1]
+,'','rstfromdocx','='*11,''
+,read('rstdoc/fromdocx.py').split('\n"""')[1]
+,'','rstlisttable','='*12,''
+,read('rstdoc/listtable.py').split('\n"""')[1]
+,'','rstuntable','='*10,''
+,read('rstdoc/untable.py').split('\n"""')[1]
+,'','rstreflow','='*9,''
+,read('rstdoc/reflow.py').split('\n"""')[1]
+,'','rstretable','='*10,''
+,read('rstdoc/retable.py').split('\n"""')[1]
+,''#,'vim_rst_tables','='*14,''
+,read('doc/vim_rst_tables.rst')
+])
 
 setup(name = 'rstdoc',
     version = __version__,
@@ -35,13 +53,13 @@ setup(name = 'rstdoc',
         ],
 
     install_requires = [],
-    extras_require = {'develop': ['pytest-coverage'],'conversion':['pypandoc'],
+    extras_require = {'develop': ['mock','pytest-coverage'],'conversion':['pypandoc'],
         'build':['bottle','waf']},
-    long_description = read('README.rst'),
+    long_description = long_description,
     packages=['rstdoc'],
     include_package_data=False,
     zip_safe=False,
-    tests_require=[],
+    tests_require=['pytest','pytest-coverage','mock'],
     entry_points={
          'console_scripts': [
               'rstlisttable=rstdoc.listtable:main',

@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# encoding: utf-8 
+
+"""
+Convert DOCX file to RST in subfolder with name of DOCX file.
+It also create ``conf.py``, ``index.py`` and ``Makefile``
+and copies ``dcx.py`` into the folder.
+
+See ``dcx.py`` for format conventions for the RST.
+"""
+
 from zipfile import ZipFile
 import pypandoc as pypan
 import os

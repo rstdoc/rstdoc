@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 # encoding: utf-8 
 
+"""
+In the ``.vimrc`` do::
+
+    from rstdoc.vim_rst_tables import *
+
+The the vim functions ``ReformatTable``, ``ReflowTable`` and ``ReTitle`` are available.
+"""
+
 import vim
 
 from vim_bridge import bridged

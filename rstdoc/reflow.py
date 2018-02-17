@@ -2,7 +2,16 @@
 # encoding: utf-8 
 
 """
-Reflow tables and paragraphs.
+Reflow tables and paragraphs in a rst document produced from a docx.
+
+Post-process a docx in this order:
+
+    rstfromdocx doc.docx
+    rstlisttable doc/doc.rst > doc/doc.rst
+    rstuntable doc/doc.rst > doc/doc.rst
+    rstreflow doc/doc.rst > doc/doc.rst
+
+Check the intermediate results.
 """
 
 import re
