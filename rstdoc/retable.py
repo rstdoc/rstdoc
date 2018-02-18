@@ -9,7 +9,8 @@ Displacing a ``|`` below will produce errors.
 This file integrates https://github.com/nvie/vim-rst-tables to reformat tables,
 to be used from Vim (see ``vim_rst_tables.py``).
 
-Note: ReflowTable cannot handle tables that span columns.
+ReflowTable cannot handle tables that span columns like this one.
+Here one would better hack into docutils.
 
 .. code:: python
 

@@ -5,7 +5,11 @@
 Support script to create documentation (PDF, HTML, DOCX)
 from restructuredText (RST). 
 
-It creates
+- For HTML ``Sphinx`` is used.
+- For PDF ``Pandoc`` is used (``Sphinx`` would work, too).
+- For DOCX ``Pandoc`` is used, therefore *no Sphinx extension*.
+
+``rstdcx``, or ``dcx.py`` creates
 
 - _links_pdf.rst _links_docx.rst _links_sphinx.rst
 
@@ -13,7 +17,7 @@ It creates
 
 - processes ``gen`` files (see examples produced by --init)
 
-See folder layout at the end of the file.
+See example at the end of ``dcx.py``.
 
 Usage
 -----
@@ -29,13 +33,16 @@ Only create .tags and _links_xxx.rst::
   $ cd tmp/src/doc
   $ ./dcx.py
 
-Create the docs (and .tags and _links_xxx.rst):
+Create the docs (and .tags and _links_xxx.rst)::
 
   $ make html
   $ make docx
   $ make pdf
 
-``waf`` build also considers all recursive include dependencies. 
+Instead of ``make`` one can load this file in `waf <https://github.com/waf-project/waf>`_.
+``waf`` also considers all recursive include dependencies, such that a change in any of them
+results in a rebuild of the documentation. ``bld.stpl`` uses ``bottle.SimpleTemplate``,
+which is useful, if one wants to fill in values while converting from a ``x.rst.stpl`` file.
 In wscript::
 
   def configure(cfg)
@@ -43,6 +50,7 @@ In wscript::
       ...
       
   def build(bld):
+      #defines bld.stpl(), bld.gen_file(), bld.build_doc()
       bld.load('dcx',tooldir='.')
       ...
 
@@ -52,7 +60,7 @@ Hyperlinks work in HTML, DOCX and PDF.
 
 - Use ``Alt+<-`` to go back in Acrobat Reader after a jump.
 
-The generated ctags file works for:
+The generated ctags file was tested with:
 
   - vim
 

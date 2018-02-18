@@ -8,7 +8,7 @@ and copies ``dcx.py`` into the folder.
 
 See ``dcx.py`` for format conventions for the RST.
 
-There are options to postprocess through::
+There are options to post-process through::
 
     --listtable (--join can be provided)
     --untable

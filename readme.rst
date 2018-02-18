@@ -1,5 +1,5 @@
 rstdoc
-------
+======
 
 When installing via ``pip install rstdoc`` these files::
 
@@ -20,7 +20,7 @@ and these scripts are installed::
   rstreflow
   rstretable
 
-The central tools is ``rstdcx`` or ``dcx.py``.
+The central tool is ``rstdcx`` or ``dcx.py``.
 Following some conventions, 
 explained by the example produced via ``rstdcx --init tmp``,
 it supports documentation of (software) projects, by
@@ -36,8 +36,12 @@ it supports documentation of (software) projects, by
 The other files' purpose:
 
 - ``rstfromdocx``: convert from docx using Pandoc, but additionally copying the images and helper files
-- ``rstlisttable``, ``rstuntable``, ``rstreflow``: post-processing a converted file
+- ``rstlisttable``, ``rstuntable``, ``rstreflow``, ``rstreimg``: post-processing a converted file
 - ``rstretable``: RST table tools, used by ``vim_rst_tables`` for Vim
+
+.. note::
+
+   ``rstfromdocx -lurg doc.rst`` does all the post-processing in one step.
 
 For those not using Vim a good alternative is the Atom editor, with these packages::
 
@@ -52,5 +56,9 @@ For those not using Vim a good alternative is the Atom editor, with these packag
 
 ``atom-build`` and ``atom-ctags`` were modified to allow finding files
 by putting the relevant subdirectory into the project paths.
+
+.. note::
+
+   It is adviced to compare the output with the original and do some manual corrections here and there.
 
 

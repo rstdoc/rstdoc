@@ -15,7 +15,7 @@ Basic usage
       $ listtable.py input1.rst input2.rst
       $ listtable.py *.rst
 
-#. Use pipe:
+#. Use pipe (but ``cat`` might not keep the encoding):
 
       $ cat in.rst | listtable.py -  | untable.py - > out.rst
 
@@ -23,23 +23,6 @@ Options
 -------
 -j, --join       e.g.002. Join method per column: 0="".join; 1=" ".join; 2="\\n".join
 
-.. important::
-
-    Always build your document and compare the rendered list-table to the
-    original rendered grid table. It is very possible that some errors may
-    occur that require manual fixes, especially when converting complex tables.
-
-Notes
------
-- The script does not create titles for tables. After conversion, you may
-  want to manually add titles.
-- The script sets all columns to the same width: ``100 / col_num``. After
-  conversion, you may want to manually edit ``:width:``.
-- The script automatically uses the first row of the table as a header.
-  After conversion, you may want to manually edit ``:header-rows:``.
-- The script requires a blank line after each table. If the blank line is at
-  the end of the file, you must add an extra line temporarily for the script
-  to process the table correctly.
 """
 
 import re

@@ -4,7 +4,7 @@
 """
 Reflow tables and paragraphs in a rst document produced from a docx.
 
-Post-process a docx in this order:
+Post-process a docx in this order::
 
     rstfromdocx doc.docx
     rstlisttable doc/doc.rst > doc/tmp.rst
@@ -17,7 +17,7 @@ Post-process a docx in this order:
 
 Check the intermediate results.
 
-Else one can also do inplace:
+Else one can also do inplace::
 
     rstfromdocx doc.docx
     rstlisttable -i doc/doc.rst
