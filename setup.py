@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#py.test --cov remdups --cov-report term-missing
+#py.test --cov rstdoc --cov-report term-missing
 
 #sudo python setup.py bdist_wheel
 #twine upload ./dist/*.whl
