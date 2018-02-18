@@ -687,10 +687,10 @@ example_tree = r'''
            │
            │  s3a: brief description
            │
-           │    Don't count the ID, since the order will change.
-           │    Instead: The IDs have the first letter of the file 
-           │    and 2 or more random letters of ``[0-9a-z]``.
-           │    Use an editor macro to generate IDs.
+           │  Don't count the ID, since the order will change.
+           │  Instead: The IDs have the first letter of the file 
+           │  and 2 or more random letters of ``[0-9a-z]``.
+           │  Use an editor macro to generate IDs.
            │
            │  Every ``.rest`` has this line at the end::
            │  
@@ -766,8 +766,8 @@ example_tree = r'''
            │  
            │  OtherName: Keep names the same all over.
            │  
-           │    Here instead of ``d99:`` we use ``:OtherName:``, but now we have two synonyms for the same item.
-           │    This is no good. If possible, keep ``d99`` in the source and in the final docs.
+           │  Here instead of ``d99:`` we use ``:OtherName:``, but now we have two synonyms for the same item.
+           │  This is no good. If possible, keep ``d99`` in the source and in the final docs.
            │  
            │  Reference |d99| does not show ``d99``.
            │  
