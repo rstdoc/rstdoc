@@ -7,17 +7,26 @@ It also create ``conf.py``, ``index.py`` and ``Makefile``
 and copies ``dcx.py`` into the folder.
 
 See ``dcx.py`` for format conventions for the RST.
+
+There are options to postprocess through::
+
+    --listtable (--join can be provided)
+    --untable
+    --reflow (--sentence True,  --join can be provided)
+    --reimg
+
+See reflow to do that manually.
 """
 
 from zipfile import ZipFile
-import pypandoc as pypan
+import pypandoc
 import os
 import shutil
 from glob import glob
-from dcx import example_tree, rindices
 import re
 import time
 from pathlib import Path
+from .dcx import example_tree, rindices
 
 def mkdir(fn):
     try:
@@ -29,7 +38,7 @@ def prj_name(fn):
     m=re.match(r'[\s\d\W]*([^\s\W]*).*',os.path.splitext(os.path.split(fn)[1])[0])
     return m.group(1).strip('_').replace(' ','')
 
-def extract_media(zf):
+def extract_media(zf,fn):
     pwd=os.getcwd()
     try:
         fnn = os.path.splitext(fn)[0]
@@ -63,7 +72,7 @@ def write_confpy(fn):
     confpy = confpy.replace('docxsample',pn).replace('2017',time.strftime('%Y'))
     lns=confpy.splitlines(True)
     s=re.search('\w',lns[1]).span(0)[0]
-    confpy='\n'.join([l[s:] for l in lns])
+    confpy=''.join([l[s:] for l in lns])
     fnn = os.path.splitext(fn)[0]
     cpfn = os.path.normpath(os.path.join(fnn,'conf.py'))
     if os.path.exists(cpfn):
@@ -113,24 +122,43 @@ def write_dcx(fn):
     dcxfile = os.path.join(os.path.split(str(Path(__file__).resolve()))[0],'dcx.py')
     shutil.copy2(dcxfile,os.path.splitext(fn)[0])
 
-def main():
+def main(**args):
     import argparse
+    from .listtable import main as listtable
+    from .untable import main as untable
+    from .reflow import main as reflow
+    from .reimg import main as reimg
 
-    parser = argparse.ArgumentParser(description='''Convert DOCX to RST using pandoc.''')
-    parser.add_argument('docx', action='store',help='DOCX file')
-    args = parser.parse_args()
+    if not args:
+        parser = argparse.ArgumentParser(description='''Convert DOCX to RST using pandoc.''')
+        parser.add_argument('docx', action='store',help='DOCX file')
+        parser.add_argument('-l', '--listtable', action='store_true', default=False, help='''postprocess through rstlisttable''')
+        parser.add_argument('-u', '--untable', action='store_true', default=False, help='''postprocess through rstuntable''')
+        parser.add_argument('-r', '--reflow', action='store_true', default=False, help='''postprocess through rstreflow''')
+        parser.add_argument('-g', '--reimg', action='store_true', default=False, help='''postprocess through rstreimg''')
+        parser.add_argument('-j', '--join', action='store', default='012',
+                help='''e.g.002. Join method per column: 0="".join; 1=" ".join; 2="\\n".join''')
+        args = parser.parse_args().__dict__
     
-    fn = args.docx
-
+    fn = args['docx']
     zf = ZipFile(fn)
-    extract_media(zf)
+    extract_media(zf,fn)
     frm,fnrst = docxrest(fn)
-    pypan.convert_file(fn,'rst',frm,outputfile=fnrst)
+    #pypandoc.convert_file(fn,'rst',frm,outputfile=fnrst)
+    rst=pypandoc.convert(fn,'rst',frm)
+    with open(fnrst,'w',encoding='utf-8',newline='\n') as f:
+        f.writelines([x+'\n' for x in rst.splitlines()])
     write_confpy(fn)
     write_index(fn)
     write_makefile(fn)
     write_dcx(fn)
 
+    for a in 'listtable untable reflow reimg'.split():
+        if args[a]:
+            args['in_place'] = True
+            args['sentence'] = True
+            args['INPUT'] = argparse.FileType('r',encoding='utf-8')(fnrst)
+            eval(a)(**args)
 
 if __name__ == '__main__':
     main()

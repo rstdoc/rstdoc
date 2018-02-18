@@ -119,7 +119,7 @@ def gridtable(
         else:
             yield line
 
-def main():
+def main(**args):
     import argparse
     import codecs
     import sys
@@ -127,17 +127,27 @@ def main():
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
     sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
 
-    parser = argparse.ArgumentParser(description='''Convert RST grid table to list-table.''')
-    parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
-    parser.add_argument('-j', '--join', action='store', default='012',
-            help='''e.g.002. Join method per column: 0="".join; 1=" ".join; 2="\\n".join''')
+    if not args:
+        parser = argparse.ArgumentParser(description='''Convert RST grid table to list-table.''')
+        parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
+        parser.add_argument('-j', '--join', action='store', default='012',
+                help='''e.g.002. Join method per column: 0="".join; 1=" ".join; 2="\\n".join''')
+        parser.add_argument('-i', '--in-place', action='store_true', default=False,
+                help='''change the file itself''')
+        args = parser.parse_args().__dict__
 
-    args = parser.parse_args()
-    join = args.join
-    for infile in args.INPUT:
+    for infile in args['INPUT']:
         data = infile.readlines()
-        for ln in gridtable(data, join):
-            sys.stdout.write(ln)
+        infile.close()
+        if args['in_place']:
+            f = open(infile.name,'w',encoding='utf-8',newline='\n')
+        else:
+            f = sys.stdout
+        try:
+            f.writelines(gridtable(data,args['join']))
+        finally:
+            if args['in_place']:
+                f.close()
 
 
 if __name__ == '__main__':

@@ -7,17 +7,30 @@ Reflow tables and paragraphs in a rst document produced from a docx.
 Post-process a docx in this order:
 
     rstfromdocx doc.docx
-    rstlisttable doc/doc.rst > doc/doc.rst
-    rstuntable doc/doc.rst > doc/doc.rst
-    rstreflow doc/doc.rst > doc/doc.rst
+    rstlisttable doc/doc.rst > doc/tmp.rst
+    rstuntable doc/tmp.rst > doc/tmp1.rst
+    rstreflow doc/tmp1.rst > doc/tmp2.rst
+    rstreimg doc/tmp2.rst > doc/tmp3.rst
+    rm doc/doc.rst
+    mv doc/tmp3.rst doc/doc.rst
+    rm doc/tmp*
 
 Check the intermediate results.
+
+Else one can also do inplace:
+
+    rstfromdocx doc.docx
+    rstlisttable -i doc/doc.rst
+    rstuntable -i doc/doc.rst
+    rstreflow -i doc/doc.rst
+    rstreimg -i doc/doc.rst
+
 """
 
 import re
 from textwrap import wrap
-from listtable import gridtable, row_to_listtable
-from retable import retable, titlerex, ReTitle
+from .listtable import gridtable, row_to_listtable
+from .retable import retable, titlerex, ReTitle
 
 _pgrphrex=[
         re.compile(r'\s+'),
@@ -146,7 +159,7 @@ def reflow(data,join='1',sentence=False):
             ):
         yield ln+'\n'
 
-def main():
+def main(**args):
     import codecs
     import sys
     import argparse
@@ -156,20 +169,30 @@ def main():
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
     sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
 
-    parser = argparse.ArgumentParser(
-        description='''Reflow paragraphs and tables, for the latter using join as for listtable''')
-    parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
-    parser.add_argument('-j', '--join', action='store', default='012',
-            help='''e.g.002. Join method per column: 0="".join; 1=" ".join; 2="\\n".join''')
-    parser.add_argument('-s', '--sentence', action='store_true', default=False,
-            help='''Break lines at the end of sentences.''')
+    if not args:
+        parser = argparse.ArgumentParser(
+            description='''Reflow paragraphs and tables, for the latter using join as for listtable''')
+        parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
+        parser.add_argument('-j', '--join', action='store', default='012',
+                help='''e.g.002. Join method per column: 0="".join; 1=" ".join; 2="\\n".join''')
+        parser.add_argument('-s', '--sentence', action='store_true', default=False,
+                help='''Break lines at the end of sentences.''')
+        parser.add_argument('-i', '--in-place', action='store_true', default=False,
+                help='''change the file itself''')
+        args = parser.parse_args().__dict__
 
-    args = parser.parse_args()
-    join = args.join
-    for infile in args.INPUT:
+    for infile in args['INPUT']:
         data = infile.readlines()
-        for ln in reflow(data,join):
-            sys.stdout.write(ln)
+        infile.close()
+        if args['in_place']:
+            f = open(infile.name,'w',encoding='utf-8',newline='\n')
+        else:
+            f = sys.stdout
+        try:
+            f.writelines(reflow(data,args['join']))
+        finally:
+            if args['in_place']:
+                f.close()
 
 
 if __name__ == '__main__':

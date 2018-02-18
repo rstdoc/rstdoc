@@ -26,6 +26,8 @@ read('readme.rst')
 ,read('rstdoc/untable.py').split('\n"""')[1]
 ,'','rstreflow','='*9,''
 ,read('rstdoc/reflow.py').split('\n"""')[1]
+,'','rstreimg','='*8,''
+,read('rstdoc/reimg.py').split('\n"""')[1]
 ,'','rstretable','='*10,''
 ,read('rstdoc/retable.py').split('\n"""')[1]
 ,''#,'vim_rst_tables','='*14,''
@@ -64,9 +66,10 @@ setup(name = 'rstdoc',
          'console_scripts': [
               'rstlisttable=rstdoc.listtable:main',
               'rstreflow=rstdoc.reflow:main',
+              'rstreimg=rstdoc.reimg:main',
               'rstretable=rstdoc.retable:main',
               'rstdcx=rstdoc.dcx:main',
-              'rstfromdocx=rstdoc.rstfromdocx:main',
+              'rstfromdocx=rstdoc.fromdocx:main',
               'rstuntable=rstdoc.untable:main',
               ]
       },

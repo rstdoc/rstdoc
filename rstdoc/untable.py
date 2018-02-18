@@ -115,7 +115,7 @@ def untable(data,process_row=paragraph23):
         row.append(rowc)
         yield from process_row(row,nColumns,org,True,withheader)
 
-def main():
+def main(**args):
     import codecs
     import sys
     import argparse
@@ -125,14 +125,25 @@ def main():
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
     sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
 
-    parser = argparse.ArgumentParser(description='''Converts 3 column list-table entries to paragraphs and leaves the rest unchanged.''')
-    parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
+    if not args:
+        parser = argparse.ArgumentParser(description='''Converts 3 column list-table entries to paragraphs and leaves the rest unchanged.''')
+        parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
+        parser.add_argument('-i', '--in-place', action='store_true', default=False,
+                help='''change the file itself''')
+        args = parser.parse_args().__args__
 
-    args = parser.parse_args()
-    for infile in args.INPUT:
+    for infile in args['INPUT']:
         data = infile.readlines()
-        for ln in untable(data):
-            sys.stdout.write(ln)
+        infile.close()
+        if args['in_place']:
+            f = open(infile.name,'w',encoding='utf-8',newline='\n')
+        else:
+            f = sys.stdout
+        try:
+            f.writelines(untable(data))
+        finally:
+            if args['in_place']:
+                f.close()
 
 if __name__ == '__main__':
     main()

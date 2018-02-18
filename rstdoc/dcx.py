@@ -881,7 +881,7 @@ example_tree = r'''
           └ docx/
 '''
 
-def main():
+def main(**args):
   import codecs
   import argparse
 
@@ -890,24 +890,25 @@ def main():
   sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
   sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
 
-  import argparse
-  parser = argparse.ArgumentParser(description='''Sample RST Documentation for HTML and DOCX.
-    Creates |substitution| links and ctags for link targets.
-    ''')
-  parser.add_argument('--init', dest='root', action='store',
-                      help='''create a sample folder structure. 
-                      Afterwards run "make html" or "make docx" form "doc" folder.''')
-  args = parser.parse_args()
+  if not args:
+    parser = argparse.ArgumentParser(description='''Sample RST Documentation for HTML and DOCX.
+      Creates |substitution| links and ctags for link targets.
+      ''')
+    parser.add_argument('--init', dest='root', action='store',
+                        help='''create a sample folder structure. 
+                        Afterwards run "make html" or "make docx" form "doc" folder.''')
+    args = parser.parse_args().__dict__
 
-  if args.root:
+  iroot = args['root']
+  if iroot:
     thisfile = str(Path(__file__).resolve()).replace('\\','/')
     try:#win32
         thisfile = thisfile.split(':')[1]
     except: pass
     tree=[l for l in example_tree.replace('__file__',thisfile).splitlines() if l.strip()]
-    mkdir(args.root)
+    mkdir(iroot)
     oldd = os.getcwd()
-    os.chdir(args.root)
+    os.chdir(iroot)
     mktree(tree)
     os.chdir(oldd)
   else:
@@ -920,7 +921,6 @@ def main():
             for f,t,d,kw in genfile(gf):
                 gen(nj(fldr,f),target=nj(fldr,t),fun=d,**kw)
         lnksandtags(fldr,lnktgts,allfiles,alltgts)
-
 
 if __name__=='__main__':
   main()

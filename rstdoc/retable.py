@@ -37,7 +37,7 @@ Test: Alter and reformating the table below.
 
 import re
 import textwrap
-from untable import untable
+from .untable import untable
 
 title_all=list(r'''#*=-^~+_.,"'!$%&\\()/:;<>?@[\]`{|}''')
 titlerex = re.compile('''^([#*=\-^~+_.,"'!$%&\\\(\)/:;<>?@\[\]`{|}])\\1+$''')
@@ -362,7 +362,7 @@ def retable(data):
     drt = doretable()
     yield from untable(data,drt)
 
-def main():
+def main(**args):
     import codecs
     import sys
     import argparse
@@ -372,13 +372,25 @@ def main():
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
     sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
 
-    parser = argparse.ArgumentParser(description='''Reflow tables RST document.''')
-    parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
-    args = parser.parse_args()
-    for infile in args.INPUT:
+    if not args:
+        parser = argparse.ArgumentParser(description='''Reflow tables RST document.''')
+        parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
+        parser.add_argument('-i', '--in-place', action='store_true', default=False,
+                help='''change the file itself''')
+        args = parser.parse_args().__dict__
+
+    for infile in args['INPUT']:
         data = infile.readlines()
-        for ln in retable(data):
-            sys.stdout.write(ln)
+        infile.close()
+        if args['in_place']:
+            f = open(infile.name,'w',encoding='utf-8',newline='\n')
+        else:
+            f = sys.stdout
+        try:
+            f.writelines(retable(data))
+        finally:
+            if args['in_place']:
+                f.close()
 
 if __name__ == '__main__':
     main()
