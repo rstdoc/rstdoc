@@ -1,22 +1,35 @@
 #!/usr/bin/env python
 # encoding: utf-8 
 
-#test with
-#py.test --doctest-modules untable.py
-
 """
 Convert tables of following format to paragraphs with an ID.
 The '-' in ID is removed and the ID is made lower case.
 **Bold** is removed.
 
+.. list-table::
+   :widths: 50 50
+   :header-rows: 0
+
+   * - **ID-XY-00**
+     - text goes here
+
+   * - **ID-XY-01**
+     - text again goes here
+
+
+If the first entry does contain no word chars or spaces between words,
+then the table stays. For a different behavior replace paragraph23.
+
 A file produced from a docx using pandoc or ``fromdocx.py`` will
-need a pre-processing via ``listtable.py`` to convert grid tables to ``list-table`` tables.
+need a pre-processing via ``rstlisttable`` to convert grid tables to ``list-table`` tables.
+This is immediately done with ``rstfromdocx -lu doc.rst``.
 
 """
 
 import re
 from textwrap import wrap
 
+_no = None
 def paragraph23(row,nColumns,org,islast,withheader):
     """Sample process_row function If not transformed to paragraph, then org must be yielded.
 
@@ -24,23 +37,43 @@ def paragraph23(row,nColumns,org,islast,withheader):
     """
     #import pdb; pdb.set_trace()
     strp = lambda rr: ' '.join([r.strip() for r in rr])
-    if (nColumns == 2 or nColumns == 3) and len(row[0])==1:
+    global _no
+    if _no!=None and _no:
+        yield from org
+    elif (_no!=None and not _no) or (_no==None and (nColumns == 2 or nColumns == 3) and len(row[0])==1):
         id = strp(row[0]).lower().replace('-','').replace('*','')
-        yield '.. _`{}`:\n\n'.format(id)
-        yield '{0}:\n\n'.format(id)
-        if nColumns == 3:
-            l1 = strp(row[1])
-            for w in wrap(l1):
-                yield l1+'\n'
-            yield '\n'
-            idx = 2
+
+        row1=row[-1][:]
+        while row1 and not row1[-1].strip():
+            del row1[-1]
+        if not row1:
+            row1 = ['']
+
+        if _no==None and (not re.search('\w',id) or ' ' in id.strip() or (len(row1)==1 and row1[0].startswith('*'))):
+            _no = True
+            yield from org
         else:
-            idx = 1
-        for r in row[idx]:
-            yield r.strip()+'\n'
+            _no = False
+            if id:
+                id = id.replace(' ','')
+                yield '.. _`{}`:\n\n'.format(id)
+                yield '{0}:\n\n'.format(id)
+            if nColumns == 3:
+                l1 = strp(row[1])
+                for w in wrap(l1):
+                    yield l1+'\n'
+                yield '\n'
+                idx = 2
+            else:
+                idx = 1
+            for r in row[idx]:
+                yield r.strip()+'\n'
     else:
         yield from org
+    if islast:
+        _no = None
     del org[:]
+
 tblre = [
     re.compile(r'^\s+')
     ,re.compile(r'^\s+:')
@@ -120,17 +153,12 @@ def main(**args):
     import sys
     import argparse
 
-    #'≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...
-    #makes problems with pdb, though
-    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-    sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
-
     if not args:
         parser = argparse.ArgumentParser(description='''Converts 3 column list-table entries to paragraphs and leaves the rest unchanged.''')
         parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
         parser.add_argument('-i', '--in-place', action='store_true', default=False,
                 help='''change the file itself''')
-        args = parser.parse_args().__args__
+        args = parser.parse_args().__dict__
 
     for infile in args['INPUT']:
         data = infile.readlines()
@@ -138,6 +166,9 @@ def main(**args):
         if args['in_place']:
             f = open(infile.name,'w',encoding='utf-8',newline='\n')
         else:
+            #'≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...  makes problems with pdb, though
+            sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+            sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
             f = sys.stdout
         try:
             f.writelines(untable(data))

@@ -12,7 +12,7 @@ There are options to postprocess through::
 
     --listtable (--join can be provided)
     --untable
-    --reflow (--sentence True,  --join can be provided)
+    --reflow (--sentence True,  --join 0)
     --reimg
 
 See reflow to do that manually.
@@ -147,6 +147,7 @@ def main(**args):
     #pypandoc.convert_file(fn,'rst',frm,outputfile=fnrst)
     rst=pypandoc.convert(fn,'rst',frm)
     with open(fnrst,'w',encoding='utf-8',newline='\n') as f:
+        f.write('.. vim: syntax=rst\n\n')
         f.writelines([x+'\n' for x in rst.splitlines()])
     write_confpy(fn)
     write_index(fn)
@@ -157,7 +158,9 @@ def main(**args):
         if args[a]:
             args['in_place'] = True
             args['sentence'] = True
-            args['INPUT'] = argparse.FileType('r',encoding='utf-8')(fnrst)
+            if a=='reflow':
+                args['join'] = '0'
+            args['INPUT'] = [argparse.FileType('r',encoding='utf-8')(fnrst)]
             eval(a)(**args)
 
 if __name__ == '__main__':

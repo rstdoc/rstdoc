@@ -34,11 +34,12 @@ from .retable import retable, titlerex, ReTitle
 
 _pgrphrex=[
         re.compile(r'\s+'),
-        re.compile(r'\s*-\s'),
-        re.compile(r'\s*\*\s'),
-        re.compile(r'\s*\w\.\s'),
-        re.compile(r'\s*#\.\s'),
-        re.compile(r'\s*:?\w\+:\s'),
+        re.compile(r'\s*-(\s|$)'),
+        re.compile(r'\s*\*(\s|$)'),
+        re.compile(r'\s*\* -(\s|$)'),
+        re.compile(r'\s*\w\.(\s|$)'),
+        re.compile(r'\s*#\.(\s|$)'),
+        re.compile(r'\s*:?\w\+:(\s|$)'),
         ]
 
 def reflowparagraph(p, sentence=False):
@@ -56,9 +57,9 @@ def reflowparagraph(p, sentence=False):
             for rp in _pgrphrex:
                 m = rp.match(p[0])
                 if m:
-                    st = m.span()[1]
-                    mo = m.group(0)
-                    break
+                    if m.span()[1] > st:
+                        st = m.span()[1]
+                        mo = m.group(0)
             if p[0] and st < len(p[0]) and p[0][st] in '|+':
                 yield from p
             else:
@@ -74,12 +75,15 @@ def reflowparagraph(p, sentence=False):
                     txt = '\n'.join([p[0][st:]]+[pp.strip() for pp in p[1:]])
                     wraptxt = wrap(txt)
                 lmo = 0
-                for tl in wraptxt:
-                    if not lmo:
-                        yield mo+tl
-                        lmo = len(mo)
-                    else:
-                        yield ' '*lmo+tl
+                if not wraptxt:
+                    yield mo
+                else:
+                    for tl in wraptxt:
+                        if not lmo:
+                            yield mo+tl
+                            lmo = len(mo)
+                        else:
+                            yield ' '*lmo+tl
         del p[:]
 
 def reflowparagraphs(data,sentence=False):
@@ -127,7 +131,13 @@ def rmextrablankline(data):
 
 def no3star(data):
     for d in data:
-        yield d.replace('***','**')
+        #d='***Hello***'
+        res = d.replace('***','**')
+        #d='**space before **'
+        res = re.sub('(\w)\s+\*\*\s*$',r'\1**',d)
+        #d='**'
+        res = re.sub('^\s*\*\*\s*$',r'',d)
+        yield res
 
 def noblankend(data):
     nbe = re.compile('\s+$')
@@ -164,11 +174,6 @@ def main(**args):
     import sys
     import argparse
 
-    #'≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...
-    #makes problems with pdb, though
-    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-    sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
-
     if not args:
         parser = argparse.ArgumentParser(
             description='''Reflow paragraphs and tables, for the latter using join as for listtable''')
@@ -187,6 +192,9 @@ def main(**args):
         if args['in_place']:
             f = open(infile.name,'w',encoding='utf-8',newline='\n')
         else:
+            #'≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...  makes problems with pdb, though
+            sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+            sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
             f = sys.stdout
         try:
             f.writelines(reflow(data,args['join']))

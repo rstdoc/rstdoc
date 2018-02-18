@@ -1,6 +1,6 @@
 # Mock out the vim library
 import sys
-sys.path = ['rstdoc','../rstdoc','./mocks','test/mocks'] + sys.path
+sys.path = ['..','test/mocks','mocks'] + sys.path
 import mock
 import vim
 
@@ -19,12 +19,12 @@ import os
 import unittest
 
 # Load test subjects
-from retable import (
+from rstdoc.retable import (
     parse_table, draw_table, table_line, get_column_widths,
     get_column_widths_from_border_spec, pad_fields, unify_table,
     join_rows, partition_raw_lines, split_row_into_lines,
     split_table_row, reflow_row_contents)
-from vim_rst_tables import get_table_bounds, reformat_table, reflow_table, re_title
+from rstdoc.vim_rst_tables import get_table_bounds, reformat_table, reflow_table, re_title
 
 
 class TestRSTTableFormatter(unittest.TestCase):
@@ -53,6 +53,16 @@ class TestRSTTableFormatter(unittest.TestCase):
         vim.current.buffer = (text_before_table + input).split('\n')
 
         reflow_table()
+
+        self.assertEqual(
+            (text_before_table + expect).split('\n'),
+            vim.current.buffer)
+
+    def reformat_table_vim(self, expect, input):
+        text_before_table = 'A piece of text before the table.\n\n'
+        vim.current.buffer = (text_before_table + input).split('\n')
+
+        reformat_table()
 
         self.assertEqual(
             (text_before_table + expect).split('\n'),
@@ -337,6 +347,16 @@ a line ending.
         pt = parse_table(raw_lines)
         dt = draw_table('', pt)
         self.assertEqual(expect, dt)
+
+    def testReformatEmpty(self):
+        self.reformat_table_vim("""\
++---+-----+---+
+| A | B c | D |
++===+=====+===+
+| 1 |     | 2 |
++---+-----+---+""","""\
+A | B c | D
+1 |  | 2""")
 
     def testReflowTable(self):
         self.load_fixture_in_vim('reflow')

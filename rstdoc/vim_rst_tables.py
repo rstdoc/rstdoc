@@ -12,7 +12,7 @@ The the vim functions ``ReformatTable``, ``ReflowTable`` and ``ReTitle`` are ava
 import vim
 
 from vim_bridge import bridged
-from retable import ReformatTable, ReflowTable, ReTitle, get_bounds
+from .retable import ReformatTable, ReflowTable, ReTitle, get_bounds
 
 def get_table_bounds():
     row,col = vim.current.window.cursor

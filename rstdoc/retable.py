@@ -9,7 +9,7 @@ Displacing a ``|`` below will produce errors.
 This file integrates https://github.com/nvie/vim-rst-tables to reformat tables,
 to be used from Vim (see ``vim_rst_tables.py``).
 
-Test: Alter and reformating the table below.
+Note: ReflowTable cannot handle tables that span columns.
 
 .. code:: python
 
@@ -138,14 +138,17 @@ def split_table_row(row_string):
     # if "^| " or " | " or " |$" is found, this is already a table,
     # if not, then we're creating a table with double space
     if not re.search(r'^\|\s+|\s+\|\s+|\s+\|$', row_string):
-        return re.split(r'\s\s+', row_string.rstrip())
+        res = re.split(r'\s\s+', row_string.rstrip())
+        return res
+
 
     # strip off the outer table drawings ("^| " and " |$"), but not
     # "^|[^ ]" or "[^ ]|$" because they can be used in "|replacements|"
     row_string = re.sub(r'^\s*\|\s+|\s+\|\s*$', '', row_string)
     # split, not by "|" but by " | " so we can have "|replacements|"
     # inside columns as well
-    return re.split(r'^\|\s+|\s+\|\s+|\s+\|$', row_string)
+    res = re.split(r'^\|\s|\s\|\s|\s\|$', row_string)
+    return res
 
 
 def parse_table(raw_lines):
@@ -367,11 +370,6 @@ def main(**args):
     import sys
     import argparse
 
-    #'≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...
-    #makes problems with pdb, though
-    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-    sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
-
     if not args:
         parser = argparse.ArgumentParser(description='''Reflow tables RST document.''')
         parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
@@ -385,6 +383,9 @@ def main(**args):
         if args['in_place']:
             f = open(infile.name,'w',encoding='utf-8',newline='\n')
         else:
+            #'≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...  makes problems with pdb, though
+            sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+            sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
             f = sys.stdout
         try:
             f.writelines(retable(data))

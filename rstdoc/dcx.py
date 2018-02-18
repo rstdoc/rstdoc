@@ -885,11 +885,6 @@ def main(**args):
   import codecs
   import argparse
 
-  #'≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...
-  #makes problems with pdb, though
-  sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-  sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
-
   if not args:
     parser = argparse.ArgumentParser(description='''Sample RST Documentation for HTML and DOCX.
       Creates |substitution| links and ctags for link targets.

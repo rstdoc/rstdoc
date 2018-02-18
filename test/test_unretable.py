@@ -1,10 +1,10 @@
 import sys
-sys.path = ['rstdoc','../rstdoc'] + sys.path
+sys.path = ['..','test/mocks','mocks'] + sys.path
 import pytest
-from untable import untable
-from retable import retable
-from listtable import gridtable
-from reflow import reflow
+from rstdoc.untable import untable
+from rstdoc.retable import retable
+from rstdoc.listtable import gridtable
+from rstdoc.reflow import reflow
 
 undata = '''\
 .. list-table::
@@ -40,7 +40,7 @@ sd
 
 
 '''
-def test_untable(request):
+def test_untable0(request):
     res = ''.join(untable(undata))
     assert res == undatares
 
@@ -71,16 +71,53 @@ the lazy
 
 And some more text.
 '''.splitlines()
+qfdatauntable = '''\
+the quick
+brown fox
+jumps
 
+- over
+the lazy
+
+- dog
+
+|dta|: Table legend
+
+.. _`bit`:
+
+
+bit:
+
+
+Function
+
+
+
+.. _`01`:
+
+
+01:
+
+
+xxx
+
+yyy
+
+
+
+And some more text.'''
 def test_untable1():
     def rowfun(row,nColumns,org,islast,withheader):
         for rc in row:
             for r in rc:
                 assert 'And some more text' not in r
         yield from org
-    res = list(untable(qfdata,rowfun))
+    untable(qfdata,rowfun)
+def test_untable2():
+    res = '\n'.join(untable(qfdata))
+    assert res == qfdatauntable
 
-def test_retable():
+def test_retable0():
     res = '\n'.join(list(retable(qfdata)))
     res.splitlines()[-4] == '+-----+----------+'
 
@@ -148,7 +185,7 @@ badtables='''\
 |     | ion | y** |
 |     | **  |     |
 +-----+-----+-----+
-| 0;  |     |     |
+| 0;  |     |  x  |
 | ±   |     |     |
 | 90  |     |     |
 | V   |     |     |
@@ -195,13 +232,61 @@ badtableres='''\
 
    * - 0;±90V
      - 
-     - 
+     - x
 
 
 '''
-def test_listtable():
+def test_listtablebasic0():
     res = ''.join(gridtable(badtables,join='0'))
     assert res == badtableres
+
+
+badtable012='''\
+**Document History**
+
++-----------------+-----------------+-----------------+-----------------+
+| Version         | Date            | Who             | Change          |
++-----------------+-----------------+-----------------+-----------------+
+| 1.0             | 10.07.2015      | xxxxxxx         | Initial setup   |
+|                 |                 |                 | of document     |
++-----------------+-----------------+-----------------+-----------------+
+| 1.6             | DRAFT           |                 | Updated: Manual |
+|                 |                 |                 | tests in System |
+|                 |                 |                 | performance     |
+|                 |                 |                 | test cases      |
++-----------------+-----------------+-----------------+-----------------+
+'''.splitlines(True)
+badtable012res='''\
+**Document History**
+
+.. list-table::
+   :widths: 25 25 25 25
+   :header-rows: 0
+
+
+   * - Version
+     - Date
+     - Who
+     - Change
+
+   * - 1.0
+     - 10.07.2015
+     - xxxxxxx
+     - Initial setup
+       of document
+
+   * - 1.6
+     - DRAFT
+     - 
+     - Updated: Manual
+       tests in System
+       performance
+       test cases
+
+'''
+def test_listtablebasic012():
+    res = ''.join(gridtable(badtable012,join='012'))
+    assert res == badtable012res
 
 joindata='''\
 line before
@@ -300,11 +385,11 @@ badtablereflow='''\
 +-----------+----------------+--------------+
 | **Value** | **Resolution** | **Accuracy** |
 +-----------+----------------+--------------+
-| 0;±90V    |                |              |
+| 0;±90V    |                | x            |
 +-----------+----------------+--------------+
 
 '''
-def test_reflow():
+def test_reflow0():
     res = ''.join(reflow(badtables,join='0'))
     assert res == badtablereflow
 
@@ -432,3 +517,52 @@ Title
 def test_reflowqf2():
    res = ''.join(reflow(refl2,sentence=True))
    assert res == refl2res
+
+rfec='''\
+.. list-table::
+   :widths: 25 25 25 25
+   :header-rows: 0
+
+
+   * - 
+     - **Basic**
+     - **Intermediate**
+     - **Advanced**
+
+   * - **OK**
+     - a is equal b if c
+     is equal d or is it not well let us see
+     if it works out after all
+     - 
+     - 
+
+   * - **NOT**
+     - 
+     - 
+     - 
+'''.splitlines(True)
+rfecres='''\
+.. list-table::
+   :widths: 25 25 25 25
+   :header-rows: 0
+
+
+   * -
+     - **Basic**
+     - **Intermediate**
+     - **Advanced**
+
+   * - **OK**
+     - a is equal b if c is equal d or is it not well let us see if it works
+       out after all
+     -
+     -
+
+   * - **NOT**
+     -
+     -
+     -
+'''
+def test_reflowemptycells():
+   res = ''.join(reflow(rfec))
+   assert res == rfecres

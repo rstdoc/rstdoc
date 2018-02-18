@@ -44,10 +44,18 @@ Notes
 
 import re
 
+def combine2(e):
+    res = [ee[len(re.split('[^ ]',e[0])[0]):].rstrip() for ee in e]
+    while res and not res[-1].strip():
+        del res[-1]
+    if not res:
+        res = ['']
+    return res
+
 combine = {
         0:lambda e: [''.join([ee.strip() for ee in e]).strip()],
         1:lambda e: [' '.join([ee.strip() for ee in e]).strip()],
-        2:lambda e: [ee[len(re.split('[^ ]',e[0])[0]):].rstrip() for ee in e]
+        2:combine2
         }
 _header = lambda line: line.startswith('+==')
 _isgridline = lambda line: line.startswith('+--') or _header(line)
@@ -123,9 +131,6 @@ def main(**args):
     import argparse
     import codecs
     import sys
-    #'≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...
-    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-    sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
 
     if not args:
         parser = argparse.ArgumentParser(description='''Convert RST grid table to list-table.''')
@@ -142,6 +147,9 @@ def main(**args):
         if args['in_place']:
             f = open(infile.name,'w',encoding='utf-8',newline='\n')
         else:
+            #'≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...  makes problems with pdb, though
+            sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+            sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
             f = sys.stdout
         try:
             f.writelines(gridtable(data,args['join']))

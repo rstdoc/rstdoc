@@ -1,7 +1,7 @@
 import sys
-sys.path = ['rstdoc','../rstdoc'] + sys.path
+sys.path = ['..','test/mocks','mocks'] + sys.path
 import pytest
-from dcx import (
+from rstdoc.dcx import (
     g_counters
     ,linktargets
     )
