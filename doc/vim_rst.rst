@@ -1,5 +1,5 @@
-vim_rst_tables
-==============
+vim_rst
+=======
 
 Usage
 -----
@@ -9,7 +9,7 @@ In your ``.vimrc`` you create shortcuts, like for example::
   let mapleader = ","
   let maplocalleader = ","
   py3 << EOF
-  from rstdoc import vim_rst_tables
+  from rstdoc import vim_rst
   EOF
   nnoremap <silent> <leader>etf :call ReformatTable()<CR>
   nnoremap <silent> <leader>etr :call ReflowTable()<CR>

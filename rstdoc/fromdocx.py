@@ -130,7 +130,7 @@ def main(**args):
     from .reimg import main as reimg
 
     if not args:
-        parser = argparse.ArgumentParser(description='''Convert DOCX to RST using pandoc.''')
+        parser = argparse.ArgumentParser(description='''Convert DOCX to RST using Pandoc and additionally copy the images and helper files.''')
         parser.add_argument('docx', action='store',help='DOCX file')
         parser.add_argument('-l', '--listtable', action='store_true', default=False, help='''postprocess through rstlisttable''')
         parser.add_argument('-u', '--untable', action='store_true', default=False, help='''postprocess through rstuntable''')

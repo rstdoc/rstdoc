@@ -4,7 +4,7 @@
 """
 In the ``.vimrc`` do::
 
-    from rstdoc.vim_rst_tables import *
+    from rstdoc.vim_rst import *
 
 The the vim functions ``ReformatTable``, ``ReflowTable`` and ``ReTitle`` are available.
 """

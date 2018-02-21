@@ -86,8 +86,7 @@ def main(**args):
         return m.group(1).strip('_').replace(' ','').replace('_','')[:6]
 
     if not args:
-        parser = argparse.ArgumentParser(
-            description='''Rename images referenced in the RST file.''')
+        parser = argparse.ArgumentParser(description='''Rename images referenced in the RST file.''')
         parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
         parser.add_argument('-i', '--in-place', action='store_true', default=False,
                 help='''change the file itself''')

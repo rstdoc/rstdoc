@@ -7,7 +7,7 @@ retable() transforms list table to grid table.
 The rst reader expects properly formated grid tables.
 Displacing a ``|`` below will produce errors.
 This file integrates https://github.com/nvie/vim-rst-tables to reformat tables,
-to be used from Vim (see ``vim_rst_tables.py``).
+to be used from Vim (see ``vim_rst.py``).
 
 ReflowTable cannot handle tables that span columns like this one.
 Here one would better hack into docutils.
@@ -372,7 +372,7 @@ def main(**args):
     import argparse
 
     if not args:
-        parser = argparse.ArgumentParser(description='''Reflow tables RST document.''')
+        parser = argparse.ArgumentParser(description='''Transforms list tables to grid tables.''')
         parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
         parser.add_argument('-i', '--in-place', action='store_true', default=False,
                 help='''change the file itself''')

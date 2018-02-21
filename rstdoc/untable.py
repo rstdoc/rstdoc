@@ -154,7 +154,7 @@ def main(**args):
     import argparse
 
     if not args:
-        parser = argparse.ArgumentParser(description='''Converts 3 column list-table entries to paragraphs and leaves the rest unchanged.''')
+        parser = argparse.ArgumentParser(description='''Converts certain column list-table (see paragraph23) to paragraphs.''')
         parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
         parser.add_argument('-i', '--in-place', action='store_true', default=False,
                 help='''change the file itself''')

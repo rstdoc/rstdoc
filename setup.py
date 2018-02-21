@@ -30,8 +30,8 @@ read('readme.rst')
 ,read('rstdoc/reimg.py').split('\n"""')[1]
 ,'','rstretable','='*10,''
 ,read('rstdoc/retable.py').split('\n"""')[1]
-,''#,'vim_rst_tables','='*14,''
-,read('doc/vim_rst_tables.rst')
+,''#,'vim_rst','='*14,''
+,read('doc/vim_rst.rst')
 ])
 
 setup(name = 'rstdoc',

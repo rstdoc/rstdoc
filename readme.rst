@@ -9,7 +9,7 @@ When installing via ``pip install rstdoc`` these files::
   untable.py
   reflow.py
   retable.py
-  vim_rst_tables.py
+  vim_rst.py
 
 and these scripts are installed::
 
@@ -35,9 +35,13 @@ it supports documentation of (software) projects, by
 
 The other files' purpose:
 
-- ``rstfromdocx``: convert from docx using Pandoc, but additionally copying the images and helper files
-- ``rstlisttable``, ``rstuntable``, ``rstreflow``, ``rstreimg``: post-processing a converted file
-- ``rstretable``: RST table tools, used by ``vim_rst_tables`` for Vim
+- ``fromdocx``  : Convert DOCX to RST using Pandoc and additionally copy the images and helper files 
+- ``listtable`` : Convert RST grid tables to list-tables
+- ``reflow``    : Reflow paragraphs and tables, for the latter using join as for listtable
+- ``reimg``     : Rename images referenced in the RST file
+- ``retable``   : Transforms list tables to grid tables
+- ``untable``   : Converts certain column list-table (see paragraph23) to paragraphs
+- ``vim_rst``   : provides RST handling to vim.
 
 .. note::
 

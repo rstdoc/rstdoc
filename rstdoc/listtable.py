@@ -116,7 +116,7 @@ def main(**args):
     import sys
 
     if not args:
-        parser = argparse.ArgumentParser(description='''Convert RST grid table to list-table.''')
+        parser = argparse.ArgumentParser(description='''Convert RST grid tables to list-tables.''')
         parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
         parser.add_argument('-j', '--join', action='store', default='012',
                 help='''e.g.002. Join method per column: 0="".join; 1=" ".join; 2="\\n".join''')

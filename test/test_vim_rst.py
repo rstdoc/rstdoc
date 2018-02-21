@@ -24,7 +24,7 @@ from rstdoc.retable import (
     get_column_widths_from_border_spec, pad_fields, unify_table,
     join_rows, partition_raw_lines, split_row_into_lines,
     split_table_row, reflow_row_contents)
-from rstdoc.vim_rst_tables import get_table_bounds, reformat_table, reflow_table, re_title
+from rstdoc.vim_rst import get_table_bounds, reformat_table, reflow_table, re_title
 
 
 class TestRSTTableFormatter(unittest.TestCase):
@@ -398,6 +398,20 @@ a line ending.
 +====================+===+===+===+
 | VPN Service        | |O| | |O| | |X| |
 +--------------------+---+---+---+""")
+
+    def testReflowWithLineBreak(self):
+        self.reflow_table_vim(
+            expect="""\
++-----------------+-----------------+-----------------+
+| Name /          | Organisation    | Action          |
+| Distribution to |                 |                 |
++-----------------+-----------------+-----------------+""",
+            input="""\
++-----------------+-----------------+-----------------+
+| Name /          | Organisation       | Action          |
+| Distribution to |                 |                 |
++-----------------+-----------------+-----------------+"""
+            )
     def testReTitle(self):
         self.load_fixture_in_vim('retitle')
         self.set_vim_cursor(1,1)
