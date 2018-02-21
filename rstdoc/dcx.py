@@ -84,6 +84,7 @@ from urllib import request
 import string
 from functools import reduce
 from collections import OrderedDict,defaultdict
+from itertools import chain
 
 verbose = False
 
@@ -134,7 +135,8 @@ def genrstincluded(fn,path=None):
     try:
         with open(nfn,'r',encoding='utf-8') as f:
             lns = f.readlines()
-    except FileNotFoundError:
+    except FileNotFoundError as err:
+        print(err)
         nfn = nfn + '.stpl'
         with open(nfn,'r',encoding='utf-8') as f:
             lns = f.readlines()
@@ -489,7 +491,10 @@ try:
     def gendoc(self,node):
         def rstscan():
             rs = []
-            apth = node.parent.find_resource(node.name).abspath()
+            if not os.path.exists(node.abspath()):
+                apth = node.parent.find_resource(node.name).abspath()
+            else:
+                apth = node.abspath()
             d,n = os.path.split(apth)
             deps = []
             for x in genrstincluded(n,d):
@@ -526,60 +531,43 @@ try:
             psfldr, psname = os.path.split(ps)
             for fldr, (lnktgts,allfiles,alltgts) in genfldrs(psfldr):
                 lnksandtags(fldr,lnktgts,allfiles,alltgts)
-    class pdf(Task.Task):
+    class pdfordocx(Task.Task):
         def run(self):
             from subprocess import Popen, PIPE
             frm = self.inputs[0].abspath()
             twd = self.outputs[0].abspath()
-            dr = self.inputs[0].parent
-            srcpth = self.generator.path.get_src()
-            reftex = 'reference.tex'
-            if dr.find_resource(reftex):
-                refparam = "--template {0}"
-            elif dr.find_resource('../'+reftex):
-                refparam = "--template ../{0}"
-            else:
-                refparam = ""
-            pandoc = ' '.join(["pandoc --listings",refparam,
-                "-V titlepage -f rst --pdf-engine xelatex",
-                "--number-sections -V papersize=a4 -V toc -V toc-depth=3",
-                "-V geometry:margin=2.5cm -o {1}"]).format(reftex,twd)
-            drnm = os.path.dirname(frm)
-            with open(frm,'rb') as f:
-                i1 = f.read().replace(b'\n.. include:: _links_sphinx.rst',b'')
-            links_pdf = dr.find_resource('_links_pdf.rst')
-            with open(links_pdf.abspath(),'rb') as f:
-                i2 = f.read()
-            p = Popen(pandoc, stdin=PIPE, cwd=drnm)
-            p.stdin.write(i1)
-            p.stdin.write(i2)
-            p.stdin.close()    
-            p.wait()
-    class docx(Task.Task):
-        def run(self):
-            from subprocess import Popen, PIPE
-            frm = self.inputs[0].abspath()
-            twd = self.outputs[0].abspath()
-            dr = self.inputs[0].parent
-            srcpth = self.generator.path.get_src()
-            refdocx = 'reference.docx'
-            if dr.find_resource(refdocx):
-                pandoc = "pandoc --reference-doc={0} -f rst -t docx -o {1}".format(refdocx,twd)
-            elif dr.find_resource('../'+refdocx):
-                pandoc = "pandoc --reference-doc=../{0} -f rst -t docx -o {1}".format(refdocx,twd)
-            else:
-                pandoc = "pandoc -f rst -t docx -o "+twd
-            drnm = os.path.dirname(frm)
-            with open(frm,'rb') as f:
-                i1 = f.read().replace(b'\n.. include:: _links_sphinx.rst',b'')
-            links_docx = dr.find_resource('_links_docx.rst')
-            with open(links_docx.abspath(),'rb') as f:
-                i2 = f.read()
-            p = Popen(pandoc, stdin=PIPE, cwd=drnm)
-            p.stdin.write(i1)
-            p.stdin.write(i2)
-            p.stdin.close()    
-            p.wait()
+            dr = self.inputs[0].parent.get_src()
+            refoption,refdoc,cmd,linksdoc = self.refdoc_cmd(twd)
+            rd = dr.find_resource(refdoc) or dr.parent.find_resource(refdoc)
+            if rd:
+                cmd.append(refoption)
+                cmd.append(rd.abspath())
+            oldp = os.getcwd()
+            os.chdir(dr.abspath())
+            try:
+                with open(frm,'rb') as f:
+                    i1 = f.read().replace(b'\n.. include:: _links_sphinx.rst',b'')
+                links_docx = dr.find_resource(linksdoc)
+                with open(links_docx.abspath(),'rb') as f:
+                    i2 = f.read()
+                p = Popen(cmd, stdin=PIPE)
+                p.stdin.write(i1)
+                p.stdin.write(i2)
+                p.stdin.close()    
+                p.wait()
+            finally:
+                os.chdir(oldp)
+    class pdf(pdfordocx):
+        def refdoc_cmd(self,output):
+            pandoc = ['pandoc','--listings','--number-sections', 
+                '--pdf-engine','xelatex','-f', 'rst']+ list(chain.from_iterable(zip(['-V']*4,
+                ['titlepage','papersize=a4','toc','toc-depth=3','geometry:margin=2.5cm']
+                )))+ ['-o', output]
+            return '--template','reference.tex', pandoc, '_links_pdf.rst'
+    class docx(pdfordocx):
+        def refdoc_cmd(self,output):
+            pandoc = ['pandoc','-f', 'rst', '-t', 'docx', '-o', output]
+            return '--reference-doc','reference.docx', pandoc, '_links_docx.rst'
     class sphinx(Task.Task):
         def run(self):
             from subprocess import run
@@ -589,21 +577,22 @@ try:
                     xf = x.strip()
                     xnew = None
                     if xf.endswith('.rest'):
-                        xff = self.inputs[0].parent.find_resource(xf)
-                        if xff.parent != self.inputs[0].parent:
+                        xff = self.inputs[0].parent.find_node(xf)
+                        if not xff:
+                            xff = self.inputs[0].parent.get_bld().find_node(xf)
                             #need to copy to src a file generated from stpl
                             xffcopy = self.inputs[0].parent.make_node(xff.name)
                             copies.append(xffcopy)
                             xffcopy.write(xff.read(encoding='utf-8'),encoding='utf-8')
                 dr = self.inputs[0].parent
                 tgt = self.outputs[0].find_or_declare('html').abspath()
-                confighere = dr.find_resource('conf.py')
+                confighere = dr.find_node('conf.py')
                 if confighere:
                     run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt])
                 else:
-                    configabove = dr.find_resource('../conf.py')
+                    configabove = dr.find_node('../conf.py')
                     if configabove:
-                        run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt,'-c',configabove.abspath()])
+                        run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt,'-c',configabove.parent.abspath()])
                     else:
                         print('NO conf.py in '+dr.abspath()+' or above')
             finally:
