@@ -30,7 +30,7 @@ Else one can also do inplace::
 import re
 from textwrap import wrap
 from .listtable import gridtable, row_to_listtable
-from .retable import retable, titlerex, ReTitle
+from .retable import retable, titlerex, re_title
 
 _pgrphrex=[
         re.compile(r'\s+'),
@@ -45,7 +45,7 @@ _pgrphrex=[
 def reflowparagraph(p, sentence=False):
     if p:
         if len(p)==3 and titlerex.match(p[0]) and titlerex.match(p[2]) or len(p)==2 and titlerex.match(p[1]):
-            ReTitle(p,0,0)
+            re_title(p,0,0)
             yield from p
         elif p[0][0] == '=': #simple table
             yield from p

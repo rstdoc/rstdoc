@@ -4,13 +4,13 @@
 """
 In the ``.vimrc`` do::
 
-    import rstdoc.vim_rst
+    from rstdoc.vim_rst import *
 
-Then these vim functions will be defined:
+to import these python functions that work on the Vim buffer
 
-- ``ReformatTable`` from e.g. double space separated format (by cursor pos, not '<,'>)
-- ``ReflowTable`` adapts to new first line (by cursor pos, not '<,'>)
-- ``ReTitle`` fixes the header underlines (by cursor pos, not '<,'>)
+- ``ReformatTable`` creates table around cursor from e.g. double space separated format
+- ``ReflowTable`` adapts table around cursor to new first line
+- ``ReTitle`` fixes the header underlines around cursor
 - ``UnderLine`` and ``TitleLine`` for titles and headings
 - ``RstDcxInit``: cd, then it will create a sample tree structure
 - ``RstDcx``: will update link and tag files starting from current dir
@@ -18,14 +18,46 @@ Then these vim functions will be defined:
 
 A sample configuration in the vimrc::
 
+  " let mapleader = ","
+  " let maplocalleader = ","
+  py3 << EOF
+  from rstdoc.vim_rst import *
+  EOF
+  nnoremap <silent> <leader>etf :py3 ReformatTable()<CR>
+  nnoremap <silent> <leader>etr :py3 ReflowTable()<CR>
+  nnoremap <silent> <leader>ett :py3 ReTable()<CR>
+  command! -narg=1 U py3 UnderLine(<f-args>) 
+  command! -narg=1 T py3 TitleLine(<f-args>) 
+
+Example::
+
+      Column 1  Column 2
+      Foo    Put two (or more) spaces as a field separator.
+      |Bar|  Even very very long lines |like| these are fine, as long as you do not put in line endings here.
+      Qux    This is the last line.
+
+``,etf`` should reformat to::
+
+      +----------+----------------------------------------------------------+
+      | Column 1 | Column 2                                                 |
+      +==========+==========================================================+
+      | Foo      | Put two (or more) spaces as a field separator.           |
+      +----------+----------------------------------------------------------+
+      | |Bar|    | Even very very long lines |like| these are fine, as long |
+      |          | as you do not put in line endings here.                  |
+      +----------+----------------------------------------------------------+
+      | Qux      | This is the last line.                                   |
+      +----------+----------------------------------------------------------+
+
+Change the number of "-" in the top line,
+then ``,etr`` should adapt the rest to those widths.
 
 """
 
 import vim
 from pathlib import Path
 
-from vim_bridge import bridged
-from .retable import ReformatTable, ReflowTable, ReTitle, get_bounds
+from .retable import reformat_table, reflow_table, re_title, get_bounds
 from .dcx import main as dcx
 from .listtable import gridtable
 
@@ -34,63 +66,44 @@ def get_table_bounds():
     row,col,m = get_bounds(vim.current.buffer,row-1,col-1)
     return row+1,col+1,m
 
-@bridged #makes ReformatTable vim function
-def reformat_table():
+def ReformatTable():
     row,col = vim.current.window.cursor
-    ReformatTable(vim.current.buffer,row-1,col-1,1)
+    reformat_table(vim.current.buffer,row-1,col-1,1)
 
-@bridged #makes ReflowTable vim function
-def reflow_table():
+def ReflowTable():
     row,col = vim.current.window.cursor
-    ReflowTable(vim.current.buffer,row-1,col-1)
+    reflow_table(vim.current.buffer,row-1,col-1)
 
-@bridged #makes ReTitle vim function
-def re_title():
+def ReTitle():
     row,col = vim.current.window.cursor
-    ReTitle(vim.current.buffer,row-1,col-1)
+    re_title(vim.current.buffer,row-1,col-1)
 
-@bridged
-def under_line(chr):
+def UnderLine(chr):
     #chr='='
     pos=vim.current.window.cursor[0]-1
     cline=vim.current.buffer[pos]
     nl=chr*len(cline)
     vim.current.buffer[pos:pos+1] = [cline,nl]
 
-@bridged
-def title_line(chr):
+def TitleLine(chr):
     #chr='='
     pos=vim.current.window.cursor[0]-1
     cline=vim.current.buffer[pos]
     nl=chr*len(cline)
     vim.current.buffer[pos:pos+1] = [nl,cline,nl]
 
-@bridged
-def rst_dcx_init():
+def RstDcxInit():
     dcx(root='.',verbose=False)
     
-@bridged
-def rst_dcx():
+def RstDcx():
     dcx(root=None,verbose=False)
     tags=','.join([str(x.absolute()) for x in Path('.').glob("**/.tags")])
     vim.eval('''execute("set tags=./.tags,.tags,'''+tags.replace('\\','/')+'")')
 
-@bridged
-def list_table(join):
-    s,e=vim.current.range.start,vim.current.range.end
-    print(s,e)
-    lns = ["xxx"]*10
-    lt = list(gridtable(lns,join))
-    #vim.current.buffer[vim.current.range.start:vim.current.range.end+1] = lt
-
-
-+-------+-------+
-| xa    | xb    |
-+=======+=======+
-| xa    | xb    |
-+-------+-------+
-| xa    | xb    |
-+-------+-------+
-| xa    | xb    |
-+-------+-------+
+def ListTable(join):
+    c_r=vim.current.range
+    #lns=vim.current.buffer[c_r[0]:c_r[1]+1]
+    #print(c_r[:])
+    lt = list(gridtable(c_r[:],join))
+    vim.current.buffer[c_r.start:c_r.end+1] = lt
 

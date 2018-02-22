@@ -9,7 +9,7 @@ Displacing a ``|`` below will produce errors.
 This file integrates https://github.com/nvie/vim-rst-tables to reformat tables,
 to be used from Vim (see ``vim_rst.py``).
 
-ReflowTable cannot handle tables that span columns like this one.
+reflow_table cannot handle tables that span columns like this one.
 Here one would better hack into docutils.
 
 .. code:: python
@@ -141,8 +141,6 @@ def split_table_row(row_string):
     if not re.search(r'^\|\s+|\s+\|\s+|\s+\|$', row_string):
         res = re.split(r'\s\s+', row_string.rstrip())
         return res
-
-
     # strip off the outer table drawings ("^| " and " |$"), but not
     # "^|[^ ]" or "[^ ]|$" because they can be used in "|replacements|"
     row_string = re.sub(r'^\s*\|\s+|\s+\|\s*$', '', row_string)
@@ -308,14 +306,14 @@ def get_bounds(lines,row,col):
     match = re.match('^(\s*).*$', lines[upper])
     return (upper, lower, match.group(1))
 
-def ReformatTable(lines,row,col,withheader):
+def reformat_table(lines,row,col,withheader):
     upper, lower, indent = get_bounds(lines,row,col)
     slice_ = lines[upper:lower+1]
     table = parse_table(slice_)
     slice_ = draw_table(indent, table, None, withheader)
     lines[upper:lower+1] = slice_
 
-def ReflowTable(lines,row,col):
+def reflow_table(lines,row,col):
     upper, lower, indent = get_bounds(lines,row,col)
     slice_ = lines[upper:lower+1]
     withheader = 0
@@ -328,7 +326,7 @@ def ReflowTable(lines,row,col):
     slice_ = draw_table(indent, table, widths, withheader)
     lines[upper:lower+1] = slice_
 
-def ReTitle(lines,row,col):
+def re_title(lines,row,col):
     upper, lower, indent = get_bounds(lines,row,col)
     t = None
     for i in range(upper,lower+1):
@@ -353,7 +351,7 @@ class doretable:
         clls = [' '.join([ax.strip() for ax in x]) for x in row]
         self.tbl.append(' | '.join(clls))
         if islast:
-            ReformatTable(self.tbl,0,0,withheader)
+            reformat_table(self.tbl,0,0,withheader)
             yield from self.tbl
             del self.tbl[:]
             while org and not org[-1].strip():

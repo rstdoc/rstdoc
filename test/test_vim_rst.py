@@ -24,7 +24,7 @@ from rstdoc.retable import (
     get_column_widths_from_border_spec, pad_fields, unify_table,
     join_rows, partition_raw_lines, split_row_into_lines,
     split_table_row, reflow_row_contents)
-from rstdoc.vim_rst import get_table_bounds, reformat_table, reflow_table, re_title
+from rstdoc.vim_rst import get_table_bounds, ReformatTable, ReflowTable, ReTitle
 
 
 class TestRSTTableFormatter(unittest.TestCase):
@@ -48,21 +48,21 @@ class TestRSTTableFormatter(unittest.TestCase):
     def load_fixture_in_vim(self, name):
         vim.current.buffer = self.read_fixture(name)
 
-    def reflow_table_vim(self, expect, input):
+    def ReflowTable_vim(self, expect, input):
         text_before_table = 'A piece of text before the table.\n\n'
         vim.current.buffer = (text_before_table + input).split('\n')
 
-        reflow_table()
+        ReflowTable()
 
         self.assertEqual(
             (text_before_table + expect).split('\n'),
             vim.current.buffer)
 
-    def reformat_table_vim(self, expect, input):
+    def ReformatTable_vim(self, expect, input):
         text_before_table = 'A piece of text before the table.\n\n'
         vim.current.buffer = (text_before_table + input).split('\n')
 
-        reformat_table()
+        ReformatTable()
 
         self.assertEqual(
             (text_before_table + expect).split('\n'),
@@ -320,7 +320,7 @@ This is paragraph text *before* the table.
 This is paragraph text *after* the table, with
 a line ending.
 """.split('\n')
-        reformat_table()
+        ReformatTable()
         self.assertEqual(expect, vim.current.buffer)
 
     def testCreateComplexTable(self):
@@ -349,7 +349,7 @@ a line ending.
         self.assertEqual(expect, dt)
 
     def testReformatEmpty(self):
-        self.reformat_table_vim("""\
+        self.ReformatTable_vim("""\
 +---+-----+---+
 | A | B c | D |
 +===+=====+===+
@@ -382,12 +382,12 @@ This is paragraph text *after* the table, with
 a line ending.
 
 """.split('\n')
-        reflow_table()
+        ReflowTable()
         self.assertEqual(expect, vim.current.buffer)
 
     def testReflowWithReplacements(self):
         # The first border decides the table size.
-        self.reflow_table_vim("""\
+        self.ReflowTable_vim("""\
 +--------------------+-----+-----+-----+
 | **Services**       | 0   | 1   | 2   |
 +====================+=====+=====+=====+
@@ -400,7 +400,7 @@ a line ending.
 +--------------------+---+---+---+""")
 
     def testReflowWithLineBreak(self):
-        self.reflow_table_vim(
+        self.ReflowTable_vim(
             expect="""\
 +-----------------+-----------------+-----------------+
 | Name /          | Organisation    | Action          |
@@ -415,15 +415,15 @@ a line ending.
     def testReTitle(self):
         self.load_fixture_in_vim('retitle')
         self.set_vim_cursor(1,1)
-        re_title()
+        ReTitle()
         self.set_vim_cursor(6,0)
-        re_title()
+        ReTitle()
         self.set_vim_cursor(10,0)
-        re_title()
+        ReTitle()
         self.set_vim_cursor(12,0)
-        re_title()
+        ReTitle()
         self.set_vim_cursor(15,0)
-        re_title()
+        ReTitle()
         expect = """\
 ====
 This

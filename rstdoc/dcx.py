@@ -88,9 +88,9 @@ from itertools import chain
 
 verbose = False
 
-retitle = re.compile(r'^([!"#$%&\'()*+,\-./:;<=>?@[\]^_`{|}~])\1+$')
-reitem = re.compile(r'^:?(\w[^:]*):\s.*$')
-renamed = re.compile(r'^\s*:name:\s*(\w.*)*$')
+rextitle = re.compile(r'^([!"#$%&\'()*+,\-./:;<=>?@[\]^_`{|}~])\1+$')
+rexitem = re.compile(r'^:?(\w[^:]*):\s.*$')
+rexname = re.compile(r'^\s*:name:\s*(\w.*)*$')
 
 #>>>> nj
 nj = lambda *x:os.path.normpath(os.path.join(*x))
@@ -216,18 +216,18 @@ def linktargets(lns,docnumber):
             if j > lenlns-1:
                 break
             lnj = lns[j]
-            if retitle.match(lnj):
+            if rextitle.match(lnj):
                 lnkname=lns[j-1].strip()
                 break
             #lnj=":lnkname: words"
-            itm = reitem.match(lnj)
+            itm = rexitem.match(lnj)
             if itm:
                 lnkname, = itm.groups()
                 break
             #j,lns=1,".. figure::\n  :name: lnkname".splitlines();lnj=lns[j]
             #j,lns=1,".. figure::\n  :name:".splitlines();lnj=lns[j]
             #j,lns=1,".. math::\n  :name: lnkname".splitlines();lnj=lns[j]
-            itm = renamed.match(lnj)
+            itm = rexname.match(lnj)
             if itm:
                 lnkname, = itm.groups()
                 lnj1 = lns[j-1].split('::')[0].replace('list-table','table').replace('code-block','code')
