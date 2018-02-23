@@ -38,10 +38,9 @@ xxx010:
 
 sd
 
-
 '''
 def test_untable0(request):
-    res = ''.join(untable(undata))
+    res = '\n'.join(untable(undata))
     assert res == undatares
 
 qfdata = '''\
@@ -85,29 +84,16 @@ the lazy
 
 .. _`bit`:
 
-
-
 bit:
-
-
 
 Function
 
-
-
 .. _`01`:
-
-
 
 01:
 
-
-
 xxx
-
 yyy
-
-
 
 And some more text.'''
 def test_untable1():

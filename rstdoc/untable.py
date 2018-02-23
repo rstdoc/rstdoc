@@ -56,20 +56,20 @@ def paragraph23(row,nColumns,org,islast,withheader):
             _no = False
             if id:
                 id = id.replace(' ','')
-                yield '.. _`{}`:\n'.format(id)
-                yield '\n'
-                yield '{0}:\n'.format(id)
-                yield '\n'
+                yield '.. _`{}`:'.format(id)
+                yield ''
+                yield '{0}:'.format(id)
+                yield ''
             if nColumns == 3:
                 l1 = strp(row[1])
                 for w in wrap(l1):
-                    yield l1+'\n'
-                yield '\n'
+                    yield l1
+                yield ''
                 idx = 2
             else:
                 idx = 1
             for r in row[idx]:
-                yield r.strip()+'\n'
+                yield r.strip()
     else:
         yield from org
     if islast:
