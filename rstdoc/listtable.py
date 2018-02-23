@@ -42,10 +42,10 @@ combine = {
         }
 _header = lambda line: line.startswith('+==')
 _isgridline = lambda line: line.startswith('+--') or _header(line)
-def row_to_listtable(row,colwidths,withheader,join,tableend):
+def row_to_listtable(row,colwidths,withheader,join,indent,tableend):
     nColumns = len(colwidths)
     def splitline(lne): 
-        st = 1
+        st = indent + 1
         sl = []
         for s in colwidths:
             nst = s+st
@@ -55,19 +55,20 @@ def row_to_listtable(row,colwidths,withheader,join,tableend):
     output = []
     output = [combine[int(join[c]if c<len(join)else join[-1])](e) 
         for c,e in enumerate(zip(*[splitline(lne)
-        for lne in row if not _isgridline(lne)]))]
+            for lne in row if not _isgridline(lne[indent:])]))]
     clms = [(('       ' if j else ('     - ' if i else '   * - '))+xx) for i,x in enumerate(output) 
         for j,xx in enumerate(x)]
+    indentstr = ' '*indent
     if len(row)==1:
         colwidth = str(int(100 / nColumns))
         colwidth = (' ' + colwidth) * nColumns
-        yield ".. list-table::\n"
-        yield "   :widths:{0}\n".format(colwidth)
-        yield "   :header-rows: {0}\n".format(withheader)
+        yield indentstr+".. list-table::\n"
+        yield indentstr+"   :widths:{0}\n".format(colwidth)
+        yield indentstr+"   :header-rows: {0}\n".format(withheader)
         clms += ['']
     for clm in clms:
-        yield clm + '\n'
-    yield '\n'
+        yield indentstr + clm + '\n'
+    yield indentstr+'\n'
 
 def gridtable(
         data #from file.readlines() or str.splitlines(True)
@@ -81,8 +82,10 @@ def gridtable(
     row = []
     withheader = 0
     lendata=len(data)
+    indent = 0
     for iL,line in enumerate(data):
-        if _isgridline(line):
+        if _isgridline(line.strip()):
+            indent = re.search('\s*',line).span()[1]
             grid = True
             insert = True
             row.append(line)
@@ -105,8 +108,9 @@ def gridtable(
                 try:
                     tableend = int(data[iL+1].strip()[0] not in '+|')
                 except: pass
-                yield from process_row(row,colwidths,withheader,join,tableend)
+                yield from process_row(row,colwidths,withheader,join,indent,tableend)
                 row = []
+                indent = 0
         else:
             yield line
 

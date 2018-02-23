@@ -4,25 +4,23 @@
 """
 In the ``.vimrc`` do::
 
-    from rstdoc.vim_rst import *
-
-to import these python functions that work on the Vim buffer
-
-- ``ReformatTable`` creates table around cursor from e.g. double space separated format
-- ``ReflowTable`` adapts table around cursor to new first line
-- ``ReTitle`` fixes the header underlines around cursor
-- ``UnderLine`` and ``TitleLine`` for titles and headings
-- ``RstDcxInit``: cd, then it will create a sample tree structure
-- ``RstDcx``: will update link and tag files starting from current dir
-- ``ListTable``: convert grid tables to list-table
-
-A sample configuration in the vimrc::
-
-  " let mapleader = ","
-  " let maplocalleader = ","
   py3 << EOF
   from rstdoc.vim_rst import *
   EOF
+
+- ``:py3 RstDcxInit()``: create a sample tree structure in current directory
+- ``:py3 RstDcx()``: update link and tag files for '.rest' files in all subdirectories
+
+**From cursor postion**:
+
+- ``ReformatTable`` creates table from e.g. double space separated format
+- ``ReflowTable`` adapts table to new first line
+- ``ReTitle`` fixes the header underlines
+- ``UnderLine`` and ``TitleLine`` add underline or title lines
+
+Access these via e.g. these vimrc maps::
+
+  " let mapleader = ","
   nnoremap <silent> <leader>etf :py3 ReformatTable()<CR>
   nnoremap <silent> <leader>etr :py3 ReflowTable()<CR>
   nnoremap <silent> <leader>ett :py3 ReTable()<CR>
@@ -52,6 +50,13 @@ Example::
 Change the number of "-" in the top line,
 then ``,etr`` should adapt the rest to those widths.
 
+**For a range** (you visually select, then do ``:'<,'> py3 Xxx(args)``):
+
+- ``ListTable``: convert grid tables to list-table
+- ``ReFlow``: reflow gridtables and paragraphs
+- ``UnTable``: 2 or 3 column listtables to paragraphs (1st column is ID (no blanks))
+- ``ReTable``: transform listtable to gridtable
+
 """
 
 import vim
@@ -60,6 +65,9 @@ from pathlib import Path
 from .retable import reformat_table, reflow_table, re_title, get_bounds
 from .dcx import main as dcx
 from .listtable import gridtable
+from .reflow import reflow
+from .untable import untable
+from .retable import retable
 
 def get_table_bounds():
     row,col = vim.current.window.cursor
@@ -102,8 +110,21 @@ def RstDcx():
 
 def ListTable(join):
     c_r=vim.current.range
-    #lns=vim.current.buffer[c_r[0]:c_r[1]+1]
-    #print(c_r[:])
     lt = list(gridtable(c_r[:],join))
+    vim.current.buffer[c_r.start:c_r.end+1] = lt
+
+def ReFlow(join,sentence):
+    c_r=vim.current.range
+    lt = list(reflow(c_r[:],join,sentence))
+    vim.current.buffer[c_r.start:c_r.end+1] = lt
+
+def UnTable():
+    c_r=vim.current.range
+    lt = list(untable(c_r[:]))
+    vim.current.buffer[c_r.start:c_r.end+1] = lt
+
+def ReTable():
+    c_r=vim.current.range
+    lt = list(retable(c_r[:]))
     vim.current.buffer[c_r.start:c_r.end+1] = lt
 

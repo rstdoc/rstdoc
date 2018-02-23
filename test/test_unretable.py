@@ -86,7 +86,9 @@ the lazy
 .. _`bit`:
 
 
+
 bit:
+
 
 
 Function
@@ -96,7 +98,9 @@ Function
 .. _`01`:
 
 
+
 01:
+
 
 
 xxx
@@ -287,6 +291,10 @@ badtable012res='''\
 def test_listtablebasic012():
     res = ''.join(gridtable(badtable012,join='012'))
     assert res == badtable012res
+
+def test_listtablebasic012indent():
+    res = ''.join(gridtable([' '*3+x for x in badtable012],join='012'))
+    assert res == ''.join([' '*3+x for x in badtable012res.splitlines(True)])
 
 joindata='''\
 line before

@@ -120,7 +120,7 @@ def reflowparagraphs(data,sentence=False):
     yield from reflowp(p)
 
 def rmextrablankline(data):
-    bk = 0
+    bc = 0
     for d in data:
         if not d.strip():
             bc = bc+1
@@ -147,8 +147,8 @@ def noblankend(data):
 class reflowrow():
     def __init__(self):
         self.tbl = []
-    def __call__(self,row,colwidths,withheader,join,tableend):
-        for lne in row_to_listtable(row,colwidths,withheader,join,tableend):
+    def __call__(self,row,colwidths,withheader,join,indent,tableend):
+        for lne in row_to_listtable(row,colwidths,withheader,join,indent,tableend):
             if not tableend or lne.strip():
                 self.tbl.append(lne)
         if tableend:
