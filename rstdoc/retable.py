@@ -4,36 +4,6 @@
 """
 retable() transforms list table to grid table.
 
-The rst reader expects properly formated grid tables.
-Displacing a ``|`` below will produce errors.
-This file integrates https://github.com/nvie/vim-rst-tables to reformat tables,
-to be used from Vim (see ``vim_rst.py``).
-
-reflow_table cannot handle tables that span columns like this one.
-Here one would better hack into docutils.
-
-.. code:: python
-
-    import docutils.statemachine
-    import docutils.parsers.rst.tableparser
-
-    text = '''
-        +------------------------+------------+----------+----------+
-        | Header row, column 1   | Header 2   | Header 3 | Header 4 |
-        +========================+============+==========+==========+
-        | body row 1, column 1   | column 2   | column 3 | column 4 |
-        +------------------------+------------+----------+----------+
-        | body row 2             |  Cells may span columns.         |
-        +------------------------+------------+---------------------+
-        | body row 3             | Cells may  | - Table cells       |
-        +------------------------+ span rows. | - contain           |
-        | body row 4             |            | - body elements.    |
-        +------------------------+------------+---------------------+
-    '''
-    lines = filter(bool, (line.strip() for line in text.splitlines()))
-    parser = docutils.parsers.rst.tableparser.GridTableParser()
-    parser.parse(docutils.statemachine.StringList(list(lines)))
-
 """
 
 import re

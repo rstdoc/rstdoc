@@ -9,7 +9,6 @@ When installing via ``pip install rstdoc`` these files::
   untable.py
   reflow.py
   retable.py
-  vim_rst.py
 
 and these scripts are installed::
 
@@ -41,13 +40,25 @@ The other files' purpose:
 - ``reimg``     : Rename images referenced in the RST file
 - ``retable``   : Transforms list tables to grid tables
 - ``untable``   : Converts certain column list-table (see paragraph23) to paragraphs
-- ``vim_rst``   : provides RST handling to vim.
 
 .. note::
 
    ``rstfromdocx -lurg doc.rst`` does all the post-processing in one step.
 
-For those not using Vim a good alternative is the Atom editor, with these packages::
+.. note::
+
+   It is adviced to compare the output with the original and do some manual corrections here and there.
+
+
+Editors
+-------
+
+Vim::
+
+  `vim_py3_rst <https://github.com/rpuntaie/vim_py3_rst>`_ 
+  `vim-table-mode https://github.com/dhruvasagar/vim-table-mode`_
+
+Atom::
 
   atom-ctags  #better https://github.com/rpuntaie/atom-ctags
   language-restructuredtext
@@ -60,9 +71,5 @@ For those not using Vim a good alternative is the Atom editor, with these packag
 
 ``atom-build`` and ``atom-ctags`` were modified to allow finding files
 by putting the relevant subdirectory into the project paths.
-
-.. note::
-
-   It is adviced to compare the output with the original and do some manual corrections here and there.
 
 

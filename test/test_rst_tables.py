@@ -1,4 +1,6 @@
 # Mock out the vim library
+# because these tests originate from vim-rst-tables.
+# `vim_py3_rst <https://github.com/rpuntaie>`_ uses rstdoc.
 import sys
 sys.path = ['..','test/mocks','mocks'] + sys.path
 import mock
@@ -22,10 +24,22 @@ import unittest
 from rstdoc.retable import (
     parse_table, draw_table, table_line, get_column_widths,
     get_column_widths_from_border_spec, pad_fields, unify_table,
-    join_rows, partition_raw_lines, split_row_into_lines,
-    split_table_row, reflow_row_contents)
-from rstdoc.vim_rst import get_table_bounds, ReformatTable, ReflowTable, ReTitle
+    join_rows, partition_raw_lines, split_row_into_lines, reflow_table,
+    re_title,get_bounds,reformat_table, split_table_row, reflow_row_contents)
 
+def get_table_bounds():
+    row,col = vim.current.window.cursor
+    row,col,m = get_bounds(vim.current.buffer,row-1,col-1)
+    return row+1,col+1,m
+def ReformatTable():
+    row,col = vim.current.window.cursor
+    reformat_table(vim.current.buffer,row-1,col-1,1)
+def ReflowTable():
+    row,col = vim.current.window.cursor
+    reflow_table(vim.current.buffer,row-1,col-1)
+def ReTitle():
+    row,col = vim.current.window.cursor
+    re_title(vim.current.buffer,row-1,col-1)
 
 class TestRSTTableFormatter(unittest.TestCase):
     maxDiff = None
