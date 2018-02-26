@@ -1,75 +1,89 @@
 rstdoc
 ======
 
-When installing via ``pip install rstdoc`` these files::
+`Sphinx`_ is an extension of `Docutils`_ used for many (software) projects,
+but it does not support creation of `DOCX`_ files.
+`Pandoc`_ does support `DOCX`_, but does not support the `Sphinx`_ extensions.
 
-  dcx.py
-  fromdocx.py
-  listtable.py
-  untable.py
-  reflow.py
-  retable.py
+`rstdoc`_ supports working with basic ``restructuredText`` (`RST`_) 
+defined by `Docutils`_ using some conventions, like  
+``.rest`` files become ``.docx`` and ``.rst`` is used for included files.
+The conventions are shown by the example produced via ``rstdcx --init samplerstdoc``,
 
-and these scripts are installed::
+The idea is, that working with text is more integrated in the 
+(software) development process.
 
-  rstdcx
-  rstfromdocx
-  rstlisttable
-  rstuntable
-  rstreflow
-  rstretable
+``rstdoc``'s script ``rstdcx`` (using module ``dcx.py``) 
 
-The central tool is ``rstdcx`` or ``dcx.py``.
-Following some conventions, 
-explained by the example produced via ``rstdcx --init tmp``,
-it supports documentation of (software) projects, by
+- generates ``.tags`` files to jump around in an editor that support `ctags`_
+  (Vim, Atom, VsCode, Emacs, ...)
 
-- generating RST files from other files
-
-- generating .tags to jump around using the Vim or Atom editor
-
-- producing numbering for tables, figures and listings 
+- produces numbering for tables, figures and code listings 
   consistent through docx, html and pdf by using ``|id|``
   defined in the generated ``_links_xxx.rst`` files.
 
-The other files' purpose:
+``pip install rstdoc`` installs:
 
-- ``fromdocx``  : Convert DOCX to RST using Pandoc and additionally copy the images and helper files 
-- ``listtable`` : Convert RST grid tables to list-tables
-- ``reflow``    : Reflow paragraphs and tables, for the latter using join as for listtable
-- ``reimg``     : Rename images referenced in the RST file
-- ``retable``   : Transforms list tables to grid tables
-- ``untable``   : Converts certain column list-table (see paragraph23) to paragraphs
+  +-----------+--------------+--------------------------------------------+
+  | Module    | Script       | Description                                |
+  +===========+==============+============================================+
+  | dcx       | rstdcx       | create ``.tags``, labels and links         |
+  +-----------+--------------+--------------------------------------------+
+  | fromdocx  | rstfromdocx  | Convert DOCX to RST using Pandoc           |
+  +-----------+--------------+--------------------------------------------+
+  | listtable | rstlisttable | Convert RST grid tables to list-tables     |
+  +-----------+--------------+--------------------------------------------+
+  | untable   | rstuntable   | Converts certain list-tables to paragraphs |
+  +-----------+--------------+--------------------------------------------+
+  | reflow    | rstreflow    | Reflow paragraphs and tables               |
+  +-----------+--------------+--------------------------------------------+
+  | reimg     | rstreimg     | Rename images referenced in the RST file   |
+  +-----------+--------------+--------------------------------------------+
+  | retable   | rstretable   | Transforms list tables to grid tables      |
+  +-----------+--------------+--------------------------------------------+
 
-.. note::
+- To create DOCX and PDF `Pandoc`_ is used.
 
-   ``rstfromdocx -lurg doc.rst`` does all the post-processing in one step.
+- To create HTML `Sphinx`_ is used. 
+  `Pandoc`_ would do as well, but `Sphinx`_ provides a nice entry point
+  to all the documentation.
 
-.. note::
-
-   It is adviced to compare the output with the original and do some manual corrections here and there.
-
+.. `Sphinx`_ should be there, because sphinx-contrib packages allow creating
+   graphic files that can be included in normal rst. TODO: support this.
 
 Editors
 -------
 
-Vim::
+Vim:
 
-  `vim_py3_rst <https://github.com/rpuntaie/vim_py3_rst>`_ 
-  `vim-table-mode https://github.com/dhruvasagar/vim-table-mode`_
+  | `vim_py3_rst <https://github.com/rpuntaie/vim_py3_rst>`_ 
+  | `vim-table-mode https://github.com/dhruvasagar/vim-table-mode`_
+  | `riv.vim <https://github.com/gu-fan/riv.vim>`_
 
-Atom::
+Atom:
 
-  atom-ctags  #better https://github.com/rpuntaie/atom-ctags
-  language-restructuredtext
-  rst-preview-pandoc
-  table-editor
-  rst-snippets
-  atom-build       #better https://github.com/rpuntaie/atom-build
-  atom-build-waf
-  find-and-replace-under-cursor
+  | atom-ctags       #better: https://github.com/rpuntaie/atom-ctags
+  | language-restructuredtext
+  | rst-preview-pandoc
+  | table-editor
+  | rst-snippets
+  | atom-build       #better: https://github.com/rpuntaie/atom-build
+  | atom-build-waf
+  | find-and-replace-under-cursor
 
-``atom-build`` and ``atom-ctags`` were modified to allow finding files
-by putting the relevant subdirectory into the project paths.
+  ``atom-build`` and ``atom-ctags`` were modified to allow finding files
+  by putting the relevant subdirectory into Atom's project paths.
 
+Of course `Emacs`_ and other `editors`_ work as well. `ReText`_ is even
+specialized for RST and Markdown (MD).
+
+.. _`editors`: http://build-me-the-docs-please.readthedocs.io/en/latest/Using_Sphinx/ToolsForReStructuredText.html
+.. _`Emacs`: http://docutils.sourceforge.net/docs/user/emacs.html
+.. _`ctags`: http://ctags.sourceforge.net/FORMAT
+.. _`Sphinx`: http://www.sphinx-doc.org/en/stable/
+.. _`Docutils`: http://docutils.sourceforge.net/
+.. _`Pandoc`: https://pandoc.org/
+.. _`RST`: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
+.. _`DOCX`: http://www.ecma-international.org/publications/standards/Ecma-376.htm
+.. _`ReText`: https://github.com/retext-project/retext
 

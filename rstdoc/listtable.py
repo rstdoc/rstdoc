@@ -2,10 +2,17 @@
 # encoding: utf-8 
 
 """
+
+.. _`listtable`:
+
+rstlisttable, listtable.py
+==========================
+
 Convert RST grid tables to list-tables.
 
-Basic usage
------------
+Usage
+-----
+
 #. Convert grid tables in a file to list-tables. The result is output to stdout::
 
       $ listtable.py input.rst

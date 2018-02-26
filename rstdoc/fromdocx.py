@@ -2,11 +2,16 @@
 # encoding: utf-8 
 
 """
-Convert DOCX file to RST in subfolder with name of DOCX file.
+.. _`fromdocx`:
+
+rstfromdocx, fromdocx.py
+========================
+
+Convert DOCX to RST in a subfolder named after the DOCX file.
 It also create ``conf.py``, ``index.py`` and ``Makefile``
 and copies ``dcx.py`` into the folder.
 
-See ``dcx.py`` for format conventions for the RST.
+See `dcx`_ for format conventions for the RST.
 
 There are options to post-process through::
 
@@ -15,7 +20,7 @@ There are options to post-process through::
     --reflow (--sentence True,  --join 0)
     --reimg
 
-See reflow to do that manually.
+See `reflow`_ to do that manually.
 """
 
 from zipfile import ZipFile

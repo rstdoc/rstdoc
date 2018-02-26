@@ -2,6 +2,11 @@
 # encoding: utf-8 
 
 """
+.. _`reflow`:
+
+rstreflow, reflow.py
+====================
+
 Reflow tables and paragraphs in a rst document produced from a docx.
 
 Post-process a docx in this order::
@@ -24,6 +29,14 @@ Else one can also do inplace::
     rstuntable -i doc/doc.rst
     rstreflow -i doc/doc.rst
     rstreimg -i doc/doc.rst
+
+.. note:: DOCX to RST using Pandoc
+
+   ``rstfromdocx -lurg doc.rst`` converts a docx to RST and
+   does all the post-processing in one step.
+
+   It is adviced, though, to compare the output with the original and do some manual
+   corrections here and there.
 
 """
 

@@ -16,19 +16,12 @@ def read(fname):
 
 long_description = '\n'.join([
 read('readme.rst')
-,'','rstdcx','='*6,''
 ,read('rstdoc/dcx.py').split('\n"""')[1]
-,'','rstfromdocx','='*11,''
 ,read('rstdoc/fromdocx.py').split('\n"""')[1]
-,'','rstlisttable','='*12,''
 ,read('rstdoc/listtable.py').split('\n"""')[1]
-,'','rstuntable','='*10,''
 ,read('rstdoc/untable.py').split('\n"""')[1]
-,'','rstreflow','='*9,''
 ,read('rstdoc/reflow.py').split('\n"""')[1]
-,'','rstreimg','='*8,''
 ,read('rstdoc/reimg.py').split('\n"""')[1]
-,'','rstretable','='*10,''
 ,read('rstdoc/retable.py').split('\n"""')[1]
 ])
 
@@ -52,7 +45,7 @@ setup(name = 'rstdoc',
         'Topic :: Utilities',
         ],
 
-    install_requires = ['pypandoc','sphinx_bootstrap_theme','bottle'],
+    install_requires = ['pypandoc','sphinx','sphinx_bootstrap_theme','bottle'],
     extras_require = {'develop': ['mock','pytest-coverage'],'build':['waf']},
     long_description = long_description,
     packages=['rstdoc'],

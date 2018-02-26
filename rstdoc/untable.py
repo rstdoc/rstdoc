@@ -2,6 +2,12 @@
 # encoding: utf-8 
 
 """
+
+.. _`untable`:
+
+rstuntable, untable.py
+======================
+
 Convert tables of following format to paragraphs with an ID.
 The '-' in ID is removed and the ID is made lower case.
 **Bold** is removed.
@@ -22,7 +28,7 @@ then the table stays. For a different behavior replace paragraph23.
 
 A file produced from a docx using pandoc or ``fromdocx.py`` will
 need a pre-processing via ``rstlisttable`` to convert grid tables to ``list-table`` tables.
-This is immediately done with ``rstfromdocx -lu doc.rst``.
+This is done in one step with ``rstfromdocx -lu doc.rst``.
 
 """
 
