@@ -1,8 +1,15 @@
 # encoding: utf-8 
 
 #require installed waf:
-#pip install -I waftools
-#wafinstall -v2.0.6
+#win32:
+#  pip install -I waftools
+#  wafinstall -v2.0.6
+#linux: 
+#  git clone https://bitbucket.org/Moo7/waftools
+#  cd waftools
+#  pip install -e .
+#  possibly edit .local to local
+#  sudo wafinstall -v2.0.6 -s --user
 
 import sys
 import os
@@ -16,14 +23,13 @@ from rstdoc.dcx import (
 
 import subprocess
 def run(x):
-    return subprocess.run(x,shell=True)
+    return subprocess.run(x,shell=False)
 
-#TODO
-#try:
-#    run('python3 --version')
-#    Python = 'python3'
-#except FileNotFoundError:
-#    Python = 'python' #must also be python 3
+try:
+    run('python3 --version')
+    Python = 'python3'
+except FileNotFoundError:
+    Python = 'python' #must also be python 3
 
 _lnkname=[
 ("""
@@ -87,7 +93,6 @@ def test_lnkname(lnsres):
     got = list(linktargets(lns,0))[0][1:]
     assert got==res
 
-
 @pytest.yield_fixture
 def tmpworkdir(tmpdir):
     """
@@ -95,16 +100,16 @@ def tmpworkdir(tmpdir):
     """
     cwd = os.getcwd()
     os.chdir(tmpdir.strpath)
-
     yield tmpdir
-
     os.chdir(cwd)
     
 @pytest.yield_fixture
 def rstsamples(tmpworkdir):
     smpl='smpl'
-    run(['rstdcx','--init',smpl])
+    r=run(['rstdcx','--init',smpl])
+    assert r.returncode == 0
     oldd=os.getcwd()
+    #import pdb;pdb.set_trace()
     os.chdir(os.path.join(tmpworkdir,smpl,'src'))
     yield os.getcwd()
     os.chdir(oldd)
@@ -116,11 +121,11 @@ def test_init(rstsamples):
 ├─doc
 │  ├─_static
 │  │  └─img.png
+│  ├─Makefile
 │  ├─conf.py
 │  ├─dd.rest
 │  ├─gen
 │  ├─index.rest
-│  ├─Makefile
 │  ├─ra.rest
 │  ├─sr.rest
 │  ├─tp.rest
@@ -129,7 +134,7 @@ def test_init(rstsamples):
 └─wscript"""
 
 def test_dcx_alonenostpl(rstsamples,capfd):
-    r=run(['dcx.py','--verbose'])
+    r=run([Python,'dcx.py','--verbose'])
     assert r.returncode == 0
     out, err = capfd.readouterr()
     assert '\n'.join(out.splitlines()) == """\
@@ -153,8 +158,8 @@ def smplbuild(rstsamples):
 def test_buildnostpl(smplbuild):
     assert tree(smplbuild,with_dot_files=False,max_depth=3)=="""\
 ├─c4che
-│  ├─build.config.py
-│  └─_cache.py
+│  ├─_cache.py
+│  └─build.config.py
 ├─code
 │  └─some_tst.c
 ├─doc
@@ -186,7 +191,7 @@ def rstsampleswithstpl(rstsamples):
     yield os.getcwd()
 
 def test_dcx_alonewithstpl(rstsampleswithstpl,capfd):
-    r=run(['dcx.py','--verbose'])
+    r=run([Python,'dcx.py','--verbose'])
     assert r.returncode == 0
     out, err = capfd.readouterr()
     assert '\n'.join(out.splitlines()) == """\
@@ -199,11 +204,9 @@ doc
 @pytest.yield_fixture(params=['docx','pdf','html'])
 def smplbuild_with_stpl(request,rstsampleswithstpl):
     oldd = os.getcwd()
-    #run(['dcx.py','--verbose'])
     r1=run(['waf','configure'])
     assert r1.returncode==0
     r2=run(['waf','--docs',request.param])
-    #import pdb; pdb.set_trace()
     assert r2.returncode==0
     os.chdir(os.path.join('..','build'))
     yield (os.getcwd(),request.param)
@@ -214,8 +217,8 @@ def test_buildwithstpl(smplbuild_with_stpl):
     if target=='docx':
         expected="""\
 ├─c4che
-│  ├─build.config.py
-│  └─_cache.py
+│  ├─_cache.py
+│  └─build.config.py
 ├─code
 │  └─some_tst.c
 ├─doc
@@ -229,8 +232,8 @@ def test_buildwithstpl(smplbuild_with_stpl):
     elif target=='pdf':
         expected="""\
 ├─c4che
-│  ├─build.config.py
-│  └─_cache.py
+│  ├─_cache.py
+│  └─build.config.py
 ├─code
 │  └─some_tst.c
 ├─doc
@@ -244,8 +247,8 @@ def test_buildwithstpl(smplbuild_with_stpl):
     elif target=='html':
         expected="""\
 ├─c4che
-│  ├─build.config.py
-│  └─_cache.py
+│  ├─_cache.py
+│  └─build.config.py
 ├─code
 │  └─some_tst.c
 ├─doc

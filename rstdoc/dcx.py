@@ -202,7 +202,7 @@ def genfldrincluded(
     excluding those that contain ``exclude_paths_substrings``
     """
     for p,ds,fs in os.walk(directory):
-        for f in fs:
+        for f in sorted(fs):
             if is_rest(f):
                 pf=nj(p,f)
                 if any([x in pf for x in exclude_paths_substrings]):
@@ -413,12 +413,12 @@ def tree(path, with_content=False, with_files=True, with_dot_files=True, max_dep
             lenfs = len(fs)
             if len(prefix)/3 >= max_depth:
                 return
-            for i,d in enumerate(ds):
+            for i,d in enumerate(sorted(ds)):
                 yield prefix + entryprefix[i==lends+lenfs-1] + d
                 yield from _tree(os.path.join(p,d),prefix+subprefix[i==lends+lenfs-1])
             del ds[:]
             if with_files:
-                for i,f in enumerate(fs):
+                for i,f in enumerate(sorted(fs)):
                     if with_dot_files or not f.startswith('.'):
                         yield prefix + entryprefix[i==lenfs-1] + f
                         if with_content:
