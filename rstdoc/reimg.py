@@ -20,11 +20,9 @@ import os
 import re
 import difflib
 import shutil
+from .dcx import reximg
 
-imgimg = re.compile(r'image:: (\w.*)')
-#imguse = re.compile(r'\|(\w[^|]*\w)\|(?! image::)') #first
 imguse = re.compile(r'\|(\w[^|\\ ]*(?: \\\|)?[^|]*\w)\|(?! image::)')
-#imgdecl = re.compile(r'\|(\w[^|]*\w)\| image:: (\w.*)') #first
 imgdecl = re.compile(r'\|(\w[^|\\ ]*(?: \\\|)?[^|]*\w)\| image:: (\w.*)')
 #imguse.search(r'|G:\_Projects\gBYM\trunk\Design\gEstimPRO\Documentation\UIspecificationresources\Electrode_surface_area.png|')
 #md=imgdecl.search(r' |G:\_Projects\gBYM\trunk\Design\gEstimPRO\Documentation\UIspecificationresources\Electrode_surface_area.png| image:: media/image3.png')
@@ -50,7 +48,7 @@ def reimg(data,prefix):
     i = 1
     fp = lambda x: x.split('image::')[1].strip()
     chfilemap = {}
-    for m in imgimg.finditer(data):
+    for m in reximg.finditer(data):
         oldp = m.group(0)
         d,f = os.path.split(oldp)
         if oldp not in chfilemap:

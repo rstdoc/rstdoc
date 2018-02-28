@@ -78,15 +78,34 @@ import re
 from pathlib import Path
 from urllib import request
 import string
-from functools import reduce
+from functools import lru_cache
 from collections import OrderedDict,defaultdict
-from itertools import chain
+from itertools import chain, tee
+from types import GeneratorType
+
+Tee = tee([], 1)[0].__class__
+def memoized(f):
+    cache={}
+    def ret(*args):
+        if args not in cache:
+            cache[args]=f(*args)
+        if isinstance(cache[args], (GeneratorType, Tee)):
+            cache[args], r = tee(cache[args])
+            return r
+        return cache[args]
+    return ret
 
 verbose = False
+_stpl = '.stpl'
 
 rextitle = re.compile(r'^([!"#$%&\'()*+,\-./:;<=>?@[\]^_`{|}~])\1+$')
 rexitem = re.compile(r'^:?(\w[^:]*):\s.*$')
 rexname = re.compile(r'^\s*:name:\s*(\w.*)*$')
+reximg = re.compile(r'image:: ((?:\.|/|\\|\w).*)')
+#reximg.search('.. image:: ..\img.png').group(1)
+#reximg.search(r'.. |c:\x y\im.jpg| image:: /tmp/img.png').group(1)
+#reximg.search(r'.. image:: c:\tmp\img.png').group(1)
+#reximg.search(r'.. image:: \\public\img.png').group(1)
 
 #>>>> nj
 nj = lambda *x:os.path.normpath(os.path.join(*x))
@@ -120,22 +139,29 @@ True
 """
 in2s = lambda it: list(zip(it[::2],it[1::2]))
 
-def genrstincluded(fn,path=None):
+@lru_cache()
+def read_lines(fn):
+    lns = []
+    with open(fn,'r',encoding='utf-8') as f:
+        lns = f.readlines()
+    return lns
+
+is_rest = lambda x: x.endswith('.rest') or x.endswith('.rest'+_stpl)
+is_rst = lambda x: x.endswith('.rst') or x.endswith('.rst'+_stpl)
+@memoized
+def genrstincluded(fn,paths=(),withimg=False):
     """return recursively all files included from an rst file"""
-    if path:
-        nfn = os.path.normpath(os.path.join(path,fn))
+    for p in paths:
+        nfn = os.path.normpath(os.path.join(p,fn))
+        if os.path.exists(nfn):
+            break
+        elif os.path.exists(nfn+_stpl):
+            nfn = nfn+_stpl
+            break
     else:
         nfn = fn
     yield fn
-    lns = None
-    try:
-        with open(nfn,'r',encoding='utf-8') as f:
-            lns = f.readlines()
-    except FileNotFoundError as err:
-        print(err)
-        nfn = nfn + '.stpl'
-        with open(nfn,'r',encoding='utf-8') as f:
-            lns = f.readlines()
+    lns = read_lines(nfn)
     toctree = False
     if lns:
         for e in lns:
@@ -143,40 +169,46 @@ def genrstincluded(fn,path=None):
                 toctreedone = False
                 if e.startswith(' '):
                     fl=e.strip()
-                    if '.rest' in fl or '.rst' in fl and os.path.exists(fl):
+                    if fl.endswith('.rest') and os.path.exists(fl):
                         toctreedone = True
-                        yield from genrstincluded(fl,path)
+                        yield from genrstincluded(fl,paths)
                     continue
                 elif toctreedone:
                     toctree = False
             if e.startswith('.. toctree::'):
                 toctree = True
             elif e.startswith('.. '):
+                #e = '.. include:: some.rst'
+                #e = '.. image:: some.png'
+                #e = '.. figure:: some.png'
+                #e = '.. |x y| image:: some.png'
                 try:
                     f,t=e[3:].split('include:: ')
                     nf = not f and t
-                    if nf:
-                        yield from genrstincluded(nf.strip(),path)
+                    if nf and not nf.startswith('_links_'):
+                        yield from genrstincluded(nf.strip(),paths)
                 except:
-                    pass
+                    if withimg:
+                        m = reximg.search(e)
+                        if m:
+                            yield m.group(1)
 
 def genfldrincluded(
         directory='.'
-        ,parse_extensions = ['.rest']
         ,exclude_paths_substrings = ['_links_','index.rest']
         ):
-    """ find all files in ``directory`` ending in ``parse_extensions``
+    """ find all .rest files in ``directory``
     and all files recursively included
     excluding those that contain ``exclude_paths_substrings``
     """
     for p,ds,fs in os.walk(directory):
         for f in fs:
-            if any([f.endswith(x) for x in parse_extensions]):
+            if is_rest(f):
                 pf=nj(p,f)
                 if any([x in pf for x in exclude_paths_substrings]):
                     continue
                 res = []
-                for ff in genrstincluded(f,p):
+                for ff in genrstincluded(f,(p,)):
                     if any([x in ff for x in exclude_paths_substrings]):
                         continue
                     pth=nj(p,ff)
@@ -256,8 +288,7 @@ def gen(source,target=None,fun=None,**kw):
     else:
         lns = []
         try:
-            with open(source,'r',encoding='utf-8') as f:
-                lns = f.readlines()
+            lns = read_lines(source)
         except:
             sys.stderr.write("ERROR: {} cannot be opened\n".format(source))
             return
@@ -274,14 +305,16 @@ def gen(source,target=None,fun=None,**kw):
             cd = re.split("#def |:",lns[i])[1]#gen(lns,**kw)
             gened += eval(cd)
     if target:
+        drn = os.path.dirname(target)
+        if not os.path.exists(drn):
+            os.makedirs(drn)
         with open(target,'w',encoding='utf-8') as o:
             o.write(''.join(gened))
     else:
         return list(gened)
 
 def genfile(gf):
-    with open(gf,'r') as f:
-        genfilelns = f.readlines()
+    genfilelns = read_lines(gf)
     for ln in genfilelns:
         if ln[0] != '#':
             try:
@@ -362,6 +395,38 @@ def mktree(tree):
             else:
                 Path(ef).touch()
 
+def tree(path, with_content=False, with_files=True, with_dot_files=True, max_depth=100):
+    """ inverse of mktree
+    like the linux tree tool
+    but optionally with content of files
+    >>> path='.'
+    >>> tree(path,False)
+    >>> tree(path,True)
+
+    """
+    subprefix = ['│  ', '   '] 
+    entryprefix = ['├─', '└─']
+    def _tree(path, prefix):
+        for p,ds,fs in os.walk(path):
+            #p,ds,fs = path,[],os.listdir()
+            lends = len(ds)
+            lenfs = len(fs)
+            if len(prefix)/3 >= max_depth:
+                return
+            for i,d in enumerate(ds):
+                yield prefix + entryprefix[i==lends+lenfs-1] + d
+                yield from _tree(os.path.join(p,d),prefix+subprefix[i==lends+lenfs-1])
+            del ds[:]
+            if with_files:
+                for i,f in enumerate(fs):
+                    if with_dot_files or not f.startswith('.'):
+                        yield prefix + entryprefix[i==lenfs-1] + f
+                        if with_content:
+                            for ln in read_lines(os.path.join(p,f)):
+                                yield prefix + subprefix[1] + ln
+    return '\n'.join(_tree(path, ''))
+
+
 def genfldrs(scanroot='.'):
     odir = os.getcwd()
     os.chdir(scanroot)
@@ -370,15 +435,16 @@ def genfldrs(scanroot='.'):
     fldr_alltgts = defaultdict(set) #all link target ids
     dcns=set([])
     for dcs in genfldrincluded('.'): 
-        rest = [adc for adc in dcs if adc.endswith('.rest')][0]
+        rest = [adc for adc in dcs if is_rest(adc)][0]
         fldr,fln = os.path.split(rest)
         fldr_allfiles[fldr] |= set(dcs)
         restn=os.path.splitext(fln)[0]
+        if is_rest(restn):
+            restn=os.path.splitext(restn)[0]
         dcns.add(restn)
         for doc in dcs:
             try: #generated files might not be there
-                with open(doc,'r',encoding='utf-8') as f:
-                    lns = f.readlines()
+                lns = read_lines(doc)
                 lnks = list(links(lns))
                 tgts = list(linktargets(lns,len(dcns)))
                 if fldr not in fldr_lnktgts:
@@ -408,7 +474,7 @@ def lnksandtags(fldr,lnktgts,allfiles,alltgts):
              orestn = restn
              if verbose:
                  print('    '+restn+'.rest')
-         if not doc.endswith(restn+'.rest'):
+         if not is_rest(doc):
              if verbose:
                  print('        '+doc)
          for _,di in _tgtsdoc:
@@ -465,9 +531,9 @@ try:
     import bottle
 
     gensrc={}
-    @TaskGen.feature('gen_file')
+    @TaskGen.feature('gen_files')
     @TaskGen.before('process_rule')
-    def gen_file(self):
+    def gen_files(self):
         global gensrc
         gensrc={}
         for f,t,fun,kw in genfile(self.path.make_node('gen').abspath()):
@@ -483,50 +549,82 @@ try:
                 twd.parent.mkdir()
                 gen(frm.abspath(),twd.abspath(),fun=self.fun,**self.kw)
             except: pass
-    @TaskGen.extension('.rest')
-    def gendoc(self,node):
-        def rstscan():
-            rs = []
-            if not os.path.exists(node.abspath()):
-                apth = node.parent.find_resource(node.name).abspath()
-            else:
-                apth = node.abspath()
-            d,n = os.path.split(apth)
-            deps = []
-            for x in genrstincluded(n,d):
-                if '_links_' not in x:
-                    nd = self.path.find_node(x)
-                    if not nd:
-                        nd = self.path.find_node(x+'.stpl')
-                        if not nd:
-                            continue
-                        nd = self.path.find_or_declare(x)
-                    deps.append(nd)
-            depsgensrc = [self.path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
-            rs = [x for x in deps if x]+depsgensrc
-            return (rs,[])
-        out_node_docx = node.parent.find_or_declare('docx/'+node.name[:-len('.rest')]+'.docx')
-        out_node_pdf = node.parent.find_or_declare('pdf/'+node.name[:-len('.rest')]+'.pdf')
-        out_node = node.change_ext('.docx')
+    def get_docs(self):
         docs = [x.lower() for x in self.bld.options.docs]
         if not docs:
             docs = [x.lower() for x in self.env.docs]
-        if node.name != "index.rest":
-            if 'docx' in docs or 'defaults' in docs:
-                self.create_task('docx', node, out_node_docx, scan=rstscan)
-            if 'pdf' in docs:
-                self.create_task('pdf', node, out_node_pdf, scan=rstscan)
-        else:
-            out_nodes = [self.path.get_src().make_node(x) for x in ['_links_'+x+'.rst' for x in doctypes]+['.tags']]
-            self.create_task('rstindex',node,out_nodes,scan=rstscan)
-            if 'html' in docs:
-                self.create_task('sphinx',node,out_node.parent,cwd=os.path.dirname(node.abspath()),scan=rstscan)
+        return docs
+    @TaskGen.feature('gen_links')
+    @TaskGen.before('process_rule')
+    def gen_links(self):
+        def fldrscan():
+            deps = []
+            for rest in self.path.ant_glob(['*.rest','*.rest'+_stpl]):
+                if not rest.name.startswith('index'):
+                    fles = genrstincluded(rest.name,(rest.parent.abspath(),))
+                    for x in fles:
+                        isrst = is_rst(x)
+                        if isrst and x.startswith('_links_'):#else cyclic dependency for _links_xxx.rst
+                            continue
+                        nd = self.path.find_node(x)
+                        if not nd:
+                            if isrst and not x.endswith(_stpl):
+                                nd = self.path.find_node(x+_stpl)
+                        deps.append(nd)
+            depsgensrc = [self.path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
+            rs = [x for x in deps if x]+depsgensrc
+            return (rs,[])
+        docs=get_docs(self)
+        if docs:
+            linksandtags = [self.path.make_node(x) for x in ['_links_'+x+'.rst' for x in doctypes]+['.tags']]
+            self.create_task('rstindex',self.path,linksandtags,scan=fldrscan)
     class rstindex(Task.Task):
         def run(self):
-            ps = self.inputs[0].abspath()
-            psfldr, psname = os.path.split(ps)
-            for fldr, (lnktgts,allfiles,alltgts) in genfldrs(psfldr):
+            for fldr, (lnktgts,allfiles,alltgts) in genfldrs(self.inputs[0].abspath()):
                 lnksandtags(fldr,lnktgts,allfiles,alltgts)
+    @TaskGen.extension('.rest')
+    def gendoc(self,node):
+        def rstscan():
+            srcpath = node.parent.get_src()
+            orgd = node.parent.abspath()
+            d = srcpath.abspath()
+            n = node.name
+            nod = None
+            if node.is_bld() and not node.name.endswith(_stpl):
+                nod = srcpath.find_node(node.name+_stpl)
+            if not nod:
+                nod = node
+            ch = genrstincluded(n,(d,orgd),True)
+            deps = []
+            nodeitself=True
+            for x in ch:
+                if nodeitself:
+                    nodeitself = False
+                    continue
+                isrst = is_rst(x)
+                if isrst and x.startswith('_links_'):#else cyclic dependency for _links_xxx.rst
+                        continue
+                nd = srcpath.find_node(x)
+                if not nd:
+                    if isrst and not x.endswith(_stpl):
+                        nd = srcpath.find_node(x+_stpl)
+                deps.append(nd)
+            depsgensrc = [self.path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
+            rs = [x for x in deps if x]+depsgensrc
+            return (rs,[])
+        docs=get_docs(self)
+        links = [self.path.get_src().find_node(x) for x in ['_links_'+x+'.rst' for x in doctypes]]
+        if node.name != "index.rest":
+            if 'docx' in docs or 'defaults' in docs:
+                out_node_docx = node.parent.find_or_declare('docx/'+node.name[:-len('.rest')]+'.docx')
+                self.create_task('docx', [node]+links, out_node_docx, scan=rstscan)
+            if 'pdf' in docs:
+                out_node_pdf = node.parent.find_or_declare('pdf/'+node.name[:-len('.rest')]+'.pdf')
+                self.create_task('pdf', [node]+links, out_node_pdf, scan=rstscan)
+        else:
+            if 'html' in docs:
+                out_node_html = node.parent.get_bld()
+                self.create_task('sphinx',[node]+links,out_node_html,cwd=node.abspath(),scan=rstscan)
     class pdfordocx(Task.Task):
         def run(self):
             from subprocess import Popen, PIPE
@@ -576,7 +674,7 @@ try:
                         xff = self.inputs[0].parent.find_node(xf)
                         if not xff:
                             xff = self.inputs[0].parent.get_bld().find_node(xf)
-                            #need to copy to src a file generated from stpl
+                            #need to copy to src a generated file
                             xffcopy = self.inputs[0].parent.make_node(xff.name)
                             copies.append(xffcopy)
                             xffcopy.write(xff.read(encoding='utf-8'),encoding='utf-8')
@@ -606,15 +704,17 @@ try:
 
     def build(bld):
         bld.src2bld = lambda f: bld(features='subst',source=f,target=f,is_copy=True)
-        def gen_file():
-            bld(features="gen_file")
+        def gen_files():
+            bld(features="gen_files")
             bld.add_group()
-        bld.gen_file = gen_file
-        def build_doc():
-            bld(source="index.rest")
+        bld.gen_files = gen_files
+        def gen_links():
+            bld(features="gen_links")
             bld.add_group()
-            bld(source=[x for x in bld.path.ant_glob("*.rest")+bld.path.ant_glob("*.stpl") if "index.rest" not in x.name])
-        bld.build_doc = build_doc
+        bld.gen_links = gen_links
+        def build_docs():
+            bld(source=[x for x in bld.path.ant_glob(['*.rest','*.rest'+_stpl])])
+        bld.build_docs = build_docs
         def stpl(tsk):
             bldpath = bld.path.get_bld()
             ps = tsk.inputs[0].abspath()
@@ -631,7 +731,7 @@ try:
             with open(pt,mode='w',encoding="utf-8",newline="\n") as f: 
                 f.write(st)
         bld.stpl=stpl
-        bld.declare_chain('stpl',ext_in=['.stpl'],ext_out=[''],rule=stpl)
+        bld.declare_chain('stpl',ext_in=[_stpl],ext_out=[''],rule=stpl)
 
 except:
     pass
@@ -641,7 +741,7 @@ except:
 #this is for mktree(): first line of file content must not be empty!
 example_tree = r'''
        src
-        ├ dcx.py << file://__file__
+        ├ dcx.py << file:///__file__
         ├ code
         │   └ some.h
                 /*
@@ -692,15 +792,15 @@ example_tree = r'''
               cfg.load('dcx',tooldir='.')
               
             def build(bld):
-              #defines bld.stpl(), bld.gen_file(), bld.build_doc()
+              #defines bld.stpl(), bld.gen_files(), bld.gen_links(), bld.build_docs()
               bld.load('dcx',tooldir='.')
               bld.recurse('doc')
 
         └ doc
            ├ wscript_build
-           │    bld(source=bld.path.ant_glob('*.stpl'))
-           │    bld.gen_file()
-           │    bld.build_doc()
+           │    bld.gen_files()
+           │    bld.gen_links()
+           │    bld.build_docs()
            ├ _static
            │    └ img.png << https://assets-cdn.github.com/images/modules/logos_page/Octocat.png
            ├ index.rest
@@ -936,11 +1036,7 @@ example_tree = r'''
               	cat dd.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/dd.pdf"
               	cat tp.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g'  | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/tp.pdf"
               	cat ra.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/ra.pdf"
-       build
-        ├ code/
-        └ doc
-          ├ html/
-          └ docx/
+       build/
 '''
 
 def main(**args):
@@ -963,9 +1059,6 @@ def main(**args):
   verbose = args['verbose']
   if iroot:
     thisfile = str(Path(__file__).resolve()).replace('\\','/')
-    try:#win32
-        thisfile = thisfile.split(':')[1]
-    except: pass
     tree=[l for l in example_tree.replace('__file__',thisfile).splitlines() if l.strip()]
     mkdir(iroot)
     oldd = os.getcwd()
