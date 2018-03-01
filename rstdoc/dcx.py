@@ -613,18 +613,18 @@ try:
             rs = [x for x in deps if x]+depsgensrc
             return (rs,[])
         docs=get_docs(self)
-        links = [self.path.get_src().find_node(x) for x in ['_links_'+x+'.rst' for x in doctypes]]
+        linkdeps = [self.path.get_src().find_node(x) for x in ['_links_'+x+'.rst' for x in doctypes]]
         if node.name != "index.rest":
             if 'docx' in docs or 'defaults' in docs:
                 out_node_docx = node.parent.find_or_declare('docx/'+node.name[:-len('.rest')]+'.docx')
-                self.create_task('docx', [node]+links, out_node_docx, scan=rstscan)
+                self.create_task('docx', [node]+linkdeps, out_node_docx, scan=rstscan)
             if 'pdf' in docs:
                 out_node_pdf = node.parent.find_or_declare('pdf/'+node.name[:-len('.rest')]+'.pdf')
-                self.create_task('pdf', [node]+links, out_node_pdf, scan=rstscan)
+                self.create_task('pdf', [node]+linkdeps, out_node_pdf, scan=rstscan)
         else:
             if 'html' in docs:
                 out_node_html = node.parent.get_bld()
-                self.create_task('sphinx',[node]+links,out_node_html,cwd=node.abspath(),scan=rstscan)
+                self.create_task('sphinx',[node]+linkdeps,out_node_html,cwd=node.abspath(),scan=rstscan)
     class pdfordocx(Task.Task):
         def run(self):
             from subprocess import Popen, PIPE
