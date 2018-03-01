@@ -23,10 +23,13 @@ from rstdoc.dcx import (
 
 import subprocess
 def run(x):
-    return subprocess.run(x,shell=False)
+    if 'win' in sys.platform:
+        return subprocess.run(x,shell=True)
+    else:
+        return subprocess.run(x,shell=False)
 
 try:
-    run('python3 --version')
+    subprocess.run(['python3','--version'])
     Python = 'python3'
 except FileNotFoundError:
     Python = 'python' #must also be python 3
