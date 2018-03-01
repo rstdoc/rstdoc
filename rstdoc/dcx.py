@@ -306,7 +306,7 @@ def gen(source,target=None,fun=None,**kw):
             gened += eval(cd)
     if target:
         drn = os.path.dirname(target)
-        if not os.path.exists(drn):
+        if drn and not os.path.exists(drn):
             os.makedirs(drn)
         with open(target,'w',encoding='utf-8') as o:
             o.write(''.join(gened))

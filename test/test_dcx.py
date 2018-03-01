@@ -147,30 +147,116 @@ doc
     sr.rest
     tp.rest"""
 
-@pytest.yield_fixture
-def smplbuild(rstsamples):
+@pytest.yield_fixture(params=['docx','pdf','html'])
+def makebuild(request,rstsamples):
     oldd = os.getcwd()
-    r1=run(['waf','configure'])
-    assert r1.returncode==0
-    r2=run(['waf','--docs','html,docx'])
-    assert r2.returncode==0
-    os.chdir(os.path.join('..','build'))
-    yield os.getcwd()
+    os.chdir('doc')
+    r=run(['make',request.param])
+    assert r.returncode == 0
+    os.chdir(os.path.join('..','..','build'))
+    yield (os.getcwd(),request.param)
     os.chdir(oldd)
 
-def test_buildnostpl(smplbuild):
-    assert tree(smplbuild,with_dot_files=False,max_depth=3)=="""\
+#The sample Makefile does not support
+#conversion from .rest.stpl to .rest
+def test_makenostpl(makebuild):
+    target=makebuild[1]
+    if target=='docx':
+        expected="""\
+├─code
+│  └─some_tst.c
+└─doc
+   └─docx
+      ├─dd.docx
+      ├─ra.docx
+      ├─sr.docx
+      └─tp.docx"""
+    elif target=='pdf':
+        expected="""\
+├─code
+│  └─some_tst.c
+└─doc
+   └─pdf
+      ├─dd.pdf
+      ├─ra.pdf
+      ├─sr.pdf
+      └─tp.pdf"""
+    elif target=='html':
+        expected="""\
+├─code
+│  └─some_tst.c
+└─doc
+   ├─doctrees
+   │  ├─dd.doctree
+   │  ├─environment.pickle
+   │  ├─index.doctree
+   │  ├─ra.doctree
+   │  ├─sr.doctree
+   │  └─tp.doctree
+   └─html
+      ├─_images
+      ├─_sources
+      ├─_static
+      ├─dd.html
+      ├─genindex.html
+      ├─index.html
+      ├─objects.inv
+      ├─ra.html
+      ├─search.html
+      ├─searchindex.js
+      ├─sr.html
+      └─tp.html"""
+    assert tree(makebuild[0],with_dot_files=False,max_depth=3)==expected
+
+@pytest.yield_fixture(params=['docx','pdf','html'])
+def wafbuild(request,rstsamples):
+    r1=run(['waf','configure'])
+    assert r1.returncode==0
+    r2=run(['waf','--docs',request.param])
+    assert r2.returncode==0
+    oldd = os.getcwd()
+    os.chdir(os.path.join('..','build'))
+    yield (os.getcwd(),request.param)
+    os.chdir(oldd)
+
+def test_wafnostpl(wafbuild):
+    target=wafbuild[1]
+    if target=='docx':
+        expected="""\
 ├─c4che
 │  ├─_cache.py
 │  └─build.config.py
 ├─code
 │  └─some_tst.c
 ├─doc
-│  ├─docx
-│  │  ├─dd.docx
-│  │  ├─ra.docx
-│  │  ├─sr.docx
-│  │  └─tp.docx
+│  └─docx
+│     ├─dd.docx
+│     ├─ra.docx
+│     ├─sr.docx
+│     └─tp.docx
+└─config.log"""
+    elif target=='pdf':
+        expected="""\
+├─c4che
+│  ├─_cache.py
+│  └─build.config.py
+├─code
+│  └─some_tst.c
+├─doc
+│  └─pdf
+│     ├─dd.pdf
+│     ├─ra.pdf
+│     ├─sr.pdf
+│     └─tp.pdf
+└─config.log"""
+    elif target=='html':
+        expected="""\
+├─c4che
+│  ├─_cache.py
+│  └─build.config.py
+├─code
+│  └─some_tst.c
+├─doc
 │  └─html
 │     ├─.doctrees
 │     ├─_images
@@ -186,6 +272,7 @@ def test_buildnostpl(smplbuild):
 │     ├─sr.html
 │     └─tp.html
 └─config.log"""
+    assert tree(wafbuild[0],with_dot_files=False,max_depth=3)==expected
 
 
 @pytest.yield_fixture
@@ -205,7 +292,7 @@ doc
     tp.rest"""
 
 @pytest.yield_fixture(params=['docx','pdf','html'])
-def smplbuild_with_stpl(request,rstsampleswithstpl):
+def wafbuildwithstpl(request,rstsampleswithstpl):
     oldd = os.getcwd()
     r1=run(['waf','configure'])
     assert r1.returncode==0
@@ -215,8 +302,8 @@ def smplbuild_with_stpl(request,rstsampleswithstpl):
     yield (os.getcwd(),request.param)
     os.chdir(oldd)
 
-def test_buildwithstpl(smplbuild_with_stpl):
-    target=smplbuild_with_stpl[1]
+def test_wafwithstpl(wafbuildwithstpl):
+    target=wafbuildwithstpl[1]
     if target=='docx':
         expected="""\
 ├─c4che
@@ -271,4 +358,4 @@ def test_buildwithstpl(smplbuild_with_stpl):
 │  │  └─tp.html
 │  └─ra.rest
 └─config.log"""
-    assert tree(smplbuild_with_stpl[0],with_dot_files=False,max_depth=3)==expected
+    assert tree(wafbuildwithstpl[0],with_dot_files=False,max_depth=3)==expected
