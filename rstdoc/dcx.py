@@ -1071,7 +1071,7 @@ example_tree = r'''
               ${BUILDDIR}/pdf:
               	${MKDIR_P} ${BUILDDIR}/pdf
               index:
-              	python ..\dcx.py
+              	python ../dcx.py
               help:
               	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
               	@echo "  docx        to docx"
