@@ -45,7 +45,7 @@ setup(name = 'rstdoc',
         'Topic :: Utilities',
         ],
 
-    install_requires = ['pypandoc','sphinx','sphinx_bootstrap_theme','bottle'],
+    install_requires = ['pypandoc','sphinx','sphinxcontrib-tikz','sphinx_bootstrap_theme','bottle'],
     extras_require = {'develop': ['mock','pytest-coverage'],'build':['waf']},
     long_description = long_description,
     packages=['rstdoc'],

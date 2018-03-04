@@ -57,7 +57,7 @@ ss""".splitlines(),('sy7','A Requirement Group')),
 ("""
 .. _`dz3`:
 
-.. figure:: _static/img.png
+.. figure:: _images/smpl.png
   :name:""".splitlines(),('dz3','Figure 1')),
 ("""
 .. _`dta`:
@@ -122,14 +122,13 @@ def test_init(rstsamples):
 ├─code
 │  └─some.h
 ├─doc
-│  ├─_static
-│  │  └─img.png
 │  ├─Makefile
 │  ├─conf.py
 │  ├─dd.rest
 │  ├─gen
 │  ├─index.rest
 │  ├─ra.rest
+│  ├─smpl.tikz
 │  ├─sr.rest
 │  ├─tp.rest
 │  └─wscript_build
@@ -194,7 +193,6 @@ def test_makenostpl(makebuild):
    │  ├─sr.doctree
    │  └─tp.doctree
    └─html
-      ├─_images
       ├─_sources
       ├─_static
       ├─dd.html

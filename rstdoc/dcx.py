@@ -530,6 +530,21 @@ try:
     from waflib import TaskGen, Task
     import bottle
 
+    @lru_cache()
+    def _pth_nde_parent(foldernode,name):
+        existsin = lambda x: os.path.exists(os.path.join(x.abspath(),name))
+        _parent = foldernode.parent
+        if existsin(_parent):
+            pth = '../'+name
+            nde = _parent.find_node(name)
+        else:
+            pth = name
+            _parent = foldernode
+            if existsin(_parent):
+                nde = _parent.find_node(name)
+            else:
+                nde = _parent.make_node(name)
+        return pth,nde,_parent.abspath()
     gensrc={}
     @TaskGen.feature('gen_files')
     @TaskGen.before('process_rule')
@@ -672,23 +687,18 @@ try:
                     xnew = None
                     if xf.endswith('.rest'):
                         xff = self.inputs[0].parent.find_node(xf)
-                        if not xff:
+                        if not xff: #need to copy to src a generated file
                             xff = self.inputs[0].parent.get_bld().find_node(xf)
-                            #need to copy to src a generated file
-                            xffcopy = self.inputs[0].parent.make_node(xff.name)
-                            copies.append(xffcopy)
-                            xffcopy.write(xff.read(encoding='utf-8'),encoding='utf-8')
+                            if xff:
+                                xffcopy = self.inputs[0].parent.make_node(xff.name)
+                                copies.append(xffcopy)
+                                xffcopy.write(xff.read(encoding='utf-8'),encoding='utf-8')
                 dr = self.inputs[0].parent
                 tgt = self.outputs[0].find_or_declare('html').abspath()
-                confighere = dr.find_node('conf.py')
-                if confighere:
-                    run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt])
-                else:
-                    configabove = dr.find_node('../conf.py')
-                    if configabove:
-                        run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt,'-c',configabove.parent.abspath()])
-                    else:
-                        print('NO conf.py in '+dr.abspath()+' or above')
+                relconfpy,confpy,_ = _pth_nde_parent(dr,'conf.py')
+                confdir = os.path.split(relconfpy)[0]
+                run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt]+(
+                    ['-c',confdir] if confdir else[]))
             finally:
                 for c in copies:
                     c.delete()
@@ -712,7 +722,39 @@ try:
             bld(features="gen_links")
             bld.add_group()
         bld.gen_links = gen_links
+        def sphinxcontrib_tikz(tsk):
+            from sphinxcontrib import tikz
+            from argparse import Namespace
+            #import shutil
+            tikzpth = tsk.inputs[0].parent
+            _,confpy,__ = _pth_nde_parent(tikzpth,'conf.py')
+            config={}
+            eval(compile(confpy.read(encoding='utf-8'),confpy.abspath(),'exec'),config)
+            class Builder:
+                def __init__(s):
+                    s.config = Namespace(**config)
+                    s.imgpath,s.imgnode,s.outdir = _pth_nde_parent(tikzpth,'_images')
+                    s.name = 'html'
+                    try:
+                        s.libs = s.config.tikz_tikzlibraries
+                        s.libs = s.libs.replace(' ', '').replace('\t', '').strip(', ')
+                    except AttributeError as e:
+                        raise ValueError(str(e).replace('Namespace','conf.py'))
+            class SphinxMock:
+                def __init__(s):
+                    s.builder = Builder()
+                    tikz.builder_inited(s)
+            sphinxmock = SphinxMock()
+            tikzfn = tikz.render_tikz(sphinxmock,{'tikz':tsk.inputs[0].read(encoding='utf-8')},sphinxmock.builder.libs)
+            os.replace(tikzpth.make_node(tikzfn).abspath(),tsk.outputs[0].abspath())
+        bld.sphinxcontrib_tikz = sphinxcontrib_tikz
         def build_docs():
+            tikzsources = bld.path.ant_glob('*.tikz')
+            for n in tikzsources:
+                _,imgnde,__ = _pth_nde_parent(n.parent,'_images')
+                tt = imgnde.make_node(n.name[:-4]+'png')
+                bld(source=n, target=tt, rule=bld.sphinxcontrib_tikz)
+            bld.add_group()
             bld(source=[x for x in bld.path.ant_glob(['*.rest','*.rest'+_stpl])])
         bld.build_docs = build_docs
         def stpl(tsk):
@@ -801,8 +843,6 @@ example_tree = r'''
            │    bld.gen_files()
            │    bld.gen_links()
            │    bld.build_docs()
-           ├ _static
-           │    └ img.png << https://assets-cdn.github.com/images/modules/logos_page/Octocat.png
            ├ index.rest
            │  ============
            │  Project Name
@@ -876,7 +916,7 @@ example_tree = r'''
            │  
            │  .. _`dz3`:
            │  
-           │  .. figure:: _static/img.png
+           │  .. figure:: _images/smpl.png
            │     :name:
            │  
            │     |dz3|: Caption here.
@@ -967,6 +1007,11 @@ example_tree = r'''
            │
            │   .. include:: _links_sphinx.rst
            │
+           ├ smpl.tikz
+               [thick]
+               \draw (0,0) grid (3,3);
+               \foreach \c in {(0,0), (1,0), (2,0), (2,1), (1,2)}
+                   \fill \c + (0.5,0.5) circle (0.42);
            ├ gen
               #from|to|gen_xxx|kwargs
               ../code/some.h | _sometst.rst                | tstdoc | {}
@@ -982,7 +1027,7 @@ example_tree = r'''
               templates_path = ['_templates']
               source_suffix = '.rest'
               master_doc = 'index'
-              project = 'docxsample'
+              project = 'sample'
               author = project+' Project Team'
               copyright = '2017, '+author
               version = '1.0'
@@ -994,15 +1039,22 @@ example_tree = r'''
               import sphinx_bootstrap_theme
               html_theme = 'bootstrap'
               html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+              latex_engine = 'xelatex'
+              tikz_transparent = True
+              tikz_proc_suite = 'ImageMagick'
+              tikz_tikzlibraries = 'arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections'
+              tikz_latex_preamble = r"""
+              \usepackage{unicode-math}
+              \usepackage{tikz}
+              %\usepackage{tikz-uml}
+              \usepackage{caption}
+              \captionsetup[figure]{labelformat=empty}
+              """
               latex_elements = {
-                      'preamble':r"""
-                      \usepackage{caption}
-                      \captionsetup[figure]{labelformat=empty}
-                      """
-                      }
+              'preamble':tikz_latex_preamble+r"\usetikzlibrary{""" + tikz_tikzlibraries+ '}'
+              }
               latex_documents = [
-                  (master_doc, 'docxsample.tex', project+' Documentation',
-                   author, 'manual'),
+                  (master_doc, project.replace(' ','')+'.tex',project+' Documentation',author,'manual'),
               ]
            └ Makefile
               SPHINXOPTS    = 
