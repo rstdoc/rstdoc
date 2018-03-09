@@ -75,6 +75,7 @@ See the example created with ``--init`` at the end of this file.
 import sys
 import os
 import re
+import subprocess
 from pathlib import Path
 from urllib import request
 import string
@@ -153,14 +154,16 @@ def genrstincluded(fn,paths=(),withimg=False):
     """return recursively all files included from an rst file"""
     for p in paths:
         nfn = os.path.normpath(os.path.join(p,fn))
-        if os.path.exists(nfn):
-            break
-        elif os.path.exists(nfn+_stpl):
+        if os.path.exists(nfn+_stpl): #first, because master
             nfn = nfn+_stpl
+            yield fn+_stpl
+            break
+        elif os.path.exists(nfn): #while this might be generated
+            yield fn
             break
     else:
         nfn = fn
-    yield fn
+        yield fn
     lns = read_lines(nfn)
     toctree = False
     if lns:
@@ -569,66 +572,92 @@ try:
         if not docs:
             docs = [x.lower() for x in self.env.docs]
         return docs
+    @lru_cache()
+    def get_files_in_folder(path):
+        deps = []
+        for rest in path.ant_glob(['*.rest','*.rest'+_stpl]):
+            if not rest.name.startswith('index'):
+                fles = genrstincluded(rest.name,(rest.parent.abspath(),))
+                for x in fles:
+                    isrst = is_rst(x)
+                    if isrst and x.startswith('_links_'):#else cyclic dependency for _links_xxx.rst
+                        continue
+                    nd = path.find_node(x)
+                    if not nd:
+                        if isrst and not x.endswith(_stpl):
+                            nd = path.find_node(x+_stpl)
+                    deps.append(nd)
+        depsgensrc = [path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
+        rs = [x for x in deps if x]+depsgensrc
+        return (rs,[])
+    @lru_cache()
+    def get_files_in_doc(path,node):
+        srcpath = node.parent.get_src()
+        orgd = node.parent.abspath()
+        d = srcpath.abspath()
+        n = node.name
+        nod = None
+        if node.is_bld() and not node.name.endswith(_stpl):
+            nod = srcpath.find_node(node.name+_stpl)
+        if not nod:
+            nod = node
+        ch = genrstincluded(n,(d,orgd),True)
+        deps = []
+        nodeitself=True
+        for x in ch:
+            if nodeitself:
+                nodeitself = False
+                continue
+            isrst = is_rst(x)
+            if isrst and x.startswith('_links_'):#else cyclic dependency for _links_xxx.rst
+                    continue
+            nd = srcpath.find_node(x)
+            if not nd:
+                if isrst and not x.endswith(_stpl):
+                    nd = srcpath.find_node(x+_stpl)
+            deps.append(nd)
+        depsgensrc = [path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
+        rs = [x for x in deps if x]+depsgensrc
+        return (rs,[])
     @TaskGen.feature('gen_links')
     @TaskGen.before('process_rule')
     def gen_links(self):
-        def fldrscan():
-            deps = []
-            for rest in self.path.ant_glob(['*.rest','*.rest'+_stpl]):
-                if not rest.name.startswith('index'):
-                    fles = genrstincluded(rest.name,(rest.parent.abspath(),))
-                    for x in fles:
-                        isrst = is_rst(x)
-                        if isrst and x.startswith('_links_'):#else cyclic dependency for _links_xxx.rst
-                            continue
-                        nd = self.path.find_node(x)
-                        if not nd:
-                            if isrst and not x.endswith(_stpl):
-                                nd = self.path.find_node(x+_stpl)
-                        deps.append(nd)
-            depsgensrc = [self.path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
-            rs = [x for x in deps if x]+depsgensrc
-            return (rs,[])
         docs=get_docs(self)
         if docs:
             linksandtags = [self.path.make_node(x) for x in ['_links_'+x+'.rst' for x in doctypes]+['.tags']]
-            self.create_task('rstindex',self.path,linksandtags,scan=fldrscan)
+            self.create_task('rstindex',self.path,linksandtags,scan=lambda:get_files_in_folder(self.path))
     class rstindex(Task.Task):
         def run(self):
             for fldr, (lnktgts,allfiles,alltgts) in genfldrs(self.inputs[0].abspath()):
                 lnksandtags(fldr,lnktgts,allfiles,alltgts)
+    def stpl(tsk,bld):
+        bldpath = bld.path.get_bld()
+        ps = tsk.inputs[0].abspath()
+        pt = tsk.outputs[0].abspath()
+        lookup,name=os.path.split(ps)
+        env = tsk.env
+        env.update(tsk.generator.__dict__)
+        st=bottle.template(name
+                ,template_lookup = [lookup]
+                ,bldpath = bldpath.abspath()
+                ,options = bld.options
+                ,**env
+                ) 
+        with open(pt,mode='w',encoding="utf-8",newline="\n") as f: 
+            f.write(st)
+    class Stpl(Task.Task):
+        def run(self):
+            stpl(self,self.generator.bld)
     @TaskGen.extension('.rest')
     def gendoc(self,node):
-        def rstscan():
-            srcpath = node.parent.get_src()
-            orgd = node.parent.abspath()
-            d = srcpath.abspath()
-            n = node.name
-            nod = None
-            if node.is_bld() and not node.name.endswith(_stpl):
-                nod = srcpath.find_node(node.name+_stpl)
-            if not nod:
-                nod = node
-            ch = genrstincluded(n,(d,orgd),True)
-            deps = []
-            nodeitself=True
-            for x in ch:
-                if nodeitself:
-                    nodeitself = False
-                    continue
-                isrst = is_rst(x)
-                if isrst and x.startswith('_links_'):#else cyclic dependency for _links_xxx.rst
-                        continue
-                nd = srcpath.find_node(x)
-                if not nd:
-                    if isrst and not x.endswith(_stpl):
-                        nd = srcpath.find_node(x+_stpl)
-                deps.append(nd)
-            depsgensrc = [self.path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
-            rs = [x for x in deps if x]+depsgensrc
-            return (rs,[])
         docs=get_docs(self)
         linkdeps = [self.path.get_src().find_node(x) for x in ['_links_'+x+'.rst' for x in doctypes]]
+        d = get_files_in_doc(self.path,node)
+        for dx in d[0]:
+            if dx.name.endswith(_stpl):
+                target_in_src_folder = dx.get_src().parent.make_node(dx.name[:-len(_stpl)])
+                self.create_task('Stpl',dx,target_in_src_folder)
+        rstscan = lambda: d
         if node.name != "index.rest":
             if 'docx' in docs or 'defaults' in docs:
                 out_node_docx = node.parent.find_or_declare('docx/'+node.name[:-len('.rest')]+'.docx')
@@ -642,7 +671,6 @@ try:
                 self.create_task('sphinx',[node]+linkdeps,out_node_html,cwd=node.abspath(),scan=rstscan)
     class pdfordocx(Task.Task):
         def run(self):
-            from subprocess import Popen, PIPE
             frm = self.inputs[0].abspath()
             twd = self.outputs[0].abspath()
             dr = self.inputs[0].parent.get_src()
@@ -659,7 +687,7 @@ try:
                 links_docx = dr.find_resource(linksdoc)
                 with open(links_docx.abspath(),'rb') as f:
                     i2 = f.read()
-                p = Popen(cmd, stdin=PIPE)
+                p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
                 p.stdin.write(i1)
                 p.stdin.write(i2)
                 p.stdin.close()    
@@ -679,7 +707,6 @@ try:
             return '--reference-doc','reference.docx', pandoc, '_links_docx.rst'
     class sphinx(Task.Task):
         def run(self):
-            from subprocess import run
             copies = []
             try:
                 for x in self.inputs[0].read(encoding='utf-8').splitlines(True):
@@ -697,7 +724,7 @@ try:
                 tgt = self.outputs[0].find_or_declare('html').abspath()
                 relconfpy,confpy,_ = _pth_nde_parent(dr,'conf.py')
                 confdir = os.path.split(relconfpy)[0]
-                run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt]+(
+                subprocess.run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt]+(
                     ['-c',confdir] if confdir else[]))
             finally:
                 for c in copies:
@@ -725,11 +752,6 @@ try:
         def sphinxcontrib_tikz(tsk):
             from sphinxcontrib import tikz
             from argparse import Namespace
-            #import shutil
-            tikzpth = tsk.inputs[0].parent
-            _,confpy,__ = _pth_nde_parent(tikzpth,'conf.py')
-            config={}
-            eval(compile(confpy.read(encoding='utf-8'),confpy.abspath(),'exec'),config)
             class Builder:
                 def __init__(s):
                     s.config = Namespace(**config)
@@ -744,9 +766,15 @@ try:
                 def __init__(s):
                     s.builder = Builder()
                     tikz.builder_inited(s)
-            sphinxmock = SphinxMock()
-            tikzfn = tikz.render_tikz(sphinxmock,{'tikz':tsk.inputs[0].read(encoding='utf-8')},sphinxmock.builder.libs)
-            os.replace(tikzpth.make_node(tikzfn).abspath(),tsk.outputs[0].abspath())
+            docs=get_docs(tsk.generator)
+            if docs:
+                tikzpth = tsk.inputs[0].parent
+                _,confpy,__ = _pth_nde_parent(tikzpth,'conf.py')
+                config={}
+                eval(compile(confpy.read(encoding='utf-8'),confpy.abspath(),'exec'),config)
+                sphinxmock = SphinxMock()
+                tikzfn = tikz.render_tikz(sphinxmock,{'tikz':tsk.inputs[0].read(encoding='utf-8')},sphinxmock.builder.libs)
+                os.replace(tikzpth.make_node(tikzfn).abspath(),tsk.outputs[0].abspath())
         bld.sphinxcontrib_tikz = sphinxcontrib_tikz
         def build_docs():
             tikzsources = bld.path.ant_glob('*.tikz')
@@ -757,23 +785,8 @@ try:
             bld.add_group()
             bld(source=[x for x in bld.path.ant_glob(['*.rest','*.rest'+_stpl])])
         bld.build_docs = build_docs
-        def stpl(tsk):
-            bldpath = bld.path.get_bld()
-            ps = tsk.inputs[0].abspath()
-            pt = tsk.outputs[0].abspath()
-            lookup,name=os.path.split(ps)
-            env = tsk.env
-            env.update(tsk.generator.__dict__)
-            st=bottle.template(name
-                    ,template_lookup = [lookup]
-                    ,bldpath = bldpath.abspath()
-                    ,options = bld.options
-                    ,**env
-                    ) 
-            with open(pt,mode='w',encoding="utf-8",newline="\n") as f: 
-                f.write(st)
-        bld.stpl=stpl
-        bld.declare_chain('stpl',ext_in=[_stpl],ext_out=[''],rule=stpl)
+        bld.stpl=lambda tsk: stpl(tsk,bld)
+        bld.declare_chain('stpl',ext_in=[_stpl],ext_out=[''],rule=bld.stpl)
 
 except:
     pass
@@ -784,6 +797,7 @@ except:
 example_tree = r'''
        src
         ├ dcx.py << file:///__file__
+        ├ reference.tex << file:///__tex_ref__
         ├ code
         │   └ some.h
                 /*
@@ -1111,11 +1125,15 @@ def main(**args):
   verbose = args['verbose']
   if iroot:
     thisfile = str(Path(__file__).resolve()).replace('\\','/')
-    tree=[l for l in example_tree.replace('__file__',thisfile).splitlines() if l.strip()]
+    tex_ref = os.path.join(os.path.split(thisfile)[0],'reference.tex')
+    tree=[l for l in example_tree.replace(
+        '__file__',thisfile).replace('__tex_ref__',tex_ref).splitlines() if l.strip()]
     mkdir(iroot)
     oldd = os.getcwd()
     os.chdir(iroot)
     mktree(tree)
+    os.chdir('src')
+    subprocess.run("pandoc --print-default-data-file reference.docx > reference.docx",shell=True)
     os.chdir(oldd)
   else:
     #link, gen and tags per folder

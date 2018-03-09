@@ -133,6 +133,8 @@ def test_init(rstsamples):
 │  ├─tp.rest
 │  └─wscript_build
 ├─dcx.py
+├─reference.docx
+├─reference.tex
 └─wscript"""
 
 def test_dcx_alonenostpl(rstsamples,capfd):
