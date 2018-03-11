@@ -348,7 +348,7 @@ def mktree(tree):
 
     - use indented lines as file content
 
-    >>> tree=[l for l in '''
+    >>> tree='''
     ...          a
     ...          ├aa.txt
     ...            this is aa
@@ -360,12 +360,17 @@ def mktree(tree):
     ...          │└f.txt
     ...          └g.txt
     ...            this is g
-    ...       '''.splitlines() if l.strip()]
+    ...       '''.splitlines()
     >>> True#mktree(tree) 
     True
     """
-    ct = re.search(r'[^\s├│└]',tree[0]).span()[0]
-    t1 = [t[ct:] for t in tree]
+    for treestart,t in enumerate(tree):
+        try:
+            ct = re.search(r'[^\s├│└]',t).span()[0]
+            break
+        except:
+            continue
+    t1 = [t[ct:] for t in tree[treestart:]]
     entry_re = re.compile(r'^(\w[^ </\\]*)(\s*<<\s*|\s*[\\/]\s*)*(\w.*)*')
     it1 = list(rindices(entry_re,t1))
     lt1 = len(t1)
@@ -648,8 +653,47 @@ try:
     class Stpl(Task.Task):
         def run(self):
             stpl(self,self.generator.bld)
+    @TaskGen.extension('.stpl')
+    def expand_stpl(self,node):#expand into same folder
+        nn = node.parent.make_node(node.name[:-len(_stpl)])
+        self.create_task('Stpl',node,nn)
+        self.get_hook(nn)(self, nn)
+    def sphinxcontrib_tikz(tsk):
+        from sphinxcontrib import tikz
+        from argparse import Namespace
+        class Builder:
+            def __init__(s):
+                s.config = Namespace(**config)
+                s.imgpath,s.imgnode,s.outdir = _pth_nde_parent(tikzpth,'_images')
+                s.name = 'html'
+                try:
+                    s.libs = s.config.tikz_tikzlibraries
+                    s.libs = s.libs.replace(' ', '').replace('\t', '').strip(', ')
+                except AttributeError as e:
+                    raise ValueError(str(e).replace('Namespace','conf.py'))
+        class SphinxMock:
+            def __init__(s):
+                s.builder = Builder()
+                tikz.builder_inited(s)
+        docs=get_docs(tsk.generator)
+        if docs:
+            tikzpth = tsk.inputs[0].parent.get_src()
+            _,confpy,__ = _pth_nde_parent(tikzpth,'conf.py')
+            config={}
+            eval(compile(confpy.read(encoding='utf-8'),confpy.abspath(),'exec'),config)
+            sphinxmock = SphinxMock()
+            tikzfn = tikz.render_tikz(sphinxmock,{'tikz':tsk.inputs[0].read(encoding='utf-8')},sphinxmock.builder.libs)
+            os.replace(tikzpth.make_node(tikzfn).abspath(),tsk.outputs[0].abspath())
+    class Tikz(Task.Task):
+        def run(self):
+            sphinxcontrib_tikz(self)
+    @TaskGen.extension('.tikz')
+    def tikz_to_png(self,node):#into _images or ../_images in source path
+        srcfldr = node.parent.get_src()
+        _,imgnde,__ = _pth_nde_parent(srcfldr,'_images')
+        self.create_task('Tikz',node,imgnde.make_node(node.name[:-5]+'.png'))
     @TaskGen.extension('.rest')
-    def gendoc(self,node):
+    def gen_docs(self,node):
         docs=get_docs(self)
         linkdeps = [self.path.get_src().find_node(x) for x in ['_links_'+x+'.rst' for x in doctypes]]
         d = get_files_in_doc(self.path,node)
@@ -749,44 +793,13 @@ try:
             bld(features="gen_links")
             bld.add_group()
         bld.gen_links = gen_links
-        def sphinxcontrib_tikz(tsk):
-            from sphinxcontrib import tikz
-            from argparse import Namespace
-            class Builder:
-                def __init__(s):
-                    s.config = Namespace(**config)
-                    s.imgpath,s.imgnode,s.outdir = _pth_nde_parent(tikzpth,'_images')
-                    s.name = 'html'
-                    try:
-                        s.libs = s.config.tikz_tikzlibraries
-                        s.libs = s.libs.replace(' ', '').replace('\t', '').strip(', ')
-                    except AttributeError as e:
-                        raise ValueError(str(e).replace('Namespace','conf.py'))
-            class SphinxMock:
-                def __init__(s):
-                    s.builder = Builder()
-                    tikz.builder_inited(s)
-            docs=get_docs(tsk.generator)
-            if docs:
-                tikzpth = tsk.inputs[0].parent
-                _,confpy,__ = _pth_nde_parent(tikzpth,'conf.py')
-                config={}
-                eval(compile(confpy.read(encoding='utf-8'),confpy.abspath(),'exec'),config)
-                sphinxmock = SphinxMock()
-                tikzfn = tikz.render_tikz(sphinxmock,{'tikz':tsk.inputs[0].read(encoding='utf-8')},sphinxmock.builder.libs)
-                os.replace(tikzpth.make_node(tikzfn).abspath(),tsk.outputs[0].abspath())
         bld.sphinxcontrib_tikz = sphinxcontrib_tikz
-        def build_docs():
-            tikzsources = bld.path.ant_glob('*.tikz')
-            for n in tikzsources:
-                _,imgnde,__ = _pth_nde_parent(n.parent,'_images')
-                tt = imgnde.make_node(n.name[:-4]+'png')
-                bld(source=n, target=tt, rule=bld.sphinxcontrib_tikz)
-            bld.add_group()
-            bld(source=[x for x in bld.path.ant_glob(['*.rest','*.rest'+_stpl])])
-        bld.build_docs = build_docs
         bld.stpl=lambda tsk: stpl(tsk,bld)
-        bld.declare_chain('stpl',ext_in=[_stpl],ext_out=[''],rule=bld.stpl)
+        def build_docs():
+            bld(source=bld.path.ant_glob(['*.tikz','*.tikz'+_stpl]))
+            bld.add_group()
+            bld(source=bld.path.ant_glob(['*.rest','*.rest'+_stpl]))
+        bld.build_docs = build_docs
 
 except:
     pass

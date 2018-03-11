@@ -15,10 +15,12 @@ import sys
 import os
 sys.path = ['..','test/mocks','mocks'] + sys.path
 import pytest
+import glob
 from rstdoc.dcx import (
     g_counters
     ,linktargets
     ,tree
+    ,mktree
     )
 
 import subprocess
@@ -291,16 +293,19 @@ doc
     sr.rest
     tp.rest"""
 
-@pytest.yield_fixture(params=['docx','pdf','html'])
-def wafbuildwithstpl(request,rstsampleswithstpl):
+def wafit(doctype):
     oldd = os.getcwd()
     r1=run(['waf','configure'])
     assert r1.returncode==0
-    r2=run(['waf','--docs',request.param])
+    r2=run(['waf','--docs',doctype])
     assert r2.returncode==0
     os.chdir(os.path.join('..','build'))
-    yield (os.getcwd(),request.param)
+    yield (os.getcwd(),doctype)
     os.chdir(oldd)
+
+@pytest.yield_fixture(params=['docx','pdf','html'])
+def wafbuildwithstpl(request,rstsampleswithstpl):
+    yield from wafit(request.param)
 
 def test_wafwithstpl(wafbuildwithstpl):
     target=wafbuildwithstpl[1]
@@ -312,12 +317,11 @@ def test_wafwithstpl(wafbuildwithstpl):
 ├─code
 │  └─some_tst.c
 ├─doc
-│  ├─docx
-│  │  ├─dd.docx
-│  │  ├─ra.docx
-│  │  ├─sr.docx
-│  │  └─tp.docx
-│  └─ra.rest
+│  └─docx
+│     ├─dd.docx
+│     ├─ra.docx
+│     ├─sr.docx
+│     └─tp.docx
 └─config.log"""
     elif target=='pdf':
         expected="""\
@@ -327,12 +331,11 @@ def test_wafwithstpl(wafbuildwithstpl):
 ├─code
 │  └─some_tst.c
 ├─doc
-│  ├─pdf
-│  │  ├─dd.pdf
-│  │  ├─ra.pdf
-│  │  ├─sr.pdf
-│  │  └─tp.pdf
-│  └─ra.rest
+│  └─pdf
+│     ├─dd.pdf
+│     ├─ra.pdf
+│     ├─sr.pdf
+│     └─tp.pdf
 └─config.log"""
     elif target=='html':
         expected="""\
@@ -342,20 +345,114 @@ def test_wafwithstpl(wafbuildwithstpl):
 ├─code
 │  └─some_tst.c
 ├─doc
-│  ├─html
-│  │  ├─.doctrees
-│  │  ├─_images
-│  │  ├─_sources
-│  │  ├─_static
-│  │  ├─dd.html
-│  │  ├─genindex.html
-│  │  ├─index.html
-│  │  ├─objects.inv
-│  │  ├─ra.html
-│  │  ├─search.html
-│  │  ├─searchindex.js
-│  │  ├─sr.html
-│  │  └─tp.html
-│  └─ra.rest
+│  └─html
+│     ├─.doctrees
+│     ├─_images
+│     ├─_sources
+│     ├─_static
+│     ├─dd.html
+│     ├─genindex.html
+│     ├─index.html
+│     ├─objects.inv
+│     ├─ra.html
+│     ├─search.html
+│     ├─searchindex.js
+│     ├─sr.html
+│     └─tp.html
 └─config.log"""
     assert tree(wafbuildwithstpl[0],with_dot_files=False,max_depth=3)==expected
+
+
+@pytest.yield_fixture
+def rststplsample(rstsamples):
+    tree=r"""
+        doc
+         ├is.rest
+            Issues
+            ======
+            This file includes an rst file.
+
+            .. include:: is1.rst
+
+            The rst file is generated from an rst.stpl file.
+         ├is1.rst.stpl
+            %import sys
+
+            .. image:: _images/tictactoe.png
+
+            We are in {{sys.platform}}.
+         ├tictactoe.tikz.stpl
+            [thick]
+            \draw (0,0) grid (3,3);
+            %for i,j in {(0,0), (1,0), (2,0), (2,1), (1,2)}:
+                  \fill ({{i+0.5}},{{j+0.5}}) circle (0.42);
+            %end
+        """.splitlines()
+    mktree(tree)
+    open('doc/index.rest','a',encoding='utf-8').write("\n   is.rest\n")
+    yield os.getcwd()
+
+@pytest.yield_fixture(params=['docx','pdf','html'])
+def wafrststpl(request,rststplsample):
+    yield from wafit(request.param)
+
+def test_wafrststpl(wafrststpl):
+    target=wafrststpl[1]
+    if target=='docx':
+        expected="""\
+├─c4che
+│  ├─_cache.py
+│  └─build.config.py
+├─code
+│  └─some_tst.c
+├─doc
+│  └─docx
+│     ├─dd.docx
+│     ├─is.docx
+│     ├─ra.docx
+│     ├─sr.docx
+│     └─tp.docx
+└─config.log"""
+    elif target=='pdf':
+        expected="""\
+├─c4che
+│  ├─_cache.py
+│  └─build.config.py
+├─code
+│  └─some_tst.c
+├─doc
+│  └─pdf
+│     ├─dd.pdf
+│     ├─is.pdf
+│     ├─ra.pdf
+│     ├─sr.pdf
+│     └─tp.pdf
+└─config.log"""
+    elif target=='html':
+        expected="""\
+├─c4che
+│  ├─_cache.py
+│  └─build.config.py
+├─code
+│  └─some_tst.c
+├─doc
+│  └─html
+│     ├─.doctrees
+│     ├─_images
+│     ├─_sources
+│     ├─_static
+│     ├─dd.html
+│     ├─genindex.html
+│     ├─index.html
+│     ├─is.html
+│     ├─objects.inv
+│     ├─ra.html
+│     ├─search.html
+│     ├─searchindex.js
+│     ├─sr.html
+│     └─tp.html
+└─config.log"""
+    assert tree(wafrststpl[0],with_dot_files=False,max_depth=3)==expected
+    assert sys.platform in open(glob.glob(os.path.join('..','src','doc','is1.rst'))[0],encoding='utf-8').read()
+    if target=='html':
+        assert sys.platform in open(glob.glob(os.path.join('doc',target,'is.*'))[0],encoding='utf-8').read()
