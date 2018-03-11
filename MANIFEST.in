@@ -1,4 +1,0 @@
-include *.rst
-recursive-include doc *.rst
-recursive-include test *.py
-recursive-include test *.txt
