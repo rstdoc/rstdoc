@@ -751,28 +751,12 @@ try:
             return '--reference-doc','reference.docx', pandoc, '_links_docx.rst'
     class sphinx(Task.Task):
         def run(self):
-            copies = []
-            try:
-                for x in self.inputs[0].read(encoding='utf-8').splitlines(True):
-                    xf = x.strip()
-                    xnew = None
-                    if xf.endswith('.rest'):
-                        xff = self.inputs[0].parent.find_node(xf)
-                        if not xff: #need to copy to src a generated file
-                            xff = self.inputs[0].parent.get_bld().find_node(xf)
-                            if xff:
-                                xffcopy = self.inputs[0].parent.make_node(xff.name)
-                                copies.append(xffcopy)
-                                xffcopy.write(xff.read(encoding='utf-8'),encoding='utf-8')
-                dr = self.inputs[0].parent
-                tgt = self.outputs[0].find_or_declare('html').abspath()
-                relconfpy,confpy,_ = _pth_nde_parent(dr,'conf.py')
-                confdir = os.path.split(relconfpy)[0]
-                subprocess.run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt]+(
-                    ['-c',confdir] if confdir else[]))
-            finally:
-                for c in copies:
-                    c.delete()
+            dr = self.inputs[0].parent
+            tgt = self.outputs[0].find_or_declare('html').abspath()
+            relconfpy,confpy,_ = _pth_nde_parent(dr,'conf.py')
+            confdir = os.path.split(relconfpy)[0]
+            subprocess.run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt]+(
+                ['-c',confdir] if confdir else[]))
 
     def options(opt):
         def docscb(option, opt, value, parser):
