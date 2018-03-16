@@ -780,8 +780,9 @@ try:
         bld.sphinxcontrib_tikz = sphinxcontrib_tikz
         bld.stpl=lambda tsk: stpl(tsk,bld)
         def build_docs():
-            bld(source=bld.path.ant_glob(['*.tikz','*.tikz'+_stpl]))
-            bld.add_group()
+            for tikz in bld.path.ant_glob(['*.tikz','*.tikz'+_stpl]):
+                bld(source=tikz)
+                bld.add_group()
             bld(source=bld.path.ant_glob(['*.rest','*.rest'+_stpl]))
         bld.build_docs = build_docs
 
