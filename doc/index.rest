@@ -1,0 +1,15 @@
+.. vi: syntax=rst
+
+============
+Project Name
+============
+
+.. toctree::
+   mo.rest
+   sr.rest
+   dd.rest
+   ra.rest
+   tp.rest
+   rstdoc.rest
+
+

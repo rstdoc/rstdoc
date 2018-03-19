@@ -8,3 +8,13 @@ build
 .tox/
 tmp/
 .pytest_cache/
+.lock-*
+.tags
+
+ra.rest
+
+_*
+!_images
+
+
+

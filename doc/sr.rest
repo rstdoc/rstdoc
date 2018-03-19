@@ -1,0 +1,173 @@
+.. vi: syntax=rst
+
+===================
+System Requirements
+===================
+
+Project Documentation
+=====================
+
+Purpose
+-------
+
+Propose an alternative to MS Office for technical documentation
+
+.. _`s3d`:
+
+Requirements
+------------
+
+The documentation format shall be validated by verifying the following requirements.
+
+.. _`sa7`:
+
+:sa7: |mwj|
+
+The documentation format shall increase productivity in comparison to MS Office.
+
+.. _`s9o`:
+
+:s9o: |m9h|
+
+The documentation format shall not be new.
+It shall have support by a large open source community.
+
+.. _`s9v`:
+
+:s9v: |mbc|
+
+Support diffs with a version control system (`VCS`_) like `SVN`_ or `GIT`_.
+
+.. _`s0t`:
+
+:s0t: |mbc|
+
+There is an easy way to find out, how documentation items are linked.
+
+Examples: 
+
+- Which items implement a certain requirement?
+- Which items test a certain requirement?
+- Which items are details to a topic?
+
+.. _`scf`:
+
+:scf: |mvd|
+
+Tools shall be available for conversion to the following formats
+
+  - `HTML`_: to make the documentation viewable over the internet
+  - `PDF`_: to archive a version and for printing
+  - `DOCX`_ and `ODT`_: to satisfy existing procedures and habits
+
+The tools shall be
+
+- open-source and community supported
+- stable
+
+.. _`san`:
+
+:san: |mvd|, hyperlinks
+
+The documentation items shall be marked by a flat and unordered IDs.
+
+Use these IDs to jump to documentation items inside the editor 
+via a keyboard shortcut or a mouse click: hypertext.
+
+Support hyperlinks in the formats the documentation can be converted to.
+
+.. _`stq`:
+
+:stq: |mvd|
+
+Full text search over all files 
+with regular expressions shall be available from inside the editor for
+
+- source code and
+- documentation
+
+.. _`sed`:
+
+:sed: |m62|
+
+The documentation can be opened by a normal text editor.
+
+The documentation is easy to read and write in a text editor.
+
+.. _`s45`:
+
+:s45: |mpn|
+
+Support formatting::
+
+    paragraphs, indentation, sections with headers
+    enumerated and bullet lists, footnotes, citations, comments
+    bold, italic, typeface, hyperlinks
+    tables, images, figures, code listings, mathematics
+
+The formatting
+
+- shall be intuitive 
+- does not need much learning
+
+.. _`sgt`:
+
+:sgt: |moc|
+
+Make it easy to automatically generate parts of documentation from 
+
+- source code, i.e. the same format shall be usable for source code documentation
+
+- via templates
+
+The reason for this is to avoid
+
+- redundancy
+- boilerplate texts
+
+.. _`s8c`:
+
+:s8c: |moc|
+
+Provide means to integrate into the documentation
+
+- defines that are also usable in source code
+- calculation results
+
+.. _`grep`: https://en.wikipedia.org/wiki/Grep
+.. _`DOCX`: http://www.ecma-international.org/publications/standards/Ecma-376.htm
+.. _`ODT`: https://en.wikipedia.org/wiki/OpenDocument
+.. _`VCS`: https://en.wikipedia.org/wiki/Comparison_of_version_control_software
+.. _`SVN`: https://en.wikipedia.org/wiki/Apache_Subversion
+.. _`URI`: https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
+.. _`hypertext`: https://en.wikipedia.org/wiki/Hypertext
+.. _`WYSIWYG`: https://en.wikipedia.org/wiki/WYSIWYG
+.. _`vendor lock-in`: https://en.wikipedia.org/wiki/Vendor_lock-in
+.. _`light markup`: https://en.wikipedia.org/wiki/Lightweight_markup_language
+.. _`Office-XML-SDK`: https://github.com/OfficeDev/Open-XML-SDK
+.. _`DOM`: https://en.wikipedia.org/wiki/Document_Object_Model
+.. _`PDF`: https://en.wikipedia.org/wiki/Portable_Document_Format
+.. _`LaTex`: https://en.wikipedia.org/wiki/LaTeX
+.. _`include`: https://github.com/jgm/pandoc/issues/4160
+.. _`constraints`: https://everypageispageone.com/2016/06/05/why-we-need-constrainable-lightweight-markup-languages/
+.. _`document markup languages`: https://en.wikipedia.org/wiki/List_of_document_markup_languages
+.. _`HTML`: https://en.wikipedia.org/wiki/HTML
+.. _`GIT`: https://en.wikipedia.org/wiki/Git
+.. _`Ctags`: https://github.com/universal-ctags/ctags/blob/master/parsers/rst.c
+.. _`Pandoc`: https://pandoc.org/
+.. _`Docutils`: http://docutils.sourceforge.net/
+.. _`Sphinx`: http://www.sphinx-doc.org/en/stable/
+.. _`RST`: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
+.. _`light markup`: https://en.wikipedia.org/wiki/Lightweight_markup_language
+.. _`rstdoc`: https://github.com/rpuntaie/rstdoc
+.. _`dcx.py`: https://github.com/rpuntaie/rstdoc/blob/master/rstdoc/dcx.py
+.. _`rstdcx`: https://github.com/rpuntaie/rstdoc/blob/master/rstdoc/dcx.py
+.. _`waf`: https://github.com/waf-project/waf
+.. _`tikz`: http://mirror.kumi.systems/ctan/graphics/pgf/base/doc/pgfmanual.pdf
+.. _`LaTex`: https://en.wikipedia.org/wiki/LaTeX
+.. _`substitutions`: http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text
+
+
+.. include:: _links_sphinx.rst
+
+

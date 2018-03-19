@@ -1,0 +1,3 @@
+bld.gen_files()
+bld.gen_links()
+bld.build_docs()

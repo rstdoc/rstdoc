@@ -1,0 +1,459 @@
+.. vi: syntax=rst
+
+==========
+Motivation
+==========
+
+Project Documentation
+=====================
+
+Purpose
+-------
+
+Motivate the |s3d|.
+
+.. _`mwj`:
+
+:mwj: 
+
+Productivity
+------------
+
+To have more evolution with less effort one must change the tools to better productivity.
+
+The objective is to find a documentation format that is more productive than MS Office for technical documentation.
+
+`DOCX`_ and `ODT`_ are no good choice for documentation during development.
+
+- They are not traceable: |s9v|, |s0t| are not satisfied
+- They have low accessibility regarding |san|, |stq|.
+- They are no good for automation: |sgt|, |s8c| 
+
+As a result:
+
+- They lead to low productivity (|sa7|).
+- The quality of the content suffers.
+
+Code is written in a text editor. Documentation must be written with the same text editor.
+It brings overhead to access information with two different tools.
+
+.. _`mbc`:
+
+:mbc: 
+
+Tracability
+-----------
+
+Trace changes
+`````````````
+
+.. _`mnn`:
+
+:mnn: |s9v|
+
+Language: 
+
+    A method to code information for transfer over space or time from sender to receiver.
+    Sender and receiver can be the same.
+
+    A human language as well as a programming language 
+
+    - define variables
+
+    - select values (=concept) from variables
+
+    Human languages can easily lead to misunderstanding:
+
+    - Human languages are less formalized than programming languages.
+    - Humans often wrongly assume that the receiver received 
+      and properly decoded (understood) a messages.
+
+Documentation is the description of the system in a human language.
+It is meant for humans. Nevertheless it is not a novel, but more like code.
+
+- It defines variables and values (concepts) like code.
+- It undergoes the same changes as code.
+- It has dependencies and a hierarchical structure like code.
+
+Version control systems (`VCS`_) like `SVN`_ or `GIT`_ are needed to trace the changes in documentation.
+
+Team members need to be able to follow changes.
+
+IDs
+```
+
+For certain new concepts human language names will be necessary for
+others random IDs will do. 
+
+- A concept has a unique name or ID.
+- Reference paragraphs have a unique ID.
+
+Relations are not reflected in the names and especially not in the IDs: flat addressing.
+Specifically the IDs do not have an order.
+
+Flat and unordered IDs are more flexible, 
+because they are independent of the changes in structure and order.
+
+Jumps to target IDs in documentation work from source code and from other documentation files.
+
+
+Trace dependencies
+``````````````````
+
+.. _`mw9`:
+
+:mw9: |s0t|
+
+Code uses identifiers for its items (variables, functions, classes, ...).
+
+The documentation can use IDs to mark an item (paragraph, figure, table, ...).
+
+The ID can be used to reference an item from somewhere else: m-n.
+A special case is 1-n, e.g. the ID of a header comprises all IDs of the paragraphs below.
+
+.. _`mvd`:
+
+:mvd: 
+
+Accessibility
+-------------
+
+Hypertext
+`````````
+
+.. _`m33`:
+
+:m33: |san| 
+
+Access time: The time to access stored information.
+
+The productivity depends much on how fast information can be found.
+
+The access time is fastest for information stored in the brain.
+The brain of most humans is very slow to memorize, though.
+And the brain forgets.
+Normally one can expect only the current topic to be present for immediate processing.
+
+Related information can be quickly looked up,
+if the documentation contains references that immediatly can be jumped to (`hypertext`_).
+The importance of this can be seen by the immense success of `hypertext`_ in the internet.
+
+To allow `hypertext`_ referenced items must have a unique adressing scheme (`URI`_).
+The `IDs`_ are used for this purpose.
+
+Search
+``````
+
+.. _`me4`:
+
+:me4: |stq|
+
+Another alternative to discover information is via search.
+
+- For small to mediums sized systems normal text search like `grep`_ suffices.
+- A larger text corpus needs indexing to speed up search.
+
+Since source code and documentation describe the same system,
+the same concepts and IDs are likely to occur.
+Source code describes the details and is not rephrasing documentation items, though.
+The concept names and IDs of documentation are expected more in source code comments than identifiers.
+
+A search shall allow to include both 
+
+- source code and
+- documentation
+
+Conversion
+``````````
+
+.. _`mio`:
+
+:mio: |scf|
+
+The purpose of this proposal is targeted to the developement time.
+
+After the project is over documents are 
+
+#) archived or 
+#) placed on a web server
+
+The formats usually used are:
+
+#) PDF
+#) HTML
+
+`DOCX`_ and `ODT`_ are widely used formats.
+They should be supported to allow final formatting correction.
+
+.. _`m9h`:
+
+:m9h: 
+
+Community
+---------
+
+.. _`mj4`:
+
+:mj4: |s9o|
+
+Community spreads the effort for tooling to more people.
+
+- The commercial model makes more people dependent on one company.
+  In case of `DOCX`_ there is no alternative to MS Word, 
+  that renders documents in the same way,
+  which makes Microsoft a monopoly leading to over-pricing.
+
+- The open source model is a decentralized community effort:
+  With software there is no effort and therefore no loss in sharing.
+  One gains the effort of others.
+
+The open source model is preferred, also because 
+
+- one can add a feature if needed
+- one can fix a bug immediately
+
+i.e. one has more control.
+
+The total effort is less than for the commercial model.
+
+.. _`m62`:
+
+:m62: 
+
+Sustainability
+--------------
+
+.. _`mef`:
+
+:mef: |sed|
+
+The information shall be accessible
+
+- over much time
+- by many people
+
+But if the format is only readable by one of many commercial tools,
+
+- at some point one may not want or be able to pay the license 
+- some people might use a different tool
+
+If one would like to change the tool one cannot without substantial costs (`vendor lock-in`_).
+
+Because of the `sustainability`_ argument, a DOCX document needs to be converted to PDF, 
+e.g. before sending to someone else or maybe even when checking into a `VCS`_.
+In the latter case one preduces redundant documents, both very inaccessible.
+
+Further reading: 
+
+| `DOCX <https://www.loc.gov/preservation/digital/formats/fdd/fdd000397.shtml>`__
+| `ODT <https://www.loc.gov/preservation/digital/formats/fdd/fdd000428.shtml>`__
+
+.. _`mpn`:
+
+:mpn: 
+
+Formatting
+----------
+
+.. _`m9g`:
+
+:m9g: |s45|
+
+The whole purpose of `DOCX`_ and `ODT`_, in general the `WYSIWYG`_ idea, is about making formatting accessible.
+The XML is so full of formatting markup, that it is not readable per se.
+The XML files are zipped, which makes them binary.
+The information coded in a human language is hidden for the sake of formatting.
+But formatting has no importance in development.
+
+There is less obtrusive alternative for formatting than via XML, HTML or even TeX, called `light markup`_.
+
+.. _`moc`:
+
+:moc: 
+
+Automation
+----------
+
+.. _`m1p`:
+
+:m1p: |sgt|, |s8c|
+
+Why don't we write code in MS Word or Libre Office? Because it would be hard to parse away all the formatting.
+
+It does not help to have a library like `Office-XML-SDK`_ or `DOM`_, because the additional complexity
+through formatting elements still needs to be dealt with when parsing or creating documentation parts.
+
+A format where formatting is less important and less obtrusive can be handled more easily 
+
+- via scripts 
+- with templates.
+
+Details
+-------
+
+Light Markup
+````````````
+
+.. _`dt7`:
+
+:dt7: 
+
+`LaTex`_ and other `document markup languages`_ are not easy to learn (|s45|) and have not enough `constraints`_.
+
+The alternatives are `light markup`_ formats: 
+
+- |sgt|, |s8c|: It is easier to *generate parts of the documentation* with scripts from source code or source code comments.
+  It allows mixing source code with documentation for better cohesion and less redundancy.
+
+- |s45|: It can be easily learned, because it restricts itself to *essential elements*.
+
+- |s45|: The elements are of conceptual nature (header, list item, ) not actual formatting.
+  The formatting is done when creating the final document. This makes it easier
+  to *keep a consistent formatting* when more people work on the documentation.
+
+- |s9v|: As text, it is *perfect for version control systems*
+  One can commit documentation changes together with the according source code changes.
+  It is easy to review documentation changes.
+  It allows to keep outdated information hidden in the VCS history
+  and not lying around and messing up.
+
+- |s0t|: It is easier to extract, which items link to which other ones, especially if the team agrees on facilitating conventions.
+
+- |san|, |stq|, |sed|: It can be edited with a *text editor*, i.e. the same tool developers work with all the time.
+
+- |stq|: It is accessible to `grep`_.
+
+- |san|: `Ctags`_ can be used to jump around while editing.
+
+- |sed|: It is very readable.
+
+- |scf|: It can be translated to *several final formats*, e.g.
+  
+  - HTML (`Pandoc`_, `Sphinx`_)
+  - PDF (`Pandoc`_, `Sphinx`_)
+  - ODT, DOCX (`Pandoc`_)
+
+Further reading:
+
+| https://www.slant.co/topics/589/~best-markup-languages
+| https://everypageispageone.com/2016/06/05/why-we-need-constrainable-lightweight-markup-languages/
+| http://ericholscher.com/blog/2016/mar/15/dont-use-markdown-for-technical-docs/
+| http://zverovich.net/2016/06/16/rst-vs-markdown.html
+| https://gist.github.com/dupuy/1855764
+
+
+RST
+```
+
+.. _`dbz`:
+
+:dbz: 
+
+There are many `light markup`_ formats. 
+But especially restructuredText (`RST`_)
+
+- |s45|: has rich format support (e.g. table formats)
+- |s45|: is extensible
+- |sgt|, |s8c|: is best for python scripting
+- |scf|: has a very good tooling support
+
+  - `Pandoc`_
+  - `Sphinx`_
+  - `Docutils`_
+  - `rstdoc`_
+
+http://rst.ninjs.org can be used to play with `RST`_.
+
+For the conversion from `RST`_ to `DOCX`_ currently the best tool is `Pandoc`_,
+`Pandoc`_ only takes pure `RST`_ and does not know 
+about the `Sphinx`_ extensions like ``:ref:``.
+
+Hypertext
+`````````
+
+.. _`doe`:
+
+:doe: hypertext in text
+
+`rstdoc`_'s `rstdcx`_ generates a ``.tags`` file for target IDs
+`CTags`_'s ``.tags`` files are supported by many editors.
+With ``.tags`` files your editor can jump around in `RST`_ files,
+as if marked up hypertext (HTML).
+
+.. _`d03`:
+
+:d03: hypertext in HTML, PDF and DOCX
+
+To reference paragraphs, figures, mathematics and tables
+use `RST`_'s replacement `substitutions`_::
+
+    This is text that references |dx8|.
+
+As the `RST`_'s link format differs between HTML, PDF and DOCX,
+`rstdoc`_'s `rstdcx`_ generates separate files 
+with definitions for the replacement `substitutions`_:
+
+``_links_docx.rst``::
+
+    .. |targetid| replace:: `targetid <file.docx#targetid>`_
+
+``_links_pdf.rst``::
+
+    .. |targetid| replace:: `targetid <file.pdf#targetid>`_
+
+``_links_sphinx.rst``::
+
+    .. |targetid| replace:: :ref:`targetid <file.html#targetid>`
+
+.. _`m1z`:
+
+:m1z: 
+
+    Substitutions cannot be in included files, until the Pandoc `include`_ bug is corrected.
+    For the ``_links_docx.txt`` this helps::
+
+        cat file.rst _links_docx.txt | sed -e's/.. include:: _links_sphinx.txt//g' | pandoc -f rst -t docx -o file.docx
+
+    The last line of a top level ``.rest`` file must be::
+
+        ``.. include:: _links_sphinx.rst``
+
+    For image substitutions to work place the ``.. |xxx| image:: xxx.jpg`` into the top level ``.rest`` file.
+
+
+.. _`grep`: https://en.wikipedia.org/wiki/Grep
+.. _`DOCX`: http://www.ecma-international.org/publications/standards/Ecma-376.htm
+.. _`ODT`: https://en.wikipedia.org/wiki/OpenDocument
+.. _`VCS`: https://en.wikipedia.org/wiki/Comparison_of_version_control_software
+.. _`SVN`: https://en.wikipedia.org/wiki/Apache_Subversion
+.. _`URI`: https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
+.. _`hypertext`: https://en.wikipedia.org/wiki/Hypertext
+.. _`WYSIWYG`: https://en.wikipedia.org/wiki/WYSIWYG
+.. _`vendor lock-in`: https://en.wikipedia.org/wiki/Vendor_lock-in
+.. _`light markup`: https://en.wikipedia.org/wiki/Lightweight_markup_language
+.. _`Office-XML-SDK`: https://github.com/OfficeDev/Open-XML-SDK
+.. _`DOM`: https://en.wikipedia.org/wiki/Document_Object_Model
+.. _`PDF`: https://en.wikipedia.org/wiki/Portable_Document_Format
+.. _`LaTex`: https://en.wikipedia.org/wiki/LaTeX
+.. _`include`: https://github.com/jgm/pandoc/issues/4160
+.. _`constraints`: https://everypageispageone.com/2016/06/05/why-we-need-constrainable-lightweight-markup-languages/
+.. _`document markup languages`: https://en.wikipedia.org/wiki/List_of_document_markup_languages
+.. _`HTML`: https://en.wikipedia.org/wiki/HTML
+.. _`GIT`: https://en.wikipedia.org/wiki/Git
+.. _`Ctags`: https://github.com/universal-ctags/ctags/blob/master/parsers/rst.c
+.. _`Pandoc`: https://pandoc.org/
+.. _`Docutils`: http://docutils.sourceforge.net/
+.. _`Sphinx`: http://www.sphinx-doc.org/en/stable/
+.. _`RST`: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
+.. _`light markup`: https://en.wikipedia.org/wiki/Lightweight_markup_language
+.. _`rstdoc`: https://github.com/rpuntaie/rstdoc
+.. _`dcx.py`: https://github.com/rpuntaie/rstdoc/blob/master/rstdoc/dcx.py
+.. _`rstdcx`: https://github.com/rpuntaie/rstdoc/blob/master/rstdoc/dcx.py
+.. _`waf`: https://github.com/waf-project/waf
+.. _`tikz`: http://mirror.kumi.systems/ctan/graphics/pgf/base/doc/pgfmanual.pdf
+.. _`LaTex`: https://en.wikipedia.org/wiki/LaTeX
+.. _`substitutions`: http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text
+
+
+.. include:: _links_sphinx.rst
+
