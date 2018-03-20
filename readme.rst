@@ -1,19 +1,15 @@
-rstdoc
-======
-
 `Sphinx`_ is an extension of `Docutils`_ used for many (software) projects,
 but it does not support creation of `DOCX`_ files.
 `Pandoc`_ does support `DOCX`_, but does not support the `Sphinx`_ extensions.
 
-`rstdoc`_ supports working with basic ``restructuredText`` (`RST`_) 
-defined by `Docutils`_ using some conventions, like  
-``.rest`` files become ``.docx`` and ``.rst`` is used for included files.
+``rstdoc`` supports working with ``restructuredText`` (`RST`_) 
+defined by `Docutils`_ using some conventions.
 The conventions are shown by the example produced via ``rstdcx --init samplerstdoc``,
 
 The idea is, that working with text is more integrated in the 
 (software) development process.
 
-``rstdoc``'s script ``rstdcx`` (using module ``dcx.py``) 
+``rstdoc``'s ``rstdcx`` (``dcx.py``) 
 
 - generates ``.tags`` files to jump around in an editor that support `ctags`_
   (Vim, Atom, VsCode, Emacs, ...)
@@ -48,17 +44,14 @@ The idea is, that working with text is more integrated in the
   `Pandoc`_ would do as well, but `Sphinx`_ provides a nice entry point
   to all the documentation.
 
-.. `Sphinx`_ should be there, because sphinx-contrib packages allow creating
-   graphic files that can be included in normal rst. TODO: support this.
-
 Editors
--------
+=======
 
 Vim:
 
-  | `vim_py3_rst <https://github.com/rpuntaie/vim_py3_rst>`_ 
-  | `vim-table-mode https://github.com/dhruvasagar/vim-table-mode`_
-  | `riv.vim <https://github.com/gu-fan/riv.vim>`_
+  | `vim_py3_rst <https://github.com/rpuntaie/vim_py3_rst>`__ 
+  | `vim-table-mode <https://github.com/dhruvasagar/vim-table-mode>`__
+  | `riv.vim <https://github.com/gu-fan/riv.vim>`__
 
 Atom:
 

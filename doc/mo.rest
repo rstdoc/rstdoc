@@ -4,8 +4,8 @@
 Motivation
 ==========
 
-Project Documentation
-=====================
+Documentation with RST
+======================
 
 Purpose
 -------
@@ -138,7 +138,7 @@ Related information can be quickly looked up,
 if the documentation contains references that immediatly can be jumped to (`hypertext`_).
 The importance of this can be seen by the immense success of `hypertext`_ in the internet.
 
-To allow `hypertext`_ referenced items must have a unique adressing scheme (`URI`_).
+To allow `hypertext`_ referenced items must have a unique resource ID (`URI`_).
 The `IDs`_ are used for this purpose.
 
 Search
@@ -271,8 +271,44 @@ There is less obtrusive alternative for formatting than via XML, HTML or even Te
 
 :moc: 
 
+Redundancy
+----------
+
+.. _`m90`:
+
+:m90:  |sgt|, |s8c|
+
+Redundancy: When the same information is there more often.
+
+Redundancy 
+
+- needs more resources
+
+    - more pages, more memory
+    - more time to read
+    - more time to write
+    - more effort when changing something
+
+- leads to inconsistencies
+
+The reasons for *redundancy* are
+
+- barrier between formats: DOCX and text, computer language and human language
+- inability to link to information: no `hypertext`_
+- inability to exploit functional dependencies: no `automation`_ available
+- normative boilerplate texts: no `automation`_ available
+
+Less redundancy means higher `productivity`_.
+
+.. _`mvl`:
+
+:mvl: 
+
 Automation
 ----------
+
+Scripting
+`````````
 
 .. _`m1p`:
 
@@ -283,142 +319,18 @@ Why don't we write code in MS Word or Libre Office? Because it would be hard to 
 It does not help to have a library like `Office-XML-SDK`_ or `DOM`_, because the additional complexity
 through formatting elements still needs to be dealt with when parsing or creating documentation parts.
 
-A format where formatting is less important and less obtrusive can be handled more easily 
+A format where formatting is less important and less obtrusive can be handled more easily via scripts.
 
-- via scripts 
-- with templates.
-
-Details
--------
-
-Light Markup
-````````````
-
-.. _`dt7`:
-
-:dt7: 
-
-`LaTex`_ and other `document markup languages`_ are not easy to learn (|s45|) and have not enough `constraints`_.
-
-The alternatives are `light markup`_ formats: 
-
-- |sgt|, |s8c|: It is easier to *generate parts of the documentation* with scripts from source code or source code comments.
-  It allows mixing source code with documentation for better cohesion and less redundancy.
-
-- |s45|: It can be easily learned, because it restricts itself to *essential elements*.
-
-- |s45|: The elements are of conceptual nature (header, list item, ) not actual formatting.
-  The formatting is done when creating the final document. This makes it easier
-  to *keep a consistent formatting* when more people work on the documentation.
-
-- |s9v|: As text, it is *perfect for version control systems*
-  One can commit documentation changes together with the according source code changes.
-  It is easy to review documentation changes.
-  It allows to keep outdated information hidden in the VCS history
-  and not lying around and messing up.
-
-- |s0t|: It is easier to extract, which items link to which other ones, especially if the team agrees on facilitating conventions.
-
-- |san|, |stq|, |sed|: It can be edited with a *text editor*, i.e. the same tool developers work with all the time.
-
-- |stq|: It is accessible to `grep`_.
-
-- |san|: `Ctags`_ can be used to jump around while editing.
-
-- |sed|: It is very readable.
-
-- |scf|: It can be translated to *several final formats*, e.g.
-  
-  - HTML (`Pandoc`_, `Sphinx`_)
-  - PDF (`Pandoc`_, `Sphinx`_)
-  - ODT, DOCX (`Pandoc`_)
-
-Further reading:
-
-| https://www.slant.co/topics/589/~best-markup-languages
-| https://everypageispageone.com/2016/06/05/why-we-need-constrainable-lightweight-markup-languages/
-| http://ericholscher.com/blog/2016/mar/15/dont-use-markdown-for-technical-docs/
-| http://zverovich.net/2016/06/16/rst-vs-markdown.html
-| https://gist.github.com/dupuy/1855764
-
-
-RST
-```
-
-.. _`dbz`:
-
-:dbz: 
-
-There are many `light markup`_ formats. 
-But especially restructuredText (`RST`_)
-
-- |s45|: has rich format support (e.g. table formats)
-- |s45|: is extensible
-- |sgt|, |s8c|: is best for python scripting
-- |scf|: has a very good tooling support
-
-  - `Pandoc`_
-  - `Sphinx`_
-  - `Docutils`_
-  - `rstdoc`_
-
-http://rst.ninjs.org can be used to play with `RST`_.
-
-For the conversion from `RST`_ to `DOCX`_ currently the best tool is `Pandoc`_,
-`Pandoc`_ only takes pure `RST`_ and does not know 
-about the `Sphinx`_ extensions like ``:ref:``.
-
-Hypertext
+Templates
 `````````
+.. _`m8d`:
 
-.. _`doe`:
+:m8d: 
 
-:doe: hypertext in text
+Many internet sites are generated with a scripting language (PHP, JS, Python, ...)
+that allows to mix text and data or generate text from data. That is the idea of *templates*.
 
-`rstdoc`_'s `rstdcx`_ generates a ``.tags`` file for target IDs
-`CTags`_'s ``.tags`` files are supported by many editors.
-With ``.tags`` files your editor can jump around in `RST`_ files,
-as if marked up hypertext (HTML).
-
-.. _`d03`:
-
-:d03: hypertext in HTML, PDF and DOCX
-
-To reference paragraphs, figures, mathematics and tables
-use `RST`_'s replacement `substitutions`_::
-
-    This is text that references |dx8|.
-
-As the `RST`_'s link format differs between HTML, PDF and DOCX,
-`rstdoc`_'s `rstdcx`_ generates separate files 
-with definitions for the replacement `substitutions`_:
-
-``_links_docx.rst``::
-
-    .. |targetid| replace:: `targetid <file.docx#targetid>`_
-
-``_links_pdf.rst``::
-
-    .. |targetid| replace:: `targetid <file.pdf#targetid>`_
-
-``_links_sphinx.rst``::
-
-    .. |targetid| replace:: :ref:`targetid <file.html#targetid>`
-
-.. _`m1z`:
-
-:m1z: 
-
-    Substitutions cannot be in included files, until the Pandoc `include`_ bug is corrected.
-    For the ``_links_docx.txt`` this helps::
-
-        cat file.rst _links_docx.txt | sed -e's/.. include:: _links_sphinx.txt//g' | pandoc -f rst -t docx -o file.docx
-
-    The last line of a top level ``.rest`` file must be::
-
-        ``.. include:: _links_sphinx.rst``
-
-    For image substitutions to work place the ``.. |xxx| image:: xxx.jpg`` into the top level ``.rest`` file.
+Text files can easily be generated from templates.
 
 
 .. _`grep`: https://en.wikipedia.org/wiki/Grep

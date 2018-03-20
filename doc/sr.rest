@@ -4,8 +4,8 @@
 System Requirements
 ===================
 
-Project Documentation
-=====================
+Documentation with RST
+======================
 
 Purpose
 -------
@@ -112,22 +112,14 @@ The formatting
 
 .. _`sgt`:
 
-:sgt: |moc|
+:sgt: |moc|, |m1p|
 
 Make it easy to automatically generate parts of documentation from 
-
-- source code, i.e. the same format shall be usable for source code documentation
-
-- via templates
-
-The reason for this is to avoid
-
-- redundancy
-- boilerplate texts
+source code, i.e. the same format shall be usable for source code documentation
 
 .. _`s8c`:
 
-:s8c: |moc|
+:s8c: |moc|, |m8d|
 
 Provide means to integrate into the documentation
 

@@ -1,1 +1,8 @@
 #from|to|gen_xxx|kwargs
+../rstdoc/dcx.py       | _dcx.rst       | doc | {}
+../rstdoc/fromdocx.py  | _fromdocx.rst  | doc | {}
+../rstdoc/listtable.py | _listtable.rst | doc | {}
+../rstdoc/untable.py   | _untable.rst   | doc | {}
+../rstdoc/reflow.py    | _reflow.rst    | doc | {}
+../rstdoc/reimg.py     | _reimg.rst     | doc | {}
+../rstdoc/retable.py   | _retable.rst   | doc | {}

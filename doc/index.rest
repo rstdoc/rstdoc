@@ -1,8 +1,10 @@
 .. vi: syntax=rst
 
-============
-Project Name
-============
+======================
+Documentation with RST
+======================
+
+:Author: Roland Puntaier
 
 .. toctree::
    mo.rest

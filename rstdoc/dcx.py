@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 #encoding: utf-8 
 
+#def gen_doc(lns,**kw):
+#    b,e = list(rindices('^"""',lns))[:2]
+#    return lns[b+1:e]
+#def gen_doc(lns,**kw)
+
 """
 .. _`dcx`:
 
@@ -298,7 +303,11 @@ def gen(source,target=None,fun=None,**kw):
         except:
             sys.stderr.write("ERROR: {} cannot be opened\n".format(source))
             return
-    iblks = list(rindices(r'#def gen(\w*(lns,\*\*kw):)*',lns))
+    if fun:
+        gen_regex = r'#def gen_'+fun+'(\w*(lns,\*\*kw):)*'
+    else:
+        gen_regex = r'#def gen(\w*(lns,\*\*kw):)*'
+    iblks = list(rindices(gen_regex,lns))
     py3 = '\n'.join([lns[k][lns[i].index('#')+1:] 
             for i,j in in2s(iblks) 
             for k in range(i,j)])
@@ -569,12 +578,10 @@ try:
             self.create_task('gentsk',frm,twd,fun=fun,kw=kw)
     class gentsk(Task.Task):
         def run(self):
-            try:
-                frm = self.inputs[0]
-                twd = self.outputs[0]
-                twd.parent.mkdir()
-                gen(frm.abspath(),twd.abspath(),fun=self.fun,**self.kw)
-            except: pass
+            frm = self.inputs[0]
+            twd = self.outputs[0]
+            twd.parent.mkdir()
+            gen(frm.abspath(),twd.abspath(),fun=self.fun,**self.kw)
     def get_docs(bld):
         docs = [x.lower() for x in bld.options.docs]
         if not docs:
@@ -649,6 +656,7 @@ try:
                 ,template_lookup = [lookup]
                 ,bldpath = bldpath.abspath()
                 ,options = bld.options
+                ,__file__ = ps.replace('\\','/')
                 ,**env
                 ) 
         with open(pt,mode='w',encoding="utf-8",newline="\n") as f: 
@@ -1093,8 +1101,6 @@ example_tree = r'''
               	@echo "  pdf         to pdf"
               %: Makefile index
               	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
-              %: %.stpl
-              	stpl $< $@
               docx: docxdir index
               	cat sr.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/sr.docx"
               	cat dd.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/dd.docx"
@@ -1128,7 +1134,7 @@ def main(**args):
   verbose = args['verbose']
   if iroot:
     thisfile = str(Path(__file__).resolve()).replace('\\','/')
-    tex_ref = os.path.join(os.path.split(thisfile)[0],'reference.tex')
+    tex_ref = os.path.normpath(os.path.join(os.path.split(thisfile)[0],'..','reference.tex'))
     tree=[l for l in example_tree.replace(
         '__file__',thisfile).replace('__tex_ref__',tex_ref).splitlines() if l.strip()]
     mkdir(iroot)

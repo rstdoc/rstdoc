@@ -4,44 +4,46 @@
 rstdoc
 ======
 
-Project Documentation
-=====================
+Documentation with RST
+======================
 
-.. TODO 
-   generate via gen file from the sources
-   improve the documentation in the sources
+.. include:: ../readme.rst
 
-.. _`grep`: https://en.wikipedia.org/wiki/Grep
-.. _`DOCX`: http://www.ecma-international.org/publications/standards/Ecma-376.htm
-.. _`ODT`: https://en.wikipedia.org/wiki/OpenDocument
-.. _`VCS`: https://en.wikipedia.org/wiki/Comparison_of_version_control_software
-.. _`SVN`: https://en.wikipedia.org/wiki/Apache_Subversion
-.. _`URI`: https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
-.. _`hypertext`: https://en.wikipedia.org/wiki/Hypertext
-.. _`WYSIWYG`: https://en.wikipedia.org/wiki/WYSIWYG
-.. _`vendor lock-in`: https://en.wikipedia.org/wiki/Vendor_lock-in
-.. _`light markup`: https://en.wikipedia.org/wiki/Lightweight_markup_language
-.. _`Office-XML-SDK`: https://github.com/OfficeDev/Open-XML-SDK
-.. _`DOM`: https://en.wikipedia.org/wiki/Document_Object_Model
-.. _`PDF`: https://en.wikipedia.org/wiki/Portable_Document_Format
-.. _`LaTex`: https://en.wikipedia.org/wiki/LaTeX
-.. _`include`: https://github.com/jgm/pandoc/issues/4160
-.. _`constraints`: https://everypageispageone.com/2016/06/05/why-we-need-constrainable-lightweight-markup-languages/
-.. _`document markup languages`: https://en.wikipedia.org/wiki/List_of_document_markup_languages
-.. _`HTML`: https://en.wikipedia.org/wiki/HTML
-.. _`GIT`: https://en.wikipedia.org/wiki/Git
-.. _`Ctags`: https://github.com/universal-ctags/ctags/blob/master/parsers/rst.c
-.. _`Pandoc`: https://pandoc.org/
-.. _`Docutils`: http://docutils.sourceforge.net/
-.. _`Sphinx`: http://www.sphinx-doc.org/en/stable/
-.. _`RST`: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
-.. _`light markup`: https://en.wikipedia.org/wiki/Lightweight_markup_language
-.. _`rstdoc`: https://github.com/rpuntaie/rstdoc
-.. _`dcx.py`: https://github.com/rpuntaie/rstdoc/blob/master/rstdoc/dcx.py
-.. _`rstdcx`: https://github.com/rpuntaie/rstdoc/blob/master/rstdoc/dcx.py
-.. _`waf`: https://github.com/waf-project/waf
-.. _`tikz`: http://mirror.kumi.systems/ctan/graphics/pgf/base/doc/pgfmanual.pdf
-.. _`LaTex`: https://en.wikipedia.org/wiki/LaTeX
-.. _`substitutions`: http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text
+.. include:: _dcx.rst
+
+.. include:: _fromdocx.rst
+
+.. include:: _listtable.rst
+
+.. include:: _untable.rst
+
+.. include:: _reflow.rst
+
+.. include:: _reimg.rst
+
+.. include:: _retable.rst
+
+
+.. .. .. alternatively one could make a rstdoc.rest.stpl with
+.. .. %import sys
+.. .. %sys.path.append('..')
+.. .. %from setup.py import read
+.. .. 
+.. .. {{read('readme.rst')}}
+.. .. 
+.. .. {{read('rstdoc/dcx.py')}}
+.. .. 
+.. .. {{read('rstdoc/fromdocx.py')}}
+.. .. 
+.. .. {{read('rstdoc/listtable.py')}}
+.. .. 
+.. .. {{read('rstdoc/untable.py')}}
+.. .. 
+.. .. {{read('rstdoc/reflow.py')}}
+.. .. 
+.. .. {{read('rstdoc/reimg.py')}}
+.. .. 
+.. .. {{read('rstdoc/retable.py')}}
+
 
 .. include:: _links_sphinx.rst

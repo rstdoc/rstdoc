@@ -4,11 +4,10 @@
 Risk Analysis
 =============
 
-Project Documentation
-=====================
+Documentation with RST
+======================
 
-.. TODO diagrams and calculations showing the advantages over MS Word
-   as example for an stpl file
+The current file is: {{__file__}}
 
 .. include:: _links_sphinx.rst
 

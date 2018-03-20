@@ -4,8 +4,8 @@
 Test Plan
 =========
 
-Project Documentation
-=====================
+Documentation with RST
+======================
 
 
 .. include:: _links_sphinx.rst

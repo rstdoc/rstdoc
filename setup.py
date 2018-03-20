@@ -12,17 +12,18 @@ import os, os.path
 __version__ = '1.0'
 
 def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname),encoding='utf-8').read()
+    with open(os.path.join(os.path.dirname(__file__), fname),encoding='utf-8') as f:
+        return f.read().split('\n"""')[1]
 
-long_description = '\n'.join([
-read('readme.rst')
-,read('rstdoc/dcx.py').split('\n"""')[1]
-,read('rstdoc/fromdocx.py').split('\n"""')[1]
-,read('rstdoc/listtable.py').split('\n"""')[1]
-,read('rstdoc/untable.py').split('\n"""')[1]
-,read('rstdoc/reflow.py').split('\n"""')[1]
-,read('rstdoc/reimg.py').split('\n"""')[1]
-,read('rstdoc/retable.py').split('\n"""')[1]
+long_description = '\n'.join(["rstdoc\n======\n\n"
+,open('readme.rst').read()
+,read('rstdoc/dcx.py')
+,read('rstdoc/fromdocx.py')
+,read('rstdoc/listtable.py')
+,read('rstdoc/untable.py')
+,read('rstdoc/reflow.py')
+,read('rstdoc/reimg.py')
+,read('rstdoc/retable.py')
 ])
 
 setup(name = 'rstdoc',
@@ -50,7 +51,7 @@ setup(name = 'rstdoc',
     long_description = long_description,
     packages=['rstdoc'],
     include_package_data=True,
-    package_data={'rstdoc':['rstdoc/reference.tex']},
+    package_data={'rstdoc':['reference.tex']},
     zip_safe=False,
     tests_require=['pytest','pytest-coverage','mock'],
     entry_points={
