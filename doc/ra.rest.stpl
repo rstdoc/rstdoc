@@ -7,7 +7,272 @@ Risk Analysis
 Documentation with RST
 ======================
 
-The current file is: {{__file__}}
+Purpose
+-------
+
+In risk analysis is based on data of measured or estimated 
+
+- probability of event
+- rating of event (harm/benefit or cost/profit)
+
+A risk analysis document is best generated from this data.
+
+This is an example for |ruw|.
+
+Risk analysis
+-------------
+
+Event
+`````
+
+.. _`rqp`:
+
+Event: A possible and recurring configuration of values of variables.
+
+.. _`rbi`:
+
+:rbi: 
+
+It is hard to get good estimates of probabilites for events in a complex real world,
+because there are 
+
+- many variables 
+- the probabilities of its values are unknown
+
+.. _`rhq`:
+
+:rhq: 
+
+The variables have functional or causal dependancies.
+The risk analysis tries to analyse these dependencies 
+to get to a more precise estimation of the probability.
+
+Instead of probabilities one can associate to events values 
+that are more practicable in certain areas, e.g. occurrence (|rd7|).
+
+.. _`rd7`:
+
+|rd7|: Occurrence
+
+.. list-table::
+   :name:
+   :widths: 25 25 25 25
+   :header-rows: 1
+
+
+   * - Number
+     - Category
+
+   * - 1
+     - Unimaginable
+
+   * - 2
+     - Improbable
+
+   * - 3
+     - Remotely imaginable
+
+   * - 4
+     - Sometimes
+
+   * - 5
+     - Probable
+
+   * - 6
+     - Frequent
+
+
+Rating of event
+```````````````
+
+.. _`rr0`:
+
+Rating: Judge an event
+
+In financial circumstances cost and profit is rated with money.
+
+In health sector harm and benefit can often only be estimated in a rough way, 
+e.g. with a *severity* value for harm (|r0u|).
+
+.. _`r0u`:
+
+|r0u|: Severity
+
+.. list-table::
+   :name:
+   :widths: 50 50
+   :header-rows: 1
+
+
+   * - Number
+     - Category
+
+   * - 1
+     - Non-essential
+
+   * - 2
+     - Minor
+
+   * - 3
+     - Critical
+
+   * - 4
+     - Catastrophical
+
+Risk
+````
+
+.. _`rha`:
+
+Risk: The incentive or refrain resulting from probability and rating or of occurence and severity.
+
+With the occurence/severity example risk values could be
+
+:ac: acceptable
+:nac: not acceptable
+:alarp: as low as reasonably practicable
+
+The values are a function of severity and occurrence defined by |rlu|.
+
+.. _`rlu`:
+
+|rlu|: Occurrence/Severity matrix.
+       AC, NAC, ALARP are counts of events in the respective cell.
+
+.. list-table::
+   :name:
+   :widths: 20 20 20 20 20
+   :header-rows: 1
+
+
+   * - **Risk R**
+     -
+     - 
+     - 
+     - 
+
+   * - **O\S**
+     - **1**
+     - **2**
+     - **3**
+     - **4**
+
+   * - **6**
+     - ALARP
+     - NAC
+     - NAC
+     - NAC
+
+   * - **5**
+     - ALARP
+     - ALARP
+     - NAC
+     - NAC
+
+   * - **4**
+     - ALARP
+     - ALARP
+     - ALARP
+     - NAC
+
+   * - **3**
+     - AC
+     - ALARP
+     - ALARP
+     - ALARP
+
+   * - **2**
+     - AC
+     - AC
+     - ALARP
+     - ALARP
+
+   * - **1**
+     - AC
+     - AC
+     - AC
+     - ALARP
+
+Measures
+````````
+
+.. _`r2m`:
+
+:r2m: 
+
+The purpose of the risk analysis is not to make a yes/no decision, 
+but rather to derive *counter measures* that prevent harm or financial loss.
+
+The counter measures change the 
+
+- probability of the event
+
+by changing the causal dependencies between events.
+
+The rating probably will not change,
+unless circumstances change drastically,
+e.g. during war a dead person is more acceptable than during peace.
+
+In the Occurrence/Severity example, in |rlu|:
+
+- before the measures: events are possibly in the upper right corner
+- after the measures: events are ideally only in the lower left corner
+- the events in the top/left to right/bottom diagonal have a trade-off
+  and should be kept "as low as reasonably practicable"
+
+Risk analysis is basically a simulation.
+
+.. _`ruw`:
+
+Risk analysis for documenting with RST
+--------------------------------------
+
+<%
+
+import yaml
+
+#ra
+ra = yaml.load('\n'.join([x[1:]for x in """\
+| risk:
+| 
+| - wanted
+| - unwanted
+| - neutral
+| 
+| occurrence:
+| 
+| - unlikely
+| - likely
+| 
+| severity:
+| 
+| - costly
+| - profitable
+| 
+| events:
+| 
+| - id: 1
+|   description: todo1
+|   causedbyevents:
+|   severity: costly
+|   occurrence1: likely
+|   measure:
+|   occurrence2: unlikely
+| 
+| - id: 2
+|   description: todo2
+|   causedbyevents:
+|   severity: costly
+|   occurrence1: likely
+|   measure:
+|   occurrence2: unlikely
+""".splitlines()]))
+
+%>
+
 
 .. include:: _links_sphinx.rst
+
+
+
 
