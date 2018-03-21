@@ -302,8 +302,6 @@ Less redundancy means higher `productivity`_.
 
 .. _`mvl`:
 
-:mvl: 
-
 Automation
 ----------
 

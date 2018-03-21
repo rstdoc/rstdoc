@@ -35,17 +35,28 @@ Frequency (`f`): How often an event is observed per time interval.
 
 Rating (`v`): Judge an event by associating a value expressing harm/benefit, loss/profit or advantage/disadvantage.
 
-%from sympy import Symbol,Function,Eq,latex
-%f_e,v_e = Symbol('f_e'),Symbol('v_e')
-%r = lambda f,v: f*v
-%r_e = Eq(Function('r_e'),r(f_e,v_e))
+<%
+from sympy import Symbol,Function,Eq,latex,N
+f_e,v_e = Symbol('f_e'),Symbol('v_e')
+r = lambda f,v: f*v
+r_e = Eq(Function('r_e'),r(f_e,v_e))
+%>
 
 .. _`r5c`:
 
-Risk (`r`): The risk is frequency * rating: `{{latex(r_e)}}`
+Risk (`r`): The risk is frequency * rating: 
+
+.. _`r12`:
+
+.. math::
+    :name:
+
+    {{latex(r_e)}}
 
 
 The total risk `R` sums over all events:
+
+.. _`ruf`:
 
 .. math::
     :name:
@@ -266,197 +277,216 @@ This risk analysis compares to the above `risk analysis`_ introduction in this w
 - Event is the need for the developer to performa a task
 - Time consumed per event instead of severity (per developer)
 - Occurrence (per developer)
-- The measure taken is to use RST for documentation instead of MS Word or Libre Office
+
+The countermeasures taken will lead to:
+
+- RST for documentation instead of MS Word or Libre Office
 
 Instead of the discrete values, numbers are used for time and occurrence.
-The numbers are rough estimates.
+The numbers are rough estimates, because they depend a lot
 
-The total risk is 
+- on the developer
+- on the tools he uses (editor and plugins)
+- how well he knows his tools
+- which phase the development is in
+- how long the project takes
+- how much documentation there is
+
+The risk |ruf| is the effort per developer.
 
 .. _`rxj`:
 
 .. math::
     :name:
 
-    R = n*\sum_{e}v_e f_e
+    R = \sum_{e}v_e f_e
 
 |rxj|: 
 
-- `n` is team size 
-- `e` is a task.
-- `v` is time minutes consumed for task per developer
-- `f` is how often per day for task per developer
-- `R` is total risk for team (man*month)
+- `e`: event to perform a task
+- `v_e`: time consumed for task
+- `f_e`: how often per day the task `e` occurs
+- `R`: total effort per developer
 
-If the
+The following events have a 
 
+- one-line description
+- occurrence `f`
+- countermeasure
+- the effort `v_1` [min] before countermeasure
+- the effort `v_2` [min] after countermeasure
 
-.. Occurrence
-.. ``````````
-.. 
-.. |rr4| defines the occurence values used for the
-.. risk analysis of using RST for documentation.
-.. 
-.. .. _`rr4`:
-.. 
-.. |rr4| Occurrence per developer. Needs to be multiplied by team size.
-.. 
-.. .. list-table::
-..    :widths: 10 40 50
-..    :header-rows: 1
-.. 
-.. 
-..    * - Number
-..      - Category
-..      - Explanation
-.. 
-..    * - 1
-..      - Unimaginable
-..      - Never occurs
-.. 
-..    * - 2
-..      - Improbable
-..      - Occurs every few months
-.. 
-..    * - 3
-..      - Remote imaginable
-..      - Occurs about once in a month
-.. 
-..    * - 4
-..      - Sometimes
-..      - Occurs about once in a week
-.. 
-..    * - 5
-..      - Probable
-..      - Occurs about once a day
-.. 
-..    * - 6
-..      - Frequent
-..      - Occurs several times a day
-.. 
-.. Effort
-.. ``````
-.. 
-.. |rrj| defines efforts in minutes per developer. It needs to be multiplied by the team size.
-.. This table corresponds to severity in |r0u|.
-.. 
-.. .. _`rrj`:
-.. 
-.. |rrj| 
-.. 
-.. .. list-table::
-..    :name:
-..    :widths: 10 40 50
-..    :header-rows: 1
-.. 
-.. 
-..    * - Number
-..      - Category
-..      - Explanation
-.. 
-..    * - 1
-..      - little
-..      - a few minutes
-.. 
-..    * - 2
-..      - 
-..      - Small to moderate injury
-.. 
-..    * - 3
-..      - Critical
-..      - Severe injury or death
-.. 
-..    * - 4
-..      - Catastrophical
-..      - Multiple deaths
+As a check for the estimation `\sum f v_1` should give `1d = 8h = 480\text{min}`.
 
+The estimates assume a project that takes 
+- about a year 
+- has 5 team members
+- 4 documents
 
 Events
 ``````
 
-.. events
-   :id:
-   description
-   severity
-   before countermeasure
-   countermeasure
-   after countermeasure
-
-
-.. _`r8g`:
-
-:r8g: 
-Programmer opens documentation file while in code editor
-
-
-
-
-.. list-table::
-
-   * - id
-     - description
-     - causedbyevents
-     - severity
-     - occurrence1
-     - measur:
-     - occurrence2
-
-   * - rnr
-     - 
-
-
-
-* - 1
-    
-    causedbyevents:
-    severity: costly
-    occurrence1: likely
-    measure:
-    occurrence2: unlikely
- 
-
 <%
 
-import yaml
+events="""
+.. list-table::
+   :widths: 40 15 15 15 15
+   :header-rows: 1
 
-#ra
-ra = yaml.load('\n'.join([x[1:]for x in """\
-| risk:
-| 
-| - wanted
-| - unwanted
-| - neutral
-| 
-| occurrence:
-| 
-| - unlikely
-| - likely
-| 
-| severity:
-| 
-| - costly
-| - profitable
-| 
-| events:
-| 
-| - id: 1
-|   description: todo1
-|   causedbyevents:
-|   severity: costly
-|   occurrence1: likely
-|   measure:
-|   occurrence2: unlikely
-| 
-| - id: 2
-|   description: todo2
-|   causedbyevents:
-|   severity: costly
-|   occurrence1: likely
-|   measure:
-|   occurrence2: unlikely
-""".splitlines()]))
+
+   * - description
+     - occurences
+     - measure
+     - time1/min
+     - time2/min
+
+   * - Include documentation in the build system
+     - 1/5/365
+     - |sxr|
+     - 0
+     - 10
+
+   * - Create separate version of documentation file (e.g. doc_1.1.docx)
+     - 1/5/100
+     - |s10|
+     - 10
+     - 0
+
+   * - Look for file and open in editor then open another file in another tool (office application)
+     - 20
+     - |sed|
+     - 1
+     - 1/10
+
+   * - Plan the design of a software component and document it
+     - 1
+     - |s8c|
+     - 40
+     - 30
+
+   * - Review the changes in a documentation file
+     - 1
+     - |s9v|
+     - 20
+     - 1
+
+   * - Look up an ID in a documentation file
+     - 10
+     - |san|
+     - 1
+     - 1/60
+
+   * - Solve an implement detail
+     - 2
+     - 
+     - 100
+     - 100
+
+   * - Discuss an interface with other team member consulting documentation
+     - 1
+     - |san|
+     - 10
+     - 9
+
+   * - Describe an implementation detail in code and in documentation
+     - 2
+     - |san|
+     - 30
+     - 20
+
+   * - Merge contributions to a documentation file from more developers
+     - 1/30
+     - |sxr|
+     - 30
+     - 1
+
+   * - A printout of a documentation shall be started (without printing time)
+     - 1/5/100
+     - |mvd|
+     - 5
+     - 10
+
+   * - Create a traceability file that shows how documentation items are linked
+     - 1/5/100
+     - |s0t|
+     - 3*480
+     - 1
+
+   * - Search for all occurrences of a name in all project files
+     - 10
+     - |stq|
+     - 4
+     - 1
+
+   * - Replace all occurrences of a name in all project files
+     - 5
+     - |stq|
+     - 4
+     - 1
+
+   * - Refactor and re-describe parts of code and update documentation
+     - 1
+     - |s8c|, |san|
+     - 30
+     - 20
+
+   * - Fix a formatting issue
+     - 10
+     - |s45|
+     - 1
+     - 1/2
+
+   * - Check for consistency of a limit values between code and documentation
+     - 1
+     - |s8c|
+     - 2
+     - 0
+
+   * - Make the documentation of automatic tests
+     - 1
+     - |sgt|
+     - 20
+     - 10
+
+""".splitlines()
+
+import yaml
+eventstr = '\n'.join([x[3:] for x in events[12:]])
+yevents = yaml.load(eventstr.replace('|',r'\|').replace('* -','- -'))
+
+#from pytablewriter import RstGridTableWriter
+#tw = RstGridTableWriter()
+#tw.header_list = "description occurence/day measure time1/min time2/min".split()
+#tw.value_matrix = yevents
+
+#import re
+#elt = re.sub("\n-","\n*",events)
+#eventlisttable = '.. list-table::\n   :name:\n\n\n'+'\n'.join(['   '+x for x in elt.splitlines()])
+
+r1 = sum([r(N(x[1]),N(x[3])) for x in yevents])
+r2 = sum([r(N(x[1]),N(x[4])) for x in yevents])
 
 %>
+
+%# {{eventstr}}
+
+%#alternatives:
+
+{{'\n'.join(events)}}
+
+%# {{tw.write_table()}}
+
+
+Result
+``````
+
+The assumed 1 year project with 5 developers would take only {{round(r2/r1,1)}} years.
+This estimate is based on a good exploitation of the possibilities 
+when using text for documentation (|slp|).
+
+- Effort without RST: {{round(r1)}}min={{round(r1/8/60,1)}}day
+- Effort with RST: {{round(r2)}}min={{round(r2/8/60,1)}}day
+- Less effort (|sa7|): {{round(r2-r1)}}min={{round((r2-r1)/8/60,1)}}day
 
 
 .. include:: _links_sphinx.rst

@@ -14,41 +14,34 @@ Propose an alternative to MS Office for technical documentation
 
 .. _`s3d`:
 
-Requirements
-------------
+Requirements on Documentation
+-----------------------------
 
-The documentation format shall be validated by verifying the following requirements.
+The project documentation format shall be validated by verifying the following requirements.
 
 .. _`sa7`:
 
 :sa7: |mwj|
 
-The documentation format shall increase productivity in comparison to MS Office.
+The documentation format increase productivity in comparison to MS Office.
 
 .. _`s9o`:
 
 :s9o: |m9h|
 
-The documentation format shall not be new.
-It shall have support by a large open source community.
+The documentation format is not new.
+
+.. _`sq0`:
+
+:sq0: |m9h|
+
+The documentation format is support by a large open source community.
 
 .. _`s9v`:
 
 :s9v: |mbc|
 
-Support diffs with a version control system (`VCS`_) like `SVN`_ or `GIT`_.
-
-.. _`s0t`:
-
-:s0t: |mbc|
-
-There is an easy way to find out, how documentation items are linked.
-
-Examples: 
-
-- Which items implement a certain requirement?
-- Which items test a certain requirement?
-- Which items are details to a topic?
+It is possible to diff a documentation file with the version control system (`VCS`_) like `SVN`_ or `GIT`_.
 
 .. _`scf`:
 
@@ -117,6 +110,13 @@ The formatting
 Make it easy to automatically generate parts of documentation from 
 source code, i.e. the same format shall be usable for source code documentation
 
+.. _`s0t`:
+
+:s0t: |mbc|
+
+Automatically generate a traceability file that shows how documentation items are linked.
+Warn about missing or duplicate targets.
+
 .. _`s8c`:
 
 :s8c: |moc|, |m8d|
@@ -125,6 +125,40 @@ Provide means to integrate into the documentation
 
 - defines that are also usable in source code
 - calculation results
+
+.. _`slp`:
+
+:slp: 
+
+Requirements on Project
+-----------------------
+
+.. _`s10`:
+
+:s10: |mbc|
+
+The project uses a version control system (`VCS`_) like `SVN`_ or `GIT`_.
+Documenation history is handled by the `VCS`_.
+
+.. _`sxr`:
+
+:sxr: |mvl|
+
+The project uses a build system.
+Creation of documentation is integrated in the build system.
+
+
+.. _`s1g`:
+
+:s1g: |moc|
+
+Whenever something is used twice in code and documentation
+let it be generated from a master copy: constants, defines of structs, ...
+
+
+.. TODO
+
+
 
 .. _`grep`: https://en.wikipedia.org/wiki/Grep
 .. _`DOCX`: http://www.ecma-international.org/publications/standards/Ecma-376.htm
