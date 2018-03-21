@@ -10,89 +10,119 @@ Documentation with RST
 Purpose
 -------
 
-In risk analysis is based on data of measured or estimated 
+Analyse advantages and disadvantages (risk) of |ruw|.
 
-- probability of event
-- rating of event (harm/benefit or cost/profit)
-
-A risk analysis document is best generated from this data.
-
-This is an example for |ruw|.
+This is an example of a template file when documentating with RST.
 
 Risk analysis
 -------------
 
-Event
-`````
+Risk analysis is basically a simulation.
 
 .. _`rqp`:
 
 Event: A possible and recurring configuration of values of variables.
 
+.. _`rvl`:
+
+Probability (`p`): Compares the mutually exclusive values of one variable of which at least one occurs (exhaustiveness).
+
+.. _`rme`:
+
+Frequency (`f`): How often an event is observed per time interval.
+
+.. _`rop`:
+
+Rating (`v`): Judge an event by associating a value expressing harm/benefit, loss/profit or advantage/disadvantage.
+
+%from sympy import Symbol,Function,Eq,latex
+%f_e,v_e = Symbol('f_e'),Symbol('v_e')
+%r = lambda f,v: f*v
+%r_e = Eq(Function('r_e'),r(f_e,v_e))
+
+.. _`r5c`:
+
+Risk (`r`): The risk is frequency * rating: `{{latex(r_e)}}`
+
+
+The total risk `R` sums over all events:
+
+.. math::
+    :name:
+
+    R = \sum_e r_e
+
+
 .. _`rbi`:
 
 :rbi: 
 
-It is hard to get good estimates of probabilites for events in a complex real world,
+Events can depend on other events functionally or statistically. 
+One can start with the probability for an event once a day and then
+follow conditional probability chains to other events.
+
+The risk analysis tries to analyse these dependencies 
+to get to a more precise estimation of the frequency.
+
+It is hard to get good estimates of frequency of an event in a complex real world,
 because there are 
 
 - many variables 
-- the probabilities of its values are unknown
+- many dependencies
+- unknown probabilities 
 
 .. _`rhq`:
 
 :rhq: 
 
-The variables have functional or causal dependancies.
-The risk analysis tries to analyse these dependencies 
-to get to a more precise estimation of the probability.
-
-Instead of probabilities one can associate to events values 
-that are more practicable in certain areas, e.g. occurrence (|rd7|).
+Because the frequencies will be inaccurate, 
+instead of numbers one often uses more unprecise but realistic values,
+that need to be defined for the special area (|rd7|).
 
 .. _`rd7`:
 
-|rd7|: Occurrence
+|rd7|: Occurrence values for a medical device
 
 .. list-table::
-   :name:
-   :widths: 25 25 25 25
+   :widths: 10 40 50
    :header-rows: 1
 
 
    * - Number
      - Category
+     - Explanation
 
    * - 1
      - Unimaginable
+     - Never occurs in the lifetime of device
 
    * - 2
      - Improbable
+     - Occurs once in the lifetime of device
 
    * - 3
-     - Remotely imaginable
+     - Remote imaginable
+     - Occurs once in 100 applications
 
    * - 4
      - Sometimes
+     - Occurs once in 10 applications
 
    * - 5
      - Probable
+     - Occurs once per applications
 
    * - 6
      - Frequent
+     - Occurs multiple times per applications
 
 
-Rating of event
-```````````````
+The rating depends on the 
 
-.. _`rr0`:
+- area (health sector, finance, ...) and the 
+- circumstances (war or peace, rich or poor, ...)
 
-Rating: Judge an event
-
-In financial circumstances cost and profit is rated with money.
-
-In health sector harm and benefit can often only be estimated in a rough way, 
-e.g. with a *severity* value for harm (|r0u|).
+|r0u| shows *severity* rating in the health sector.
 
 .. _`r0u`:
 
@@ -100,39 +130,42 @@ e.g. with a *severity* value for harm (|r0u|).
 
 .. list-table::
    :name:
-   :widths: 50 50
+   :widths: 10 40 50
    :header-rows: 1
 
 
    * - Number
      - Category
+     - Explanation
 
    * - 1
      - Non-essential
+     - Minor injury not needing medical intervention
 
    * - 2
      - Minor
+     - Small to moderate injury
 
    * - 3
      - Critical
+     - Severe injury or death
 
    * - 4
      - Catastrophical
+     - Multiple deaths
 
-Risk
-````
 
-.. _`rha`:
-
-Risk: The incentive or refrain resulting from probability and rating or of occurence and severity.
-
-With the occurence/severity example risk values could be
+In this discrete description risk value could be 
 
 :ac: acceptable
-:nac: not acceptable
 :alarp: as low as reasonably practicable
+:nac: not acceptable
 
-The values are a function of severity and occurrence defined by |rlu|.
+The risk function is defined by a table.
+The total risk can 
+
+- count each risk value occurrence
+- count each cell occurrence in the risk table (|rlu|)
 
 .. _`rlu`:
 
@@ -193,25 +226,23 @@ The values are a function of severity and occurrence defined by |rlu|.
      - AC
      - ALARP
 
-Measures
-````````
+Countermeasures
+```````````````
 
 .. _`r2m`:
 
 :r2m: 
 
-The purpose of the risk analysis is not to make a yes/no decision, 
-but rather to derive *counter measures* that prevent harm or financial loss.
+The purpose of the risk analysis is not so much to make a yes/no decision, 
+but rather to derive *countermeasures* that prevent harm or financial loss.
 
-The counter measures change the 
+The countermeasures change the 
 
 - probability of the event
 
 by changing the causal dependencies between events.
 
-The rating probably will not change,
-unless circumstances change drastically,
-e.g. during war a dead person is more acceptable than during peace.
+The rating probably will not change, unless circumstances change.
 
 In the Occurrence/Severity example, in |rlu|:
 
@@ -220,12 +251,169 @@ In the Occurrence/Severity example, in |rlu|:
 - the events in the top/left to right/bottom diagonal have a trade-off
   and should be kept "as low as reasonably practicable"
 
-Risk analysis is basically a simulation.
 
 .. _`ruw`:
 
 Risk analysis for documenting with RST
 --------------------------------------
+
+.. _`rp5`:
+
+:rp5: 
+
+This risk analysis compares to the above `risk analysis`_ introduction in this way:
+
+- Event is the need for the developer to performa a task
+- Time consumed per event instead of severity (per developer)
+- Occurrence (per developer)
+- The measure taken is to use RST for documentation instead of MS Word or Libre Office
+
+Instead of the discrete values, numbers are used for time and occurrence.
+The numbers are rough estimates.
+
+The total risk is 
+
+.. _`rxj`:
+
+.. math::
+    :name:
+
+    R = n*\sum_{e}v_e f_e
+
+|rxj|: 
+
+- `n` is team size 
+- `e` is a task.
+- `v` is time minutes consumed for task per developer
+- `f` is how often per day for task per developer
+- `R` is total risk for team (man*month)
+
+If the
+
+
+.. Occurrence
+.. ``````````
+.. 
+.. |rr4| defines the occurence values used for the
+.. risk analysis of using RST for documentation.
+.. 
+.. .. _`rr4`:
+.. 
+.. |rr4| Occurrence per developer. Needs to be multiplied by team size.
+.. 
+.. .. list-table::
+..    :widths: 10 40 50
+..    :header-rows: 1
+.. 
+.. 
+..    * - Number
+..      - Category
+..      - Explanation
+.. 
+..    * - 1
+..      - Unimaginable
+..      - Never occurs
+.. 
+..    * - 2
+..      - Improbable
+..      - Occurs every few months
+.. 
+..    * - 3
+..      - Remote imaginable
+..      - Occurs about once in a month
+.. 
+..    * - 4
+..      - Sometimes
+..      - Occurs about once in a week
+.. 
+..    * - 5
+..      - Probable
+..      - Occurs about once a day
+.. 
+..    * - 6
+..      - Frequent
+..      - Occurs several times a day
+.. 
+.. Effort
+.. ``````
+.. 
+.. |rrj| defines efforts in minutes per developer. It needs to be multiplied by the team size.
+.. This table corresponds to severity in |r0u|.
+.. 
+.. .. _`rrj`:
+.. 
+.. |rrj| 
+.. 
+.. .. list-table::
+..    :name:
+..    :widths: 10 40 50
+..    :header-rows: 1
+.. 
+.. 
+..    * - Number
+..      - Category
+..      - Explanation
+.. 
+..    * - 1
+..      - little
+..      - a few minutes
+.. 
+..    * - 2
+..      - 
+..      - Small to moderate injury
+.. 
+..    * - 3
+..      - Critical
+..      - Severe injury or death
+.. 
+..    * - 4
+..      - Catastrophical
+..      - Multiple deaths
+
+
+Events
+``````
+
+.. events
+   :id:
+   description
+   severity
+   before countermeasure
+   countermeasure
+   after countermeasure
+
+
+.. _`r8g`:
+
+:r8g: 
+Programmer opens documentation file while in code editor
+
+
+
+
+.. list-table::
+
+   * - id
+     - description
+     - causedbyevents
+     - severity
+     - occurrence1
+     - measur:
+     - occurrence2
+
+   * - rnr
+     - 
+
+
+
+* - 1
+    
+    causedbyevents:
+    severity: costly
+    occurrence1: likely
+    measure:
+    occurrence2: unlikely
+ 
 
 <%
 
