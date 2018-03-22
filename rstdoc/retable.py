@@ -295,11 +295,22 @@ def get_bounds(lines,row,col):
     return (upper, lower, match.group(1))
 
 def reformat_table(lines,row,col,withheader):
+    """ create or reformat a grid table in lines
+    """
     upper, lower, indent = get_bounds(lines,row,col)
     slice_ = lines[upper:lower+1]
     table = parse_table(slice_)
     slice_ = draw_table(indent, table, None, withheader)
     lines[upper:lower+1] = slice_
+
+def create_rst_table(data,withheader=0):
+    """create a rst table from data
+    >>> lns=[['one','two','three'],['1','2','3']]
+    >>> create_rst_table(lns)
+    """
+    lines = ['  '.join(x) for x in data]
+    reformat_table(lines,0,0,withheader)
+    return '\n'.join(lines)
 
 def reflow_table(lines,row,col):
     upper, lower, indent = get_bounds(lines,row,col)

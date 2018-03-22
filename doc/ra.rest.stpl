@@ -166,7 +166,7 @@ The rating depends on the
      - Multiple deaths
 
 
-In this discrete description risk value could be 
+In this discrete description, risk value could be 
 
 :ac: acceptable
 :alarp: as low as reasonably practicable
@@ -319,6 +319,7 @@ The following events have a
 As a check for the estimation `\sum f v_1` should give `1d = 8h = 480\text{min}`.
 
 The estimates assume a project that takes 
+
 - about a year 
 - has 5 team members
 - 4 documents
@@ -326,9 +327,8 @@ The estimates assume a project that takes
 Events
 ``````
 
-<%
+.. start parsing events
 
-events="""
 .. list-table::
    :widths: 40 15 15 15 15
    :header-rows: 1
@@ -448,41 +448,33 @@ events="""
      - 20
      - 10
 
-""".splitlines()
-
-import yaml
-eventstr = '\n'.join([x[3:] for x in events[12:]])
-yevents = yaml.load(eventstr.replace('|',r'\|').replace('* -','- -'))
-
-#from pytablewriter import RstGridTableWriter
-#tw = RstGridTableWriter()
-#tw.header_list = "description occurence/day measure time1/min time2/min".split()
-#tw.value_matrix = yevents
-
-#import re
-#elt = re.sub("\n-","\n*",events)
-#eventlisttable = '.. list-table::\n   :name:\n\n\n'+'\n'.join(['   '+x for x in elt.splitlines()])
-
-r1 = sum([r(N(x[1]),N(x[3])) for x in yevents])
-r2 = sum([r(N(x[1]),N(x[4])) for x in yevents])
-
-%>
-
-%# {{eventstr}}
-
-%#alternatives:
-
-{{'\n'.join(events)}}
-
-%# {{tw.write_table()}}
+.. stop parsing events
 
 
 Result
 ``````
 
+<%
+
+import yaml
+from rstdoc.dcx import rindices
+
+with open(__file__, encoding='utf-8') as f:
+    lns = f.readlines()
+    ev1,ev2 = list(rindices('parsing events',lns))[:2]
+    events = lns[ev1+13:ev2-1]
+
+eventstr = '\n'.join([x[3:] for x in events]).replace('|',r'\|').replace('* -','- -')
+eventdata = yaml.load(eventstr)
+
+r1 = sum([r(N(x[1]),N(x[3])) for x in eventdata])
+r2 = sum([r(N(x[1]),N(x[4])) for x in eventdata])
+
+%>
+
+
 The assumed 1 year project with 5 developers would take only {{round(r2/r1,1)}} years.
-This estimate is based on a good exploitation of the possibilities 
-when using text for documentation (|slp|).
+This estimate is based on a good exploitation of the possibilities opened with text for documentation (|slp|).
 
 - Effort without RST: {{round(r1)}}min={{round(r1/8/60,1)}}day
 - Effort with RST: {{round(r2)}}min={{round(r2/8/60,1)}}day

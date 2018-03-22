@@ -14,20 +14,21 @@ Motivate the |s3d|.
 
 .. _`mwj`:
 
-:mwj: 
-
 Productivity
 ------------
 
 To have more evolution with less effort one must change the tools to better productivity.
 
-The objective is to find a documentation format that is more productive than MS Office for technical documentation.
+The objective is to find a documentation format that is more productive than 
+MS Office or Libre Office for technical documentation.
 
-`DOCX`_ and `ODT`_ are no good choice for documentation during development.
+`DOCX`_ and `ODT`_ cannot be well integrated into a software project. 
+They
 
-- They are not traceable: |s9v|, |s0t| are not satisfied
-- They have low accessibility regarding |san|, |stq|.
-- They are no good for automation: |sgt|, |s8c| 
+- have low accessibility: |san|, |stq|
+- have low traceability: |s9v|, |s0t|
+- produce too much redundancy: |sgt|, |s8c|
+- are no good for automation: |sgt|, |s8c| 
 
 As a result:
 
@@ -39,9 +40,7 @@ It brings overhead to access information with two different tools.
 
 .. _`mbc`:
 
-:mbc: 
-
-Tracability
+Traceability
 -----------
 
 Trace changes
@@ -187,8 +186,6 @@ They should be supported to allow final formatting correction.
 
 .. _`m9h`:
 
-:m9h: 
-
 Community
 ---------
 
@@ -217,8 +214,6 @@ i.e. one has more control.
 The total effort is less than for the commercial model.
 
 .. _`m62`:
-
-:m62: 
 
 Sustainability
 --------------
@@ -250,8 +245,6 @@ Further reading:
 
 .. _`mpn`:
 
-:mpn: 
-
 Formatting
 ----------
 
@@ -269,14 +262,14 @@ There is less obtrusive alternative for formatting than via XML, HTML or even Te
 
 .. _`moc`:
 
-:moc: 
-
 Redundancy
 ----------
 
 .. _`m90`:
 
 :m90:  |sgt|, |s8c|
+
+Less redundancy means higher `productivity`_.
 
 Redundancy: When the same information is there more often.
 
@@ -297,8 +290,6 @@ The reasons for *redundancy* are
 - inability to link to information: no `hypertext`_
 - inability to exploit functional dependencies: no `automation`_ available
 - normative boilerplate texts: no `automation`_ available
-
-Less redundancy means higher `productivity`_.
 
 .. _`mvl`:
 
