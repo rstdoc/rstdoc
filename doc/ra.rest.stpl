@@ -376,7 +376,7 @@ Events
      - 1
      - 1/60
 
-   * - Solve an implement detail
+   * - Solve an implementation detail or a bug report
      - 2
      - 
      - 100
@@ -388,7 +388,7 @@ Events
      - 10
      - 9
 
-   * - Describe an implementation detail in code and in documentation
+   * - Describe an implementation detail or how a bug was fixed documentation
      - 2
      - |san|
      - 30
@@ -442,11 +442,12 @@ Events
      - 2
      - 0
 
-   * - Make the documentation of automatic tests
+   * - Make the documentation of automatic tests or a test report of a test run
      - 1
      - |sgt|
      - 20
      - 10
+
 
 .. stop parsing events
 
