@@ -1,8 +1,12 @@
 #from|to|gen_xxx|kwargs
-../rstdoc/dcx.py       | _dcx.rst       | doc | {}
-../rstdoc/fromdocx.py  | _fromdocx.rst  | doc | {}
-../rstdoc/listtable.py | _listtable.rst | doc | {}
-../rstdoc/untable.py   | _untable.rst   | doc | {}
-../rstdoc/reflow.py    | _reflow.rst    | doc | {}
-../rstdoc/reimg.py     | _reimg.rst     | doc | {}
-../rstdoc/retable.py   | _retable.rst   | doc | {}
+../rstdoc/dcx.py       | _dcx.rst       | head | {}
+../rstdoc/fromdocx.py  | _fromdocx.rst  | head | {}
+../rstdoc/listtable.py | _listtable.rst | head | {}
+../rstdoc/untable.py   | _untable.rst   | head | {}
+../rstdoc/reflow.py    | _reflow.rst    | head | {}
+../rstdoc/reimg.py     | _reimg.rst     | head | {}
+../rstdoc/retable.py   | _retable.rst   | head | {}
+
+../rstdoc/dcx.py    | _dcx_funs.rst      | api   | {}
+../test/test_dcx.py | _test_dcx_funs.rst | tests | {}
+

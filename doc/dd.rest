@@ -174,8 +174,8 @@ To have `hypertext`_ during writing, it should support `CTags`_'s ``.tags`` file
 `rstdoc`_'s `rstdcx`_ is used to 
 
 - create ``.tags`` and ``_links_xxx.rst`` files to support hypertext (|d03|) 
-- generated files from source code using the ``gen`` file (|da0|)
-- expand template files ``.stpl`` (|m8d|) 
+- generated files from source code using the ``gen`` file (|dhy|)
+- expand template files ``.stpl`` (|dv6|) 
 - convert ``.tikz`` files to ``.png`` and place into ``./_images`` or ``../_images``
 
 .. _`dqf`:
@@ -374,6 +374,10 @@ Since Python is used to automate tasks,
 Generated documentation files
 `````````````````````````````
 
+.. _`dhy`:
+
+:dhy:
+
 To generate documentation files from source code,
 e.g. test descriptions from test functions of the test code,
 `rstdoc`_'s `rstdcx`
@@ -383,9 +387,9 @@ e.g. test descriptions from test functions of the test code,
 - executes the ``def gen_xxx(lns,**kw)`` function with the lines of the source file and the ``kw`` from the ``gen`` file
 - saves the result in the target files
 
-See the ``gen`` file of this documentation as an example. 
+In `waf`_'s ``wscript_build``, call ``gen_files()`` to initiate interpretation of the ``gen`` file.
 
-In `waf`_'s ``wscript_build``, call ``gen_files()`` to initiate this.
+See the ``gen`` file of this documentation as an example. 
 
 Template
 --------

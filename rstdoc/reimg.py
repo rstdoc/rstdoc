@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # encoding: utf-8 
 
-#def gen_doc(lns,**kw):
+#def gen_head(lns,**kw):
 #    b,e = list(rindices('^"""',lns))[:2]
 #    return lns[b+1:e]
-#def gen_doc(lns,**kw)
+#def gen_head(lns,**kw)
 
 """
 .. _`reimg`:

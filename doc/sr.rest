@@ -145,8 +145,8 @@ Documenation history is handled by the `VCS`_.
 :sxr: |mvl|
 
 The project uses a build system.
-Creation of documentation is integrated in the build system.
 
+Creation of documentation is integrated in the build system.
 
 .. _`s1g`:
 
@@ -155,10 +155,33 @@ Creation of documentation is integrated in the build system.
 Whenever something is used twice in code and documentation
 let it be generated from a master copy: constants, defines of structs, ...
 
+.. _`scs`:
 
-.. TODO
+:scs: |mvd|
 
+All text concerning development is integrated in the documentation.
 
+- specifications
+- design descriptions
+- test plans
+- issues
+- meeting minutes
+- ...
+
+.. _`sim`:
+
+:sim: |mvd|
+
+Every developers know where to put information and how and where to find information.
+
+.. _`sil`:
+
+:sil: |mak|
+
+Developers can work independently.
+
+This is linked to |s10|. The `VCS`_ needs to enable independent development.
+A distributed `VCS`_ like `GIT`_ has advantages in this regard.
 
 .. _`grep`: https://en.wikipedia.org/wiki/Grep
 .. _`DOCX`: http://www.ecma-international.org/publications/standards/Ecma-376.htm

@@ -1,3 +1,4 @@
+highlight_language = "none"
 extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',

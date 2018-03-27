@@ -1,5 +1,11 @@
 # encoding: utf-8 
 
+##lns=open(__file__).readlines()
+##list(gen_tests(lns))
+#def gen_tests(lns,**kw):
+#    yield from doc_def(lns)
+#def gen_tests
+
 #require installed waf:
 #win32:
 #  pip install -I waftools
@@ -62,6 +68,13 @@ ss""".splitlines(),('sy7','A Requirement Group')),
 .. figure:: _images/smpl.png
   :name:""".splitlines(),('dz3','Figure 1')),
 ("""
+.. _`dua`:
+
+|dua|: Table legend
+
+.. table::
+  :name:""".splitlines(),('dua','Table 1')),
+("""
 .. _`dta`:
 
 |dta|: Table legend
@@ -92,6 +105,11 @@ ss""".splitlines(),('sy7','A Requirement Group')),
 
 @pytest.mark.parametrize('lnsres',_lnkname)
 def test_lnkname(lnsres):
+    '''
+    Test the extraction of the name for different kinds of target::
+
+        header, figure, list-table, table, code-block, code, math, definition (:id:) 
+    '''
     #lns,res=_lnkname[6]
     lns,res = lnsres
     g_counters.clear()
@@ -120,6 +138,10 @@ def rstsamples(tmpworkdir):
     os.chdir(oldd)
 
 def test_init(rstsamples):
+    '''
+    Tests `mktree`_.
+    Check tree created by "rstdcx --init smpl"
+    '''
     assert tree('.')=="""\
 ├─code
 │  └─some.h

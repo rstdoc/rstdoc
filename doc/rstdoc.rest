@@ -11,6 +11,10 @@ Documentation with RST
 
 .. include:: _dcx.rst
 
+.. include:: _dcx_funs.rst
+
+
+
 .. include:: _fromdocx.rst
 
 .. include:: _listtable.rst

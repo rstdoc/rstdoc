@@ -10,12 +10,16 @@ Documentation with RST
 Purpose
 -------
 
-Analyse advantages and disadvantages (risk) of |ruw|.
+There are two purpose of this file 
 
-This is an example of a template file when documentating with RST.
+- provide an example for templating
 
-Risk analysis
--------------
+- analyse advantages and disadvantages (|ruw|)
+
+when documentating with RST.
+
+Introduction to risk analysis
+-----------------------------
 
 Risk analysis is basically a simulation.
 
@@ -244,14 +248,10 @@ Countermeasures
 
 :r2m: 
 
-The purpose of the risk analysis is not so much to make a yes/no decision, 
-but rather to derive *countermeasures* that prevent harm or financial loss.
+The purpose of the risk analysis is not to make a yes/no decision for a project, 
+but to derive *countermeasures* that reduce the risk or prevent harm or financial loss.
 
-The countermeasures change the 
-
-- probability of the event
-
-by changing the causal dependencies between events.
+The countermeasures change the probability of the events, by changing the causal dependencies between events.
 
 The rating probably will not change, unless circumstances change.
 
@@ -274,16 +274,16 @@ Risk analysis for documenting with RST
 
 This risk analysis compares to the above `risk analysis`_ introduction in this way:
 
-- Event is the need for the developer to performa a task
-- Time consumed per event instead of severity (per developer)
-- Occurrence (per developer)
+- Event is the need for the developer to perform a task
+- Time consumed per event corresponds to severity (per developer)
+- Occurrence (per developer) stays the same.
 
-The countermeasures taken will lead to:
+The countermeasures taken lead to:
 
 - RST for documentation instead of MS Word or Libre Office
 
 Instead of the discrete values, numbers are used for time and occurrence.
-The numbers are rough estimates, because they depend a lot
+The numbers are rough estimates, because they depend a lot:
 
 - on the developer
 - on the tools he uses (editor and plugins)
@@ -322,7 +322,7 @@ The estimates assume a project that takes
 
 - about a year 
 - has 5 team members
-- 4 documents
+- needs to be consistently documented
 
 Events
 ``````
@@ -473,13 +473,14 @@ r2 = sum([r(N(x[1]),N(x[4])) for x in eventdata])
 
 %>
 
-
 The assumed 1 year project with 5 developers would take only {{round(r2/r1,1)}} years.
-This estimate is based on a good exploitation of the possibilities opened with text for documentation (|slp|).
 
 - Effort without RST: {{round(r1)}}min={{round(r1/8/60,1)}}day
 - Effort with RST: {{round(r2)}}min={{round(r2/8/60,1)}}day
 - Less effort (|sa7|): {{round(r2-r1)}}min={{round((r2-r1)/8/60,1)}}day
+
+The benefit is not due to using a text editor instead of a office application to write documentation.
+It is due to a good exploitation of all the possibilities opened by pure text (|s3d| and |slp|).
 
 
 .. include:: _links_sphinx.rst
