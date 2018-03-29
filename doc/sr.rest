@@ -89,7 +89,7 @@ The documentation is easy to read and write in a text editor.
 
 .. _`s45`:
 
-:s45: |mpn|
+:s45: |mpn| 
 
 Support formatting::
 
@@ -100,15 +100,32 @@ Support formatting::
 
 The formatting
 
+- is not obtrusive (|m9g|)
 - shall be intuitive 
 - does not need much learning
+
+.. _`s86`:
+
+:s86: |mgn|
+
+Table-like data is store as text using a format that is 
+
+- not too verbose
+- easily accessible by scripting (|sgt|)
 
 .. _`sgt`:
 
 :sgt: |moc|, |m1p|
 
-Make it easy to automatically generate parts of documentation from 
-source code, i.e. the same format shall be usable for source code documentation
+Make it easy to automatically generate parts of documentation 
+
+- from source code
+- from data
+
+Data shall be usable 
+
+- in source code 
+- in documentation
 
 .. _`s0t`:
 

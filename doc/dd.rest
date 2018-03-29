@@ -167,6 +167,14 @@ To have `hypertext`_ during writing, it should support `CTags`_'s ``.tags`` file
 
 - for templates (|dv6|)
 
+.. _`d23`:
+
+:d23: |sgt|
+
+Data is preferably written directly in Python.
+Any text format that is readable in Python works, too.
+Very table-like data is written in `yaml`_ or `json`_ (|dg8|).
+
 .. _`dwm`:
 
 :dwm: |doe|, |san|, |sgt|, |s8c|
@@ -480,6 +488,41 @@ becomes::
 
     is very important.
 
+Data
+----
+
+.. _`dg8`:
+
+:dg8: 
+
+Data needs to be text, because then changes can be traced via `VCS`_.
+
+Since the scripting and templating is done with Python,
+data written in Python is most easily accessible,
+e.g. via and ``import``.
+
+If the data is more table-like:
+
+`yaml`_ is good for direct editing, because it is 
+
+- very non-verbose and
+- almost can be used directly as RST
+- changes can be best followed without too much syntax
+
+`json`_ is appropriate, if the data 
+
+- is generated 
+- needs to be read and possibly edited by humans
+- needs to be rendered on HTML via ``javascript``
+
+XML is only appropriate for a predefined schema,
+that is unlikely to change throughout the development time.
+There are alternatives for `XPath`_:
+
+- Python and `yaml`_: `dpath`_
+- `json`_: `jsonpath`_ 
+
+
 
 .. _`bottle`: https://bottlepy.org
 .. _`SimpleTemplate`: https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax
@@ -520,6 +563,9 @@ becomes::
 .. _`Jinja2`: http://jinja.pocoo.org/
 .. _`sympy`: https://github.com/sympy/sympy
 .. _`formulas`: http://docs.sympy.org/latest/tutorial/printing.html
-
+.. _`yaml`: http://yaml.org/
+.. _`json`: https://www.json.org/
+.. _`jsonpath`: https://github.com/h2non/jsonpath-ng
+.. _`dpath`: https://pypi.python.org/pypi/dpath
 
 .. include:: _links_sphinx.rst
