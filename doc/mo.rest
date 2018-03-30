@@ -10,7 +10,12 @@ Documentation with RST
 Purpose
 -------
 
-Motivate the |s3d|.
+This documenation motivates the use of RST for documenation of (software) projects.
+It is at the same time an example for documenation using RST.
+
+If you don't need any motivation in that regard, jump to the documentation of the sources: |rr1| 
+
+This file motivates the |s3d|.
 
 .. _`mwj`:
 
@@ -23,6 +28,8 @@ The objective is to find a documentation format that is more productive than
 MS Office or Libre Office for technical documentation.
 
 `DOCX`_ and `ODT`_ cannot be well integrated into a software project. 
+The reason does not lie in the writing itself, 
+but in the organization of information and the further development of the text.
 They
 
 - have low accessibility: |san|, |stq|
@@ -409,6 +416,7 @@ Text files can easily be generated from templates.
 .. _`LaTex`: https://en.wikipedia.org/wiki/LaTeX
 .. _`substitutions`: http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text
 .. _`docbook`: https://en.wikipedia.org/wiki/DocBook
+.. _`documentation generator`: https://en.wikipedia.org/wiki/Comparison_of_documentation_generators
 
 .. include:: _links_sphinx.rst
 

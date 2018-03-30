@@ -4,12 +4,18 @@
 #    b,e = list(rindices('^"""',lns))[:2]
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
+#def gen_api(lns,**kw):
+#    yield from doc_parts(lns,signature='py')
+#def gen_api
 
 """
 .. _`fromdocx`:
 
 rstfromdocx, fromdocx.py
 ========================
+
+rstfromdocx: shell command
+fromdocx: rstdoc module
 
 Convert DOCX to RST in a subfolder named after the DOCX file.
 It also create ``conf.py``, ``index.py`` and ``Makefile``
@@ -27,6 +33,14 @@ There are options to post-process through::
 See `reflow`_ to do that manually.
 """
 
+
+#''' starts api doc parts (see doc_parts())
+'''
+API
+---
+'''
+
+
 from zipfile import ZipFile
 import pypandoc
 import os
@@ -43,11 +57,19 @@ def mkdir(fn):
     except:
         pass
 
+_rstname = lambda fn: os.path.splitext(os.path.split(fn)[1])[0]
+
 def prj_name(fn):
-    m=re.match(r'[\s\d\W]*([^\s\W]*).*',os.path.splitext(os.path.split(fn)[1])[0])
+    m=re.match(r'[\s\d\W]*([^\s\W]*).*',_rstname(fn))
     return m.group(1).strip('_').replace(' ','')
 
-def extract_media(zf,fn):
+def extract_media(
+        ,fn #docx file name
+        ):
+    '''
+    extract media files from a docx file
+    '''
+    zf = ZipFile(fn)
     pwd=os.getcwd()
     try:
         fnn = os.path.splitext(fn)[0]
@@ -69,13 +91,23 @@ def extract_media(zf,fn):
     finally:
         os.chdir(pwd)
 
-def docxrest(fn):
+def docxrest(
+        fn #docx file name
+        ):
+    '''
+    returns 'docx' and file name of ``.rest`` file.
+    '''
     fnrst,frm = os.path.splitext(fn)
     frm = frm.strip('.')
     fnrst = os.path.normpath(os.path.join(fnrst,os.path.split(fnrst)[1]+'.rest'))
     return frm,fnrst
 
-def write_confpy(fn):
+def write_confpy(
+        fn #docx file name
+        ):
+    '''
+    Takes the conf.py from the ``example_tree`` in ``rstdoc.dcx``.
+    '''
     confpy = re.split('\s*.\s*Makefile',example_tree.split('conf.py')[1])[0]
     pn = prj_name(fn)
     confpy = confpy.replace('docxsample',pn).replace('2017',time.strftime('%Y'))
@@ -89,10 +121,16 @@ def write_confpy(fn):
     with open(cpfn,'w',encoding='utf-8') as f:
         f.write(confpy)
 
-def write_index(fn):
+def write_index(
+        fn #docx file name
+        ):
+    '''
+    Adds a the generated .rest to ``toctree`` in index.rest
+    or generates new index.rest.
+    '''
     fnn = os.path.splitext(fn)[0]
     ifn = os.path.normpath(os.path.join(fnn,'index.rest'))
-    rst=os.path.splitext(os.path.split(fn)[1])[0]+'.rest'
+    rst = _rstname(fn)+'.rest'
     prjname = prj_name(fn)
     hp = '='*len(prjname)
     if os.path.exists(ifn):
@@ -105,12 +143,17 @@ def write_index(fn):
     with open(ifn,'w') as f:
         f.writelines(lns)
 
-def write_makefile(fn):
+def write_makefile(
+        fn #docx file name
+        ):
+    '''
+    Takes the Makefile from the ``example_tree`` in ``rstdoc.dcx``.
+    '''
     mf = re.split('\s+build\s+',re.split('└ Makefile',example_tree)[1])[0]
     lns=mf.splitlines(True)
     s=re.search('\w',lns[1]).span(0)[0]
     lns = [l[s:] for l in lns]
-    rst=os.path.splitext(os.path.split(fn)[1])[0]
+    rst = _rstname(fn)
     idoc = list(rindices('^docx:',lns))[0]
     ipdf = list(rindices('^pdf:',lns))[0]
     doce = lns[idoc+1].replace('sr',rst)
@@ -127,11 +170,21 @@ def write_makefile(fn):
     with open(mffn,'w',encoding='utf-8') as f:
         f.writelines(lns)
 
-def write_dcx(fn):
+def write_dcx(
+        fn #docx file name
+        ):
+    '''
+    Writes the dcx.py into the folder generated for the docx.
+    '''
     dcxfile = os.path.join(os.path.split(str(Path(__file__).resolve()))[0],'dcx.py')
     shutil.copy2(dcxfile,os.path.splitext(fn)[0])
 
-def main(**args):
+def main(
+        **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
+        ):
+    '''
+    This corresponds to the |fromdocx| shell command.
+    '''
     import argparse
     from .listtable import main as listtable
     from .untable import main as untable
@@ -150,8 +203,7 @@ def main(**args):
         args = parser.parse_args().__dict__
     
     fn = args['docx']
-    zf = ZipFile(fn)
-    extract_media(zf,fn)
+    extract_media(fn)
     frm,fnrst = docxrest(fn)
     #pypandoc.convert_file(fn,'rst',frm,outputfile=fnrst)
     rst=pypandoc.convert(fn,'rst',frm)

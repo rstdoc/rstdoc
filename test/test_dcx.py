@@ -3,7 +3,7 @@
 ##lns=open(__file__).readlines()
 ##list(gen_tests(lns))
 #def gen_tests(lns,**kw):
-#    yield from doc_def(lns)
+#    yield from doc_parts(lns)
 #def gen_tests
 
 #require installed waf:

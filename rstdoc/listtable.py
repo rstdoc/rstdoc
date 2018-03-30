@@ -5,6 +5,9 @@
 #    b,e = list(rindices('^"""',lns))[:2]
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
+#def gen_api(lns,**kw):
+#    yield from doc_parts(lns,signature='py')
+#def gen_api
 
 """
 
@@ -12,6 +15,9 @@
 
 rstlisttable, listtable.py
 ==========================
+
+rstlisttable: shell command
+listable: rstdoc module
 
 Convert RST grid tables to list-tables.
 
@@ -37,6 +43,14 @@ Options
 
 """
 
+
+
+#''' starts api doc parts (see doc_parts())
+'''
+API
+---
+'''
+
 import re
 
 def combine2(e):
@@ -54,7 +68,24 @@ combine = {
         }
 _header = lambda line: line.startswith('+==')
 _isgridline = lambda line: line.startswith('+--') or _header(line)
-def row_to_listtable(row,colwidths,withheader,join,indent,tableend):
+def row_to_listtable(
+        row #list of cells for the row
+        ,colwidths #The widths of the columns
+        ,withheader #produce :header-rows: 1
+        ,join #0,1,2 telling how to combine the lines of a cell
+        ,indent #indentation of the table
+        ,tableend #True, if end of table
+        ):
+    '''
+    This is the default ``process_row`` parameter of `gridtable`_.
+
+    join: join lines of cell with
+
+        - 0 = without space 
+        - 1 = with space
+        - 2 = keep multi-line
+
+    '''
     nColumns = len(colwidths)
     def splitline(lne): 
         st = indent + 1
@@ -84,11 +115,13 @@ def row_to_listtable(row,colwidths,withheader,join,indent,tableend):
 
 def gridtable(
         data #from file.readlines() or str.splitlines(True)
-        ,join='012'
-        ,process_row = row_to_listtable
+        ,join='012' #join column 0 without space, column 1 with space and leave the rest as-is
+        ,process_row = row_to_listtable #creates a list-table entry for the row
         ):
-    """Convert grid table to list table with same column number throughout.
-    """
+    '''
+    Convert grid table to list table with same column number throughout.
+    See `row_to_listtable`_.
+    '''
     grid = False
     insert = False
     row = []
@@ -126,7 +159,12 @@ def gridtable(
         else:
             yield line
 
-def main(**args):
+def main(
+        **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
+        ):
+    '''
+    This corresponds to the |listtable| shell command.
+    '''
     import argparse
     import codecs
     import sys

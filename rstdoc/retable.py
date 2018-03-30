@@ -5,12 +5,18 @@
 #    b,e = list(rindices('^"""',lns))[:2]
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
+#def gen_api(lns,**kw):
+#    yield from doc_parts(lns,signature='py')
+#def gen_api
 
 """
 .. _`retable`:
 
 rstretable, retable.py
 ======================
+
+rstretable: shell command
+retable: rstdoc module
 
 Transforms list tables to grid tables.
 
@@ -23,6 +29,14 @@ the Vim plugin `vim-rst-tables-py3`_, plus some little fixes.
 
 
 """
+
+
+#''' starts api doc parts (see doc_parts())
+'''
+API
+---
+'''
+
 
 import re
 import textwrap
@@ -363,7 +377,12 @@ def retable(data):
     drt = doretable()
     yield from untable(data,drt)
 
-def main(**args):
+def main(
+        **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
+        ):
+    '''
+    This corresponds to the |retable| shell command.
+    '''
     import codecs
     import sys
     import argparse

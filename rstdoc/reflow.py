@@ -5,12 +5,18 @@
 #    b,e = list(rindices('^"""',lns))[:2]
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
+#def gen_api(lns,**kw):
+#    yield from doc_parts(lns,signature='py')
+#def gen_api
 
 """
 .. _`reflow`:
 
 rstreflow, reflow.py
 ====================
+
+rstreflow: shell command
+reflow: rstdoc module
 
 Reflow tables and paragraphs in a rst document produced from a docx.
 
@@ -45,6 +51,14 @@ Else one can also do inplace::
 
 """
 
+
+#''' starts api doc parts (see doc_parts())
+'''
+API
+---
+'''
+
+
 import re
 from textwrap import wrap
 from .listtable import gridtable, row_to_listtable
@@ -60,7 +74,13 @@ _pgrphrex=[
         re.compile(r'\s*:?\w\+:(\s|$)'),
         ]
 
-def reflowparagraph(p, sentence=False):
+def reflowparagraph(
+      p #paragraph
+      ,sentence=False #if True lines are split at the end of the sentence
+      ):
+    '''
+    Reflow a paragaph using ``textwarp.wrap``. Possibly split sentences.
+    '''
     if p:
         if len(p)==3 and titlerex.match(p[0]) and titlerex.match(p[2]) or len(p)==2 and titlerex.match(p[1]):
             re_title(p,0,0)
@@ -104,13 +124,19 @@ def reflowparagraph(p, sentence=False):
                             yield ' '*lmo+tl
         del p[:]
 
-def reflowparagraphs(data,sentence=False):
-    #yield from data
+def reflowparagraphs(
+      lns #lines from rst file
+      ,sentence=False #if True lines are split at the end of the sentence
+      ):
+    '''
+    Reflow paragraphs using `reflowparagraph`_.
+    '''
+    #yield from lns
     p = []
     literal = False
     reflowp = lambda p: reflowparagraph(p,sentence)
     re_literal = re.compile('^(?!\.\. ).*::\s*$')
-    for dd in data:
+    for dd in lns:
         if dd.strip() == '':
             dds = ['']
         else:
@@ -137,9 +163,14 @@ def reflowparagraphs(data,sentence=False):
                     p.append(d)
     yield from reflowp(p)
 
-def rmextrablankline(data):
+def rmextrablankline(
+      lns #lines from rst file
+      ):
+    '''
+    Remove excessive blank lines.
+    '''
     bc = 0
-    for d in data:
+    for d in lns:
         if not d.strip():
             bc = bc+1
         else:
@@ -147,8 +178,13 @@ def rmextrablankline(data):
         if bc < 3:
             yield d
 
-def no3star(data):
-    for d in data:
+def no3star(
+      lns #lines from rst file
+      ):
+    '''
+    Removes three stars, as they are not supported by docutils.
+    '''
+    for d in lns:
         #d='***Hello***'
         res = d.replace('***','**')
         #d='**space before **'
@@ -157,12 +193,20 @@ def no3star(data):
         res = re.sub('^\s*\*\*\s*$',r'',d)
         yield res
 
-def noblankend(data):
+def noblankend(
+      lns #lines from rst file
+      ):
+    '''
+    Removes blanks at the end of the line.
+    '''
     nbe = re.compile('\s+$')
-    for d in data:
+    for d in lns:
         yield nbe.sub('',d)
 
 class reflowrow():
+    '''
+    This replaces `row_to_listtable`_ in `gridtable`_ to reflow a grid table.
+    '''
     def __init__(self):
         self.tbl = []
     def __call__(self,row,colwidths,withheader,join,indent,tableend):
@@ -173,13 +217,20 @@ class reflowrow():
             yield from retable(self.tbl)
             del self.tbl[:]
 
-def reflow(data,join='1',sentence=False):
+def reflow(
+      lns #lines from rst file
+      join='1',
+      sentence=False
+      ):
+    '''
+    Combines all rst corrections of this file.
+    '''
     r = reflowrow()
     for ln in noblankend(
             no3star(
                 rmextrablankline(
                     reflowparagraphs(
-                        gridtable(data, join, r),
+                        gridtable(lns, join, r),
                         sentence
                         )
                     )
@@ -187,7 +238,12 @@ def reflow(data,join='1',sentence=False):
             ):
         yield ln+'\n'
 
-def main(**args):
+def main(
+        **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
+        ):
+    '''
+    This corresponds to the |reflow| shell command.
+    '''
     import codecs
     import sys
     import argparse
@@ -205,7 +261,7 @@ def main(**args):
         args = parser.parse_args().__dict__
 
     for infile in args['INPUT']:
-        data = infile.readlines()
+        lns = infile.readlines()
         infile.close()
         if args['in_place']:
             f = open(infile.name,'w',encoding='utf-8',newline='\n')
@@ -215,7 +271,7 @@ def main(**args):
             sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
             f = sys.stdout
         try:
-            f.writelines(reflow(data,args['join']))
+            f.writelines(reflow(lns,args['join']))
         finally:
             if args['in_place']:
                 f.close()

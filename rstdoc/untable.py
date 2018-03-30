@@ -5,6 +5,9 @@
 #    b,e = list(rindices('^"""',lns))[:2]
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
+#def gen_api(lns,**kw):
+#    yield from doc_parts(lns,signature='py')
+#def gen_api
 
 """
 
@@ -12,6 +15,9 @@
 
 rstuntable, untable.py
 ======================
+
+rstuntable: shell command
+untable: rstdoc module
 
 Convert tables of following format to paragraphs with an ID.
 The '-' in ID is removed and the ID is made lower case.
@@ -36,6 +42,14 @@ need a pre-processing via ``rstlisttable`` to convert grid tables to ``list-tabl
 This is done in one step with ``rstfromdocx -lu doc.rst``.
 
 """
+
+
+#''' starts api doc parts (see doc_parts())
+'''
+API
+---
+'''
+
 
 import re
 from textwrap import wrap
@@ -161,7 +175,12 @@ def untable(data,process_row=paragraph23):
         row.append(rowc)
         yield from process_row(row,nColumns,org,True,withheader)
 
-def main(**args):
+def main(
+        **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
+        ):
+    '''
+    This corresponds to the |untable| shell command.
+    '''
     import codecs
     import sys
     import argparse

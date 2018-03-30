@@ -9,7 +9,7 @@
 #def gen_head
 ##list(gen_api(lns))
 #def gen_api(lns,**kw):
-#    yield from doc_def(lns)
+#    yield from doc_parts(lns,signature='py')
 #def gen_api
 
 """
@@ -87,12 +87,14 @@ See the example created with ``--init`` at the end of this file.
 """
 
 
-#''' starts api doc parts (see doc_def())
+#''' starts api doc parts (see doc_parts())
 '''
 API
 ---
 
 The functions in ``dcx.py`` are available to the ``gen_xxx(lns,**kw)`` functions (|dhy|).
+
+
 '''
 
 
@@ -132,50 +134,105 @@ reximg = re.compile(r'image:: ((?:\.|/|\\|\w).*)')
 #reximg.search(r'.. image:: c:\tmp\img.png').group(1)
 #reximg.search(r'.. image:: \\public\img.png').group(1)
 
-#>>>> nj
 nj = lambda *x:os.path.normpath(os.path.join(*x))
 
-#>>>> rindices
-def rindices(r,lns):
-  """Return the indices matching a regular expression
-  >>> lns=['a','ab','b','aa']
-  >>> [lns[i] for i in rindices(r'^a\w*',lns)]==['a', 'ab', 'aa']
-  True
-  """
-  if isinstance(r,str):
-    r = re.compile(r)
-  return filter(lambda x:r.search(lns[x]),range(len(lns)))
+def rindices(
+    r #regular expression string or compiled
+    ,lns #lines
+    ):
+    '''
+    Return the indices matching the regular expression ``r``.
 
-#>>>> rlines
-def rlines(r,lns):
-  return [lns[i] for i in rindices(r,lns)]
+    ::
 
-#>>>> intervals
-"""
->>> intervals([1,2,3])==[(1, 2), (2, 3)]
-True
-"""
-intervals = lambda it: list(zip(it[:],it[1:]))
+      >>> lns=['a','ab','b','aa']
+      >>> [lns[i] for i in rindices(r'^a\w*',lns)]==['a', 'ab', 'aa']
+      True
 
-#>>>> in2s
-"""
->>> in2s([1,2,3,4])==[(1, 2), (3, 4)]
-True
-"""
-in2s = lambda it: list(zip(it[::2],it[1::2]))
+    '''
+    if isinstance(r,str):
+      r = re.compile(r)
+    return filter(lambda x:r.search(lns[x]),range(len(lns)))
 
-def doc_def(lns,threeprimes=True):
-    if threeprimes:
-        rex = re.compile(r"^\s+'''\s*\n*$")
-    else:
-        rex = re.compile(r'^\s+"""\s*\n*$')
-    funrex = re.compile('def |\(')
-    for a,b in in2s(list(rindices(rex,lns))):
-        fun = funrex.split(lns[a-1])
-        if len(fun)>1:
-            fun = fun[1]
-            yield '.. _`'+fun+'`:\n'
-            yield ':'+fun+':\n'
+def rlines(
+    r #regular expression string or compiled
+    ,lns #lines
+    ):
+    '''
+    Return the lines matched by ``r``.
+    '''
+    return [lns[i] for i in rindices(r,lns)]
+
+def intervals(
+    nms #list of indices
+    ):
+    """
+    Return intervals between numbers.
+
+    ::
+
+      >>> intervals([1,2,3])==[(1, 2), (2, 3)]
+      True
+
+    """
+    return list(zip(nms[:],nms[1:]))
+
+def in2s
+    """
+    Convert the list into a list of couples of two elements.
+    
+    ::
+
+      >>> in2s([1,2,3,4])==[(1, 2), (3, 4)]
+      True
+
+    """
+    return list(zip(nms[::2],nms[1::2]))
+
+def doc_parts(
+    lns #list of lines
+    ,relim=r"^\s+'''\s*\n*$" #regular expression marking lines enclosing the documentation
+    ,reid=r"\s(\w+)\(" #extract id from preceding or succeeding non-empty lines
+    ,signature=None #if signature language is given the preceding or succeeding lines will be included
+    ):
+    '''
+    yield doc part delimeted by ``relim`` regular expression
+    possibly with id, if ``reid`` matches 
+
+    ::
+
+      >>> list(doc_parts(open(__file__).readlines(),signature='py'))
+
+    '''
+    rlim = re.compile(relim)
+    rid = re.compile(reid)
+    def foundid(lnsi):
+        if not lnsi.strip():#empty
+            return False
+        id = re.search(rid,lnsi)
+        if id and id.groups():
+            ids = id.group(1)
+            return ids
+    for a,b in in2s(list(rindices(rlim,lns))):
+        for i in range(a-1,0,-1):
+            ids = foundid(lns[i])
+            if ids or ids is False:
+                break
+        if ids is False:
+            for i in range(b+1,len(lns)):
+                if not isinstance(ids,str):
+                    ids = foundid(lns[i])
+                if ids is False:
+                    break
+        if ids:
+            yield '.. _`'+ids+'`:\n'
+            yield ':'+ids+':\n'
+        if signature:
+            yield '.. code-block:: '+signature
+            if i < a:
+                yield from ('   '+x for x in lns[i:a])
+            elif i > b:
+                yield from ('   '+x for x in lns[b:i])
         yield from lns[a+1:b]
 
 @lru_cache()
@@ -188,8 +245,14 @@ def _read_lines(fn):
 is_rest = lambda x: x.endswith('.rest') or x.endswith('.rest'+_stpl)
 is_rst = lambda x: x.endswith('.rst') or x.endswith('.rst'+_stpl)
 @memoized
-def rstincluded(fn,paths=(),withimg=False):
-    """return recursively all files included from an rst file"""
+def rstincluded(
+    fn #file name without path
+    ,paths=() #paths where to look for fn
+    ,withimg=False #also yield image files, not just other rst files
+    ):
+    '''
+    Yield the files recursively included from an RST file.
+    '''
     for p in paths:
         nfn = os.path.normpath(os.path.join(p,fn))
         if os.path.exists(nfn+_stpl): #first, because master
@@ -238,10 +301,11 @@ def fldrincluded(
         directory='.'
         ,exclude_paths_substrings = ['_links_','index.rest']
         ):
-    """ find all .rest files in ``directory``
-    and all files recursively included
+    ''' 
+    Yield a list of .rest files for each directory below ``directory``.
+    The list also includes all files recursively included via these `.rest` files,
     excluding those that contain ``exclude_paths_substrings``
-    """
+    '''
     for p,ds,fs in os.walk(directory):
         for f in sorted(fs):
             if is_rest(f):
@@ -266,14 +330,20 @@ def links(lns):
             yield i,g
 
 g_counters=defaultdict(dict)
-def linktargets(lns,docnumber):
-    #docprefix = str(docnumber)+'.'
-    #docnumber=0
-    #list(linktargets(lns,docnumber))
+def linktargets(
+    lns,  #lines of the document
+    docid #identifies the document
+    ):
+    '''
+    Yields line index, target and link name of ``lns`` of a RST file.
+    '''
+    #docprefix = str(docid)+'.'
+    #docid=0
+    #list(linktargets(lns,docid))
     docprefix = ' '
-    if docnumber not in g_counters:
-        g_counters[docnumber] = {".. figure":1,".. math":1,".. table":1,".. code":1} #=list-table,code-block
-    counters=g_counters[docnumber]
+    if docid not in g_counters:
+        g_counters[docid] = {".. figure":1,".. math":1,".. table":1,".. code":1} #=list-table,code-block
+    counters=g_counters[docid]
     itgts = rindices(r'^\.\. _`?(\w[^:`]*)`?:\s*$',lns)
     lenlns = len(lns)
     for i in itgts:
@@ -311,9 +381,14 @@ def linktargets(lns,docnumber):
                     lnkname = tgt
         yield i, tgt, lnkname
 
-def gen(source,target=None,fun=None,**kw):
+def gen(
+    source #either a list of lines of a path to the source code
+    ,target=None #either save to this file or return the generated documentation
+    ,fun=None #use ``#gen_<fun>(lns,**kw):`` to extract the documtenation
+    ,**kw #kw arguments to the gen_<fun>() function
+    ):
     ''' 
-    Take the gen_[fun] functions enclosed by #def gen_[fun] to create a new file.
+    Take the gen_[fun] functions enclosed by ``#def gen_[fun](lns,**kw)`` to create a new file.
 
     Example::
 
@@ -363,10 +438,15 @@ def gen(source,target=None,fun=None,**kw):
     else:
         return gened
 
-def parsegenfile(genpth):
+def parsegenfile(
+    genpth #path to gen file
+    ):
     '''
-    Parse the file ``genpth`` which has format::
-      sourcefile | targetfile | <gen_[suffix]> | <kw paramams or {}>
+    Parse the file ``genpth`` which has format ::
+
+      sourcefile | targetfile | suffix | kw paramams or {}
+
+    ``suffix`` refers to ``gen_<suffix>``.
 
     The yields are used for the `gen`_ function.
     '''
@@ -385,7 +465,9 @@ def mkdir(ef):
     except:
         pass
 
-def mktree(tree):
+def mktree(
+    tree #tree string as list of lines
+    ):
     ''' 
     Build a directory tree from a string as returned by the tree tool.
 
@@ -393,9 +475,9 @@ def mktree(tree):
 
     Leafs:
 
-    - / or \\ to make a directory leaf
+    - ``/`` or ``\\`` to make a directory leaf
 
-    - << to copy file from internet using http:// or locally using file:://
+    - ``<<`` to copy file from internet using ``http://`` or locally using ``file:://``
 
     - use indented lines as file content
 
@@ -414,8 +496,8 @@ def mktree(tree):
         ...          └g.txt
         ...            this is g
         ...       """.splitlines()
-        >>> True#mktree(tree) 
-        True
+        >>> #mktree(tree) 
+
     '''
     for treestart,t in enumerate(tree):
         try:
@@ -456,7 +538,13 @@ def mktree(tree):
             else:
                 Path(ef).touch()
 
-def tree(path, with_content=False, with_files=True, with_dot_files=True, max_depth=100):
+def tree(
+    path #path of which to create the tree string
+    ,with_content=False #use this only if all the files are text
+    ,with_files=True #else only directories are listed
+    ,with_dot_files=True #also include files starting with .
+    ,max_depth=100 #max folder depth to list
+    ):
     '''
     Inverse of mktree.
     Like the linux tree tool, but optionally with content of files
@@ -491,7 +579,16 @@ def tree(path, with_content=False, with_files=True, with_dot_files=True, max_dep
     return '\n'.join(_tree(path, ''))
 
 
-def fldrs(scanroot='.'):
+def fldrs(
+    scanroot='.' #root path to start scanning for independent doc folders
+    ):
+    '''
+    Yields::
+
+        fldr, (lnktgts,allfiles,alltgts)
+
+    These are used by `lnksandtags`_.
+    '''
     odir = os.getcwd()
     os.chdir(scanroot)
     fldr_lnktgts = OrderedDict()
@@ -524,7 +621,15 @@ def fldrs(scanroot='.'):
     os.chdir(odir)
 
 doctypes = "sphinx docx pdf".split()
-def lnksandtags(fldr,lnktgts,allfiles,alltgts):
+def lnksandtags(
+    fldr #folder path
+    ,lnktgts  #list of links and targets in a document: (restn, doc, lenlns, lnks, tgts)
+    ,allfiles #all files in one folder
+    ,alltgts  #all targets of the whole folder
+    ):
+    '''
+    Creates links_xxx.rst and .tags files for a folder ``fldr`` in that folder.
+    '''
     _tgtsdoc = [(dt,[]) for dt in doctypes]
     tags = []
     orestn = None

@@ -5,12 +5,18 @@
 #    b,e = list(rindices('^"""',lns))[:2]
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
+#def gen_api(lns,**kw):
+#    yield from doc_parts(lns,signature='py')
+#def gen_api
 
 """
 .. _`reimg`:
 
 rstreimg, reimg.py
 ==================
+
+rstreimg: shell command
+reimg: rstdoc module
 
 Reimg renames the images in the rst file and the files themselves.
 It uses part of the document name and a number as new names.
@@ -20,6 +26,14 @@ should be combined in one directory and
 the names of the images have no meaning (image13,...).
 
 """
+
+
+#''' starts api doc parts (see doc_parts())
+'''
+API
+---
+'''
+
 
 import os
 import re
@@ -49,7 +63,19 @@ imgdecl = re.compile(r'\|(\w[^|\\ ]*(?: \\\|)?[^|]*\w)\| image:: (\w.*)')
 #prefix = 'doc'
 #with open('doc1.rest','w',encoding='utf-8') as f:
 #    f.write(reimg(data,prefix))
-def reimg(data,prefix):
+
+def reimg(
+    data #rst file read by f.read()
+    ,prefix #string prefix for images, should be derived from docx file name
+    ):
+    '''
+    This renames all the images in the rst file converted from docx, to avoid
+
+    - images having strange names
+
+    - collision of image names from different docx
+
+    '''
     i = 1
     fp = lambda x: x.split('image::')[1].strip()
     chfilemap = {}
@@ -85,7 +111,12 @@ def reimg(data,prefix):
         data = data.replace('|'+o+'|', '|'+n+'|')
     return data
 
-def main(**args):
+def main(
+        **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
+        ):
+    '''
+    This corresponds to the |reimg| shell command.
+    '''
     import codecs
     import sys
     import argparse

@@ -387,11 +387,10 @@ Generated documentation files
 :dhy:
 
 To generate documentation files from source code,
-e.g. test descriptions from test functions of the test code,
 `rstdoc`_'s `rstdcx`
 
-- looks into a ``gen`` file, to see which source files leads to which target file
-- gets the ``def gen_xxx(lns,**kw)`` python function. ``xxx`` comes from the ``gen`` file, otherwise it must match exactly.
+- looks into a ``gen`` file, to see which source files lead to which target file
+- gets the ``def gen_xxx(lns,**kw)`` python function. ``xxx`` comes from the ``gen`` file, the rest must match exactly.
 - executes the ``def gen_xxx(lns,**kw)`` function with the lines of the source file and the ``kw`` from the ``gen`` file
 - saves the result in the target files
 
@@ -521,7 +520,6 @@ There are alternatives for `XPath`_:
 
 - Python and `yaml`_: `dpath`_
 - `json`_: `jsonpath`_ 
-
 
 
 .. _`bottle`: https://bottlepy.org
