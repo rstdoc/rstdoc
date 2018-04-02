@@ -177,7 +177,9 @@ def intervals(
     """
     return list(zip(nms[:],nms[1:]))
 
-def in2s
+def in2s(
+    nms #list of indices
+    ):
     """
     Convert the list into a list of couples of two elements.
     
@@ -721,6 +723,7 @@ try:
         global gensrc
         gensrc={}
         for f,t,fun,kw in parsegenfile(self.path.make_node('gen').abspath()):
+            print(f,t,fun,kw)
             gensrc[t]=f
             frm = self.path.find_resource(f)
             twd = self.path.make_node(t)

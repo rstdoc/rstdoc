@@ -55,11 +55,21 @@ import re
 from textwrap import wrap
 
 _no = None
-def paragraph23(row,nColumns,org,islast,withheader):
-    """Sample process_row function If not transformed to paragraph, then org must be yielded.
+def paragraph23(
+      row #list of strings representing the row
+      ,nColumns, #number of columns in the table
+      ,org #orginal text
+      ,islast #this call is with the last table entry
+      ,withheader #the table has a header line
+      ):
+    '''
+    For process_row parameter of ``untable``. 
 
-    This expects 3 columns and the first must have only one line, which holds an ID.
-    """
+    For a table of 2 or 3 columns, transform to text.
+    The first column must hold only one line for an ID.
+
+    If not transformed to paragraph, then the orginal text (org) is yielded.
+    '''
     #import pdb; pdb.set_trace()
     strp = lambda rr: ' '.join([r.strip() for r in rr])
     global _no
@@ -115,7 +125,20 @@ def refindE(res,ln):
             yield m.span()[1]
         else:
             yield -1
-def untable(data,process_row=paragraph23):
+
+def untable(
+      lns #list of strings
+      ,process_row=paragraph23 #called for each row to transform to paragraph
+      ):
+    '''
+    Transform a RST list-table to normal paragraphs.
+    The table is supposed to have this format:
+
+       - The first column holds an ID.
+       - Optionally the second column holds keywords.
+       - The last column holds the details.
+
+    '''
     hT = -1
     nColumns = 0
     row = []
@@ -124,7 +147,7 @@ def untable(data,process_row=paragraph23):
     endT = False
     indE = len(".. * -")
     withheader = 0
-    for ln in data:
+    for ln in lns:
         if hT==-1:
             hT = ln.find('.. list-table')
             if hT > -1:
@@ -193,7 +216,7 @@ def main(
         args = parser.parse_args().__dict__
 
     for infile in args['INPUT']:
-        data = infile.readlines()
+        lns = infile.readlines()
         infile.close()
         if args['in_place']:
             f = open(infile.name,'w',encoding='utf-8',newline='\n')
@@ -203,7 +226,7 @@ def main(
             sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
             f = sys.stdout
         try:
-            f.writelines(untable(data))
+            f.writelines(untable(lns))
         finally:
             if args['in_place']:
                 f.close()

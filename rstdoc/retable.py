@@ -308,25 +308,47 @@ def get_bounds(lines,row,col):
     match = re.match('^(\s*).*$', lines[upper])
     return (upper, lower, match.group(1))
 
-def reformat_table(lines,row,col,withheader):
-    """ create or reformat a grid table in lines
-    """
+def reformat_table(
+        lines #list of strings
+        ,row=0  #of cursor position,
+        ,col=0  #... as only the lines delimited by an empty line are used
+        ,withheader=0 #user the first line as table header
+        ):
+    ''' 
+    Create or reformat a grid table in lines.
+    The table is delimited by emtpy lines starting from (row,col).
+    '''
     upper, lower, indent = get_bounds(lines,row,col)
     slice_ = lines[upper:lower+1]
     table = parse_table(slice_)
     slice_ = draw_table(indent, table, None, withheader)
     lines[upper:lower+1] = slice_
 
-def create_rst_table(data,withheader=0):
-    """create a rst table from data
-    >>> lns=[['one','two','three'],['1','2','3']]
-    >>> create_rst_table(lns)
-    """
-    lines = ['  '.join(x) for x in data]
+def create_rst_table(
+        data #list of list of data
+        ,withheader=0):
+    '''
+    Create a rst table from data
+
+    Example:
+
+        >>> lns=[['one','two','three'],[1,2,3]]
+        >>> create_rst_table(lns)
+
+    '''
+    lines = ['  '.join([str(xx) for xx in x]) for x in data]
     reformat_table(lines,0,0,withheader)
     return '\n'.join(lines)
 
-def reflow_table(lines,row,col):
+def reflow_table(
+        lines  #list of strings
+        ,row=0 #of cursor position,
+        ,col=0 #... as only the lines delimited by an empty line are considered
+        ):
+    '''
+    Adapt an existing table to the widths of the first line.
+    The table is delimited by emtpy lines starting from (row,col).
+    '''
     upper, lower, indent = get_bounds(lines,row,col)
     slice_ = lines[upper:lower+1]
     withheader = 0
@@ -339,7 +361,14 @@ def reflow_table(lines,row,col):
     slice_ = draw_table(indent, table, widths, withheader)
     lines[upper:lower+1] = slice_
 
-def re_title(lines,row,col):
+def re_title(
+        lines  #list of lines
+        ,row=0 #of cursor position,
+        ,col=0 #... as only the lines delimited by an empty line are considered
+        ):
+    '''
+    Adjust the under- or overline or a title.
+    '''
     upper, lower, indent = get_bounds(lines,row,col)
     t = None
     for i in range(upper,lower+1):
@@ -372,10 +401,15 @@ class doretable:
                 del org[-1]
         del org[:]
 
-def retable(data):
-    """transform listtable to gridtable"""
+def retable(
+        lns #list of strings
+        ):
+    '''
+    Transform listtable to grid table.
+    Yield the resulting lines.
+    '''
     drt = doretable()
-    yield from untable(data,drt)
+    yield from untable(lns,drt)
 
 def main(
         **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
@@ -395,7 +429,7 @@ def main(
         args = parser.parse_args().__dict__
 
     for infile in args['INPUT']:
-        data = infile.readlines()
+        lns = infile.readlines()
         infile.close()
         if args['in_place']:
             f = open(infile.name,'w',encoding='utf-8',newline='\n')
@@ -405,7 +439,7 @@ def main(
             sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
             f = sys.stdout
         try:
-            f.writelines(retable(data))
+            f.writelines(retable(lns))
         finally:
             if args['in_place']:
                 f.close()

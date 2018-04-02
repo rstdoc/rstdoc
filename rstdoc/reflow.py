@@ -219,8 +219,8 @@ class reflowrow():
 
 def reflow(
       lns #lines from rst file
-      join='1',
-      sentence=False
+      ,join='1' #0 no space, 1 with space, 2 keep as-is
+      ,sentence=False #if True lines are split at the end of the sentence
       ):
     '''
     Combines all rst corrections of this file.
