@@ -565,5 +565,6 @@ There are alternatives for `XPath`_:
 .. _`json`: https://www.json.org/
 .. _`jsonpath`: https://github.com/h2non/jsonpath-ng
 .. _`dpath`: https://pypi.python.org/pypi/dpath
+.. _`XPath`: https://en.wikipedia.org/wiki/XPath
 
 .. include:: _links_sphinx.rst

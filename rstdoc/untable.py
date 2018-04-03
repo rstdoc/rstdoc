@@ -57,7 +57,7 @@ from textwrap import wrap
 _no = None
 def paragraph23(
       row #list of strings representing the row
-      ,nColumns, #number of columns in the table
+      ,nColumns #number of columns in the table
       ,org #orginal text
       ,islast #this call is with the last table entry
       ,withheader #the table has a header line

@@ -7,7 +7,7 @@ Test Plan
 Documentation with RST
 ======================
 
-.. include:: _test_dcx_funs.rst
+.. include:: _test_dcx_tests.rst
 
 
 .. .. rstdoc\dcx.py           586    396    32%   99-104, 135, 153-156, 163-205,

@@ -29,15 +29,15 @@ Event: A possible and recurring configuration of values of variables.
 
 .. _`rvl`:
 
-Probability (`p`): Compares the mutually exclusive values of one variable of which at least one occurs (exhaustiveness).
+Probability: `p`. Compares the mutually exclusive values of one variable of which at least one occurs (exhaustiveness).
 
 .. _`rme`:
 
-Frequency (`f`): How often an event is observed per time interval.
+Frequency: `f`. How often an event is observed per time interval.
 
 .. _`rop`:
 
-Rating (`v`): Judge an event by associating a value expressing harm/benefit, loss/profit or advantage/disadvantage.
+Rating: `v`. Judge an event by associating a value expressing harm/benefit, loss/profit or advantage/disadvantage.
 
 <%
 from sympy import Symbol,Function,Eq,latex,N
@@ -48,7 +48,7 @@ r_e = Eq(Function('r_e'),r(f_e,v_e))
 
 .. _`r5c`:
 
-Risk (`r`): The risk is frequency * rating: 
+Risk: `r`. The risk is frequency * rating: 
 
 .. _`r12`:
 

@@ -227,15 +227,26 @@ def doc_parts(
                 if ids is False:
                     break
         if ids:
+            yield
             yield '.. _`'+ids+'`:\n'
+            yield
             yield ':'+ids+':\n'
+            yield
         if signature:
-            yield '.. code-block:: '+signature
+            yield '.. code-block:: '+signature+'\n'
+            yield
             if i < a:
                 yield from ('   '+x for x in lns[i:a])
             elif i > b:
                 yield from ('   '+x for x in lns[b:i])
-        yield from lns[a+1:b]
+            yield
+        indent = 0
+        for ln in lns[a+1:b]:
+            lnst = re.search(r'[^\s]',ln)
+            if lnst and lnst.span():
+                indent = lnst.span()[0]
+                break;
+        yield from (x[indent:] for x in lns[a+1:b])
 
 @lru_cache()
 def _read_lines(fn):
@@ -308,12 +319,18 @@ def fldrincluded(
     The list also includes all files recursively included via these `.rest` files,
     excluding those that contain ``exclude_paths_substrings``
     '''
+    sofar = []
     for p,ds,fs in os.walk(directory):
-        for f in sorted(fs):
+        for f in reversed(sorted(fs)):
             if is_rest(f):
                 pf=nj(p,f)
                 if any([x in pf for x in exclude_paths_substrings]):
                     continue
+                if pf in sofar:
+                    continue
+                sofar.append(pf)
+                if pf.endswith(_stpl):
+                    sofar.append(pf[:-len(_stpl)])
                 res = []
                 for ff in rstincluded(f,(p,)):
                     if any([x in ff for x in exclude_paths_substrings]):
@@ -436,7 +453,7 @@ def gen(
         if drn and not os.path.exists(drn):
             os.makedirs(drn)
         with open(target,'w',encoding='utf-8') as o:
-            o.write(''.join(gened))
+            o.write(''.join(((x or '\n') for x in gened)))
     else:
         return gened
 
@@ -702,6 +719,19 @@ try:
     import bottle
 
     @lru_cache()
+    def _ant_glob_stpl(bldpath,stardotext):
+        res = []
+        sofar = []
+        stplsfirst = bldpath.ant_glob(stardotext+_stpl)
+        for x in stplsfirst:
+            sofar.append(x.name[:-len(_stpl)])
+            res.append(x)
+        nonstpls = bldpath.ant_glob(stardotext)
+        for x in nonstpls:
+            if x.name not in sofar:
+                res.append(x)
+        return res
+    @lru_cache()
     def _pth_nde_parent(foldernode,name):
         existsin = lambda x: os.path.exists(os.path.join(x.abspath(),name))
         _parent = foldernode.parent
@@ -723,7 +753,6 @@ try:
         global gensrc
         gensrc={}
         for f,t,fun,kw in parsegenfile(self.path.make_node('gen').abspath()):
-            print(f,t,fun,kw)
             gensrc[t]=f
             frm = self.path.find_resource(f)
             twd = self.path.make_node(t)
@@ -742,7 +771,7 @@ try:
     @lru_cache()
     def get_files_in_folder(path):
         deps = []
-        for rest in path.ant_glob(['*.rest','*.rest'+_stpl]):
+        for rest in _ant_glob_stpl(path,'*.rest'):
             if not rest.name.startswith('index'):
                 fles = rstincluded(rest.name,(rest.parent.abspath(),))
                 for x in fles:
@@ -943,10 +972,10 @@ try:
         def build_docs():
             docs=get_docs(bld)
             if docs:
-                for tikz in bld.path.ant_glob(['*.tikz','*.tikz'+_stpl]):
+                for tikz in _ant_glob_stpl(bld.path,'*.tikz'):
                     bld(source=tikz)
                     bld.add_group()
-                bld(source=bld.path.ant_glob(['*.rest','*.rest'+_stpl]))
+                bld(source=_ant_glob_stpl(bld.path,'*.rest'))
         bld.build_docs = build_docs
 
 except:

@@ -85,7 +85,7 @@ The format of the documentation matters regarding independence:
 .. _`mbc`:
 
 Traceability
------------
+------------
 
 Trace changes
 `````````````

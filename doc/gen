@@ -7,13 +7,13 @@
 ../rstdoc/reimg.py     | _reimg.rst     | head | {}
 ../rstdoc/retable.py   | _retable.rst   | head | {}
 
-../rstdoc/dcx.py | _dcx_funs.rst       | api | {}
-../fromdocx.py   | _fromdocx_funs.rst  | api | {}
-../listtable.py  | _listtable_funs.rst | api | {}
-../reflow.py     | _reflow_funs.rst    | api | {}
-../reimg.py      | _reimg_funs.rst     | api | {}
-../retable.py    | _retable_funs.rst   | api | {}
-../untable.py    | _untable_funs.rst   | api | {}
+../rstdoc/dcx.py       | _dcx_api.rst       | api | {}
+../rstdoc/fromdocx.py  | _fromdocx_api.rst  | api | {}
+../rstdoc/listtable.py | _listtable_api.rst | api | {}
+../rstdoc/reflow.py    | _reflow_api.rst    | api | {}
+../rstdoc/reimg.py     | _reimg_api.rst     | api | {}
+../rstdoc/retable.py   | _retable_api.rst   | api | {}
+../rstdoc/untable.py   | _untable_api.rst   | api | {}
 
-../test/test_dcx.py | _test_dcx_funs.rst | tests | {}
+../test/test_dcx.py | _test_dcx_tests.rst | tests | {}
 

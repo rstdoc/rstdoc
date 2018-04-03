@@ -15,7 +15,7 @@ Documentation with RST
 
 .. include:: _dcx.rst
 
-.. include:: _dcx_funs.rst
+.. include:: _dcx_api.rst
 
 
 
