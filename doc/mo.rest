@@ -27,9 +27,9 @@ To have more evolution with less effort one must change the tools to better prod
 The objective is to find a documentation format that is more productive than 
 MS Office or Libre Office for technical documentation.
 
-`DOCX`_ and `ODT`_ cannot be well integrated into a software project. 
+`DOCX`_ or `ODT`_ cannot be well integrated into a software project. 
 The reason does not lie in the writing itself, 
-but in the organization of information and the further development of the text.
+but in the organization of information and the further development and handling of text.
 They
 
 - have low accessibility: |san|, |stq|
@@ -45,6 +45,69 @@ As a result:
 Code is written in a text editor. Documentation must be written with the same text editor.
 It brings overhead to access information with two different tools.
 
+
+.. _`mpn`:
+
+Formatting vs Content
+---------------------
+
+.. _`m9g`:
+
+:m9g: |s45|
+
+The purpose of `DOCX`_ or `ODT`_, in general the `WYSIWYG`_ idea, 
+is about providing easy formatting.
+The information coded in a human language is surrounded by layers of formatting.
+
+- The `DOCX`_ XML files are zipped, which makes them binary.
+- The XML-based formatting is so full of formatting markup, that it is not very readable.
+  This also applies to non-zipped formats like `docbook`_.
+
+But formatting should have no importance in development.
+
+There is a less obtrusive alternative for formatting than via XML, HTML or even TeX: 
+
+- `light markup`_.
+
+.. _`mgn`:
+
+:mgn: |s86|
+
+The content is important in documentation.
+
+Certain content can be stored in a text database and reused in other documents via templating (|m8d|).
+Data can be better integrated into text, than into `DOCX`_ or `ODT`_.
+
+.. _`m21`:
+
+:m21: |scf|
+
+From a naive perspective it may seem easier to use `DOCX`_, 
+but it is not,
+basically due to the complex task to bring a big project to a consistent final state.
+
+Final Version
+-------------
+
+.. _`mio`:
+
+:mio: |scf|
+
+The purpose of this proposal is targeted to the developement time.
+
+After the project is over documents are 
+
+#) archived or 
+#) placed on a web server
+
+The formats usually used, are:
+
+#) PDF
+#) HTML
+#) `DOCX`_ or `ODT`_
+
+In case the final version is a printout,
+`DOCX`_ or `ODT`_ allow final formatting correction before printing.
 
 .. _`mak`:
 
@@ -204,28 +267,6 @@ A search shall allow to include both
 - source code and
 - documentation
 
-Conversion
-``````````
-
-.. _`mio`:
-
-:mio: |scf|
-
-The purpose of this proposal is targeted to the developement time.
-
-After the project is over documents are 
-
-#) archived or 
-#) placed on a web server
-
-The formats usually used are:
-
-#) PDF
-#) HTML
-
-`DOCX`_ and `ODT`_ are widely used formats.
-They should be supported to allow final formatting correction.
-
 .. _`m9h`:
 
 Community
@@ -285,36 +326,6 @@ Further reading:
 | `DOCX <https://www.loc.gov/preservation/digital/formats/fdd/fdd000397.shtml>`__
 | `ODT <https://www.loc.gov/preservation/digital/formats/fdd/fdd000428.shtml>`__
 
-.. _`mpn`:
-
-Formatting vs Content
----------------------
-
-.. _`m9g`:
-
-:m9g: |s45|
-
-The whole purpose of `DOCX`_ and `ODT`_, in general the `WYSIWYG`_ idea, 
-is about providing easy formatting.
-The information coded in a human language is hidden for the sake of formatting.
-But formatting has no importance in development.
-
-- The `DOCX`_ XML files are zipped, which makes them binary.
-- The XML-based formatting is so full of formatting markup, that it is not very readable.
-  This also applies to non-zipped formats like `docbook`_.
-
-There is a less obtrusive alternative for formatting than via XML, HTML or even TeX: 
-
-- `light markup`_.
-
-.. _`mgn`:
-
-:mgn: |s86|
-
-The content is important in documentation.
-
-Certain content can be stored in a text database and reused in other documents via templating (|m8d|).
-Data can be better integrated into text, than into `DOCX`_ and `ODT`_.
 
 .. _`moc`:
 

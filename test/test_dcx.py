@@ -167,10 +167,10 @@ def test_dcx_alonenostpl(rstsamples,capfd):
     out, err = capfd.readouterr()
     assert '\n'.join(out.splitlines()) == """\
 doc
-    dd.rest
-    ra.rest
+    tp.rest
     sr.rest
-    tp.rest"""
+    ra.rest
+    dd.rest"""
 
 @pytest.yield_fixture(params=['docx','pdf','html'])
 def makebuild(request,rstsamples):
@@ -310,10 +310,10 @@ def test_dcx_alonewithstpl(rstsampleswithstpl,capfd):
     out, err = capfd.readouterr()
     assert '\n'.join(out.splitlines()) == """\
 doc
-    dd.rest
-    ra.rest
+    tp.rest
     sr.rest
-    tp.rest"""
+    ra.rest
+    dd.rest"""
 
 def wafit(doctype):
     oldd = os.getcwd()
