@@ -1,10 +1,26 @@
+
+#def gen_tests(lns,**kw):
+#    yield from doc_parts(lns)
+#def gen_tests
+
+
 # Mock out the vim library
-# because these tests originate from vim-rst-tables.
-# `vim_py3_rst <https://github.com/rpuntaie>`_ uses rstdoc.
 import sys
 sys.path = ['..','test/mocks','mocks'] + sys.path
 import mock
 import vim
+
+
+'''
+
+rst tables
+``````````
+
+These tests mostly originate from the history of `vim-rst-tables <https://github.com/ossobv/vim-rst-tables-py3>`_.
+
+
+'''
+
 
 vimvar = {}
 
@@ -317,6 +333,10 @@ class TestRSTTableFormatter(unittest.TestCase):
                 draw_table('', [['Foo', 'Mu'], ['x', 'y']]))
 
     def testCreateTable(self):
+        '''
+        Test |reformat_table| by creating a grid table from lines where columns are separated by two blanks.
+
+        '''
         self.load_fixture_in_vim('default')
         expect = """\
 This is paragraph text *before* the table.
@@ -363,6 +383,9 @@ a line ending.
         self.assertEqual(expect, dt)
 
     def testReformatEmpty(self):
+        '''
+        Tests |reformat_table| with a table with an empty cell.
+        '''
         self.ReformatTable_vim("""\
 +---+-----+---+
 | A | B c | D |
@@ -373,6 +396,10 @@ A | B c | D
 1 |  | 2""")
 
     def testReflowTable(self):
+        '''
+        Tests |reflow_table| with a table whose start line was reduced.
+
+        '''
         self.load_fixture_in_vim('reflow')
         expect = """\
 This is paragraph text *before* the table.
@@ -400,6 +427,10 @@ a line ending.
         self.assertEqual(expect, vim.current.buffer)
 
     def testReflowWithReplacements(self):
+        '''
+        Tests |reflow_table| with a table containing replacement substitutions
+        with successive rows reduced in length.
+        '''
         # The first border decides the table size.
         self.ReflowTable_vim("""\
 +--------------------+-----+-----+-----+
@@ -414,6 +445,9 @@ a line ending.
 +--------------------+---+---+---+""")
 
     def testReflowWithLineBreak(self):
+        '''
+        Tests |reflow_table| with a successive line lengthened.
+        '''
         self.ReflowTable_vim(
             expect="""\
 +-----------------+-----------------+-----------------+
@@ -427,6 +461,9 @@ a line ending.
 +-----------------+-----------------+-----------------+"""
             )
     def testReTitle(self):
+        '''
+        Tests |re_title| on a fixture file.
+        '''
         self.load_fixture_in_vim('retitle')
         self.set_vim_cursor(1,1)
         ReTitle()
@@ -458,3 +495,15 @@ Qux
 """.split('\n')
         self.assertEqual(expect, vim.current.buffer)
 
+    def testCreateFromData(self):
+        '''
+        Tests creation of table from data (|create_rst_table|).
+        '''
+        lns=[['one','two','three'],[1,2,3]]
+        self.assertEqual(create_rst_table(lns) == """\
++-----+-----+-------+
+| one | two | three |
++-----+-----+-------+
+| 1   | 2   | 3     |
++-----+-----+-------+
+""")

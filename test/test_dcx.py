@@ -29,6 +29,15 @@ from rstdoc.dcx import (
     ,mktree
     )
 
+
+'''
+
+rstdcx, dcx.py
+``````````````
+
+'''
+
+
 import subprocess
 def run(x):
     if 'win' in sys.platform:
@@ -106,7 +115,7 @@ ss""".splitlines(),('sy7','A Requirement Group')),
 @pytest.mark.parametrize('lnsres',_lnkname)
 def test_lnkname(lnsres):
     '''
-    Test the extraction of the name for different kinds of target::
+    Test the extraction of the name for different kinds of targets::
 
         header, figure, list-table, table, code-block, code, math, definition (:id:) 
     '''
@@ -162,6 +171,9 @@ def test_init(rstsamples):
 └─wscript"""
 
 def test_dcx_alonenostpl(rstsamples,capfd):
+    '''
+    Check the output of rstdcx or dcx.py.
+    '''
     r=run([Python,'dcx.py','--verbose'])
     assert r.returncode == 0
     out, err = capfd.readouterr()
@@ -182,9 +194,10 @@ def makebuild(request,rstsamples):
     yield (os.getcwd(),request.param)
     os.chdir(oldd)
 
-#The sample Makefile does not support
-#conversion from .rest.stpl to .rest
 def test_makenostpl(makebuild):
+    '''
+    Run make with the sample Makefile.
+    '''
     target=makebuild[1]
     if target=='docx':
         expected="""\
@@ -244,6 +257,14 @@ def wafbuild(request,rstsamples):
     os.chdir(oldd)
 
 def test_wafnostpl(wafbuild):
+    '''
+    Run Waf on the sample project.
+    Waf needs to be installed 
+    
+    - either in the system or 
+    - added manually to the root folder of the project
+
+    '''
     target=wafbuild[1]
     if target=='docx':
         expected="""\
@@ -305,6 +326,9 @@ def rstsampleswithstpl(rstsamples):
     yield os.getcwd()
 
 def test_dcx_alonewithstpl(rstsampleswithstpl,capfd):
+    '''
+    Check the output of rstdcx or dcx.py when there is a ``.stpl`` file.
+    '''
     r=run([Python,'dcx.py','--verbose'])
     assert r.returncode == 0
     out, err = capfd.readouterr()
@@ -330,6 +354,9 @@ def wafbuildwithstpl(request,rstsampleswithstpl):
     yield from wafit(request.param)
 
 def test_wafwithstpl(wafbuildwithstpl):
+    '''
+    Run Waf for the case when a main file exists as template (``.stpl``).
+    '''
     target=wafbuildwithstpl[1]
     if target=='docx':
         expected="""\
@@ -419,6 +446,9 @@ def wafrststpl(request,rststplsample):
     yield from wafit(request.param)
 
 def test_wafrststpl(wafrststpl):
+    '''
+    Run Waf for the case when an included file exists as template (``.stpl``).
+    '''
     target=wafrststpl[1]
     if target=='docx':
         expected="""\

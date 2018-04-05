@@ -47,28 +47,31 @@ The idea is, that working with text is more integrated in the
 Editors
 =======
 
-Vim:
+There are a lot of `editors`_ that work well with RST, e.g. `Emacs`_.
+`ReText`_ is even specialized for RST (and Markdown).
 
-  | `vim_py3_rst <https://github.com/rpuntaie/vim_py3_rst>`__ 
-  | `vim-table-mode <https://github.com/dhruvasagar/vim-table-mode>`__
-  | `riv.vim <https://github.com/gu-fan/riv.vim>`__
+Vim
+---
 
-Atom:
+| `vim_py3_rst <https://github.com/rpuntaie/vim_py3_rst>`__ 
+| `vim-table-mode <https://github.com/dhruvasagar/vim-table-mode>`__
+| `riv.vim <https://github.com/gu-fan/riv.vim>`__
 
-  | atom-ctags       #better: https://github.com/rpuntaie/atom-ctags
-  | language-restructuredtext
-  | rst-preview-pandoc
-  | table-editor
-  | rst-snippets
-  | atom-build       #better: https://github.com/rpuntaie/atom-build
-  | atom-build-waf
-  | find-and-replace-under-cursor
+Atom
+----
 
-  ``atom-build`` and ``atom-ctags`` were modified to allow finding files
-  by putting the relevant subdirectory into Atom's project paths.
+| atom-ctags       #better: https://github.com/rpuntaie/atom-ctags
+| language-restructuredtext
+| rst-preview-pandoc
+| table-editor
+| rst-snippets
+| atom-build       #better: https://github.com/rpuntaie/atom-build
+| atom-build-waf
+| find-and-replace-under-cursor
 
-Of course `Emacs`_ and other `editors`_ work as well. `ReText`_ is even
-specialized for RST and Markdown (MD).
+``atom-build`` and ``atom-ctags`` were modified to allow finding files
+by putting the relevant subdirectory into Atom's project paths.
+
 
 .. _`editors`: http://build-me-the-docs-please.readthedocs.io/en/latest/Using_Sphinx/ToolsForReStructuredText.html
 .. _`Emacs`: http://docutils.sourceforge.net/docs/user/emacs.html

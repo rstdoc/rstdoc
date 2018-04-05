@@ -7,20 +7,50 @@ Test Plan
 Documentation with RST
 ======================
 
+Test Driver
+-----------
+
+There are only automatic tests.
+
+`pytest`_ and `tox`_ are used to run the tests.
+
+.. include:: ../tox.ini
+    :literal:
+
+To run `tox`_, in the root folder, enter::
+
+    tox
+
+To run `pytest`_, in the root folder, enter::
+
+    py.test
+
+To have a test coverage report, enter::
+
+    py.test --cov rstdoc --cov-report term-missing
+
+Test Coverage
+-------------
+
+The tests aim to produce 100% test coverage.
+
+
+The current test coverage is this.
+
+.. include:: _testcoverage.rst 
+    :literal:
+
+Tests
+-----
+
 .. include:: _test_dcx_tests.rst
 
+.. include:: _test_rst_table.rst
 
-.. .. rstdoc\dcx.py           586    396    32%   99-104, 135, 153-156, 163-205,
-.. ..                         215-229, 232-236, 256, 277-281, 296-329, 332-339, 416, 445-446, 451-480,
-.. ..                         484-545, 555-567, 573-578, 581-584, 586-589, 592-607, 610-636, 640-643,
-.. ..                         646-647, 649-663, 666, 669-671, 673-695, 698, 701-703, 706-724, 727-749,
-.. ..                         752-756, 759-760, 763-767, 771-773, 777, 780-801, 1150-1158, 1161
-.. .. rstdoc\fromdocx.py      130    130     0%   8-176
-.. .. rstdoc\listtable.py      95     22    77%   130-157, 161
-.. .. rstdoc\reflow.py        128     23    82%   191-221, 225
-.. .. rstdoc\reimg.py          74     74     0%   9-126
-.. .. rstdoc\retable.py       250     28    89%   204, 283-284, 311-313, 336, 367-392, 395
-.. .. rstdoc\untable.py       123     25    80%   53, 64-65, 85, 165-190, 193
+
+
+.. _`pytest`: https://docs.pytest.org/en/latest/
+.. _`tox`: https://tox.readthedocs.io/en/latest/
 
 .. include:: _links_sphinx.rst
 

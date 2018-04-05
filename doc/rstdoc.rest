@@ -13,6 +13,7 @@ Documentation with RST
 
 .. include:: ../readme.rst
 
+
 .. include:: _dcx.rst
 
 .. include:: _dcx_api.rst
@@ -21,17 +22,34 @@ Documentation with RST
 
 .. include:: _fromdocx.rst
 
+.. include:: _fromdocx_api.rst
+
 
 
 .. include:: _listtable.rst
 
+.. include:: _listtable_api.rst
+
+
 .. include:: _untable.rst
+
+.. include:: _untable_api.rst
+
 
 .. include:: _reflow.rst
 
+.. include:: _reflow_api.rst
+
+
 .. include:: _reimg.rst
 
+.. include:: _reimg_api.rst
+
+
 .. include:: _retable.rst
+
+.. include:: _retable_api.rst
+
 
 
 .. .. .. alternatively one could make a rstdoc.rest.stpl with
