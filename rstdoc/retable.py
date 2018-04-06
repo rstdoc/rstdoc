@@ -6,14 +6,14 @@
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
 #def gen_api(lns,**kw):
-#    yield from doc_parts(lns,signature='py')
+#    yield from doc_parts(lns,signature='py',prefix='retable.')
 #def gen_api
 
 """
-.. _`retable`:
+.. _`rstretable`:
 
-rstretable, retable.py
-======================
+rstretable
+==========
 
 rstretable: shell command
 retable: rstdoc module
@@ -35,6 +35,13 @@ the Vim plugin `vim-rst-tables-py3`_, plus some little fixes.
 '''
 API
 ---
+
+
+.. code-block::
+
+   import rstdoc.retable as retable
+
+
 '''
 
 
@@ -415,7 +422,7 @@ def main(
         **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
         ):
     '''
-    This corresponds to the |retable| shell command.
+    This corresponds to the |rstretable| shell command.
     '''
     import codecs
     import sys

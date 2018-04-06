@@ -9,14 +9,14 @@
 #def gen_head
 ##list(gen_api(lns))
 #def gen_api(lns,**kw):
-#    yield from doc_parts(lns,signature='py')
+#    yield from doc_parts(lns,signature='py',prefix='dcx.')
 #def gen_api
 
 """
-.. _`dcx`:
+.. _`rstdcx`:
 
-rstdcx, dcx.py
-==============
+rstdcx
+======
 
 Support script to create documentation (PDF, HTML, DOCX)
 from restructuredText (RST). 
@@ -92,8 +92,12 @@ See the example created with ``--init`` at the end of this file.
 API
 ---
 
-The functions in ``dcx.py`` are available to the ``gen_xxx(lns,**kw)`` functions (|dhy|).
+.. code-block::
 
+   import rstdoc.dcx as dcx
+
+
+The functions in ``dcx.py`` are available to the ``gen_xxx(lns,**kw)`` functions (|dhy|).
 
 '''
 
@@ -196,6 +200,7 @@ def doc_parts(
     ,relim=r"^\s+'''\s*\n*$" #regular expression marking lines enclosing the documentation
     ,reid=r"\s(\w+)\(" #extract id from preceding or succeeding non-empty lines
     ,signature=None #if signature language is given the preceding or succeeding lines will be included
+    ,prefix='' #prefix for id
     ):
     '''
     yield doc part delimeted by ``relim`` regular expression
@@ -228,9 +233,9 @@ def doc_parts(
                     break
         if ids:
             yield
-            yield '.. _`'+ids+'`:\n'
+            yield '.. _`'+prefix+ids+'`:\n'
             yield
-            yield ':'+ids+':\n'
+            yield ':'+prefix+ids+':\n'
             yield
         if signature:
             yield '.. code-block:: '+signature+'\n'
@@ -467,7 +472,7 @@ def parsegenfile(
 
     ``suffix`` refers to ``gen_<suffix>``.
 
-    The yields are used for the `gen`_ function.
+    The yields are used for the |dcx.gen| function.
     '''
     genfilelns = _read_lines(genpth)
     for ln in genfilelns:
@@ -606,7 +611,7 @@ def fldrs(
 
         fldr, (lnktgts,allfiles,alltgts)
 
-    These are used by `lnksandtags`_.
+    These are used by |dcx.lnksandtags|.
     '''
     odir = os.getcwd()
     os.chdir(scanroot)
@@ -1310,6 +1315,9 @@ example_tree = r'''
        build/'''
 
 def main(**args):
+  '''
+  This corresponds to the |rstdcx| shell command.
+  '''
   import codecs
   import argparse
 

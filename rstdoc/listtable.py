@@ -6,15 +6,15 @@
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
 #def gen_api(lns,**kw):
-#    yield from doc_parts(lns,signature='py')
+#    yield from doc_parts(lns,signature='py',prefix='listtable.')
 #def gen_api
 
 """
 
-.. _`listtable`:
+.. _`rstlisttable`:
 
-rstlisttable, listtable.py
-==========================
+rstlisttable
+============
 
 rstlisttable: shell command
 listable: rstdoc module
@@ -49,6 +49,13 @@ Options
 '''
 API
 ---
+
+
+.. code-block::
+
+   import rstdoc.listtable as listtable
+
+
 '''
 
 import re
@@ -77,7 +84,7 @@ def row_to_listtable(
         ,tableend #True, if end of table
         ):
     '''
-    This is the default ``process_row`` parameter of `gridtable`_.
+    This is the default ``process_row`` parameter of |listtable.gridtable|.
 
     join: join lines of cell with
 
@@ -120,7 +127,7 @@ def gridtable(
         ):
     '''
     Convert grid table to list table with same column number throughout.
-    See `row_to_listtable`_.
+    See |listtable.row_to_listtable|.
     '''
     grid = False
     insert = False
@@ -163,7 +170,7 @@ def main(
         **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
         ):
     '''
-    This corresponds to the |listtable| shell command.
+    This corresponds to the |rstlisttable| shell command.
     '''
     import argparse
     import codecs

@@ -6,15 +6,15 @@
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
 #def gen_api(lns,**kw):
-#    yield from doc_parts(lns,signature='py')
+#    yield from doc_parts(lns,signature='py',prefix='untable.')
 #def gen_api
 
 """
 
-.. _`untable`:
+.. _`rstuntable`:
 
-rstuntable, untable.py
-======================
+rstuntable
+==========
 
 rstuntable: shell command
 untable: rstdoc module
@@ -48,6 +48,11 @@ This is done in one step with ``rstfromdocx -lu doc.rst``.
 '''
 API
 ---
+
+.. code-block::
+
+   import rstdoc.untable as untable
+
 '''
 
 
@@ -202,7 +207,7 @@ def main(
         **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
         ):
     '''
-    This corresponds to the |untable| shell command.
+    This corresponds to the |rstuntable| shell command.
     '''
     import codecs
     import sys

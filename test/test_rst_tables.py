@@ -13,7 +13,7 @@ import vim
 
 '''
 
-rst tables
+RST tables
 ``````````
 
 These tests mostly originate from the history of `vim-rst-tables <https://github.com/ossobv/vim-rst-tables-py3>`_.
@@ -334,7 +334,7 @@ class TestRSTTableFormatter(unittest.TestCase):
 
     def testCreateTable(self):
         '''
-        Test |reformat_table| by creating a grid table from lines where columns are separated by two blanks.
+        Test |retable.reformat_table| by creating a grid table from lines where columns are separated by two blanks.
 
         '''
         self.load_fixture_in_vim('default')
@@ -384,7 +384,7 @@ a line ending.
 
     def testReformatEmpty(self):
         '''
-        Tests |reformat_table| with a table with an empty cell.
+        Tests |retable.reformat_table| with a table with an empty cell.
         '''
         self.ReformatTable_vim("""\
 +---+-----+---+
@@ -397,7 +397,7 @@ A | B c | D
 
     def testReflowTable(self):
         '''
-        Tests |reflow_table| with a table whose start line was reduced.
+        Tests |retable.reflow_table| with a table whose start line was reduced.
 
         '''
         self.load_fixture_in_vim('reflow')
@@ -428,7 +428,7 @@ a line ending.
 
     def testReflowWithReplacements(self):
         '''
-        Tests |reflow_table| with a table containing replacement substitutions
+        Tests |retable.reflow_table| with a table containing replacement substitutions
         with successive rows reduced in length.
         '''
         # The first border decides the table size.
@@ -446,7 +446,7 @@ a line ending.
 
     def testReflowWithLineBreak(self):
         '''
-        Tests |reflow_table| with a successive line lengthened.
+        Tests |retable.reflow_table| with a successive line lengthened.
         '''
         self.ReflowTable_vim(
             expect="""\
@@ -462,7 +462,7 @@ a line ending.
             )
     def testReTitle(self):
         '''
-        Tests |re_title| on a fixture file.
+        Tests |retable.re_title| on a fixture file.
         '''
         self.load_fixture_in_vim('retitle')
         self.set_vim_cursor(1,1)
@@ -497,7 +497,7 @@ Qux
 
     def testCreateFromData(self):
         '''
-        Tests creation of table from data (|create_rst_table|).
+        Tests creation of table from data (|retable.create_rst_table|).
         '''
         lns=[['one','two','three'],[1,2,3]]
         self.assertEqual(create_rst_table(lns) == """\

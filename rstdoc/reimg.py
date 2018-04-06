@@ -6,14 +6,14 @@
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
 #def gen_api(lns,**kw):
-#    yield from doc_parts(lns,signature='py')
+#    yield from doc_parts(lns,signature='py',prefix='reimg.')
 #def gen_api
 
 """
-.. _`reimg`:
+.. _`rstreimg`:
 
-rstreimg, reimg.py
-==================
+rstreimg
+========
 
 rstreimg: shell command
 reimg: rstdoc module
@@ -32,6 +32,11 @@ the names of the images have no meaning (image13,...).
 '''
 API
 ---
+
+.. code-block::
+
+   import rstdoc.reimg as reimg
+
 '''
 
 
@@ -115,7 +120,7 @@ def main(
         **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
         ):
     '''
-    This corresponds to the |reimg| shell command.
+    This corresponds to the |rstreimg| shell command.
     '''
     import codecs
     import sys

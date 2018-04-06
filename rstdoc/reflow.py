@@ -6,14 +6,14 @@
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
 #def gen_api(lns,**kw):
-#    yield from doc_parts(lns,signature='py')
+#    yield from doc_parts(lns,signature='py',prefix='reflow.')
 #def gen_api
 
 """
-.. _`reflow`:
+.. _`rstreflow`:
 
-rstreflow, reflow.py
-====================
+rstreflow
+=========
 
 rstreflow: shell command
 reflow: rstdoc module
@@ -56,6 +56,11 @@ Else one can also do inplace::
 '''
 API
 ---
+
+.. code-block::
+
+   import rstdoc.reflow as reflow
+
 '''
 
 
@@ -129,7 +134,7 @@ def reflowparagraphs(
       ,sentence=False #if True lines are split at the end of the sentence
       ):
     '''
-    Reflow paragraphs using `reflowparagraph`_.
+    Reflow paragraphs using |reflow.reflowparagraph|.
     '''
     #yield from lns
     p = []
@@ -205,7 +210,7 @@ def noblankend(
 
 class reflowrow():
     '''
-    This replaces `row_to_listtable`_ in `gridtable`_ to reflow a grid table.
+    This replaces |listtable.row_to_listtable| in |listtable.gridtable| to reflow a grid table.
     '''
     def __init__(self):
         self.tbl = []
@@ -242,7 +247,7 @@ def main(
         **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
         ):
     '''
-    This corresponds to the |reflow| shell command.
+    This corresponds to the |rstreflow| shell command.
     '''
     import codecs
     import sys

@@ -5,14 +5,14 @@
 #    return lns[b+1:e]
 #def gen_head(lns,**kw)
 #def gen_api(lns,**kw):
-#    yield from doc_parts(lns,signature='py')
+#    yield from doc_parts(lns,signature='py',prefix='fromdocx.')
 #def gen_api
 
 """
-.. _`fromdocx`:
+.. _`rstfromdocx`:
 
-rstfromdocx, fromdocx.py
-========================
+rstfromdocx
+===========
 
 rstfromdocx: shell command
 fromdocx: rstdoc module
@@ -21,7 +21,7 @@ Convert DOCX to RST in a subfolder named after the DOCX file.
 It also create ``conf.py``, ``index.py`` and ``Makefile``
 and copies ``dcx.py`` into the folder.
 
-See `dcx`_ for format conventions for the RST.
+See |rstdcx| for format conventions for the RST.
 
 There are options to post-process through::
 
@@ -30,7 +30,7 @@ There are options to post-process through::
     --reflow (--sentence True,  --join 0)
     --reimg
 
-See `reflow`_ to do that manually.
+See |rstreflow| to do that manually.
 """
 
 
@@ -38,6 +38,12 @@ See `reflow`_ to do that manually.
 '''
 API
 ---
+
+
+.. code-block::
+
+   import rstdoc.fromdocx as fromdocx
+
 '''
 
 
@@ -183,7 +189,7 @@ def main(
         **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
         ):
     '''
-    This corresponds to the |fromdocx| shell command.
+    This corresponds to the |rstfromdocx| shell command.
     '''
     import argparse
     from .listtable import main as listtable

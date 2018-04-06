@@ -73,18 +73,22 @@ There is a less obtrusive alternative for formatting than via XML, HTML or even 
 
 :mgn: |s86|
 
-The content is important in documentation.
+The content is important in documentation, not formatting.
+
+Every bit of information needs a location. 
+This location cannot be in a `DOCX`_ or `ODT`_, 
+because there it is not well accessible (|mbc|).
 
 Certain content can be stored in a text database and reused in other documents via templating (|m8d|).
-Data can be better integrated into text, than into `DOCX`_ or `ODT`_.
+It can be better integrated into text, than into `DOCX`_ or `ODT`_.
 
 .. _`m21`:
 
 :m21: |scf|
 
-From a naive perspective it may seem easier to use `DOCX`_, 
-but it is not,
-basically due to the complex task to bring a big project to a consistent final state.
+From an immediate but naive perspective it may seem easier to compose documents using `DOCX`_ or `ODT`_. 
+Due to the complex task to bring a big project to a consistent final state, it is not.
+More detailed reasons are the topic of this documentation. 
 
 Final Version
 -------------

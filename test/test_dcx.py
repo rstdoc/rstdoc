@@ -148,7 +148,7 @@ def rstsamples(tmpworkdir):
 
 def test_init(rstsamples):
     '''
-    Tests |mktree|.
+    Tests |dcx.mktree|.
     Check tree created by ``rstdcx --init smpl``
     '''
     assert tree('.')=="""\
