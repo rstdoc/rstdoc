@@ -347,7 +347,7 @@ def fldrincluded(
                 yield res
 
 def links(lns):
-    r = re.compile(r'\|(\w+)\|')
+    r = re.compile(r'[^`]\|(\w+)\|[^`]')
     for i,ln in enumerate(lns):
         mo = r.findall(ln)
         for g in mo:

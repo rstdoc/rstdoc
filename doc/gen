@@ -15,6 +15,6 @@
 ../rstdoc/retable.py   | _retable_api.rst   | api | {}
 ../rstdoc/untable.py   | _untable_api.rst   | api | {}
 
-../test/test_dcx.py | _test_dcx_tests.rst | tests | {}
+../test/test_dcx.py        | _test_dcx_tests.rst | tests | {}
 ../test/test_rst_tables.py | _test_rst_table.rst | tests | {}
 
