@@ -673,7 +673,13 @@ def lnksandtags(
                 for n in fca.nodes]
         tlines = ''.join(trace).splitlines(keepends=True)
         with open(nj(fldr,trace_file_name),'w',encoding='utf-8') as f:
+            f.write('.. raw:: html\n\n')
+            f.write('    <object data="_images/_trace.svg" type="image/svg+xml"></object>\n')
             f.writelines(tlines)
+            f.write('.. image:: _trace.svg\n\n')#else it is not copied into _images
+        ld = pyfca.LatticeDiagram(fca,4*297,4*210)
+        tracesvg = os.path.abspath(nj(fldr,'_trace.svg'))
+        ld.svg(target='../index.html').saveas(tracesvg)
         return tlines
     def add_target(i,tgt,lnkname,restn,up,fin):
         for doctype,doclns in _tgtsdoc:
