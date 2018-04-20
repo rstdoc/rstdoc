@@ -50,7 +50,7 @@ import textwrap
 from .untable import untable
 
 title_all=list(r'''#*=-^~+_.,"'!$%&\\()/:;<>?@[\]`{|}''')
-titlerex = re.compile('''^([#*=\-^~+_.,"'!$%&\\\(\)/:;<>?@\[\]`{|}])\\1+$''')
+titlerex = re.compile('''^([#*=\-^~+_.,"'!$%&\\\(\)/:;<>?@\[\]`{|}])\\1+\s*$''')
 #retitle.match('====')
 #retitle.match('\\\\\\')
 #retitle.match('----')

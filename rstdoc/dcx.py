@@ -441,6 +441,8 @@ def gen(
         except:
             sys.stderr.write("ERROR: {} cannot be opened\n".format(source))
             return
+    if '.' not in sys.path:
+        sys.path.append('.')
     if fun:
         gen_regex = r'#def gen_'+fun+'(\w*(lns,\*\*kw):)*'
     else:
@@ -660,12 +662,12 @@ def lnksandtags(
     '''
     _tgtsdoc = [(doctype,[]) for doctype in doctypes]
     tags = []
-    orestn = None
+    objects = [] #in FCA sense
     up = 0
     if (fldr.strip()):
        up = len(fldr.split(os.sep))
     #unknowntgts = []
-    def tracelines(objects):
+    def tracelines():
         fca = pyfca.Lattice(objects,lambda x:x)
         reflist = lambda x,pfx='t': ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
         trace = [".. _`t{0}`:\n\nt{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n".format(
@@ -691,7 +693,35 @@ def lnksandtags(
                 tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restn+'.pdf')
             doclns.append(tgte)
         tags.append('{0}	{1}	/^\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*up+fin,i+1))
-    objects = [] #in FCA sense
+    def add_linksto(i,tgt,iterlnks,ojlnk=None): #all the links in the lines following target at line i
+        linksto = []
+        if ojlnk and ojlnk[0] < i:
+            if ojlnk[1] in alltgts:
+                linksto.append(ojlnk[1])
+            else:
+                linksto.append('-'+ojlnk[1])
+                #unknowntgts.append(ojlnk[1])
+            tgt = ojlnk[2]
+            ojlnk = None
+        if ojlnk is None:
+            for j, lnk in iterlnks:
+                if j > i:#links up to this target
+                    ojlnk = j,lnk,tgt
+                    break
+                else:
+                    if lnk in alltgts:
+                        linksto.append(lnk)
+                    else:
+                        linksto.append('-'+lnk)
+                        #unknowntgts.append(lnk)
+        if linksto:
+            if ojlnk:
+                objects.append(set([x for x in linksto if not x.startswith('-')]+[tgt]))
+            linksto = '.. .. ' + ','.join(linksto) + '\n\n'
+            for _,doclns in _tgtsdoc:
+                doclns.append(linksto)
+        return ojlnk
+    orestn = None
     for restn, doc, lenlns, lnks, tgts in lnktgts:
          fin = doc.replace("\\","/")
          if restn != orestn:
@@ -704,40 +734,12 @@ def lnksandtags(
          for _,doclns in _tgtsdoc:
              doclns.append('\n.. .. {0}\n\n'.format(fin))
          iterlnks = iter(lnks)
-         def add_linksto(i,tgt,ojlnk=None): #all the links in the lines following target at line i
-             linksto = []
-             if ojlnk and ojlnk[0] < i:
-                 if ojlnk[1] in alltgts:
-                     linksto.append(ojlnk[1])
-                 else:
-                     linksto.append('-'+ojlnk[1])
-                     #unknowntgts.append(ojlnk[1])
-                 tgt = ojlnk[2]
-                 ojlnk = None
-             if ojlnk is None:
-                 for j, lnk in iterlnks:
-                     if j > i:#links up to this target
-                         ojlnk = j,lnk,tgt
-                         break
-                     else:
-                         if lnk in alltgts:
-                             linksto.append(lnk)
-                         else:
-                             linksto.append('-'+lnk)
-                             #unknowntgts.append(lnk)
-             if linksto:
-                 if ojlnk:
-                     objects.append(set([x for x in linksto if not x.startswith('-')]+[tgt]))
-                 linksto = '.. .. ' + ','.join(linksto) + '\n\n'
-                 for _,doclns in _tgtsdoc:
-                     doclns.append(linksto)
-             return ojlnk
          ojlnk=None
          for i,tgt,lnkname in tgts:
-             ojlnk = add_linksto(i,tgt,ojlnk)
+             ojlnk = add_linksto(i,tgt,iterlnks,ojlnk)
              add_target(i,tgt,lnkname,restn,up,fin)
-         ojlnk = add_linksto(lenlns,None,ojlnk)
-    for i,tgt,lnkname in linktargets(tracelines(objects),len(g_counters)) :
+         ojlnk = add_linksto(lenlns,None,iterlnks,ojlnk)
+    for i,tgt,lnkname in linktargets(tracelines(),len(g_counters)) :
         add_target(i,tgt,lnkname,os.path.splitext(trace_file_name)[0],0,trace_file_name)
     for doctype,doclns in _tgtsdoc:
         with open(nj(fldr,'_links_%s.rst'%doctype),'w',encoding='utf-8') as f:
@@ -868,7 +870,7 @@ try:
         env = tsk.env
         env.update(tsk.generator.__dict__)
         st=bottle.template(name
-                ,template_lookup = [lookup]
+                ,template_lookup = [lookup,os.path.split(lookup)[0]]
                 ,bldpath = bldpath.abspath()
                 ,options = bld.options
                 ,__file__ = ps.replace('\\','/')
