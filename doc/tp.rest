@@ -48,7 +48,6 @@ Tests
 .. include:: _test_rst_table.rst
 
 
-
 .. _`pytest`: https://docs.pytest.org/en/latest/
 .. _`tox`: https://tox.readthedocs.io/en/latest/
 

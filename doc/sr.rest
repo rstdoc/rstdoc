@@ -21,37 +21,37 @@ The project documentation format shall be validated by verifying the following r
 
 .. _`sa7`:
 
-:sa7: |mwj|
+:sa7: |rwj|
 
 The documentation format increase productivity in comparison to MS Office.
 
 .. _`s9o`:
 
-:s9o: |m9h|
+:s9o: |r9h|
 
 The documentation format is not new.
 
 .. _`sq0`:
 
-:sq0: |m9h|
+:sq0: |r9h|
 
 The documentation format is support by a large open source community.
 
 .. _`s9v`:
 
-:s9v: |mbc|
+:s9v: |rbc|
 
 It is possible to diff a documentation file with the version control system (`VCS`_) like `SVN`_ or `GIT`_.
 
 .. _`scf`:
 
-:scf: |mvd|
+:scf: |rvd|
 
 Tools shall be available for conversion to the following formats
 
   - `HTML`_: to make the documentation viewable over the internet
   - `PDF`_: to archive a version and for printing
-  - `DOCX`_ and `ODT`_: to satisfy existing procedures and habits
+  - `DOCX`_ and `ODT`_: to satisfy existing procedures and habits for printing
 
 The tools shall be
 
@@ -60,7 +60,7 @@ The tools shall be
 
 .. _`san`:
 
-:san: |mvd|, hyperlinks
+:san: |rvd|, hyperlinks
 
 The documentation items shall be marked by a flat and unordered IDs.
 
@@ -71,7 +71,7 @@ Support hyperlinks in the formats the documentation can be converted to.
 
 .. _`stq`:
 
-:stq: |mvd|
+:stq: |rvd|
 
 Full text search over all files 
 with regular expressions shall be available from inside the editor for
@@ -81,7 +81,7 @@ with regular expressions shall be available from inside the editor for
 
 .. _`sed`:
 
-:sed: |m62|
+:sed: |r62|
 
 The documentation can be opened by a normal text editor.
 
@@ -89,7 +89,7 @@ The documentation is easy to read and write in a text editor.
 
 .. _`s45`:
 
-:s45: |mpn| 
+:s45: |rpn| 
 
 Support formatting::
 
@@ -100,13 +100,13 @@ Support formatting::
 
 The formatting
 
-- is not obtrusive (|m9g|)
+- is not obtrusive (|r9g|)
 - shall be intuitive 
 - does not need much learning
 
 .. _`s86`:
 
-:s86: |mgn|
+:s86: |rgn|
 
 Table-like data is store as text using a format that is 
 
@@ -115,7 +115,7 @@ Table-like data is store as text using a format that is
 
 .. _`sgt`:
 
-:sgt: |moc|, |m1p|
+:sgt: |roc|, |r1p|
 
 Make it easy to automatically generate parts of documentation 
 
@@ -129,14 +129,14 @@ Data shall be usable
 
 .. _`s0t`:
 
-:s0t: |mbc|
+:s0t: |rbc|
 
 Automatically generate a traceability file that shows how documentation items are linked.
 Warn about missing or duplicate targets.
 
 .. _`s8c`:
 
-:s8c: |moc|, |m8d|
+:s8c: |roc|, |r8d|
 
 Provide means to integrate into the documentation
 
@@ -152,14 +152,14 @@ Requirements on Project
 
 .. _`s10`:
 
-:s10: |mbc|
+:s10: |rbc|
 
 The project uses a version control system (`VCS`_) like `SVN`_ or `GIT`_.
-Documenation history is handled by the `VCS`_.
+Documentation history is handled by the `VCS`_.
 
 .. _`sxr`:
 
-:sxr: |mvl|
+:sxr: |rvl|
 
 The project uses a build system.
 
@@ -167,14 +167,14 @@ Creation of documentation is integrated in the build system.
 
 .. _`s1g`:
 
-:s1g: |moc|
+:s1g: |roc|
 
 Whenever something is used twice in code and documentation
 let it be generated from a master copy: constants, defines of structs, ...
 
 .. _`scs`:
 
-:scs: |mvd|
+:scs: |rvd|
 
 All text concerning development is integrated in the documentation.
 
@@ -187,13 +187,13 @@ All text concerning development is integrated in the documentation.
 
 .. _`sim`:
 
-:sim: |mvd|
+:sim: |rvd|
 
 Every developers know where to put information and how and where to find information.
 
 .. _`sil`:
 
-:sil: |mak|
+:sil: |rak|
 
 Developers can work independently.
 

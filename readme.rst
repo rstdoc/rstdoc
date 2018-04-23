@@ -1,3 +1,12 @@
+
+This python packages supports working with `RST`_  as documentation format:
+
+- postprocess `Pandoc`_'s conversion from `DOCX`_ to `RST`_
+- preprocess `Pandoc`_'s conversion from `RST`_ to `DOCX`_
+- link the documents
+- create a ``.tags`` file
+- reformat/create `RST`_ tables
+
 `Sphinx`_ is an extension of `Docutils`_ used for many (software) projects,
 but it does not support creation of `DOCX`_ files.
 `Pandoc`_ does support `DOCX`_, but does not support the `Sphinx`_ extensions.

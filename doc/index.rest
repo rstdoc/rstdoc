@@ -7,15 +7,14 @@ Documentation with RST
 :Author: Roland Puntaier
 
 .. toctree::
-   mo.rest
+   ra.rest
    sr.rest
    dd.rest
-   ra.rest
    tp.rest
    rstdoc.rest
 
 
-Traceability
+Dependencies
 ============
 
 .. include:: _trace.rst

@@ -678,8 +678,8 @@ def lnksandtags(
     def tracelines():
         try:
             fca = pyfca.Lattice(objects,lambda x:x)
-            reflist = lambda x,pfx='t': ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
-            trace = [".. _`t{0}`:\n\nt{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n".format(
+            reflist = lambda x,pfx='tr': ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
+            trace = [".. _`tr{0}`:\n\ntr{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n".format(
                     n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
                     for n in fca.nodes]
             tlines = ''.join(trace).splitlines(keepends=True)
@@ -690,7 +690,7 @@ def lnksandtags(
                 f.write('.. image:: _trace.svg\n\n')#else it is not copied into _images
             ld = pyfca.LatticeDiagram(fca,4*297,4*210)
             tracesvg = os.path.abspath(nj(fldr,'_trace.svg'))
-            ld.svg(target='../index.html').saveas(tracesvg)
+            ld.svg(target='../index.html#tr',colors={"ra":"blue", "sr":"red", "dd":"yellow", "tp":"green"}).saveas(tracesvg)
             return tlines
         except:
             return []
