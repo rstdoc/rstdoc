@@ -27,6 +27,8 @@ from rstdoc.dcx import (
     ,linktargets
     ,tree
     ,mktree
+    ,main
+    ,doc_parts
     )
 
 
@@ -508,3 +510,15 @@ def test_wafrststpl(wafrststpl):
     assert sys.platform in open(glob.glob(os.path.join('..','src','doc','is1.rst'))[0],encoding='utf-8').read()
     if target=='html':
         assert sys.platform in open(glob.glob(os.path.join('doc',target,'is.*'))[0],encoding='utf-8').read()
+
+def test_selfdoc():
+    main(root=None,verbose=True)
+    assert os.path.exists(os.path.join('doc','_dcx_api.rst'))
+
+def test_docparts_after():
+    res = list(doc_parts(['/// \\brief\n',"/// afun's description\n"
+        ,'void afun(\n','int x //int variable\n',')\n','\n'],
+        signature='cpp',relim=r'\\brief|\s\w*\('))
+    assert res == ['.. code-block:: cpp\n', None, '   void afun(\n',
+        '   int x //int variable\n', '   )\n', None, "afun's description\n"]
+

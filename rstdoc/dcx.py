@@ -114,7 +114,10 @@ from collections import OrderedDict,defaultdict
 from itertools import chain, tee
 from types import GeneratorType
 
-import pyfca
+try:
+    import pyfca
+except:
+    pyfca = None
 
 Tee = tee([], 1)[0].__class__
 def memoized(f):
@@ -203,12 +206,15 @@ def doc_parts(
     lns #list of lines
     ,relim=r"^\s+'''\s*\n*$" #regular expression marking lines enclosing the documentation
     ,reid=r"\s(\w+)\(" #extract id from preceding or succeeding non-empty lines
+    ,reindent=r'[^#/\s]' #determines start of text
     ,signature=None #if signature language is given the preceding or succeeding lines will be included
-    ,prefix='' #prefix for id
+    ,prefix='' #prefix to make id unique, e.g. module name
     ):
     '''
     yield doc part delimeted by ``relim`` regular expression
     possibly with id, if ``reid`` matches 
+
+    If start and stop differ use regulare expression ``|`` in ``relim``.
 
     ::
 
@@ -217,6 +223,7 @@ def doc_parts(
     '''
     rlim = re.compile(relim)
     rid = re.compile(reid)
+    rindent = re.compile(reindent)
     def foundid(lnsi):
         if not lnsi.strip():#empty
             return False
@@ -224,6 +231,7 @@ def doc_parts(
         if id and id.groups():
             ids = id.group(1)
             return ids
+    ids = False
     for a,b in in2s(list(rindices(rlim,lns))):
         for i in range(a-1,0,-1):
             ids = foundid(lns[i])
@@ -251,7 +259,7 @@ def doc_parts(
             yield
         indent = 0
         for ln in lns[a+1:b]:
-            lnst = re.search(r'[^\s]',ln)
+            lnst = re.search(rindent,ln)
             if lnst and lnst.span():
                 indent = lnst.span()[0]
                 break;
@@ -668,21 +676,24 @@ def lnksandtags(
        up = len(fldr.split(os.sep))
     #unknowntgts = []
     def tracelines():
-        fca = pyfca.Lattice(objects,lambda x:x)
-        reflist = lambda x,pfx='t': ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
-        trace = [".. _`t{0}`:\n\nt{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n".format(
-                n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
-                for n in fca.nodes]
-        tlines = ''.join(trace).splitlines(keepends=True)
-        with open(nj(fldr,trace_file_name),'w',encoding='utf-8') as f:
-            f.write('.. raw:: html\n\n')
-            f.write('    <object data="_images/_trace.svg" type="image/svg+xml"></object>\n')
-            f.writelines(tlines)
-            f.write('.. image:: _trace.svg\n\n')#else it is not copied into _images
-        ld = pyfca.LatticeDiagram(fca,4*297,4*210)
-        tracesvg = os.path.abspath(nj(fldr,'_trace.svg'))
-        ld.svg(target='../index.html').saveas(tracesvg)
-        return tlines
+        try:
+            fca = pyfca.Lattice(objects,lambda x:x)
+            reflist = lambda x,pfx='t': ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
+            trace = [".. _`t{0}`:\n\nt{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n".format(
+                    n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
+                    for n in fca.nodes]
+            tlines = ''.join(trace).splitlines(keepends=True)
+            with open(nj(fldr,trace_file_name),'w',encoding='utf-8') as f:
+                f.write('.. raw:: html\n\n')
+                f.write('    <object data="_images/_trace.svg" type="image/svg+xml"></object>\n')
+                f.writelines(tlines)
+                f.write('.. image:: _trace.svg\n\n')#else it is not copied into _images
+            ld = pyfca.LatticeDiagram(fca,4*297,4*210)
+            tracesvg = os.path.abspath(nj(fldr,'_trace.svg'))
+            ld.svg(target='../index.html').saveas(tracesvg)
+            return tlines
+        except:
+            return []
     def add_target(i,tgt,lnkname,restn,up,fin):
         for doctype,doclns in _tgtsdoc:
             if doctype=='sphinx':
@@ -739,8 +750,10 @@ def lnksandtags(
              ojlnk = add_linksto(i,tgt,iterlnks,ojlnk)
              add_target(i,tgt,lnkname,restn,up,fin)
          ojlnk = add_linksto(lenlns,None,iterlnks,ojlnk)
-    for i,tgt,lnkname in linktargets(tracelines(),len(g_counters)) :
-        add_target(i,tgt,lnkname,os.path.splitext(trace_file_name)[0],0,trace_file_name)
+    tlns = tracelines()
+    if tlns:
+        for i,tgt,lnkname in linktargets(tlns,len(g_counters)) :
+            add_target(i,tgt,lnkname,os.path.splitext(trace_file_name)[0],0,trace_file_name)
     for doctype,doclns in _tgtsdoc:
         with open(nj(fldr,'_links_%s.rst'%doctype),'w',encoding='utf-8') as f:
             f.write('\n'.join(doclns));

@@ -38,7 +38,7 @@ import unittest
 
 # Load test subjects
 from rstdoc.retable import (
-    parse_table, draw_table, table_line, get_column_widths,
+    parse_table, draw_table, table_line, get_column_widths, create_rst_table,
     get_column_widths_from_border_spec, pad_fields, unify_table,
     join_rows, partition_raw_lines, split_row_into_lines, reflow_table,
     re_title,get_bounds,reformat_table, split_table_row, reflow_row_contents)
@@ -500,10 +500,9 @@ Qux
         Tests creation of table from data (|retable.create_rst_table|).
         '''
         lns=[['one','two','three'],[1,2,3]]
-        self.assertEqual(create_rst_table(lns) == """\
+        self.assertEqual(create_rst_table(lns), """\
 +-----+-----+-------+
 | one | two | three |
 +-----+-----+-------+
 | 1   | 2   | 3     |
-+-----+-----+-------+
-""")
++-----+-----+-------+""")
