@@ -396,11 +396,12 @@ from sympy import Symbol,Function,Eq,latex,N
 f_e,v_e = Symbol('f_e'),Symbol('v_e')
 r = lambda f,v: f*v
 r_e = Eq(Function('r_e'),r(f_e,v_e))
+#{{latex(r_e)}} expands to "\operatorname{r_{e}} = f_{e} v_{e}", but docx cannot handle \operatorname
 %>
 
 .. math::
 
-    {{latex(r_e)}}
+    r_{e} = f_{e} v_{e}
 
 
 The total risk `R` sums over all events:
