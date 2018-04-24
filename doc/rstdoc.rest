@@ -1,13 +1,14 @@
 .. vi: syntax=rst
 
-======
-rstdoc
-======
-
 .. _`rr1`:
 
+======
 rstdoc
 ======
+
+Purpose
+=======
+
 
 .. include:: ../readme.rst
 

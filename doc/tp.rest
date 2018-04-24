@@ -4,11 +4,8 @@
 Test Plan
 =========
 
-Documentation with RST
-======================
-
 Test Driver
------------
+===========
 
 There are only automatic tests.
 
@@ -30,7 +27,7 @@ To have a test coverage report, enter::
     py.test --cov rstdoc --cov-report term-missing
 
 Test Coverage
--------------
+=============
 
 The tests aim to produce 100% test coverage.
 
@@ -41,7 +38,7 @@ The current test coverage is this.
     :literal:
 
 Tests
------
+=====
 
 .. include:: _test_dcx_tests.rst
 

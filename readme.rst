@@ -3,9 +3,9 @@ This python packages supports working with `RST`_  as documentation format:
 
 - postprocess `Pandoc`_'s conversion from `DOCX`_ to `RST`_
 - preprocess `Pandoc`_'s conversion from `RST`_ to `DOCX`_
-- link the documents
-- create a ``.tags`` file
+- link the `RST`_ documents
 - reformat/create `RST`_ tables
+- create a ``.tags`` file
 
 `Sphinx`_ is an extension of `Docutils`_ used for many (software) projects,
 but it does not support creation of `DOCX`_ files.
@@ -29,23 +29,23 @@ The idea is, that working with text is more integrated in the
 
 ``pip install rstdoc`` installs:
 
-  +-----------+--------------+--------------------------------------------+
-  | Module    | Script       | Description                                |
-  +===========+==============+============================================+
-  | dcx       | rstdcx       | create ``.tags``, labels and links         |
-  +-----------+--------------+--------------------------------------------+
-  | fromdocx  | rstfromdocx  | Convert DOCX to RST using Pandoc           |
-  +-----------+--------------+--------------------------------------------+
-  | listtable | rstlisttable | Convert RST grid tables to list-tables     |
-  +-----------+--------------+--------------------------------------------+
-  | untable   | rstuntable   | Converts certain list-tables to paragraphs |
-  +-----------+--------------+--------------------------------------------+
-  | reflow    | rstreflow    | Reflow paragraphs and tables               |
-  +-----------+--------------+--------------------------------------------+
-  | reimg     | rstreimg     | Rename images referenced in the RST file   |
-  +-----------+--------------+--------------------------------------------+
-  | retable   | rstretable   | Transforms list tables to grid tables      |
-  +-----------+--------------+--------------------------------------------+
++-----------+--------------+--------------------------------------------+
+| Module    | Script       | Description                                |
++===========+==============+============================================+
+| dcx       | rstdcx       | create ``.tags``, labels and links         |
++-----------+--------------+--------------------------------------------+
+| fromdocx  | rstfromdocx  | Convert DOCX to RST using Pandoc           |
++-----------+--------------+--------------------------------------------+
+| listtable | rstlisttable | Convert RST grid tables to list-tables     |
++-----------+--------------+--------------------------------------------+
+| untable   | rstuntable   | Converts certain list-tables to paragraphs |
++-----------+--------------+--------------------------------------------+
+| reflow    | rstreflow    | Reflow paragraphs and tables               |
++-----------+--------------+--------------------------------------------+
+| reimg     | rstreimg     | Rename images referenced in the RST file   |
++-----------+--------------+--------------------------------------------+
+| retable   | rstretable   | Transforms list tables to grid tables      |
++-----------+--------------+--------------------------------------------+
 
 - To create DOCX and PDF `Pandoc`_ is used.
 

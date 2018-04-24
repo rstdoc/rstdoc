@@ -50,6 +50,7 @@ import textwrap
 from .untable import untable
 
 title_all=list(r'''#*=-^~+_.,"'!$%&\\()/:;<>?@[\]`{|}''')
+title_some = "=-`'.~*+^:;,_" #same as in vim_py3_rst
 titlerex = re.compile('''^([#*=\-^~+_.,"'!$%&\\\(\)/:;<>?@\[\]`{|}])\\1+\s*$''')
 #retitle.match('====')
 #retitle.match('\\\\\\')
@@ -372,9 +373,10 @@ def re_title(
         lines  #list of lines
         ,row=0 #of cursor position,
         ,col=0 #... as only the lines delimited by an empty line are considered
+        ,down=0 # >0 = down, <0 = up
         ):
     '''
-    Adjust the under- or overline or a title.
+    Adjust the under- or overline of a title.
     '''
     upper, lower, indent = get_bounds(lines,row,col)
     t = None
@@ -391,7 +393,12 @@ def re_title(
             lines[i] = tstrip
             continue
         if titlerex.match(lines[j]):
-            lines[j] = lines[j][0]*leni
+            hl = lines[j]
+            try:
+                nhl = title_some[title_some.index(hl[0])+down]
+            except:
+                nhl = hl[0]
+            lines[j] = nhl*leni
 
 class doretable:
     def __init__(self):

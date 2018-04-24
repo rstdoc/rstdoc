@@ -4,11 +4,8 @@
 Risk Analysis
 =============
 
-Documentation with RST
-======================
-
 Purpose
--------
+=======
 
 This risk analysis focuses on displaying the benefits
 of using `light markup`_ text,
@@ -26,15 +23,15 @@ that integrates automatic generation of some of its parts.
 Only a part of |rr1| documentation deals with the provided python code.
 
 Qualitative Analysis
---------------------
+====================
 
 Purpose
-```````
+-------
 
 .. _`rwj`:
 
 Productivity
-````````````
+------------
 
 To have more evolution with less effort one must change the tools to better productivity.
 
@@ -63,7 +60,7 @@ It brings overhead to access information with two different tools.
 .. _`rpn`:
 
 Formatting vs Content
-`````````````````````
+---------------------
 
 .. _`r9g`:
 
@@ -105,7 +102,7 @@ Due to the complex task to bring a big project to a consistent final state, it i
 More detailed reasons are the topic of this documentation. 
 
 Final Version
-`````````````
+-------------
 
 .. _`rio`:
 
@@ -130,7 +127,7 @@ In case the final version is a printout,
 .. _`rak`:
 
 Parallelism
-```````````
+-----------
 
 Parallel processing is faster than serial processing.
 The productivity of a team increases if the team members can work in parallel.
@@ -166,10 +163,10 @@ The format of the documentation matters regarding independence:
 .. _`rbc`:
 
 Traceability
-````````````
+------------
 
 Trace changes
-'''''''''''''
+`````````````
 
 .. _`rnn`:
 
@@ -222,7 +219,7 @@ Jumps to target IDs in documentation work from source code and from other docume
 
 
 Trace dependencies
-''''''''''''''''''
+``````````````````
 
 .. _`rw9`:
 
@@ -238,10 +235,10 @@ A special case is 1-n, e.g. the ID of a header comprises all IDs of the paragrap
 .. _`rvd`:
 
 Accessibility
-`````````````
+-------------
 
 Hypertext
-'''''''''
+`````````
 
 .. _`r33`:
 
@@ -264,7 +261,7 @@ To allow `hypertext`_ referenced items must have a unique resource ID (`URI`_).
 The `IDs`_ are used for this purpose.
 
 Search
-''''''
+``````
 
 .. _`re4`:
 
@@ -288,7 +285,7 @@ A search shall allow to include both
 .. _`r9h`:
 
 Community
-`````````
+---------
 
 .. _`rj4`:
 
@@ -317,7 +314,7 @@ The total effort is less than for the commercial model.
 .. _`r62`:
 
 Sustainability
-``````````````
+--------------
 
 .. _`ref`:
 
@@ -348,7 +345,7 @@ Further reading:
 .. _`roc`:
 
 Redundancy
-``````````
+----------
 
 .. _`r90`:
 
@@ -362,10 +359,10 @@ Redundancy
 
 - needs more resources
 
-    - more pages, more memory
-    - more time to read
-    - more time to write
-    - more effort when changing something
+  - more pages, more memory
+  - more time to read
+  - more time to write
+  - more effort when changing something
 
 - leads to inconsistencies
 
@@ -379,10 +376,10 @@ The reasons for redundancy are
 .. _`rvl`:
 
 Automation
-``````````
+----------
 
 Scripting
-'''''''''
+`````````
 
 .. _`r1p`:
 
@@ -396,7 +393,7 @@ through formatting elements still needs to be dealt with when parsing or creatin
 A format where formatting is less important and less obtrusive can be handled more easily via scripts.
 
 Templates
-'''''''''
+`````````
 
 .. _`r8d`:
 
@@ -413,12 +410,12 @@ Text files can easily be generated from templates.
 
 
 Quantitative Analysis
----------------------
+=====================
 
 Introduction to risk analysis
-`````````````````````````````
+-----------------------------
 
-:Risk analysis is basically a simulation.
+Risk analysis is basically a simulation.
 
 :Event: A possible and recurring configuration of values of variables.
 
@@ -444,23 +441,16 @@ r_e = Eq(Function('r_e'),r(f_e,v_e))
 
 The total risk `R` sums over all events:
 
-.. _`ruf`:
-
 .. math::
-    :name:
 
     R = \sum_e r_e
 
-
-.. _`rbi`:
-
-:rbi: 
 
 Events can depend on other events functionally or statistically. 
 One can start with the probability for an event once a day and then
 follow conditional probability chains to other events.
 
-The risk analysis tries to analyse these dependencies 
+The *risk analysis* tries to analyse these dependencies 
 to get to a more precise estimation of the frequency.
 
 It is hard to get good estimates of frequency of an event in a complex real world,
@@ -470,12 +460,8 @@ because there are
 - many dependencies
 - unknown probabilities 
 
-.. _`rhq`:
-
-:rhq: 
-
 Because the frequencies will be inaccurate, 
-instead of numbers one often uses more unprecise but realistic values,
+instead of numbers one can use more unprecise but realistic values,
 that need to be defined for the special area (|rd7|).
 
 .. _`rd7`:
@@ -483,6 +469,7 @@ that need to be defined for the special area (|rd7|).
 |rd7|: Occurrence values for a medical device
 
 .. list-table::
+   :name:
    :widths: 10 40 50
    :header-rows: 1
 
@@ -516,16 +503,14 @@ that need to be defined for the special area (|rd7|).
      - Occurs multiple times per applications
 
 
-The rating depends on the 
+The *rating* depends on the 
 
 - area (health sector, finance, ...) and the 
 - circumstances (war or peace, rich or poor, ...)
 
-|r0u| shows *severity* rating in the health sector.
-
 .. _`r0u`:
 
-|r0u|: Severity
+|r0u|: *Severity* rating in the health sector.
 
 .. list-table::
    :name:
@@ -568,8 +553,7 @@ The total risk can
 
 .. _`rlu`:
 
-|rlu|: Occurrence/Severity matrix.
-       AC, NAC, ALARP are counts of events in the respective cell.
+|rlu|: Occurrence/Severity matrix. AC, NAC, ALARP are counts of events in the respective cell.
 
 .. list-table::
    :name:
@@ -626,7 +610,7 @@ The total risk can
      - ALARP
 
 Countermeasures
-'''''''''''''''
+---------------
 
 .. _`r2m`:
 
@@ -650,7 +634,7 @@ In the Occurrence/Severity example, in |rlu|:
 .. _`ruw`:
 
 Risk analysis for documenting with RST
-``````````````````````````````````````
+--------------------------------------
 
 .. _`rp5`:
 
@@ -676,7 +660,7 @@ The numbers are rough estimates, because they depend a lot:
 - how long the project takes
 - how much documentation there is
 
-The risk |ruf| is the effort per developer.
+The risk is the effort per developer.
 
 .. _`rxj`:
 
@@ -709,7 +693,7 @@ The estimates assume a project that takes
 - needs to be consistently documented
 
 Events
-``````
+------
 
 .. start parsing events
 
@@ -837,7 +821,7 @@ Events
 
 
 Result
-``````
+------
 
 <%
 

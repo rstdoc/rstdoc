@@ -4,18 +4,15 @@
 System Requirements
 ===================
 
-Documentation with RST
-======================
-
 Purpose
--------
+=======
 
 Propose an alternative to MS Office for technical documentation
 
 .. _`s3d`:
 
 Requirements on Documentation
------------------------------
+=============================
 
 The project documentation format shall be validated by verifying the following requirements.
 
@@ -49,9 +46,9 @@ It is possible to diff a documentation file with the version control system (`VC
 
 Tools shall be available for conversion to the following formats
 
-  - `HTML`_: to make the documentation viewable over the internet
-  - `PDF`_: to archive a version and for printing
-  - `DOCX`_ and `ODT`_: to satisfy existing procedures and habits for printing
+- `HTML`_: to make the documentation viewable over the internet
+- `PDF`_: to archive a version and for printing
+- `DOCX`_ and `ODT`_: to satisfy existing procedures and habits for printing
 
 The tools shall be
 
@@ -148,7 +145,7 @@ Provide means to integrate into the documentation
 :slp: 
 
 Requirements on Project
------------------------
+=======================
 
 .. _`s10`:
 

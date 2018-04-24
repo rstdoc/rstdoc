@@ -6,6 +6,7 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.graphviz',
     ]
 numfig = False
+smartquotes = False
 default_role = 'math'
 templates_path = ['_templates']
 source_suffix = '.rest'

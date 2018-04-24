@@ -393,6 +393,8 @@ def linktargets(
             lnj = lns[j]
             if rextitle.match(lnj):
                 lnkname=lns[j-1].strip()
+                if not lnkname:
+                    lnkname=lns[j+1].strip()
                 break
             #lnj=":lnkname: words"
             itm = rexitem.match(lnj)
@@ -1290,6 +1292,7 @@ example_tree = r'''
                   'sphinx.ext.graphviz',
                   ]
               numfig = False
+              smartquotes = False
               default_role = 'math'
               templates_path = ['_templates']
               source_suffix = '.rest'
