@@ -20,7 +20,7 @@ The project documentation format shall be validated by verifying the following r
 
 :sa7: |rwj|
 
-The documentation format increase productivity in comparison to MS Office.
+The documentation format increases productivity in comparison to MS Office.
 
 .. _`s9o`:
 
@@ -57,9 +57,9 @@ The tools shall be
 
 .. _`san`:
 
-:san: |rvd|, hyperlinks
+:san: |rvd|, |rbc|, hyperlinks
 
-The documentation items shall be marked by a flat and unordered IDs.
+The documentation items shall be marked by flat and unordered IDs.
 
 Use these IDs to jump to documentation items inside the editor 
 via a keyboard shortcut or a mouse click: hypertext.
@@ -105,7 +105,7 @@ The formatting
 
 :s86: |rgn|
 
-Table-like data is store as text using a format that is 
+Table-like data is stored as text using a format that is 
 
 - not too verbose
 - easily accessible by scripting (|sgt|)
@@ -141,8 +141,6 @@ Provide means to integrate into the documentation
 - calculation results
 
 .. _`slp`:
-
-:slp: 
 
 Requirements on Project
 =======================
@@ -186,7 +184,15 @@ All text concerning development is integrated in the documentation.
 
 :sim: |rvd|
 
-Every developers know where to put information and how and where to find information.
+Every developer know where to put information and how and where to find information.
+
+The location is in ``.rest`` and ``.rst``, ``.stpl`` and code files.
+
+The developer 
+
+- only works with these source files
+- does not care about the final format
+- does not spend time in fixing formatting issues of a final format
 
 .. _`sil`:
 

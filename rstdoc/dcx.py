@@ -685,6 +685,26 @@ def lnksandtags(
                     n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
                     for n in fca.nodes]
             tlines = ''.join(trace).splitlines(keepends=True)
+            confpy = nj(fldr,'conf.py')
+            config={}
+            with open(confpy,encoding='utf-8') as f:
+                eval(compile(f.read(),os.path.abspath(confpy),'exec'),config)
+            try:
+                filecolors=config['filecolors']
+            except:
+                filecolors={"ra":"blue", "sr":"red", "dd":"yellow", "tp":"green"}
+            def _drawnode(canvas,node,parent,c,r): 
+                od = []
+                its = {x[0] for x in node.intent}
+                for k,v in filecolors.items():
+                    if k[0] in its:
+                        od.append(v)
+                if its-set([k[0] for k in filecolors]):
+                    od.append("white")
+                odl = len(od)
+                for i in range(odl-1,-1,-1):
+                    rr = int(r*(i+1)/odl)
+                    parent.add(canvas.circle(c,rr,fill=od[i],stroke='black'))
             with open(nj(fldr,trace_file_name),'w',encoding='utf-8') as f:
                 f.write('.. raw:: html\n\n')
                 f.write('    <object data="_images/_trace.svg" type="image/svg+xml"></object>\n')
@@ -692,7 +712,7 @@ def lnksandtags(
                 f.write('.. image:: _trace.svg\n\n')#else it is not copied into _images
             ld = pyfca.LatticeDiagram(fca,4*297,4*210)
             tracesvg = os.path.abspath(nj(fldr,'_trace.svg'))
-            ld.svg(target='../index.html#tr',colors={"ra":"blue", "sr":"red", "dd":"yellow", "tp":"green"}).saveas(tracesvg)
+            ld.svg(target='../index.html#tr',drawnode=_drawnode).saveas(tracesvg)
             return tlines
         except:
             return []
@@ -1293,6 +1313,7 @@ example_tree = r'''
                   ]
               numfig = False
               smartquotes = False
+              filecolors={"ra":"lightblue", "sr":"red", "dd":"yellow", "tp":"green"}
               default_role = 'math'
               templates_path = ['_templates']
               source_suffix = '.rest'

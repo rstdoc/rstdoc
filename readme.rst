@@ -3,9 +3,12 @@ This python packages supports working with `RST`_  as documentation format:
 
 - postprocess `Pandoc`_'s conversion from `DOCX`_ to `RST`_
 - preprocess `Pandoc`_'s conversion from `RST`_ to `DOCX`_
-- link the `RST`_ documents
-- reformat/create `RST`_ tables
+- link the `RST`_ documents (``_links_xxx.rst`` files)
 - create a ``.tags`` file
+- reformat/create `RST`_ tables
+- expand template files ``.stpl``
+- convert ``.tikz`` to ``.png`` files and place them ``./_images`` or ``../_images``
+- generated files from source code using the ``gen`` file
 
 `Sphinx`_ is an extension of `Docutils`_ used for many (software) projects,
 but it does not support creation of `DOCX`_ files.
@@ -53,34 +56,6 @@ The idea is, that working with text is more integrated in the
   `Pandoc`_ would do as well, but `Sphinx`_ provides a nice entry point
   to all the documentation.
 
-Editors
-=======
-
-There are a lot of `editors`_ that work well with RST, e.g. `Emacs`_.
-`ReText`_ is even specialized for RST (and Markdown).
-
-Vim
----
-
-| `vim_py3_rst <https://github.com/rpuntaie/vim_py3_rst>`__ 
-| `vim-table-mode <https://github.com/dhruvasagar/vim-table-mode>`__
-| `riv.vim <https://github.com/gu-fan/riv.vim>`__
-
-Atom
-----
-
-| atom-ctags       #better: https://github.com/rpuntaie/atom-ctags
-| language-restructuredtext
-| rst-preview-pandoc
-| table-editor
-| rst-snippets
-| atom-build       #better: https://github.com/rpuntaie/atom-build
-| atom-build-waf
-| find-and-replace-under-cursor
-
-``atom-build`` and ``atom-ctags`` were modified to allow finding files
-by putting the relevant subdirectory into Atom's project paths.
-
 
 .. _`editors`: http://build-me-the-docs-please.readthedocs.io/en/latest/Using_Sphinx/ToolsForReStructuredText.html
 .. _`Emacs`: http://docutils.sourceforge.net/docs/user/emacs.html
@@ -90,5 +65,4 @@ by putting the relevant subdirectory into Atom's project paths.
 .. _`Pandoc`: https://pandoc.org/
 .. _`RST`: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
 .. _`DOCX`: http://www.ecma-international.org/publications/standards/Ecma-376.htm
-.. _`ReText`: https://github.com/retext-project/retext
 

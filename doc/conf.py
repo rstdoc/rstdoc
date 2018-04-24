@@ -7,6 +7,7 @@ extensions = ['sphinx.ext.autodoc',
     ]
 numfig = False
 smartquotes = False
+filecolors={"ra":"lightblue", "sr":"red", "dd":"yellow", "tp":"green"}
 default_role = 'math'
 templates_path = ['_templates']
 source_suffix = '.rest'
