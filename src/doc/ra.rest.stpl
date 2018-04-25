@@ -2,6 +2,8 @@
 
 %globals().update(include('utility.rst.tpl'))
 
+.. _`rwx`:
+
 =============
 Risk Analysis
 =============
@@ -22,7 +24,7 @@ This whole documentation is an example for documentation using RST.
 Specifically this file's original is a template file 
 that integrates automatic generation of some of its parts.
 
-Only a part of |rr1| documentation deals with the provided python code.
+Only a part of |or1| documentation deals with the provided python code.
 
 %pagebreak()
 
@@ -81,10 +83,6 @@ There is a less obtrusive alternative for formatting than via XML, HTML or even 
 
 - `light markup`_.
 
-.. _`rgn`:
-
-:rgn: |s86|
-
 The content is important in documentation, not formatting.
 
 Every bit of information needs a location. 
@@ -94,10 +92,6 @@ because there it is not well accessible (|rvd|).
 Certain content can be stored in a text database and reused in other documents via templating (|r8d|).
 
 Data can be better integrated into text, than into `DOCX`_ or `ODT`_.
-
-.. _`r21`:
-
-:r21: |scf|
 
 From an immediate but naive perspective it may seem easier to compose documents using `DOCX`_ or `ODT`_. 
 Due to the complex task to bring a big project to a consistent final state, it is not.
@@ -315,7 +309,7 @@ Redundancy
 
 :r90:  |sgt|, |s8c|
 
-Redundancy: When the same information is there more often.
+Redundancy: When the same information needs to be maintained at more places.
 
 Less redundancy means higher `productivity`_.
 
@@ -336,6 +330,10 @@ The reasons for redundancy are
 - inability to link to information: no `hypertext`_
 - inability to exploit functional dependencies: no `automation`_ available
 - normative boilerplate texts: no `automation`_ available
+
+Firther reading: 
+
+| `DRY <https://en.wikipedia.org/wiki/Don%27t_repeat_yourself>`__
 
 .. _`rvl`:
 

@@ -7,7 +7,14 @@ extensions = ['sphinx.ext.autodoc',
     ]
 numfig = False
 smartquotes = False
-filecolors={"ra":"lightblue", "sr":"red", "dd":"yellow", "tp":"green"}
+file_id_color={
+    "meta":("m","white"),
+    "ra":("r","lightblue"),
+    "sr":("s","red"),
+    "dd":("d","yellow"), 
+    "tp":("t","green"),
+    "rstdoc":("o","pink")}
+trace_target='meta.html'
 default_role = 'math'
 templates_path = ['_templates']
 source_suffix = '.rest'

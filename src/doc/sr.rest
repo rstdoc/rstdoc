@@ -1,5 +1,7 @@
 .. vi: syntax=rst
 
+.. _`son`:
+
 ===================
 System Requirements
 ===================
@@ -7,14 +9,12 @@ System Requirements
 Purpose
 =======
 
-Propose an alternative to MS Office for technical documentation
+Propose an alternative to MS Office for technical documentation.
 
 .. _`s3d`:
 
 Requirements on Documentation
 =============================
-
-The project documentation format shall be validated by verifying the following requirements.
 
 .. _`sa7`:
 
@@ -24,21 +24,17 @@ The documentation format increases productivity in comparison to MS Office.
 
 .. _`s9o`:
 
-:s9o: |r9h|
+:s9o: |r9h|, |rj4|
 
 The documentation format is not new.
-
-.. _`sq0`:
-
-:sq0: |r9h|
-
-The documentation format is support by a large open source community.
+The documentation format is supported by a large open source community.
 
 .. _`s9v`:
 
 :s9v: |rbc|
 
-It is possible to diff a documentation file with the version control system (`VCS`_) like `SVN`_ or `GIT`_.
+It is possible to diff a documentation file with the version control system (`VCS`_).
+Therefore it must be text-based.
 
 .. _`scf`:
 
@@ -48,7 +44,7 @@ Tools shall be available for conversion to the following formats
 
 - `HTML`_: to make the documentation viewable over the internet
 - `PDF`_: to archive a version and for printing
-- `DOCX`_ and `ODT`_: to satisfy existing procedures and habits for printing
+- `DOCX`_ and `ODT`_: to satisfy existing procedures
 
 The tools shall be
 
@@ -90,7 +86,7 @@ The documentation is easy to read and write in a text editor.
 
 Support formatting::
 
-    paragraphs, indentation, sections with headers
+    paragraphs, sections with headers
     enumerated and bullet lists, footnotes, citations, comments
     bold, italic, typeface, hyperlinks
     tables, images, figures, code listings, mathematics
@@ -100,10 +96,6 @@ The formatting
 - is not obtrusive (|r9g|)
 - shall be intuitive 
 - does not need much learning
-
-.. _`s86`:
-
-:s86: |rgn|
 
 Table-like data is stored as text using a format that is 
 
@@ -128,7 +120,7 @@ Data shall be usable
 
 :s0t: |rbc|
 
-Automatically generate a traceability file that shows how documentation items are linked.
+Automatically generate a dependencies file that shows how documentation items are linked.
 Warn about missing or duplicate targets.
 
 .. _`s8c`:
@@ -150,7 +142,9 @@ Requirements on Project
 :s10: |rbc|
 
 The project uses a version control system (`VCS`_) like `SVN`_ or `GIT`_.
+
 Documentation history is handled by the `VCS`_.
+Team members follow changes of documentation on the `VCS`_.
 
 .. _`sxr`:
 
@@ -171,11 +165,12 @@ let it be generated from a master copy: constants, defines of structs, ...
 
 :scs: |rvd|
 
-All text concerning development is integrated in the documentation.
+All documentation of concern to development is integrated in the text-based documentation.
 
-- specifications
-- design descriptions
-- test plans
+- risk analysis / motivation
+- specification
+- design description
+- test plan
 - issues
 - meeting minutes
 - ...
@@ -184,15 +179,17 @@ All text concerning development is integrated in the documentation.
 
 :sim: |rvd|
 
-Every developer know where to put information and how and where to find information.
+There is a meta-document that informs,
+where to put and how to find which information.
 
-The location is in ``.rest`` and ``.rst``, ``.stpl`` and code files.
+.. _`seo`:
+
+:seo: |r90|
 
 The developer 
 
-- only works with these source files
-- does not care about the final format
-- does not spend time in fixing formatting issues of a final format
+- only works and cares about the text sources of documentation
+- does not spend time in fixing formatting issues of a generated format
 
 .. _`sil`:
 

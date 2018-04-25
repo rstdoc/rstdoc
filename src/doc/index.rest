@@ -7,6 +7,7 @@ Documentation with RST
 :Author: Roland Puntaier
 
 .. toctree::
+   meta.rest
    ra.rest
    sr.rest
    dd.rest
@@ -14,11 +15,3 @@ Documentation with RST
    rstdoc.rest
 
 
-Dependencies
-============
-
-.. include:: _trace.rst
-
-
-
-.. include:: _links_sphinx.rst

@@ -1,8 +1,20 @@
 .. vi: syntax=rst
 
+.. _`tkf`:
+
 =========
 Test Plan
 =========
+
+Purpose
+=======
+
+The |son| are tested by 
+
+- the motivations in the |rwx|
+- this whole documentation
+
+The tests here concentrate on |or1|.
 
 Test Driver
 ===========

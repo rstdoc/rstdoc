@@ -1,0 +1,38 @@
+.. vi: syntax=rst
+
+.. _`m0d`:
+
+========
+Overview
+========
+
+Purpose
+=======
+
+Generally provide an overview, 
+such that new team members or reviewers can find their way in the documentation.
+
+No actual content is placed in this file.
+
+In this example case |m0d|
+
+- gives an overview of the documents: `Files`_
+
+- summaries dependencies between the documents: `Dependencies`_
+
+Files
+=====
+
+.. include:: files.rst
+
+``rstdoc.rest`` is specific to this project.
+It stands for any other files, like ``issues.rest``, ...
+
+Dependencies
+============
+
+.. include:: _trace.rst
+
+
+.. include:: _links_sphinx.rst
+

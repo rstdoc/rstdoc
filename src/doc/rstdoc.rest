@@ -1,6 +1,6 @@
 .. vi: syntax=rst
 
-.. _`rr1`:
+.. _`or1`:
 
 ======
 rstdoc
