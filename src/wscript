@@ -4,7 +4,7 @@ top='.'
 out='../build'
 def options(opt):
   opt.load('dcx',tooldir='rstdoc')
-  opt.add_option("--tests", default=False, help="Run the tests") 
+  opt.add_option("--tests", default=False, action="store_true", help="Run the tests") 
 def configure(cfg):
   cfg.load('dcx',tooldir='rstdoc')
 def build(bld):

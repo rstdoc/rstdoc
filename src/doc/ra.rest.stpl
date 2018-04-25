@@ -1,6 +1,6 @@
 .. vi: syntax=rst
 
-%globals().update(include('utility.rst.stpl'))
+%globals().update(include('utility.rst.tpl'))
 
 =============
 Risk Analysis

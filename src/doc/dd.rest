@@ -142,7 +142,7 @@ Then they have the additional extension ``.stpl``.
 
 Template files can include other template files,
 which either are in the current or the parent directory.
-E.g. in this documentation ``ra.rest.stpl`` includes ``utility.rst.stpl``.
+E.g. in this documentation ``ra.rest.stpl`` includes ``utility.rst.tpl``.
 
 Tools
 =====
