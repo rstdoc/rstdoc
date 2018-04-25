@@ -677,10 +677,15 @@ def lnksandtags(
 
     If ``pyfca`` is available also the dependencies file ``_trace.rst`` is created.
 
-    ``file_id_color`` maps files to a (letter,color) tuple.
+    conf.py entries:
+
+    ``file_id_color``: maps files to a (letter,color) tuple.
+
     IDs starting with the letter are assumed to be from that file.
     This is used to color an FCA lattice diagram in "_trace.rst".
     The diagram nodes are clickable in HTML.
+
+    ``trace_target``: target, when clicking on diagram nodes
 
     '''
     _tgtsdoc = [(doctype,[]) for doctype in doctypes]
