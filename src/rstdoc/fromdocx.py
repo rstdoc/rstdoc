@@ -30,6 +30,18 @@ There are options to post-process through::
     --reflow (--sentence True,  --join 0)
     --reimg
 
+``rstfromdocx -lurg`` combines all of these.
+
+To convert more DOCX documents into the same 
+RST documentation folder, proceed like this:
+
+- rename/copy the original DOCX to the name you want for the rest file
+- run ``rstfromdocx -lurg doc1.docx``
+- check the output in the ``doc1`` subfolder
+- repeat the previous 2 steps with the next DOCX files
+- create a new folder, e.g. ``doc``
+- merge all other folders into that new folder
+
 See |rstreflow| to do that manually.
 """
 
@@ -70,7 +82,7 @@ def prj_name(fn):
     return m.group(1).strip('_').replace(' ','')
 
 def extract_media(
-        ,fn #docx file name
+        fn #docx file name
         ):
     '''
     extract media files from a docx file
