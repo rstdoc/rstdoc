@@ -46,7 +46,7 @@ setup(name = 'rstdoc',
         'Topic :: Utilities',
         ],
 
-    install_requires = ['stpl','pyfca','pypandoc','sphinx','sphinxcontrib-tikz','sphinx_bootstrap_theme'],
+    install_requires = ['stpl','pyfca','cairosvg','pypandoc','sphinx','sphinxcontrib-tikz','sphinx_bootstrap_theme'],
     extras_require = {'develop': ['mock','pytest-coverage'],'build':['waf']},
     long_description = long_description,
     packages=['rstdoc'],

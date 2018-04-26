@@ -7,13 +7,6 @@ extensions = ['sphinx.ext.autodoc',
     ]
 numfig = False
 smartquotes = False
-file_id_color={
-    "meta":("m","white"),
-    "ra":("r","lightblue"),
-    "sr":("s","red"),
-    "dd":("d","yellow"), 
-    "tp":("t","green"),
-    "rstdoc":("o","pink")}
 default_role = 'math'
 templates_path = ['_templates']
 source_suffix = '.rest'
@@ -47,3 +40,12 @@ latex_elements = {
 latex_documents = [
     (master_doc, project.replace(' ','')+'.tex',project+' Documentation',author,'manual'),
 ]
+#rstdoc
+file_id_color={
+    "meta":("m","white"),
+    "ra":("r","lightblue"),
+    "sr":("s","red"),
+    "dd":("d","yellow"), 
+    "tp":("t","green"),
+    "rstdoc":("o","pink")}
+html_extra_path=["_images/_trace.svg"]

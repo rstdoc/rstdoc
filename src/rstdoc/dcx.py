@@ -681,13 +681,21 @@ def lnksandtags(
 
     If ``pyfca`` is available also the dependencies file ``_trace.rst`` is created.
 
-    conf.py entries:
+    conf.py entries::
 
-    ``file_id_color``: maps files to a (letter,color) tuple.
+      file_id_color={
+          "meta":("m","white"),
+          "ra":("r","lightblue"),
+          "sr":("s","red"),
+          "dd":("d","yellow"), 
+          "tp":("t","green"),
+          "rstdoc":("o","pink")}
+      html_extra_path=["_images/_trace.svg"]
 
-    IDs starting with the letter are assumed to be from that file.
+    IDs starting with the letter in file_id_color are assumed to be from that file.
     This is used to color an FCA lattice diagram in "_trace.rst".
     The diagram nodes are clickable in HTML.
+
 
     '''
     _tgtsdoc = [(doctype,[]) for doctype in doctypes]
@@ -699,18 +707,6 @@ def lnksandtags(
     #unknowntgts = []
     def tracelines():
         try:
-            fca = pyfca.Lattice(objects,lambda x:x)
-            tr = 'tr'
-            reflist = lambda x,pfx=tr: ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
-            trace = [(".. _`"+tr+"{0}`:\n\n:"+tr+"{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n").format(
-                    n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
-                    for n in fca.nodes]
-            tlines = ''.join(trace).splitlines(keepends=True)
-            with open(nj(fldr,trace_file_name+'.rst'),'w',encoding='utf-8') as f:
-                f.write('.. raw:: html\n\n')
-                f.write('    <object data="_images/'+trace_file_name+'.svg" type="image/svg+xml"></object>\n')
-                f.writelines(tlines)
-                f.write('.. image:: '+trace_file_name+'.svg\n\n')#else it is not copied into _images
             try:
                 confpy = nj(fldr,'conf.py')
                 config={}
@@ -729,9 +725,34 @@ def lnksandtags(
                         parent.add(canvas.circle(c,rr,fill=od[i],stroke='black'))
             except:
                 _drawnode = None
+                file_id_color=None
+            fca = pyfca.Lattice(objects,lambda x:x)
+            tr = 'tr'
+            reflist = lambda x,pfx=tr: ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
+            trace = [(".. _`"+tr+"{0}`:\n\n:"+tr+"{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n").format(
+                    n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
+                    for n in fca.nodes]
+            tlines = ''.join(trace).splitlines(keepends=True)
+            tlines.extend(['.. _`trace`:\n','\n','.. figure:: _images/'+trace_file_name+'.png\n','   :name:\n','\n','   |trace|: Diagram of dependency trace'])
+            if file_id_color is not None:
+                legend=', '.join([fnm+" "+clr for fnm,(_,clr) in file_id_color.items()])
+                tlines.extend(['   :'+legend,'\n'])
+            tlines.append('\n')
+            with open(nj(fldr,trace_file_name+'.rst'),'w',encoding='utf-8') as f:
+                f.write('.. raw:: html\n\n')
+                #needs in conf.py: html_extra_path=["_images/_trace.svg"]
+                f.write('    <object data="'+trace_file_name+'.svg" type="image/svg+xml"></object>\n')
+                if file_id_color is not None:
+                    f.write('    <p>Dependency trace with clickable nodes:'+legend+'</p>\n\n')
+                f.writelines(tlines)
             ld = pyfca.LatticeDiagram(fca,4*297,4*210)
-            tracesvg = os.path.abspath(nj(fldr,trace_file_name+'.svg'))
-            ld.svg(target='../'+trace_target+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
+            tracesvg = os.path.abspath(nj(fldr,"_images",trace_file_name+'.svg'))
+            ld.svg(target=trace_target+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
+            try:
+                import cairosvg
+                pngf = tracesvg.replace('.svg','.png')
+                cairosvg.svg2png(url="file:///"+tracesvg, write_to=pngf)
+            except: pass
             return tlines
         except:
             return []
