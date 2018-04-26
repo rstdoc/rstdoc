@@ -335,9 +335,9 @@ Hypertext
 `rstdoc`_'s `rstdcx`_ generates a ``.tags`` file for target IDs
 `CTags`_'s ``.tags`` files are supported by many editors.
 With ``.tags`` files your editor can jump around in `RST`_ files,
-as if marked up `hypertext`__ (HTML).
+as if marked up hypertext__ (HTML).
 
-__ `hypertext_`_
+__ hypertext_
 
 .. _`d03`:
 

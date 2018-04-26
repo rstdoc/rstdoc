@@ -73,4 +73,22 @@ Purpose
 .. .. {{read('rstdoc/retable.py')}}
 
 
+
+.. .. repeat links here because pandoc does not see those in included file
+
+.. _`substitutions`: http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text
+.. _`vim-rst-tables-py3`: https://github.com/ossobv/vim-rst-tables-py3
+.. _`vim_py3_rst`: https://github.com/rpuntaie/vim_py3_rst
+.. _`editors`: http://build-me-the-docs-please.readthedocs.io/en/latest/Using_Sphinx/ToolsForReStructuredText.html
+.. _`Emacs`: http://docutils.sourceforge.net/docs/user/emacs.html
+.. _`ctags`: http://ctags.sourceforge.net/FORMAT
+.. _`Sphinx`: http://www.sphinx-doc.org/en/stable/
+.. _`Docutils`: http://docutils.sourceforge.net/
+.. _`Pandoc`: https://pandoc.org/
+.. _`RST`: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
+.. _`DOCX`: http://www.ecma-international.org/publications/standards/Ecma-376.htm
+
+
 .. include:: _links_sphinx.rst
+
+

@@ -435,7 +435,7 @@ def gen(
     ,**kw #kw arguments to the gen_<fun>() function
     ):
     ''' 
-    Take the gen_[fun] functions enclosed by ``#def gen_[fun](lns,**kw)`` to create a new file.
+    Take the ``gen_[fun]`` functions enclosed by ``#def gen_[fun](lns,**kw)`` to create a new file.
 
     Example::
 
