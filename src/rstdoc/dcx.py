@@ -709,6 +709,8 @@ def lnksandtags(
         try:
             try:
                 confpy = nj(fldr,'conf.py')
+                if not os.path.exists(confpy):
+                    confpy = os.path.normpath(nj(fldr,'..','conf.py'))
                 config={}
                 with open(confpy,encoding='utf-8') as f:
                     eval(compile(f.read(),os.path.abspath(confpy),'exec'),config)
@@ -954,6 +956,7 @@ try:
         with open(pt,mode='w',encoding="utf-8",newline="\n") as f: 
             f.write(st)
     class Stpl(Task.Task):
+        always_run = True
         def run(self):
             stpl(self,self.generator.bld)
     @TaskGen.extension('.stpl')
@@ -1013,7 +1016,7 @@ try:
         else:
             if 'html' in docs:
                 out_node_html = node.parent.get_bld()
-                self.create_task('sphinx',[node]+linkdeps,out_node_html,cwd=node.abspath(),scan=rstscan)
+                self.create_task('sphinx',[node]+linkdeps,out_node_html,cwd=node.parent.abspath(),scan=rstscan)
     class pdfordocx(Task.Task):
         def run(self):
             frm = self.inputs[0].abspath()
@@ -1051,13 +1054,15 @@ try:
             pandoc = ['pandoc','-f', 'rst', '-t', 'docx', '-o', output]
             return '--reference-doc','reference.docx', pandoc, '_links_docx.rst'
     class sphinx(Task.Task):
+        always_run = True
         def run(self):
             dr = self.inputs[0].parent
             tgt = self.outputs[0].find_or_declare('html').abspath()
             relconfpy,confpy,_ = _pth_nde_parent(dr,'conf.py')
             confdir = os.path.split(relconfpy)[0]
+            cwd=self.get_cwd().abspath()
             subprocess.run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt]+(
-                ['-c',confdir] if confdir else[]))
+                ['-c',confdir] if confdir else []),cwd=cwd)
 
     def options(opt):
         def docscb(option, opt, value, parser):
