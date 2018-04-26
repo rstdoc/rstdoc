@@ -139,9 +139,9 @@ def untable(
     Transform a RST list-table to normal paragraphs.
     The table is supposed to have this format:
 
-       - The first column holds an ID.
-       - Optionally the second column holds keywords.
-       - The last column holds the details.
+    - The first column holds an ID.
+    - Optionally the second column holds keywords.
+    - The last column holds the details.
 
     '''
     hT = -1

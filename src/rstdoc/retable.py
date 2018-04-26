@@ -340,8 +340,8 @@ def create_rst_table(
 
     Example:
 
-        >>> lns=[['one','two','three'],[1,2,3]]
-        >>> create_rst_table(lns)
+    >>> lns=[['one','two','three'],[1,2,3]]
+    >>> create_rst_table(lns)
 
     '''
     lines = ['  '.join([str(xx) for xx in x]) for x in data]

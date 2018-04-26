@@ -33,7 +33,7 @@ Usage
       $ listtable.py input1.rst input2.rst
       $ listtable.py *.rst
 
-#. Use pipe (but ``cat`` might not keep the encoding):
+#. Use pipe (but ``cat`` might not keep the encoding)::
 
       $ cat in.rst | listtable.py -  | untable.py - > out.rst
 
@@ -88,9 +88,9 @@ def row_to_listtable(
 
     join: join lines of cell with
 
-        - 0 = without space 
-        - 1 = with space
-        - 2 = keep multi-line
+    - 0 = without space 
+    - 1 = with space
+    - 2 = keep multi-line
 
     '''
     nColumns = len(colwidths)

@@ -10,6 +10,7 @@ tmp/
 .pytest_cache/
 .lock-*
 .tags
+tex2pdf.*
 
 ra.rest
 

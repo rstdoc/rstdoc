@@ -152,6 +152,7 @@ reximg = re.compile(r'image:: ((?:\.|/|\\|\w).*)')
 nj = lambda *x:os.path.normpath(os.path.join(*x))
 
 trace_file_name = '_trace' #used for _trace.rst and _trace.svg
+trace_target= 'index'
 
 def rindices(
     r #regular expression string or compiled
@@ -342,6 +343,7 @@ def fldrincluded(
     The list also includes all files recursively included via these `.rest` files,
     excluding those that contain ``exclude_paths_substrings``
     '''
+    global trace_target
     sofar = []
     for p,ds,fs in os.walk(directory):
         for f in reversed(sorted(fs)):
@@ -356,6 +358,8 @@ def fldrincluded(
                     sofar.append(pf[:-len(_stpl)])
                 res = []
                 for ff in rstincluded(f,(p,)):
+                    if trace_file_name in ff:
+                        trace_target = os.path.splitext(f)[0]
                     if any([x in ff for x in exclude_paths_substrings]):
                         continue
                     pth=nj(p,ff)
@@ -644,10 +648,10 @@ def fldrs(
         rest = [adc for adc in dcs if is_rest(adc)][0]
         fldr,fln = os.path.split(rest)
         fldr_allfiles[fldr] |= set(dcs)
-        restn=os.path.splitext(fln)[0]
-        if is_rest(restn):
-            restn=os.path.splitext(restn)[0]
-        dcns.add(restn)
+        restname=os.path.splitext(fln)[0]
+        if is_rest(restname):
+            restname=os.path.splitext(restname)[0]
+        dcns.add(restname)
         for doc in dcs:
             try: #generated files might not be there
                 lns = _read_lines(doc)
@@ -655,7 +659,7 @@ def fldrs(
                 tgts = list(linktargets(lns,len(dcns)))
                 if fldr not in fldr_lnktgts:
                     fldr_lnktgts[fldr] = []
-                fldr_lnktgts[fldr].append((restn,doc,len(lns),lnks,tgts))
+                fldr_lnktgts[fldr].append((restname,doc,len(lns),lnks,tgts))
                 fldr_alltgts[fldr] |= set([n for ni,n,nn in tgts])
             except:
                 pass
@@ -668,7 +672,7 @@ def fldrs(
 doctypes = "sphinx docx pdf".split()
 def lnksandtags(
     fldr #folder path
-    ,lnktgts  #list of links and targets in a document: (restn, doc, lenlns, lnks, tgts)
+    ,lnktgts  #list of links and targets in a document: (restname, doc, lenlns, lnks, tgts)
     ,allfiles #all files in one folder
     ,alltgts  #all targets of the whole folder
     ):
@@ -685,22 +689,20 @@ def lnksandtags(
     This is used to color an FCA lattice diagram in "_trace.rst".
     The diagram nodes are clickable in HTML.
 
-    ``trace_target``: target, when clicking on diagram nodes
-
     '''
     _tgtsdoc = [(doctype,[]) for doctype in doctypes]
     tags = []
     objects = [] #in FCA sense: set of target tgt with all its links to other targets 
-    up = 0
+    upcnt = 0
     if (fldr.strip()):
-       up = len(fldr.split(os.sep))
+       upcnt = len(fldr.split(os.sep))
     #unknowntgts = []
     def tracelines():
         try:
             fca = pyfca.Lattice(objects,lambda x:x)
             tr = 'tr'
             reflist = lambda x,pfx=tr: ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
-            trace = [(".. _`"+tr+"{0}`:\n\n:``"+tr+"{0}``:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n").format(
+            trace = [(".. _`"+tr+"{0}`:\n\n:"+tr+"{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n").format(
                     n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
                     for n in fca.nodes]
             tlines = ''.join(trace).splitlines(keepends=True)
@@ -709,16 +711,12 @@ def lnksandtags(
                 f.write('    <object data="_images/'+trace_file_name+'.svg" type="image/svg+xml"></object>\n')
                 f.writelines(tlines)
                 f.write('.. image:: '+trace_file_name+'.svg\n\n')#else it is not copied into _images
-            trace_target='index.html'
             try:
                 confpy = nj(fldr,'conf.py')
                 config={}
                 with open(confpy,encoding='utf-8') as f:
                     eval(compile(f.read(),os.path.abspath(confpy),'exec'),config)
                 file_id_color=config['file_id_color']
-                try:
-                    trace_target=config['trace_target']
-                except: pass
                 def _drawnode(canvas,node,parent,c,r): 
                     od = []
                     its = {x[0] for x in node.intent}
@@ -733,20 +731,20 @@ def lnksandtags(
                 _drawnode = None
             ld = pyfca.LatticeDiagram(fca,4*297,4*210)
             tracesvg = os.path.abspath(nj(fldr,trace_file_name+'.svg'))
-            ld.svg(target='../'+trace_target+'#'+tr,drawnode=_drawnode).saveas(tracesvg)
+            ld.svg(target='../'+trace_target+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
             return tlines
         except:
             return []
-    def add_target(i,tgt,lnkname,restn,up,fin):
+    def add_target(i,tgt,lnkname,restname,upcnt,fname):
         for doctype,doclns in _tgtsdoc:
             if doctype=='sphinx':
                 tgte = ".. |{0}| replace:: :ref:`{1}<{0}>`\n".format(tgt,lnkname)
             elif doctype=='docx':
-                tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restn+'.docx')
+                tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restname+'.docx')
             elif doctype=='pdf':
-                tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restn+'.pdf')
+                tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restname+'.pdf')
             doclns.append(tgte)
-        tags.append('{0}	{1}	/^\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*up+fin,i+1))
+        tags.append('{0}	{1}	/^\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fname,i+1))
     def add_linksto(i,tgt,iterlnks,ojlnk=None): #all the links from tgt in the lines following tgt at line i
         linksto = []
         if ojlnk and ojlnk[0] < i:
@@ -759,7 +757,7 @@ def lnksandtags(
             ojlnk = None
         if ojlnk is None:
             for j, lnk in iterlnks:
-                if j > i:#links up to this target
+                if j > i:#links upcnt to this target
                     ojlnk = j,lnk,tgt
                     break
                 else:
@@ -775,28 +773,28 @@ def lnksandtags(
             for _,doclns in _tgtsdoc:
                 doclns.append(linksto)
         return ojlnk
-    orestn = None
-    for restn, doc, lenlns, lnks, tgts in lnktgts:
-         fin = doc.replace("\\","/")
-         if restn != orestn:
-             orestn = restn
+    orestname = None
+    for restname, doc, lenlns, lnks, tgts in lnktgts:
+         fname = doc.replace("\\","/")
+         if restname != orestname:
+             orestname = restname
              if verbose:
-                 print('    '+restn+'.rest')
+                 print('    '+restname+'.rest')
          if not is_rest(doc):
              if verbose:
                  print('        '+doc)
          for _,doclns in _tgtsdoc:
-             doclns.append('\n.. .. {0}\n\n'.format(fin))
+             doclns.append('\n.. .. {0}\n\n'.format(fname))
          iterlnks = iter(lnks)
          ojlnk=None
          for i,tgt,lnkname in tgts:
              ojlnk = add_linksto(i,tgt,iterlnks,ojlnk)
-             add_target(i,tgt,lnkname,restn,up,fin)
+             add_target(i,tgt,lnkname,restname,upcnt,fname)
          ojlnk = add_linksto(lenlns,None,iterlnks,ojlnk)
     tlns = tracelines()
     if tlns:
         for i,tgt,lnkname in linktargets(tlns,len(g_counters)) :
-            add_target(i,tgt,lnkname,trace_file_name,0,trace_file_name+'.rst')
+            add_target(i,tgt,lnkname,trace_target,0,trace_file_name+'.rst')
     for doctype,doclns in _tgtsdoc:
         with open(nj(fldr,'_links_%s.rst'%doctype),'w',encoding='utf-8') as f:
             f.write('\n'.join(doclns));

@@ -14,7 +14,6 @@ file_id_color={
     "dd":("d","yellow"), 
     "tp":("t","green"),
     "rstdoc":("o","pink")}
-trace_target='meta.html'
 default_role = 'math'
 templates_path = ['_templates']
 source_suffix = '.rest'
