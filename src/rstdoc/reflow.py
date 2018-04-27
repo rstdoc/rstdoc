@@ -168,6 +168,19 @@ def reflowparagraphs(
                     p.append(d)
     yield from reflowp(p)
 
+def nostrikeout(
+      lns #lines from rst file
+      ):
+    '''
+    Removes ``[strikeout:xxx]``
+    '''
+    nso = re.compile(r'\[STRIKEOUT:[^\]]*\]',re.M|re.I)
+    #lns='''hello [STRIKEOUT:Firmware may deactivate the high-voltage circuits in
+    #   ***STOP*** state.] there [STRIKEOUT:guy]'''.splitlines(True)
+    all = ''.join([x+'\n' if not x.endswith('\n') else x for x in lns])
+    res = nso.sub('',all)
+    yield from res.splitlines()
+
 def rmextrablankline(
       lns #lines from rst file
       ):
@@ -190,12 +203,16 @@ def no3star(
     Removes three stars, as they are not supported by docutils.
     '''
     for d in lns:
-        #d='***Hello***'
-        res = d.replace('***','**')
-        #d='**space before **'
-        res = re.sub('(\w)\s+\*\*\s*$',r'\1**',d)
-        #d='**'
-        res = re.sub('^\s*\*\*\s*$',r'',d)
+        #d='****'
+        res = re.sub('\*\*\*\*+','',d)
+        #res='***Hello***'
+        res = res.replace('***','**')
+        #res='**space before **'
+        res = re.sub('(\w)\s+\*\*\s*$',r'\1**',res)
+        #res='**'
+        res = re.sub('^\s*\*\*\s*(\*\*)*$',r'',res)
+        res = res.replace('.. _``:','')
+        res = re.sub('^:$',r'',res)
         yield res
 
 def noblankend(
@@ -232,10 +249,10 @@ def reflow(
     '''
     r = reflowrow()
     for ln in noblankend(
-            no3star(
-                rmextrablankline(
+             rmextrablankline(
+                no3star(
                     reflowparagraphs(
-                        gridtable(lns, join, r),
+                        nostrikeout(gridtable(lns, join, r)),
                         sentence
                         )
                     )

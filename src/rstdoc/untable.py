@@ -231,7 +231,7 @@ def main(
             sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
             f = sys.stdout
         try:
-            f.writelines(untable(lns))
+            f.writelines(x+'\n' if not x.endswith('\n') else x for x in untable(lns))
         finally:
             if args['in_place']:
                 f.close()

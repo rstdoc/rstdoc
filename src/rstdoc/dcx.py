@@ -735,17 +735,18 @@ def lnksandtags(
                     n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
                     for n in fca.nodes]
             tlines = ''.join(trace).splitlines(keepends=True)
-            tlines.extend(['.. _`trace`:\n','\n','.. figure:: _images/'+trace_file_name+'.png\n','   :name:\n','\n','   |trace|: Diagram of dependency trace'])
+            tlines.extend(['.. _`trace`:\n','\n','.. figure:: _images/'+trace_file_name+'.png\n','   :name:\n','\n',
+              '   |trace|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies'])
             if file_id_color is not None:
                 legend=', '.join([fnm+" "+clr for fnm,(_,clr) in file_id_color.items()])
-                tlines.extend(['   :'+legend,'\n'])
+                tlines.extend([': '+legend,'\n'])
             tlines.append('\n')
             with open(nj(fldr,trace_file_name+'.rst'),'w',encoding='utf-8') as f:
                 f.write('.. raw:: html\n\n')
                 #needs in conf.py: html_extra_path=["_images/_trace.svg"]
                 f.write('    <object data="'+trace_file_name+'.svg" type="image/svg+xml"></object>\n')
                 if file_id_color is not None:
-                    f.write('    <p>Dependency trace with clickable nodes:'+legend+'</p>\n\n')
+                    f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
                 f.writelines(tlines)
             ld = pyfca.LatticeDiagram(fca,4*297,4*210)
             tracesvg = os.path.abspath(nj(fldr,"_images",trace_file_name+'.svg'))
@@ -936,6 +937,7 @@ try:
             linksandtags = [self.path.make_node(x) for x in ['_links_'+x+'.rst' for x in doctypes]+['.tags']]
             self.create_task('rstindex',self.path,linksandtags,scan=lambda:get_files_in_folder(self.path))
     class rstindex(Task.Task):
+        always_run = True
         def run(self):
             for fldr, (lnktgts,allfiles,alltgts) in fldrs(self.inputs[0].abspath()):
                 lnksandtags(fldr,lnktgts,allfiles,alltgts)

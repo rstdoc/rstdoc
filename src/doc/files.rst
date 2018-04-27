@@ -1,13 +1,49 @@
 
-``meta.rest`` (|m0d|): Project and documentation overview.
+meta.rest
+---------
 
-``ra.rest`` (|rwx|): Motivations and risks.
+|m0d|
 
-``sr.rest`` (|son|): General requirements motivated from |rwx|.
+Project and documentation overview.
 
-``dd.rest`` (|dcu|): The detailed choices made to satisfy |son|.
+ra.rest
+-------
 
-``tp.rest`` (|tkf|): Tests to verify the |dcu|.
+|rwx|
 
-``rstdoc.rest`` (|or1|): The description of the python API and command line tools provided by this package.
+Motivations and risks.
+
+The argumentation is kept general to
+motivate general requirements that do not presume solutions.
+
+sr.rest
+-------
+
+|son|
+
+General requirements motivated from |rwx|.
+
+dd.rest
+-------
+
+|dcu|
+
+The detailed choices made to satisfy |son|.
+
+Here the actual format, the conventions and the tools
+are proposed.
+
+tp.rest
+-------
+
+|tkf|
+
+Tests to python code provided by this package (|or1|).
+
+rstdoc.rest
+-----------
+
+|or1|
+
+The description of the python API and command line tools provided by this package.
 

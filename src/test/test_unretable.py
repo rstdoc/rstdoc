@@ -560,3 +560,4 @@ rfecres='''\
 def test_reflowemptycells():
    res = ''.join(reflow(rfec))
    assert res == rfecres
+

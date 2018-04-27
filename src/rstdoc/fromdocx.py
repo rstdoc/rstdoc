@@ -17,7 +17,7 @@ rstfromdocx
 rstfromdocx: shell command
 fromdocx: rstdoc module
 
-Convert DOCX to RST in a subfolder named after the DOCX file.
+Convert DOCX to RST in a subfolder of current dir, named after the DOCX file.
 It also create ``conf.py``, ``index.py`` and ``Makefile``
 and copies ``dcx.py`` into the folder.
 
@@ -81,6 +81,8 @@ def prj_name(fn):
     m=re.match(r'[\s\d\W]*([^\s\W]*).*',_rstname(fn))
     return m.group(1).strip('_').replace(' ','')
 
+_fldrhere = lambda n: os.path.abspath(os.path.split(os.path.splitext(n)[0])[1])
+
 def extract_media(
         fn #docx file name
         ):
@@ -90,7 +92,7 @@ def extract_media(
     zf = ZipFile(fn)
     pwd=os.getcwd()
     try:
-        fnn = os.path.splitext(fn)[0]
+        fnn = _fldrhere(fn)
         mkdir(fnn)
         media=[x for x in zf.infolist() if 'media/' in x.filename]
         os.chdir(fnn)
@@ -102,10 +104,12 @@ def extract_media(
             try:
                 shutil.move(m.filename,os.getcwd())
             except:pass
-        for f in glob('word/media/*'):
-            os.remove(f)
-        os.rmdir('word/media')
-        os.rmdir('word')
+        try:
+            for f in glob('word/media/*'):
+                os.remove(f)
+            os.rmdir('word/media')
+            os.rmdir('word')
+        except: pass
     finally:
         os.chdir(pwd)
 
@@ -115,9 +119,10 @@ def docxrest(
     '''
     returns 'docx' and file name of ``.rest`` file.
     '''
-    fnrst,frm = os.path.splitext(fn)
+    _,frm = os.path.split(fn)
+    fnrst,frm = os.path.splitext(frm)
     frm = frm.strip('.')
-    fnrst = os.path.normpath(os.path.join(fnrst,os.path.split(fnrst)[1]+'.rest'))
+    fnrst = os.path.join(_fldrhere(fn),fnrst+'.rest')
     return frm,fnrst
 
 def write_confpy(
@@ -132,7 +137,7 @@ def write_confpy(
     lns=confpy.splitlines(True)
     s=re.search('\w',lns[1]).span(0)[0]
     confpy=''.join([l[s:] for l in lns])
-    fnn = os.path.splitext(fn)[0]
+    fnn = _fldrhere(fn)
     cpfn = os.path.normpath(os.path.join(fnn,'conf.py'))
     if os.path.exists(cpfn):
         return
@@ -146,7 +151,7 @@ def write_index(
     Adds a the generated .rest to ``toctree`` in index.rest
     or generates new index.rest.
     '''
-    fnn = os.path.splitext(fn)[0]
+    fnn = _fldrhere(fn)
     ifn = os.path.normpath(os.path.join(fnn,'index.rest'))
     rst = _rstname(fn)+'.rest'
     prjname = prj_name(fn)
@@ -177,7 +182,7 @@ def write_makefile(
     doce = lns[idoc+1].replace('sr',rst)
     pdfe = lns[ipdf+1].replace('sr',rst)
     lns=lns[:idoc+1]+[lns[ipdf]]
-    fnn = os.path.splitext(fn)[0]
+    fnn = _fldrhere(fn)
     mffn = os.path.normpath(os.path.join(fnn,'Makefile'))
     if os.path.exists(mffn):
         with open(mffn,'r') as f:
@@ -195,7 +200,7 @@ def write_dcx(
     Writes the dcx.py into the folder generated for the docx.
     '''
     dcxfile = os.path.join(os.path.split(str(Path(__file__).resolve()))[0],'dcx.py')
-    shutil.copy2(dcxfile,os.path.splitext(fn)[0])
+    shutil.copy2(dcxfile,_fldrhere(fn))
 
 def main(
         **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
@@ -232,6 +237,9 @@ def main(
     write_index(fn)
     write_makefile(fn)
     write_dcx(fn)
+
+    if 'join' not in args:
+        args['join'] = '012'
 
     for a in 'listtable untable reflow reimg'.split():
         if args[a]:
