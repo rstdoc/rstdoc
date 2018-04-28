@@ -121,6 +121,11 @@ def main(
         ):
     '''
     This corresponds to the |rstreimg| shell command.
+
+    ``rstfile`` is the file name
+
+    ``in_place`` defaults to False
+
     '''
     import codecs
     import sys
@@ -132,12 +137,15 @@ def main(
 
     if not args:
         parser = argparse.ArgumentParser(description='''Rename images referenced in the RST file.''')
-        parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
+        parser.add_argument('rstfile', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
         parser.add_argument('-i', '--in-place', action='store_true', default=False,
                 help='''change the file itself''')
         args = parser.parse_args().__dict__
 
-    for infile in args['INPUT']:
+    if not 'in_place' in args: args['in_place'] = False
+    if isinstance(args['rstfile'],str): args['rstfile'] = [argparse.FileType('r',encoding='utf-8')(args['rstfile'])]
+
+    for infile in args['rstfile']:
         od = os.getcwd()
         data = infile.read()
         infile.close()

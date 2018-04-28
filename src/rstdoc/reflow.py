@@ -95,6 +95,7 @@ def reflowparagraph(
         elif len(p[0])>3 and p[0][0:3]=='.. ': #directive, comment
             yield from p
         else:
+            #p = ['This e.g. is a sentence. And here a new one.','A new one.']
             st = 0
             mo = ''
             for rp in _pgrphrex:
@@ -109,11 +110,15 @@ def reflowparagraph(
                 if sentence:
                     txt = ' '.join([p[0][st:]]+[pp.strip() for pp in p[1:]])
                     wraptxt = []
-                    for ph in txt.split('. '):
-                        wraptxt.extend(wrap(ph))
-                        wraptxt[-1]+='.'
+                    ss = re.split('(?<!e\.g)\.\s+',txt)
+                    for ph in ss:
+                        wraptxt.extend(wrap(ph,width=150))
+                        if wraptxt: wraptxt[-1]+='.'
                     else:
-                        wraptxt[-1]=wraptxt[-1][:-1]
+                        try:
+                           wraptxt[-1]=wraptxt[-1][:-1]
+                        except:
+                           pass
                 else:
                     txt = '\n'.join([p[0][st:]]+[pp.strip() for pp in p[1:]])
                     wraptxt = wrap(txt)
@@ -265,6 +270,11 @@ def main(
         ):
     '''
     This corresponds to the |rstreflow| shell command.
+
+    ``rstfile`` is the file name
+
+    ``in_place`` defaults to False
+
     '''
     import codecs
     import sys
@@ -273,7 +283,7 @@ def main(
     if not args:
         parser = argparse.ArgumentParser(
             description='''Reflow paragraphs and tables, for the latter using join as for listtable''')
-        parser.add_argument('INPUT', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
+        parser.add_argument('rstfile', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
         parser.add_argument('-j', '--join', action='store', default='012',
                 help='''e.g.002. Join method per column: 0="".join; 1=" ".join; 2="\\n".join''')
         parser.add_argument('-s', '--sentence', action='store_true', default=False,
@@ -282,7 +292,13 @@ def main(
                 help='''change the file itself''')
         args = parser.parse_args().__dict__
 
-    for infile in args['INPUT']:
+    if not 'in_place' in args: args['in_place'] = False
+    if not 'sentence' in args: args['sentence'] = False
+    if 'join' not in args: args['join'] = '012'
+
+    if isinstance(args['rstfile'],str): args['rstfile'] = [argparse.FileType('r',encoding='utf-8')(args['rstfile'])]
+
+    for infile in args['rstfile']:
         lns = infile.readlines()
         infile.close()
         if args['in_place']:
@@ -293,7 +309,7 @@ def main(
             sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
             f = sys.stdout
         try:
-            f.writelines(reflow(lns,args['join']))
+            f.writelines(reflow(lns,args['join'],sentence=args['sentence']))
         finally:
             if args['in_place']:
                 f.close()
