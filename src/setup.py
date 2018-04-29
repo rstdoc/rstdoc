@@ -46,7 +46,9 @@ setup(name = 'rstdoc',
         'Topic :: Utilities',
         ],
 
-    install_requires = ['stpl','pyfca','cairosvg','pypandoc','sphinx','sphinxcontrib-tikz','sphinx_bootstrap_theme'],
+    #optional dependencies: 
+    #'pyfca','cairosvg': only used to draw FCA diagram
+    install_requires = ['stpl','pypandoc','sphinx','sphinxcontrib-tikz','sphinx_bootstrap_theme'],
     extras_require = {'develop': ['mock','pytest-coverage'],'build':['waf']},
     long_description = long_description,
     packages=['rstdoc'],
