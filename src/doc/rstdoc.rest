@@ -87,7 +87,8 @@ Purpose
 .. _`Pandoc`: https://pandoc.org/
 .. _`RST`: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
 .. _`DOCX`: http://www.ecma-international.org/publications/standards/Ecma-376.htm
-
+.. _`SimpleTemplate`: https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax
+.. _`waf`: https://github.com/waf-project/waf
 
 .. include:: _links_sphinx.rst
 

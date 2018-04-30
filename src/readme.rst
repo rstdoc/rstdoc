@@ -1,6 +1,6 @@
 Many companies use `DOCX`_ and thus produce an information barrier.
 Working with text is more integrated in the (software) development process.
-A final format can be `DOCX`_, but, at least during development, text should be used. 
+A final format can be `DOCX`_, but, at least during development, text is better.
 
 `Sphinx`_ is an extension of `Docutils`_ used for many (software) projects,
 but it does not support creation of `DOCX`_ files, which certain companies demand.
@@ -9,28 +9,21 @@ but it does not support creation of `DOCX`_ files, which certain companies deman
 This python packages supports working with `RST`_ as documentation format without depending on `Sphinx`_:
 
 - link `RST`_ documents (``_links_xxx.rst`` files)
-- create a ``.tags`` file
+- create a ``.tags`` file to jump around in an editor that support `ctags`_
 - `RST`_ handling with python: reformat/create `RST`_ tables
 - postprocess `Pandoc`_'s conversion from `DOCX`_ to `RST`_
 - preprocess `Pandoc`_'s conversion from `RST`_ to `DOCX`_
-- Support in building
+- Support in building with `WAF`_ or ``Makefile``
 
   - expand `SimpleTemplate`_ template files ``.stpl``
   - convert ``.tikz`` to ``.png`` files and place them ``./_images`` or ``../_images``
   - generated files from source code using a ``gen`` file
 
-``rstdoc`` supports working with ``restructuredText`` (`RST`_).
+The conventions used are shown 
 
-``rstdcx`` (``rstdoc.dcx.py``) 
-
-- generates ``.tags`` files to jump around in an editor that support `ctags`_
-  (Vim, Atom, VsCode, Emacs, ...)
-
-- produces numbering for tables, figures and code listings 
-  consistent through docx, html and pdf by using ``|id|``
-  defined in the generated ``_links_xxx.rst`` files.
-
-The conventions used are shown by the example produced via ``rstdcx --init samplerstdoc``.
+- by the example produced via ``rstdcx --init samplerstdoc``
+- by the documentation sources that can be found at 
+  https://github.com/rpuntaie/rstdoc/tree/master/src/doc 
 
 ``pip install rstdoc`` installs:
 
@@ -67,4 +60,6 @@ The conventions used are shown by the example produced via ``rstdcx --init sampl
 .. _`Pandoc`: https://pandoc.org/
 .. _`RST`: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
 .. _`DOCX`: http://www.ecma-international.org/publications/standards/Ecma-376.htm
+.. _`SimpleTemplate`: https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax
+.. _`waf`: https://github.com/waf-project/waf
 

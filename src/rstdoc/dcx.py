@@ -749,6 +749,7 @@ def lnksandtags(
                     f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
                 f.writelines(tlines)
             ld = pyfca.LatticeDiagram(fca,4*297,4*210)
+            mkdir(nj(fldr,"_images"))
             tracesvg = os.path.abspath(nj(fldr,"_images",trace_file_name+'.svg'))
             ld.svg(target=trace_target+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
             try:

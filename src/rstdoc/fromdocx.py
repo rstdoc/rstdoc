@@ -42,7 +42,7 @@ RST documentation folder, proceed like this:
 - create a new folder, e.g. ``doc``
 - merge all other folders into that new folder
 
-|docx_rst_5| creates 5 different rst files with different postprocessing.
+|fromdocx.docx_rst_5| creates 5 different rst files with different postprocessing.
 
 See |rstreflow| for an alternative proceeding.
 """
