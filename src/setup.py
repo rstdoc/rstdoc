@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+#sudo pip install -e .
 #py.test --cov rstdoc --cov-report term-missing
 
 #sudo python setup.py bdist_wheel
@@ -46,14 +47,15 @@ setup(name = 'rstdoc',
         'Topic :: Utilities',
         ],
 
-    #optional dependencies: 
-    #'pyfca','cairosvg': only used to draw FCA diagram
+    #optional dependencies, because only used to draw FCA diagram:
+    #- pyfca: https://github.com//pyfca/pyfca
+    #- cairosvg: http://cairosvg.org/
     install_requires = ['stpl','pypandoc','sphinx','sphinxcontrib-tikz','sphinx_bootstrap_theme'],
     extras_require = {'develop': ['mock','pytest-coverage'],'build':['waf']},
     long_description = long_description,
     packages=['rstdoc'],
-    include_package_data=True,
-    package_data={'rstdoc':['reference.tex']},
+    #include_package_data=True,
+    package_data={'rstdoc':['../reference.tex','../reference.docx','../readme.rst']},
     zip_safe=False,
     tests_require=['pytest','pytest-coverage','mock'],
     entry_points={

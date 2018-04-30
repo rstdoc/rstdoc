@@ -1,27 +1,27 @@
-
-This python packages supports working with `RST`_  as documentation format:
-
-- postprocess `Pandoc`_'s conversion from `DOCX`_ to `RST`_
-- preprocess `Pandoc`_'s conversion from `RST`_ to `DOCX`_
-- link the `RST`_ documents (``_links_xxx.rst`` files)
-- create a ``.tags`` file
-- reformat/create `RST`_ tables
-- expand template files ``.stpl``
-- convert ``.tikz`` to ``.png`` files and place them ``./_images`` or ``../_images``
-- generated files from source code using the ``gen`` file
+Many companies use `DOCX`_ and thus produce an information barrier.
+Working with text is more integrated in the (software) development process.
+A final format can be `DOCX`_, but, at least during development, text should be used. 
 
 `Sphinx`_ is an extension of `Docutils`_ used for many (software) projects,
-but it does not support creation of `DOCX`_ files.
+but it does not support creation of `DOCX`_ files, which certain companies demand.
 `Pandoc`_ does support `DOCX`_, but does not support the `Sphinx`_ extensions.
 
-``rstdoc`` supports working with ``restructuredText`` (`RST`_) 
-defined by `Docutils`_ using some conventions.
-The conventions are shown by the example produced via ``rstdcx --init samplerstdoc``,
+This python packages supports working with `RST`_ as documentation format without depending on `Sphinx`_:
 
-The idea is, that working with text is more integrated in the 
-(software) development process.
+- link `RST`_ documents (``_links_xxx.rst`` files)
+- create a ``.tags`` file
+- `RST`_ handling with python: reformat/create `RST`_ tables
+- postprocess `Pandoc`_'s conversion from `DOCX`_ to `RST`_
+- preprocess `Pandoc`_'s conversion from `RST`_ to `DOCX`_
+- Support in building
 
-``rstdoc``'s ``rstdcx`` (``dcx.py``) 
+  - expand `SimpleTemplate`_ template files ``.stpl``
+  - convert ``.tikz`` to ``.png`` files and place them ``./_images`` or ``../_images``
+  - generated files from source code using a ``gen`` file
+
+``rstdoc`` supports working with ``restructuredText`` (`RST`_).
+
+``rstdcx`` (``rstdoc.dcx.py``) 
 
 - generates ``.tags`` files to jump around in an editor that support `ctags`_
   (Vim, Atom, VsCode, Emacs, ...)
@@ -29,6 +29,8 @@ The idea is, that working with text is more integrated in the
 - produces numbering for tables, figures and code listings 
   consistent through docx, html and pdf by using ``|id|``
   defined in the generated ``_links_xxx.rst`` files.
+
+The conventions used are shown by the example produced via ``rstdcx --init samplerstdoc``.
 
 ``pip install rstdoc`` installs:
 
