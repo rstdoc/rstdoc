@@ -81,7 +81,8 @@ Conventions
 - ``.rest.stpl`` and ``.rst.stpl`` are templates without parameters
 - ``.rst.tpl`` need parameters: ``%include('some.rst.tpl',param="test")`` looks up templates in ``.`` and ``..``
 
-See the example created with ``--init`` at the end of this file and the sources of the documentation of |rstdoc|.
+See the example created with ``--init`` at the end of this file and the sources of the documentation of 
+`rstdoc <https://github.com/rpuntaie/rstdoc>`__.
 
 .. _`substitutions`: http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text
 
