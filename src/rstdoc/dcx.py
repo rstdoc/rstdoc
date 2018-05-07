@@ -78,9 +78,10 @@ Conventions
 - Included files have extension ``.rst`` ignored by Sphinx (see conf.py).
 - ``.. _`id`:`` are targets.
 - References use replacement `substitutions`_: ``|id|``.
-- In the src tree the only files (not folders), starting with ``_``, are generated ones.
+- ``.rest.stpl`` and ``.rst.stpl`` are templates without parameters
+- ``.rst.tpl`` need parameters: ``%include('some.rst.tpl',param="test")`` looks up templates in ``.`` and ``..``
 
-See the example created with ``--init`` at the end of this file.
+See the example created with ``--init`` at the end of this file and the sources of the documentation of |rstdoc|.
 
 .. _`substitutions`: http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text
 
@@ -148,6 +149,14 @@ reximg = re.compile(r'image:: ((?:\.|/|\\|\w).*)')
 #reximg.search(r'.. |c:\x y\im.jpg| image:: /tmp/img.png').group(1)
 #reximg.search(r'.. image:: c:\tmp\img.png').group(1)
 #reximg.search(r'.. image:: \\public\img.png').group(1)
+rerstinclude = re.compile(r'\.\. include::\s*([\./\w\\].*)')
+restplinclude = re.compile(r'''%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*''')
+#rerstinclude.split('.. include:: test.rst')
+#rerstinclude.split('.. include:: ../test.rst')
+#restplinclude.split('%include("test.rst.stpl",v="xxx")')
+#restplinclude.match('%include("test.rst.stpl",v="xxx")')
+#restplinclude.split('%include("../test.rst.stpl",v="xxx")')
+#restplinclude.match('%include("../test.rst.stpl",v="xxx")')
 
 nj = lambda *x:os.path.normpath(os.path.join(*x))
 
@@ -320,11 +329,12 @@ def rstincluded(
                 toctree = True
             elif e.startswith('.. '):
                 #e = '.. include:: some.rst'
+                #e = '.. include:: ../some.rst'
                 #e = '.. image:: some.png'
                 #e = '.. figure:: some.png'
                 #e = '.. |x y| image:: some.png'
                 try:
-                    f,t=e[3:].split('include:: ')
+                    f,t,_ = rerstinclude.split(e)
                     nf = not f and t
                     if nf and not nf.startswith('_links_'):
                         yield from rstincluded(nf.strip(),paths)
@@ -333,6 +343,17 @@ def rstincluded(
                         m = reximg.search(e)
                         if m:
                             yield m.group(1)
+            elif restplinclude.match(e): 
+                #e="%include('some.rst.tpl',v='xxx')" #no '../some.rst.tpl': current and parent folder are automatically searched
+                f,t,_=restplinclude.split(e)
+                nf = not f and t
+                if nf:
+                    try:
+                        if not os.path.exists(nf):
+                            nf = os.path.join('..',nf)
+                        yield from rstincluded(nf.strip(),paths)
+                    except:
+                        pass
 
 def fldrincluded(
         directory='.'
@@ -949,15 +970,18 @@ try:
         lookup,name=os.path.split(ps)
         env = tsk.env
         env.update(tsk.generator.__dict__)
-        st=bottle.template(name
-                ,template_lookup = [lookup,os.path.split(lookup)[0]]
-                ,bldpath = bldpath.abspath()
-                ,options = bld.options
-                ,__file__ = ps.replace('\\','/')
-                ,**env
-                ) 
-        with open(pt,mode='w',encoding="utf-8",newline="\n") as f: 
-            f.write(st)
+        try: #if stpl needs a parameter this will fail, the stpl is then no separate file but only used via include #TODO: produces build fail that can be ignored
+            st=bottle.template(name
+                    ,template_lookup = [lookup,os.path.split(lookup)[0]]
+                    ,bldpath = bldpath.abspath()
+                    ,options = bld.options
+                    ,__file__ = ps.replace('\\','/')
+                    ,**env
+                    ) 
+            with open(pt,mode='w',encoding="utf-8",newline="\n") as f: 
+                f.write(st)
+        except:
+            pass
     class Stpl(Task.Task):
         always_run = True
         def run(self):

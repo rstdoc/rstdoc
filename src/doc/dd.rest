@@ -9,7 +9,7 @@ Design Description
 Purpose
 =======
 
-An implemenation of the |son| is described
+An implementation of the |son| is described
 in a short way with links to motivation further down in the document.
 
 For an illustrative implementation of the following conventions see the end of `dcx.py`_
@@ -40,6 +40,10 @@ Place a target ID before paragraphs, figures, list-tables, code listings, maths:
     .. _`dx8`:
 
     :dx8: <optionally key words here>
+
+    ``:dx8:`` is a RST definition that will get special formatting in the generated document.
+    Else, ``dx8:`` would do, too. 
+    Omitting it, if the ID is not wanted in the generated document.
 
     |dx8| is an example ID. 
 
@@ -80,7 +84,7 @@ Place a target ID before paragraphs, figures, list-tables, code listings, maths:
     .. math:: 
        :name:
 
-If headers are referenced accross files, add an ID before them, too::
+If headers are referenced across files, add an ID before them, too::
 
     .. _`d99`:
 
@@ -161,12 +165,15 @@ Images can be generated from `tikz`_ files (``.tikz``) or templates of it (``.ti
 :dyn: |s8c|, |dv6|
 
 ``.rest``, ``.rst``, ``.tikz`` files can be `SimpleTemplate`_ templates. 
-Then they have the additional extension ``.stpl``.
 
-Template files can include other template files,
-which either are in the current or the parent directory.
-E.g. in this documentation ``ra.rest.stpl`` includes ``utility.rst.tpl``.
+Then they have the additional extension 
 
+- ``.stpl``, if they can be expanded by themselves
+- ``.tpl``, if they are only used by other template files (``%include('some.rst.tpl')``).
+  ``.tpl`` files can have parameters, which are provided via ``%include('some.rst.tpl',aparam="test")`` 
+  ``.tpl`` files can be in the same or the parent folder, without the need for a path in ``%include()``.
+
+In this documentation ``ra.rest.stpl`` includes ``utility.rst.tpl``.
 
 Tools
 =====
@@ -265,11 +272,15 @@ The alternatives are `light markup`_ formats:
   The formatting is done when creating the final document. This makes it easier
   to *keep a consistent formatting* when more people work on the documentation.
 
-- |s9v|: As text, it is *perfect for version control systems*
+- |s9v|: As text, it is *perfect for version control systems*.
   One can commit documentation changes together with the according source code changes.
+  It allows to keep outdated information hidden in the `VCS`_ history and not lying around and messing up.
   It is easy to review documentation changes.
-  It allows to keep outdated information hidden in the VCS history
-  and not lying around and messing up.
+  To make it even more easy one should try to have 
+
+  - one sentence per line
+  - one clause per line or 
+  - one list item per line
 
 - |s0t|: It is easier to extract, which items link to which other ones, especially if the team agrees on facilitating conventions.
 
@@ -384,7 +395,7 @@ For image substitutions to work place the ``.. |xxx| image:: xxx.jpg`` into the 
 Editor
 ------
 
-If most work is done on text, it becomes important to have a very fexible and powerful editor.
+If most work is done on text, it becomes important to have a very flexible and powerful editor.
 One should invest a some time to know the editor well.
 
 There are a lot of `editors`_ that work well with RST, e.g. `Emacs`_.
@@ -582,7 +593,8 @@ If the data is more table-like:
 
 XML is only appropriate for a predefined schema,
 that is unlikely to change throughout the development time.
-There are alternatives for `XPath`_:
+
+There are alternatives for XML's `XPath`_ in `yaml`_ and `json`_:
 
 - Python and `yaml`_: `dpath`_
 - `json`_: `jsonpath`_ 
