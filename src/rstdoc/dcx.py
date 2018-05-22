@@ -246,8 +246,9 @@ def doc_parts(
             return False
         id = re.search(rid,lnsi)
         if id and id.groups():
-            ids = id.group(1)
-            return ids
+            ids = [x for x in id.groups() if x is not None]
+            if len(ids) > 0:
+                return ids[0]
     ids = False
     for a,b in in2s(list(rindices(rlim,lns))):
         for i in range(a-1,0,-1):
@@ -256,9 +257,10 @@ def doc_parts(
                 break
         if ids is False:
             for i in range(b+1,len(lns)):
-                if not isinstance(ids,str):
-                    ids = foundid(lns[i])
-                if ids is False:
+                testid = foundid(lns[i])
+                if isinstance(testid,str):
+                    ids = testid
+                if testid is False:
                     break
         if ids:
             yield
@@ -272,7 +274,7 @@ def doc_parts(
             if i < a:
                 yield from ('   '+x for x in lns[i:a])
             elif i > b:
-                yield from ('   '+x for x in lns[b:i])
+                yield from ('   '+x for x in lns[b+1:i+1])
             yield
         indent = 0
         for ln in lns[a+1:b]:
