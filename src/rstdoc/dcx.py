@@ -89,12 +89,11 @@ See the example created with ``--init`` at the end of this file and the sources 
 """
 
 
-#''' starts api doc parts (see doc_parts())
 '''
 API
 ---
 
-.. code-block::
+.. code-block:: py
 
    import rstdoc.dcx as dcx
 
@@ -178,6 +177,7 @@ def rindices(
       True
 
     '''
+
     if isinstance(r,str):
       r = re.compile(r)
     return filter(lambda x:r.search(lns[x]),range(len(lns)))
@@ -189,6 +189,7 @@ def rlines(
     '''
     Return the lines matched by ``r``.
     '''
+
     return [lns[i] for i in rindices(r,lns)]
 
 def intervals(
@@ -219,16 +220,25 @@ def in2s(
     """
     return list(zip(nms[::2],nms[1::2]))
 
+
+#re.search(reid,'OpenDevices = None').groups()
+#re.search(reid,'def OpenDevices(None)').groups()
+#re.search(reid,'class OpenDevices:').groups()
+#re.search(reid,'    def __init__(a,b):').groups()
+
+#re.search(relim,"  '''prefix. ").groups()
+#re.search(relim,"  '''").groups()
+
 def doc_parts(
     lns #list of lines
-    ,relim=r"^\s+'''\s*\n*$" #regular expression marking lines enclosing the documentation
-    ,reid=r"\s(\w+)\(" #extract id from preceding or succeeding non-empty lines
+    ,relim=r"^\s*'''([\w.:]*)\s*\n*$" #regular expression marking lines enclosing the documentation. The group is a prefix.
+    ,reid=r"\s(\w+)[(:]|(\w+)\s\=" #extract id from preceding or succeeding non-empty lines
     ,reindent=r'[^#/\s]' #determines start of text
     ,signature=None #if signature language is given the preceding or succeeding lines will be included
-    ,prefix='' #prefix to make id unique, e.g. module name
+    ,prefix='' #prefix to make id unique, e.g. module name. Include the dot.
     ):
     '''
-    yield doc part delimeted by ``relim`` regular expression
+    ``doc_parts()`` yields doc parts delimeted by ``relim`` regular expression
     possibly with id, if ``reid`` matches 
 
     If start and stop differ use regulare expression ``|`` in ``relim``.
@@ -237,48 +247,74 @@ def doc_parts(
 
       >>> list(doc_parts(open(__file__).readlines(),signature='py'))
 
+    - There is no empty line between doc string and preceding code lines that should be included.
+    - There is no empty line between doc string and succeeding code lines that should be included.
+    - Included code lines end with an empty line.
+
+    In case of ``__init__()`` the ID can come from the ``class`` line
+    and the included lines can be those of ``__init__()``,
+    if there is no empty line between the doc string and ``class`` above as well as ``_init__()`` below.
+
+    If the included code comes only from one side of the doc string, have an empty line at the other side.
+
+    Immediately after the initial doc string marker there can be a prefix, e.g. ``classname.``.
+
     '''
+
     rlim = re.compile(relim)
     rid = re.compile(reid)
     rindent = re.compile(reindent)
     def foundid(lnsi):
         if not lnsi.strip():#empty
             return False
-        id = re.search(rid,lnsi)
+        id = rid.search(lnsi)
         if id and id.groups():
             ids = [x for x in id.groups() if x is not None]
             if len(ids) > 0:
                 return ids[0]
-    ids = False
-    for a,b in in2s(list(rindices(rlim,lns))):
-        for i in range(a-1,0,-1):
-            ids = foundid(lns[i])
-            if ids or ids is False:
+    ids = []
+    def checkid(rng):
+        for i in rng:
+            testid = foundid(lns[i])
+            if testid is False:
                 break
-        if ids is False:
-            for i in range(b+1,len(lns)):
-                testid = foundid(lns[i])
-                if isinstance(testid,str):
-                    ids = testid
-                if testid is False:
-                    break
+            elif not ids and isinstance(testid,str):
+                ids.append(testid)
+        return i
+    for a,b in in2s(list(rindices(rlim,lns))):
+        try:
+            thisprefix = rlim.search(lns[a]).groups()[0]
+        except:
+            thisprefix = ''
+        ids.clear()
+        i = checkid(range(a-1,0,-1))
+        j = checkid(range(b+1,len(lns)))
         if ids:
             yield
-            yield '.. _`'+prefix+ids+'`:\n'
+            yield '.. _`'+prefix+thisprefix+ids[0]+'`:\n'
             yield
-            yield ':'+prefix+ids+':\n'
+            yield ':'+prefix+thisprefix+ids[0]+':\n'
             yield
         if signature:
-            yield '.. code-block:: '+signature+'\n'
-            yield
-            if i < a:
-                yield from ('   '+x for x in lns[i:a])
-            elif i > b:
-                yield from ('   '+x for x in lns[b+1:i+1])
-            yield
+            if i < a and i > 0:
+                if not lns[i].strip():#empty
+                    i = i+1
+                if i < a:
+                    yield '.. code-block:: '+signature+'\n'
+                    yield
+                    yield from ('   '+x for x in lns[i:a])
+                    yield
+            if j > b+1 and j < len(lns):
+                if not lns[j].strip():#empty
+                    j = j-1
+                if j > b:
+                    yield '.. code-block:: '+signature+'\n'
+                    yield
+                    yield from ('   '+x for x in lns[b+1:j+1])
+                    yield
         indent = 0
         for ln in lns[a+1:b]:
-            lnst = re.search(rindent,ln)
+            lnst = rindent.search(ln)
             if lnst and lnst.span():
                 indent = lnst.span()[0]
                 break;
@@ -293,6 +329,7 @@ def _read_lines(fn):
 
 is_rest = lambda x: x.endswith('.rest') or x.endswith('.rest'+_stpl)
 is_rst = lambda x: x.endswith('.rst') or x.endswith('.rst'+_stpl)
+
 @memoized
 def rstincluded(
     fn #file name without path
@@ -302,6 +339,7 @@ def rstincluded(
     '''
     Yield the files recursively included from an RST file.
     '''
+
     for p in paths:
         nfn = os.path.normpath(os.path.join(p,fn))
         if os.path.exists(nfn+_stpl): #first, because master
@@ -367,6 +405,7 @@ def fldrincluded(
     The list also includes all files recursively included via these `.rest` files,
     excluding those that contain ``exclude_paths_substrings``
     '''
+
     global trace_target
     sofar = []
     for p,ds,fs in os.walk(directory):
@@ -399,6 +438,7 @@ def links(lns):
             yield i,g
 
 g_counters=defaultdict(dict)
+
 def linktargets(
     lns,  #lines of the document
     docid #identifies the document
@@ -406,6 +446,7 @@ def linktargets(
     '''
     Yields line index, target and link name of ``lns`` of a RST file.
     '''
+
     #docprefix = str(docid)+'.'
     #docid=0
     #list(linktargets(lns,docid))
@@ -474,6 +515,7 @@ def gen(
         ['some lines', 'to extrace']
 
     '''
+
     if isinstance(source,list):
         lns = source
         source = ""
@@ -523,6 +565,7 @@ def parsegenfile(
 
     The yields are used for the |dcx.gen| function.
     '''
+
     genfilelns = _read_lines(genpth)
     for ln in genfilelns:
         if ln[0] != '#':
@@ -542,6 +585,7 @@ def mktree(
     tree #tree string as list of lines
     ):
     ''' 
+
     Build a directory tree from a string as returned by the tree tool.
 
     The level is determined by the identation.
@@ -572,6 +616,7 @@ def mktree(
         >>> #mktree(tree) 
 
     '''
+
     for treestart,t in enumerate(tree):
         try:
             ct = re.search(r'[^\s├│└]',t).span()[0]
@@ -629,6 +674,7 @@ def tree(
       >>> tree(path,True)
 
     '''
+
     subprefix = ['│  ', '   '] 
     entryprefix = ['├─', '└─']
     def _tree(path, prefix):
@@ -662,6 +708,7 @@ def fldrs(
 
     These are used by |dcx.lnksandtags|.
     '''
+
     odir = os.getcwd()
     os.chdir(scanroot)
     fldr_lnktgts = OrderedDict()
@@ -694,9 +741,10 @@ def fldrs(
     os.chdir(odir)
 
 doctypes = "sphinx docx pdf".split()
+
 def lnksandtags(
     fldr #folder path
-    ,lnktgts  #list of links and targets in a document: (restname, doc, lenlns, lnks, tgts)
+    ,lnktgts  #list of links and targets in a document (restname, doc, lenlns, lnks, tgts)
     ,allfiles #all files in one folder
     ,alltgts  #all targets of the whole folder
     ):
@@ -720,8 +768,8 @@ def lnksandtags(
     This is used to color an FCA lattice diagram in "_trace.rst".
     The diagram nodes are clickable in HTML.
 
-
     '''
+
     _tgtsdoc = [(doctype,[]) for doctype in doctypes]
     tags = []
     objects = [] #in FCA sense: set of target tgt with all its links to other targets 
@@ -1465,6 +1513,7 @@ def main(**args):
   '''
   This corresponds to the |rstdcx| shell command.
   '''
+
   import codecs
   import argparse
 
