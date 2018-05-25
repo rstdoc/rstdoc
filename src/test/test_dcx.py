@@ -516,9 +516,9 @@ def test_selfdoc():
     assert os.path.exists(os.path.join('doc','_dcx_api.rst'))
 
 def test_docparts_after():
-    res = list(doc_parts(['/// \\brief\n',"/// afun's description\n"
+    res = list(doc_parts(['/// \\brief\n',"/// afun's description\n","//\n"
         ,'void afun(\n','int x //int variable\n',')\n','\n'],
-        signature='cpp',relim=r'\\brief|\s\w*\('))
+        signature='cpp',relim=r'\\brief|//$',reid=r'\s(\w\+)\('))
     assert res == ['.. code-block:: cpp\n', None, '   void afun(\n',
         '   int x //int variable\n', '   )\n', None, "afun's description\n"]
 

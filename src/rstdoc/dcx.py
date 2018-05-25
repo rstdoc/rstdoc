@@ -274,6 +274,7 @@ def doc_parts(
                 return ids[0]
     ids = []
     def checkid(rng):
+        i = None
         for i in rng:
             testid = foundid(lns[i])
             if testid is False:
@@ -296,7 +297,7 @@ def doc_parts(
             yield ':'+prefix+thisprefix+ids[0]+':\n'
             yield
         if signature:
-            if i < a and i > 0:
+            if i is not None and i < a and i > 0:
                 if not lns[i].strip():#empty
                     i = i+1
                 if i < a:
@@ -304,7 +305,7 @@ def doc_parts(
                     yield
                     yield from ('   '+x for x in lns[i:a])
                     yield
-            if j > b+1 and j < len(lns):
+            if j is not None and j > b+1 and j < len(lns):
                 if not lns[j].strip():#empty
                     j = j-1
                 if j > b:
