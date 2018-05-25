@@ -25,7 +25,10 @@ long_description = '\n'.join(["rstdoc\n======\n\n"
 ,read('rstdoc/reflow.py')
 ,read('rstdoc/reimg.py')
 ,read('rstdoc/retable.py')
-])
+]).replace(
+    '|rstdcx|','rstdcx_').replace(
+    '|fromdocx.docx_rst_5|','``fromdocx.docx_rst_5``').replace(
+    '|rstreflow|','rstreflow_')
 
 setup(name = 'rstdoc',
     version = __version__,
