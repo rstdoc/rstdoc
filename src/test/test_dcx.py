@@ -234,6 +234,7 @@ def test_makenostpl(makebuild):
    │  ├─sr.doctree
    │  └─tp.doctree
    └─html
+      ├─_images
       ├─_sources
       ├─_static
       ├─dd.html
