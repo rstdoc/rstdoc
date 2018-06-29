@@ -769,6 +769,8 @@ def lnksandtags(
     This is used to color an FCA lattice diagram in "_trace.rst".
     The diagram nodes are clickable in HTML.
 
+    For ``_trace.png`` one needs the cairosvg library.
+
     '''
 
     _tgtsdoc = [(doctype,[]) for doctype in doctypes]
@@ -829,7 +831,8 @@ def lnksandtags(
                 import cairosvg
                 pngf = tracesvg.replace('.svg','.png')
                 cairosvg.svg2png(url="file:///"+tracesvg, write_to=pngf)
-            except: pass
+            except Exception as e:
+                print(e)
             return tlines
         except:
             return []
@@ -1022,18 +1025,16 @@ try:
         lookup,name=os.path.split(ps)
         env = tsk.env
         env.update(tsk.generator.__dict__)
-        try: #if stpl needs a parameter this will fail, the stpl is then no separate file but only used via include #TODO: produces build fail that can be ignored
-            st=bottle.template(name
-                    ,template_lookup = [lookup,os.path.split(lookup)[0]]
-                    ,bldpath = bldpath.abspath()
-                    ,options = bld.options
-                    ,__file__ = ps.replace('\\','/')
-                    ,**env
-                    ) 
-            with open(pt,mode='w',encoding="utf-8",newline="\n") as f: 
-                f.write(st)
-        except:
-            pass
+        #if the .stpl needs a parameter, then this fails, since it is intended to be used as include file only: name it .tpl then
+        st=bottle.template(name
+                ,template_lookup = [lookup,os.path.split(lookup)[0]]
+                ,bldpath = bldpath.abspath()
+                ,options = bld.options
+                ,__file__ = ps.replace('\\','/')
+                ,**env
+                )
+        with open(pt,mode='w',encoding="utf-8",newline="\n") as f:
+            f.write(st)
     class Stpl(Task.Task):
         always_run = True
         def run(self):
@@ -1042,7 +1043,10 @@ try:
     def expand_stpl(self,node):#expand into same folder
         nn = node.parent.make_node(node.name[:-len(_stpl)])
         self.create_task('Stpl',node,nn)
-        self.get_hook(nn)(self, nn)
+        try:
+            self.get_hook(nn)(self, nn)
+        except:
+            pass
     def sphinxcontrib_tikz(tsk):
         from sphinxcontrib import tikz
         from argparse import Namespace
