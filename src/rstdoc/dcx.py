@@ -102,7 +102,6 @@ The functions in ``dcx.py`` are available to the ``gen_xxx(lns,**kw)`` functions
 
 '''
 
-
 import sys
 import os
 import re
@@ -135,9 +134,10 @@ def memoized(f):
 verbose = False
 _stpl = '.stpl'
 
-rextgt = re.compile(r'^\.\. _`?(\w[^:`]*)`?:\s*$')
+rextgt = re.compile(r'(?:^|\s)\.\. _`?(\w[^:`]*)`?:\s*$')
 rextitle = re.compile(r'^([!"#$%&\'()*+,\-./:;<=>?@[\]^_`{|}~])\1+$')
-rexitem = re.compile(r'^:?(\w[^:]*):\s*.*$')
+rexitem = re.compile(r'^\s*:?(\w[^:]*):\s*.*$')
+rexoneword = re.compile(r'^\s*(\w*)\s*$')
 rexname = re.compile(r'^\s*:name:\s*(\w.*)*$')
 rexlinksto = re.compile(r'[^`]?\|(\w+)\|[^`]?')
 reximg = re.compile(r'image:: ((?:\.|/|\\|\w).*)')
@@ -471,18 +471,13 @@ def linktargets(
                 if not lnkname:
                     lnkname=lns[j+1].strip()
                 break
-            #lnj=":lnkname: words"
-            itm = rexitem.match(lnj)
-            if itm:
-                lnkname, = itm.groups()
-                break
             #j,lns=1,".. figure::\n  :name: lnkname".splitlines();lnj=lns[j]
             #j,lns=1,".. figure::\n  :name:".splitlines();lnj=lns[j]
             #j,lns=1,".. math::\n  :name: lnkname".splitlines();lnj=lns[j]
             itm = rexname.match(lnj)
             if itm:
                 lnkname, = itm.groups()
-                lnj1 = lns[j-1].split('::')[0].replace('list-table','table').replace('code-block','code')
+                lnj1 = lns[j-1].split('::')[0].replace('list-table','table').replace('code-block','code').strip()
                 if not lnkname and lnj1 in counters:
                     lnkname = lnj1[3].upper()+lnj1[4:]+docprefix+str(counters[lnj1])
                     counters[lnj1]+=1
@@ -490,8 +485,16 @@ def linktargets(
                 elif lnkname:
                     lnkname = lnkname.strip()
                     break
-                else:
-                    lnkname = tgt
+            #lnj=":lnkname: words"
+            itm = rexitem.match(lnj)
+            if itm:
+                lnkname, = itm.groups()
+                break
+            itm = rexoneword.match(lnj)
+            if itm:
+                lnkname, = itm.groups()
+                break
+            lnkname = tgt
         yield i, tgt, lnkname
 
 def gen(
@@ -774,7 +777,7 @@ def lnksandtags(
     '''
 
     _tgtsdoc = [(doctype,[]) for doctype in doctypes]
-    tags = []
+    tagentries = []
     objects = [] #in FCA sense: set of target tgt with all its links to other targets 
     upcnt = 0
     if (fldr.strip()):
@@ -782,60 +785,57 @@ def lnksandtags(
     #unknowntgts = []
     def tracelines():
         try:
-            try:
-                confpy = nj(fldr,'conf.py')
-                if not os.path.exists(confpy):
-                    confpy = os.path.normpath(nj(fldr,'..','conf.py'))
-                config={}
-                with open(confpy,encoding='utf-8') as f:
-                    eval(compile(f.read(),os.path.abspath(confpy),'exec'),config)
-                file_id_color=config['file_id_color']
-                def _drawnode(canvas,node,parent,c,r): 
-                    od = []
-                    its = {x[0] for x in node.intent}
-                    for k,(k0,v) in file_id_color.items():
-                        if k0 in its:
-                            od.append(v)
-                    odl = len(od)
-                    for i in range(odl-1,-1,-1):
-                        rr = int(r*(i+1)/odl)
-                        parent.add(canvas.circle(c,rr,fill=od[i],stroke='black'))
-            except:
-                _drawnode = None
-                file_id_color=None
-            fca = pyfca.Lattice(objects,lambda x:x)
-            tr = 'tr'
-            reflist = lambda x,pfx=tr: ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
-            trace = [(".. _`"+tr+"{0}`:\n\n:"+tr+"{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n").format(
-                    n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
-                    for n in fca.nodes]
-            tlines = ''.join(trace).splitlines(keepends=True)
-            tlines.extend(['.. _`trace`:\n','\n','.. figure:: _images/'+trace_file_name+'.png\n','   :name:\n','\n',
-              '   |trace|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies'])
-            if file_id_color is not None:
-                legend=', '.join([fnm+" "+clr for fnm,(_,clr) in file_id_color.items()])
-                tlines.extend([': '+legend,'\n'])
-            tlines.append('\n')
-            with open(nj(fldr,trace_file_name+'.rst'),'w',encoding='utf-8') as f:
-                f.write('.. raw:: html\n\n')
-                #needs in conf.py: html_extra_path=["_images/_trace.svg"]
-                f.write('    <object data="'+trace_file_name+'.svg" type="image/svg+xml"></object>\n')
-                if file_id_color is not None:
-                    f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
-                f.writelines(tlines)
-            ld = pyfca.LatticeDiagram(fca,4*297,4*210)
-            mkdir(nj(fldr,"_images"))
-            tracesvg = os.path.abspath(nj(fldr,"_images",trace_file_name+'.svg'))
-            ld.svg(target=trace_target+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
-            try:
-                import cairosvg
-                pngf = tracesvg.replace('.svg','.png')
-                cairosvg.svg2png(url="file:///"+tracesvg, write_to=pngf)
-            except Exception as e:
-                print(e)
-            return tlines
+            confpy = nj(fldr,'conf.py')
+            if not os.path.exists(confpy):
+                confpy = os.path.normpath(nj(fldr,'..','conf.py'))
+            config={}
+            with open(confpy,encoding='utf-8') as f:
+                eval(compile(f.read(),os.path.abspath(confpy),'exec'),config)
+            file_id_color=config['file_id_color']
+            def _drawnode(canvas,node,parent,c,r): 
+                od = []
+                its = {x[0] for x in node.intent}
+                for k,(k0,v) in file_id_color.items():
+                    if k0 in its:
+                        od.append(v)
+                odl = len(od)
+                for i in range(odl-1,-1,-1):
+                    rr = int(r*(i+1)/odl)
+                    parent.add(canvas.circle(c,rr,fill=od[i],stroke='black'))
         except:
-            return []
+            _drawnode = None
+            file_id_color=None
+        fca = pyfca.Lattice(objects,lambda x:x)
+        tr = 'tr'
+        reflist = lambda x,pfx=tr: ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
+        trace = [(".. _`"+tr+"{0}`:\n\n:"+tr+"{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n").format(
+                n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
+                for n in fca.nodes]
+        tlines = ''.join(trace).splitlines(keepends=True)
+        tlines.extend(['.. _`trace`:\n','\n','.. figure:: _images/'+trace_file_name+'.png\n','   :name:\n','\n',
+          '   |trace|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies'])
+        if file_id_color is not None:
+            legend=', '.join([fnm+" "+clr for fnm,(_,clr) in file_id_color.items()])
+            tlines.extend([': '+legend,'\n'])
+        tlines.append('\n')
+        with open(nj(fldr,trace_file_name+'.rst'),'w',encoding='utf-8') as f:
+            f.write('.. raw:: html\n\n')
+            #needs in conf.py: html_extra_path=["_images/_trace.svg"]
+            f.write('    <object data="'+trace_file_name+'.svg" type="image/svg+xml"></object>\n')
+            if file_id_color is not None:
+                f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
+            f.writelines(tlines)
+        ld = pyfca.LatticeDiagram(fca,4*297,4*210)
+        mkdir(nj(fldr,"_images"))
+        tracesvg = os.path.abspath(nj(fldr,"_images",trace_file_name+'.svg'))
+        ld.svg(target=trace_target+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
+        try:
+            import cairosvg
+            pngf = tracesvg.replace('.svg','.png')
+            cairosvg.svg2png(url="file:///"+tracesvg, write_to=pngf)
+        except Exception as e:
+            print(e)
+        return tlines
     def add_target(i,tgt,lnkname,restname,upcnt,fname):
         for doctype,doclns in _tgtsdoc:
             if doctype=='sphinx':
@@ -845,7 +845,7 @@ def lnksandtags(
             elif doctype=='pdf':
                 tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restname+'.pdf')
             doclns.append(tgte)
-        tags.append('{0}	{1}	/^\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fname,i+1))
+        tagentries.append('{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fname,i+1))
     def add_linksto(i,tgt,iterlnks,ojlnk=None): #all the links from tgt in the lines following tgt at line i
         linksto = []
         if ojlnk and ojlnk[0] < i:
@@ -892,15 +892,16 @@ def lnksandtags(
              ojlnk = add_linksto(i,tgt,iterlnks,ojlnk)
              add_target(i,tgt,lnkname,restname,upcnt,fname)
          ojlnk = add_linksto(lenlns,None,iterlnks,ojlnk)
-    tlns = tracelines()
-    if tlns:
-        for i,tgt,lnkname in linktargets(tlns,len(g_counters)) :
-            add_target(i,tgt,lnkname,trace_target,0,trace_file_name+'.rst')
+    if len(objects)>0:
+        tlns = tracelines()
+        if tlns:
+            for i,tgt,lnkname in linktargets(tlns,len(g_counters)) :
+                add_target(i,tgt,lnkname,trace_target,0,trace_file_name+'.rst')
     for doctype,doclns in _tgtsdoc:
         with open(nj(fldr,'_links_%s.rst'%doctype),'w',encoding='utf-8') as f:
             f.write('\n'.join(doclns));
     with open(nj(fldr,'.tags'),'wb') as f:
-        f.write('\n'.join(tags).encode('utf-8'));
+        f.write('\n'.join(tagentries).encode('utf-8'));
 
 
 #==============> for building with WAF
@@ -1027,6 +1028,7 @@ try:
         env.update(tsk.generator.__dict__)
         #if the .stpl needs a parameter, then this fails, since it is intended to be used as include file only: name it .tpl then
         st=bottle.template(name
+                ,template_settings={'esceape_func':lambda x:x}
                 ,template_lookup = [lookup,os.path.split(lookup)[0]]
                 ,bldpath = bldpath.abspath()
                 ,options = bld.options
