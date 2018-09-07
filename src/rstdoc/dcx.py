@@ -828,7 +828,8 @@ def lnksandtags(
         ld = pyfca.LatticeDiagram(fca,4*297,4*210)
         mkdir(nj(fldr,"_images"))
         tracesvg = os.path.abspath(nj(fldr,"_images",trace_file_name+'.svg'))
-        ld.svg(target=trace_target+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
+        ttgt = lambda : trace_target.endswith('.rest') and os.path.splitext(trace_target)[0] or trace_target
+        ld.svg(target=ttgt()+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
         try:
             import cairosvg
             pngf = tracesvg.replace('.svg','.png')
@@ -908,7 +909,7 @@ def lnksandtags(
 
 try:
     from waflib import TaskGen, Task
-    import bottle
+    import stpl as bottle
 
     @lru_cache()
     def _ant_glob_stpl(bldpath,stardotext):
@@ -1259,6 +1260,13 @@ example_tree = r'''
            │     dd.rest
            │     tp.rest
            │
+           │  One can also have a 
+           │  
+           │  - issues.rest for issues
+           │  
+           │  - pp.rest for the project plan 
+           │    (with backlog, epics, stories, tasks) 
+           │
            │  .. include:: _trace.rst
            │  
            │  .. include:: _links_sphinx.rst
@@ -1271,15 +1279,7 @@ example_tree = r'''
            │  
            │  rz7: risk calculations
            │  
-           │  Risk analysis could be a SimpleTemplate (.stpl) file,
-           │  where calculation are done in python while converting to this file.
-           │  
-           │  Similarly one can have a 
-           │  
-           │  - is.rest for issues
-           │  
-           │  - pp.rest for the project plan 
-           │    (with backlog, epics, stories, tasks) 
+           │  Risk calculations are done with python in the ``.stpl`` file.
            │  
            │  .. include:: _links_sphinx.rst
            │  
@@ -1299,8 +1299,7 @@ example_tree = r'''
            │  s3a: brief description
            │
            │  Don't count the ID, since the order will change.
-           │  Instead: The IDs have the first letter of the file 
-           │  and 2 or more random letters of ``[0-9a-z]``.
+           │  The IDs have the first letter of the file and 2 or more random letters of ``[0-9a-z]``.
            │  Use an editor macro to generate IDs.
            │
            │  Every ``.rest`` has this line at the end::
@@ -1313,15 +1312,13 @@ example_tree = r'''
            │  Design Description
            │  ==================
            │  
-           │  ``dcx.py`` produces its own labeling consistent across DOCX, PDF, HTML,
-           │  and same as Sphinx (useful for display math). 
+           │  ``dcx.py`` produces its own labeling consistent across DOCX, PDF, HTML.
            │  
            │  .. _`dz7`:
            │  
            │  dz7: Independent DD IDs
            │  
-           │    The relation with RS IDs is m-n. Links like |s3a|
-           │    can be scattered over more DD entries.  
+           │    The relation with RS IDs is m-n. Links like |s3a| can be scattered over more DD entries.  
            │  
            │  .. _`dz3`:
            │  
@@ -1404,30 +1401,30 @@ example_tree = r'''
            │  .. include:: _links_sphinx.rst
            │  
            ├ tp.rest
-           │   Test Plan
-           │   =========
-           │   
-           │   .. _`t9a`:
-           │   
-           │   Requirement Tests
-           │   -----------------
+           │  Test Plan
+           │  =========
+           │  
+           │  .. _`t9a`:
+           │  
+           │  Requirement Tests
+           │  -----------------
            │
-           │   No duplication. Only reference the requirements to be tested.
+           │  No duplication. Only reference the requirements to be tested.
            │
-           │   - |s3a|
+           │  - |s3a|
            │
-           │   Or better: reference the according SR chapter, else changes there would need an update here.
+           │  Or better: reference the according SR chapter, else changes there would need an update here.
            │
-           │   - Test |sy7|
+           │  - Test |sy7|
            │
-           │   Unit Tests
-           │   ----------
+           │  Unit Tests
+           │  ----------
            │
-           │   Use ``.rst`` for included files and start the file with ``_`` if generated.
-           │   
-           │   .. include:: _sometst.rst
+           │  Use ``.rst`` for included files and start the file with ``_`` if generated.
+           │  
+           │  .. include:: _sometst.rst
            │
-           │   .. include:: _links_sphinx.rst
+           │  .. include:: _links_sphinx.rst
            │
            ├ smpl.tikz
                [thick]
