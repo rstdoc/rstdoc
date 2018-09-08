@@ -1,0 +1,19 @@
+
+<%
+from sympy.abc import *
+from sympy import Eq, latex, solve, lambdify
+pyth = Eq(c**2,a**2+b**2)
+pythfun = lambdify((a,b),solve(pyth,'c')[1])
+
+%>
+
+.. _`f00`:
+
+.. math::
+   :name:
+
+   {{latex(pyth)}}
+
+
+Numbers satisfying |f00|, like 3, 4, and {{pythfun(3,4)}} are called pythagorean numbers.
+

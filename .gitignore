@@ -13,10 +13,16 @@ tmp/
 tex2pdf.*
 
 ra.rest
+main.rest
+normalfromstpl.rst
 
 _*
 !_images
 !__init__.py
 
 
+#waf
+.waf????????*
+**/waf*-*-*/
+**/waf/*
 

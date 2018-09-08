@@ -1,0 +1,15 @@
+top='.'
+out='../build'
+
+def docload(x): 
+    x.load('dcx',tooldir='../../rstdoc')
+
+def options(opt):
+    docload(opt)
+
+def configure(cfg):
+    docload(cfg)
+  
+def build(bld):
+    docload(bld) #defines bld.stpl(), bld.gen_files(), bld.gen_links(), bld.build_docs()
+    bld.recurse('doc')

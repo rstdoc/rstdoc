@@ -1,0 +1,18 @@
+%globals().update(include('utility.rst.tpl'))
+
+rst include
+===========
+
+.. include:: normalinclude.rst
+
+sub
+===
+
+%include('sub.rst.tpl')
+
+
+.. include:: links.rst
+
+
+
+.. include:: _links_sphinx.rst

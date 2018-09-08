@@ -1,0 +1,12 @@
+
+if not bld.options.docs:
+    bld.options.docs.append('html')
+
+#only .rest.stpl are converted by default
+#do .rst.stpl first
+bld(source='normalfromstpl.rst.stpl')
+bld.add_group()
+
+bld.gen_files()
+bld.gen_links()
+bld.build_docs()
