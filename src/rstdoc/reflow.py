@@ -57,7 +57,7 @@ Else one can also do inplace::
 API
 ---
 
-.. code-block::
+.. code-block:: py
 
    import rstdoc.reflow as reflow
 

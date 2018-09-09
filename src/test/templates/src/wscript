@@ -2,7 +2,7 @@ top='.'
 out='../build'
 
 def docload(x): 
-    x.load('dcx',tooldir='../../rstdoc')
+    x.load('dcx',tooldir='../../../rstdoc')
 
 def options(opt):
     docload(opt)

@@ -33,7 +33,7 @@ the names of the images have no meaning (image13,...).
 API
 ---
 
-.. code-block::
+.. code-block:: py
 
    import rstdoc.reimg as reimg
 

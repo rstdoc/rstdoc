@@ -148,7 +148,7 @@ is_rst = lambda x: x.endswith('.rst') or x.endswith('.rst'+_stpl) or x.endswith(
 rextgt = re.compile(r'(?:^|^[^\.\%\w]*\s|^\s*\(?\w+[\)\.]\s)\.\. _`?(\w[^:`]*)`?:\s*$')
 rextitle = re.compile(r'^([!"#$%&\'()*+,\-./:;<=>?@[\]^_`{|}~])\1+$')
 rexitem = re.compile(r'^\s*:?(\w[^:]*):\s*.*$')
-rexoneword = re.compile(r'^\s*(\w*)\s*$')
+rexoneword = re.compile(r'^\s*(\w+)\s*$')
 rexname = re.compile(r'^\s*:name:\s*(\w.*)*$')
 rexlinksto = re.compile(r'[^`]?\|(\w+)\|[^`]?')
 reximg = re.compile(r'image:: ((?:\.|/|\\|\w).*)')
@@ -377,7 +377,7 @@ def _read_stpl_lines_it(fn):
     for i,ln in enumerate(flns):
         m = restplinclude.match(ln)
         if m: 
-            yield from _read_stpl_lines(m.group(1))
+            yield from _read_stpl_lines(os.path.join(os.path.dirname(fn),m.group(1)))
         else:
             yield fn,i,ln
 
@@ -554,9 +554,28 @@ def make_tgts(
         paired_itgts_itgts1 = zip(itgts,itgts1)
     lenlns = len(lns)
     lenlns1 = len(lns1)
+    def is_literal(ii,iis,spc):
+        for iprev in range(ii-1,0,-1):
+           prev = iis[iprev]
+           if prev:
+               newspc,_ = next((ich,ch) for ich,ch in enumerate(prev) if ch!=' ' and ch!='\t')
+               if newspc<spc:
+                   prev = prev.strip()
+                   if prev:
+                       if not prev.startswith('.. ') and prev.endswith('::'):
+                           return True
+                       return False
     for i,i1 in paired_itgts_itgts1:
         ii,iis,iilen = (i,lns,lenlns) if i else (i1,lns1,lenlns1)
-        tgt = rextgt.search(iis[ii]).group(1)
+        cur = iis[ii]
+        tgt = rextgt.search(cur).group(1)
+        #cur = ' .. _`x`:'
+        try:#skip literal blocks
+            spc = re.search('\w',cur).span()[0]-3
+            if spc>0 and is_literal(ii,iis,spc):
+                continue
+        except:
+            pass
         lnkname = tgt
         for j in range(ii+2,ii+8):
             #j=i+2
@@ -837,7 +856,7 @@ def fldrs(
                 lns = _read_lines(restpath)
                 fil = _read_stpl_lines(doc)
                 tgts = list(make_tgts(lns,doc,fil))
-            elif not doc.endswith('.tpl'):#%include('x.rst.tpl') were considered in first branch
+            elif not doc.endswith('.tpl') and os.path.exists(doc):#%include('x.rst.tpl') were considered in first branch
                 lns = _read_lines(doc)
                 tgts = list(make_tgts(lns,doc))
             else:

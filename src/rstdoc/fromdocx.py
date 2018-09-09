@@ -54,7 +54,7 @@ API
 ---
 
 
-.. code-block::
+.. code-block:: py
 
    import rstdoc.fromdocx as fromdocx
 

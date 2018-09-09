@@ -49,7 +49,7 @@ This is done in one step with ``rstfromdocx -lu doc.rst``.
 API
 ---
 
-.. code-block::
+.. code-block:: py
 
    import rstdoc.untable as untable
 

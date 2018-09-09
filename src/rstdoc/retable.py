@@ -37,7 +37,7 @@ API
 ---
 
 
-.. code-block::
+.. code-block:: py
 
    import rstdoc.retable as retable
 
@@ -373,7 +373,7 @@ def re_title(
         lines  #list of lines
         ,row=0 #of cursor position,
         ,col=0 #... as only the lines delimited by an empty line are considered
-        ,down=0 # >0 = down, <0 = up
+        ,down=0 #>0down, <0up
         ):
     '''
     Adjust the under- or overline of a title.

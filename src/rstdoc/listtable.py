@@ -51,7 +51,7 @@ API
 ---
 
 
-.. code-block::
+.. code-block:: py
 
    import rstdoc.listtable as listtable
 
@@ -123,7 +123,7 @@ def row_to_listtable(
 def gridtable(
         data #from file.readlines() or str.splitlines(True)
         ,join='012' #join column 0 without space, column 1 with space and leave the rest as-is
-        ,process_row = row_to_listtable #creates a list-table entry for the row
+        ,process_row=row_to_listtable #creates a list-table entry for the row
         ):
     '''
     Convert grid table to list table with same column number throughout.

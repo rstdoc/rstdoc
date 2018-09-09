@@ -124,7 +124,7 @@ def test_lnkname(lnsres):
     #lns,res=_lnkname[6]
     lns,res = lnsres
     g_counters.clear()
-    got = list(linktargets(lns,0))[0][1:]
+    got = list(make_tgts(lns,0))[0][1:]
     assert got==res
 
 @pytest.yield_fixture
