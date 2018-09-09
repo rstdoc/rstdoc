@@ -24,7 +24,7 @@ import pytest
 import glob
 from rstdoc.dcx import (
     g_counters
-    ,linktargets
+    ,make_tgts
     ,tree
     ,mktree
     ,main

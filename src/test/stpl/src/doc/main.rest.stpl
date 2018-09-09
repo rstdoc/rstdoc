@@ -8,7 +8,7 @@ rst include
 sub
 ===
 
-%include('sub.rst.tpl')
+%include('sub.rst.tpl',version=2)
 
 
 .. include:: links.rst

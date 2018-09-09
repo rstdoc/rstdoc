@@ -176,9 +176,10 @@ restplinclude = re.compile(r'''%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*''')
 #rerstinclude.split('.. include:: test.rst')
 #rerstinclude.split('.. include:: ../test.rst')
 #rerstinclude.split('  .. include:: ../test.rst')
-#restplinclude.split('%include("test.rst.stpl",v="xxx")')
-#restplinclude.split('%include("../test.rst.stpl",v="xxx")')
-#restplinclude.split('% include(  "../test.rst.stpl",v="xxx")')
+#restplinclude.split('%include("test.rst.stpl",v="aparam")')
+#restplinclude.split('%include("../test.rst.stpl",v="aparam")')
+#restplinclude.split('% include(  "../test.rst.stpl",v="aparam")')
+
 
 nj = lambda *x:os.path.normpath(os.path.join(*x))
 
@@ -352,10 +353,7 @@ def _read_lines(fn):
         lns = f.readlines()
     return lns
 
-def _read_stpl_lines_it(fn
-    ,rex=re.compile(r'''^\s*\%\s*include\(\s*['"]([^'"]+)['"]\s*\)''')
-    #rex.match("% include( 'x.rst.stpl' )").group(1)#x.rst.stpl
-    ):
+def _read_stpl_lines_it(fn):
     """
     This flattens the .stpl includes to have all targets align to those in the .rest file.
     Targets must not be *explicit* in all .stpl. They must not be created by stpl.
@@ -369,13 +367,19 @@ def _read_stpl_lines_it(fn
     #            ) 
     #fil=list(_read_stpl_lines('main.rest.stpl'))
     #lns=stpl('main.rest.stpl')
-    with open(fn,'r',encoding='utf-8') as f:
-        for i,ln in enumerate(f.readlines()):
-            m = rex.match(ln)
-            if m: 
-                yield from _read_stpl_lines(m.group(1))
-            else:
-                yield fn,i,ln
+    flns = []
+    if os.path.exists(fn):
+        flns = _read_lines(fn)
+    else:
+        parnt = os.path.normpath(os.path.join(os.path.dirname(fn),'..',fn))
+        if os.path.exists(parnt):
+            flns = _read_lines(parnt)
+    for i,ln in enumerate(flns):
+        m = restplinclude.match(ln)
+        if m: 
+            yield from _read_stpl_lines(m.group(1))
+        else:
+            yield fn,i,ln
 
 @lru_cache()
 def _read_stpl_lines(fn):
@@ -436,7 +440,7 @@ def rstincluded(
                         if m:
                             yield m.group(1)
             elif restplinclude.match(e): 
-                #e="%include('some.rst.tpl',v='xxx')" #no '../some.rst.tpl': current and parent folder are automatically searched
+                #e="%include('some.rst.tpl',v='param')" #no '../some.rst.tpl': current and parent folder are automatically searched
                 f,t,_=restplinclude.split(e)
                 nf = not f and t
                 if nf:
@@ -488,12 +492,40 @@ def links(lns):
         for g in mo:
             yield i,g
 
+def pair(a,b,cmp):
+    """ pair two sorted lists
+    b must be longer than a
+    >>> a=[1,2,4,7]
+    ... b=[1,2,3,4,5,6,7]
+    ... cmp = lambda x,y: x==y
+    ... list(pair(a,b,cmp))
+    [(1, 1), (2, 2), (None, 3), (4, 4), (None, 5), (None, 6), (7, 7)]
+    """
+    for i,(aa,bb) in enumerate(zip(a,b)):
+        if not cmp(aa,bb):
+            break
+        yield aa,bb
+    alen = len(a)
+    tlen = max(alen,len(b))
+    d = 0
+    for j in range(i,alen):
+        for dd in range(tlen-j-d):
+            bb = b[j+d+dd]
+            if not cmp(a[j],bb):
+                yield None,bb
+            else:
+                yield a[j],bb
+                d = d+dd
+                break
+        else:
+            return
+
 class RstDocError(Exception):
     pass
 
 g_counters=defaultdict(dict)
 
-def linktargets(
+def make_tgts(
     lns  #lines of the document
     ,doc #doc .rest file name
     ,fil=None #stpl lines
@@ -508,31 +540,41 @@ def linktargets(
         g_counters[doc] = {".. figure":1,".. math":1,".. table":1,".. code":1} #=list-table,code-block
     counters=g_counters[doc]
     itgts = list(rindices(rextgt,lns))
-    itgts1 = list(rindices(rextgt,(x[2] for x in fil))) if fil else itgts
-    if len(itgts)!=len(itgts1):
-        raise RstDocError("RST targets mismatch between .stpl and .rest")
+    if fil:
+        lns1 = [x[2] for x in fil]
+        itgts1 = list(rindices(rextgt,lns1))
+    else:
+        lns1 = lns
+        itgts1 = itgts
+    if len(itgts)<len(itgts1):
+        paired_itgts_itgts1 = pair(itgts,itgts1,lambda x,y:lns[x]==lns1[y])
+    elif len(itgts)>len(itgts1):
+        raise RstDocError(".rest has more targets than .stpl. Targets cannot be generated.")
+    else:
+        paired_itgts_itgts1 = zip(itgts,itgts1)
     lenlns = len(lns)
-    for i,i1 in zip(itgts,itgts1):
-        #i,i1 = itgts[0],itgts1[0]
-        tgt = rextgt.search(lns[i]).group(1)
+    lenlns1 = len(lns1)
+    for i,i1 in paired_itgts_itgts1:
+        ii,iis,iilen = (i,lns,lenlns) if i else (i1,lns1,lenlns1)
+        tgt = rextgt.search(iis[ii]).group(1)
         lnkname = tgt
-        for j in range(i+2,i+8):
+        for j in range(ii+2,ii+8):
             #j=i+2
-            if j > lenlns-1:
+            if j > iilen-1:
                 break
-            lnj = lns[j]
+            lnj = iis[j]
             if rextitle.match(lnj):
-                lnkname=lns[j-1].strip()
+                lnkname=iis[j-1].strip()
                 if not lnkname:
-                    lnkname=lns[j+1].strip()
+                    lnkname=iis[j+1].strip()
                 break
-            #j,lns=1,".. figure::\n  :name: lnkname".splitlines();lnj=lns[j]
-            #j,lns=1,".. figure::\n  :name:".splitlines();lnj=lns[j]
-            #j,lns=1,".. math::\n  :name: lnkname".splitlines();lnj=lns[j]
+            #j,iis=1,".. figure::\n  :name: lnkname".splitlines();lnj=iis[j]
+            #j,iis=1,".. figure::\n  :name:".splitlines();lnj=iis[j]
+            #j,iis=1,".. math::\n  :name: lnkname".splitlines();lnj=iis[j]
             itm = rexname.match(lnj)
             if itm:
                 lnkname, = itm.groups()
-                lnj1 = lns[j-1].split('::')[0].replace('list-table','table').replace('code-block','code').strip()
+                lnj1 = iis[j-1].split('::')[0].replace('list-table','table').replace('code-block','code').strip()
                 if not lnkname and lnj1 in counters:
                     lnkname = lnj1[3].upper()+lnj1[4:]+docprefix+str(counters[lnj1])
                     counters[lnj1]+=1
@@ -550,7 +592,7 @@ def linktargets(
                 lnkname, = itm.groups()
                 break
             lnkname = tgt
-        yield (i,fil[i1][:2] if fil else (doc,i)), tgt, lnkname
+        yield (i,fil[i1][:2] if fil else (doc,ii)), tgt, lnkname
 
 def gen(
     source #either a list of lines of a path to the source code
@@ -780,8 +822,7 @@ def fldrs(
     fldr_alltgts = defaultdict(set) #all link target ids
     dcns=set([])
     for dcs in fldrincluded('.'): 
-        #dcs=['main.rest.stpl', 'sub.rst.tpl', 'subsub.rst.tpl', 'links.rst']
-        rest = [adc for adc in dcs if is_rest(adc)][0]
+        rest = next(adc for adc in dcs if is_rest(adc))
         restpath,restext = os.path.splitext(rest)
         fldr,restname = os.path.split(restpath)
         fldr_allfiles[fldr] |= set(dcs)
@@ -792,16 +833,13 @@ def fldrs(
             reststpl = False
         dcns.add(restname)
         for doc in dcs:
-            #doc = dcs[1]
-            #try: #generated files might not be there
             if doc==rest and reststpl and os.path.exists(restpath):
                 lns = _read_lines(restpath)
                 fil = _read_stpl_lines(doc)
-                docid = doc
-                tgts = list(linktargets(lns,docid,fil))
+                tgts = list(make_tgts(lns,doc,fil))
             elif not doc.endswith('.tpl'):#%include('x.rst.tpl') were considered in first branch
                 lns = _read_lines(doc)
-                tgts = list(linktargets(lns,doc))
+                tgts = list(make_tgts(lns,doc))
             else:
                 continue
             lnks = list(links(lns))
@@ -809,9 +847,6 @@ def fldrs(
                 fldr_lnktgts[fldr] = []
             fldr_lnktgts[fldr].append((restname,doc,len(lns),lnks,tgts))
             fldr_alltgts[fldr] |= set([n for ni,n,nn in tgts])
-            #except Exception as e:
-            #    if isinstance(e,RstDocError):
-            #        raise
     for fldr,lnktgts in fldr_lnktgts.items():
         allfiles = fldr_allfiles[fldr]
         alltgts = fldr_alltgts[fldr]
@@ -911,7 +946,7 @@ def lnksandtags(
         except Exception as e:
             print(e)
         return tlines
-    def add_target(tgt,lnkname,restname,upcnt,fil2):
+    def add_target(tgt,lnkname,restname,upcnt,fi):
         for doctype,doclns in _tgtsdoc:
             if doctype=='sphinx':
                 tgte = ".. |{0}| replace:: :ref:`{1}<{0}>`\n".format(tgt,lnkname)
@@ -920,8 +955,8 @@ def lnksandtags(
             elif doctype=='pdf':
                 tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restname+'.pdf')
             doclns.append(tgte)
-        tagentries.append('{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fil2[0],fil2[1]))
-    def add_linksto(i,tgt,iterlnks,ojlnk=None): #all the links from tgt in the lines following tgt at line i
+        tagentries.append('{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fi[0],fi[1]))
+    def add_linksto(i,tgt,iterlnks,ojlnk=None): #all the links away from the block following this tgt to next tgt
         linksto = []
         if ojlnk and ojlnk[0] < i:
             if ojlnk[1] in alltgts:
@@ -962,15 +997,16 @@ def lnksandtags(
              doclns.append('\n.. .. {0}\n\n'.format(doc))
          iterlnks = iter(lnks)
          ojlnk=None
-         for (i,fil2),tgt,lnkname in tgts:
-             ojlnk = add_linksto(i,tgt,iterlnks,ojlnk)
-             add_target(tgt,lnkname,restname,upcnt,fil2)
+         for (i,fi),tgt,lnkname in tgts:
+             if i is not None:
+               ojlnk = add_linksto(i,tgt,iterlnks,ojlnk)
+               add_target(tgt,lnkname,restname,upcnt,fi)
          ojlnk = add_linksto(lenlns,None,iterlnks,ojlnk)
     if len(objects)>0:
         tlns = tracelines()
         if tlns:
-            for (_,fil2),tgt,lnkname in linktargets(tlns,trace_file_name+'.rst') :
-                add_target(tgt,lnkname,trace_target,0,fil2)
+            for (_,fi),tgt,lnkname in make_tgts(tlns,trace_file_name+'.rst') :
+                add_target(tgt,lnkname,trace_target,0,fi)
     for doctype,doclns in _tgtsdoc:
         with open(nj(fldr,'_links_%s.rst'%doctype),'w',encoding='utf-8') as f:
             f.write('\n'.join(doclns));
@@ -990,12 +1026,10 @@ try:
         sofar = []
         stplsfirst = bldpath.ant_glob(stardotext+_stpl)
         for x in stplsfirst:
-            print(x)#XXX
             sofar.append(x.name[:-len(_stpl)])
             res.append(x)
         nonstpls = bldpath.ant_glob(stardotext)
         for x in nonstpls:
-            print(x)#XXX
             if x.name not in sofar:
                 res.append(x)
         return res
@@ -1387,7 +1421,7 @@ example_tree = r'''
            │  
            │  The disadvantage is that the id will differ between rst and final doc.
            │  When this is needed in an included file use template include: ``%include('x.rst.tpl`)``
-           │  See the te ``example`` folder.
+           │  See the the ``test/stpl`` folder.
            │
            │  Every ``.rest`` has this line at the end::
            │  
@@ -1444,7 +1478,7 @@ example_tree = r'''
            │       - Function
            │  
            │     * - 0
-           │       - xxx
+           │       - afun
            │  
            │  Reference |dta| does not show ``dta``.
            │  
@@ -1455,8 +1489,8 @@ example_tree = r'''
            │  .. code-block:: cpp
            │     :name:
            │  
-           │     struct xxx{
-           │        int yyy; //yyy for zzz
+           │     struct astruct{
+           │        int afield; //afield description 
            │     }
            │  
            │  Reference |dyi| does not show ``dyi``.
