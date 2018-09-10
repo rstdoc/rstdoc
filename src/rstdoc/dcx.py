@@ -147,7 +147,6 @@ _stpl = '.stpl'
 is_rest = lambda x: x.endswith('.rest') or x.endswith('.rest'+_stpl)
 is_rst = lambda x: x.endswith('.rst') or x.endswith('.rst'+_stpl) or x.endswith('.rst.tpl')
 
-
 rextgt = re.compile(r'(?:^|^[^\.\%\w]*\s|^\s*\(?\w+[\)\.]\s)\.\. _`?(\w[^:`]*)`?:\s*$')
 rextitle = re.compile(r'^([!"#$%&\'()*+,\-./:;<=>?@[\]^_`{|}~])\1+$')
 rexitem = re.compile(r'^\s*:?(\w[^:]*):\s*.*$')
@@ -443,13 +442,11 @@ def rstincluded(
                         if m:
                             yield m.group(1)
             elif restplinclude.match(e): 
-                #e="%include('some.rst.tpl',v='param')" #no '../some.rst.tpl': current and parent folder are automatically searched
+                #e="%include('some.rst.tpl',v='param')"
                 f,t,_=restplinclude.split(e)
                 nf = not f and t
                 if nf:
                     try:
-                        if not os.path.exists(nf):
-                            nf = os.path.join('..',nf)
                         yield from rstincluded(nf.strip(),paths)
                     except:
                         pass
@@ -766,11 +763,13 @@ def mktree(
                 if ix >= 0 and ix <= len(ef):
                     mkdir(ef)
                     old = os.getcwd()
-                    os.chdir(ef)
-                    mktree(
-                      t1[c+1:f]
-                      )
-                    os.chdir(old)
+                    try:
+                        os.chdir(ef)
+                        mktree(
+                          t1[c+1:f]
+                          )
+                    finally:
+                        os.chdir(old)
                 else:
                     t0 = t1[c+1:f]
                     ct = re.search(r'[^\s│]',t0[0]).span()[0]
@@ -838,44 +837,46 @@ def fldrs(
     '''
 
     odir = os.getcwd()
-    os.chdir(scanroot)
-    fldr_lnktgts = OrderedDict()
-    fldr_allfiles = defaultdict(set) #fldr, files
-    fldr_alltgts = defaultdict(set) #all link target ids
-    dcns=set([])
-    for dcs in fldrincluded('.'): 
-        rest = next(adc for adc in dcs if is_rest(adc))
-        restpath,restext = os.path.splitext(rest)
-        fldr,restname = os.path.split(restpath)
-        fldr_allfiles[fldr] |= set(dcs)
-        if restext == _stpl:
-            reststpl = True
-            restname=os.path.splitext(restname)[0]
-        else:
-            reststpl = False
-        dcns.add(restname)
-        for doc in dcs:
-            if doc==rest and reststpl and os.path.exists(restpath):
-                lns = _read_lines(restpath)
-                fil = _read_stpl_lines(doc)
-                tgts = list(make_tgts(lns,doc,fil))
-            elif not doc.endswith('.tpl') and not doc.endswith('.txt') and os.path.exists(doc):
-                #.txt are considered literal include
-                #%include('x.rst.tpl') were considered in first branch
-                lns = _read_lines(doc)
-                tgts = list(make_tgts(lns,doc))
+    try:
+        os.chdir(scanroot)
+        fldr_lnktgts = OrderedDict()
+        fldr_allfiles = defaultdict(set) #fldr, files
+        fldr_alltgts = defaultdict(set) #all link target ids
+        dcns=set([])
+        for dcs in fldrincluded('.'): 
+            rest = next(adc for adc in dcs if is_rest(adc))
+            restpath,restext = os.path.splitext(rest)
+            fldr,restname = os.path.split(restpath)
+            fldr_allfiles[fldr] |= set(dcs)
+            if restext == _stpl:
+                reststpl = True
+                restname=os.path.splitext(restname)[0]
             else:
-                continue
-            lnks = list(make_lnks(lns))
-            if fldr not in fldr_lnktgts:
-                fldr_lnktgts[fldr] = []
-            fldr_lnktgts[fldr].append((restname,doc,len(lns),lnks,tgts))
-            fldr_alltgts[fldr] |= set([n for ni,n,nn in tgts])
-    for fldr,lnktgts in fldr_lnktgts.items():
-        allfiles = fldr_allfiles[fldr]
-        alltgts = fldr_alltgts[fldr]
-        yield fldr, (lnktgts,allfiles,alltgts)
-    os.chdir(odir)
+                reststpl = False
+            dcns.add(restname)
+            for doc in dcs:
+                if doc==rest and reststpl and os.path.exists(restpath):
+                    lns = _read_lines(restpath)
+                    fil = _read_stpl_lines(doc)
+                    tgts = list(make_tgts(lns,doc,fil))
+                elif not doc.endswith('.tpl') and not doc.endswith('.txt') and os.path.exists(doc):
+                    #.txt are considered literal include
+                    #%include('x.rst.tpl') were considered in first branch
+                    lns = _read_lines(doc)
+                    tgts = list(make_tgts(lns,doc))
+                else:
+                    continue
+                lnks = list(make_lnks(lns))
+                if fldr not in fldr_lnktgts:
+                    fldr_lnktgts[fldr] = []
+                fldr_lnktgts[fldr].append((restname,doc,len(lns),lnks,tgts))
+                fldr_alltgts[fldr] |= set([n for ni,n,nn in tgts])
+        for fldr,lnktgts in fldr_lnktgts.items():
+            allfiles = fldr_allfiles[fldr]
+            alltgts = fldr_alltgts[fldr]
+            yield fldr, (lnktgts,allfiles,alltgts)
+    finally:
+        os.chdir(odir)
 
 doctypes = "sphinx docx pdf".split()
 
@@ -1106,7 +1107,7 @@ try:
                         continue
                     nd = path.find_node(x)
                     if not nd:
-                        if isrst and not x.endswith(_stpl):
+                        if isrst and not x.endswith(_stpl) and not x.endswith('.tpl'):
                             nd = path.find_node(x+_stpl)
                     deps.append(nd)
         depsgensrc = [path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
@@ -1119,7 +1120,7 @@ try:
         d = srcpath.abspath()
         n = node.name
         nod = None
-        if node.is_bld() and not node.name.endswith(_stpl):
+        if node.is_bld() and not node.name.endswith(_stpl) and not x.endswith('.tpl'):
             nod = srcpath.find_node(node.name+_stpl)
         if not nod:
             nod = node
@@ -1135,7 +1136,7 @@ try:
                     continue
             nd = srcpath.find_node(x)
             if not nd:
-                if isrst and not x.endswith(_stpl):
+                if isrst and not x.endswith(_stpl) and not x.endswith('.tpl'):
                     nd = srcpath.find_node(x+_stpl)
             deps.append(nd)
         depsgensrc = [path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
@@ -1686,11 +1687,13 @@ def main(**args):
         '__file__',thisfile).replace('__tex_ref__',tex_ref).splitlines() if l.strip()]
     mkdir(iroot)
     oldd = os.getcwd()
-    os.chdir(iroot)
-    mktree(tree)
-    os.chdir('src')
-    subprocess.run("pandoc --print-default-data-file reference.docx > reference.docx",shell=True)
-    os.chdir(oldd)
+    try:
+        os.chdir(iroot)
+        mktree(tree)
+        os.chdir('src')
+        subprocess.run("pandoc --print-default-data-file reference.docx > reference.docx",shell=True)
+    finally:
+        os.chdir(oldd)
   else:
     #link, gen and tags per folder
     for fldr, (lnktgts,allfiles,alltgts) in fldrs('.'):
