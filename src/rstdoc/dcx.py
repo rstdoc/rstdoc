@@ -183,7 +183,9 @@ restplinclude = re.compile(r'''%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*''')
 #restplinclude.split('% include(  "../test.rst.stpl",v="aparam")')
 
 
-nj = lambda *x:os.path.normpath(os.path.join(*x))
+op = os.path
+nj = lambda *x:op.normpath(op.join(*x))
+updir = lambda fn: nj(op.dirname(fn),'..',fn)
 
 trace_file_name = '_trace' #used for _trace.rst and _trace.svg
 trace_target= 'index'
@@ -364,22 +366,22 @@ def _read_stpl_lines_it(fn):
     #def stpl(file_or_string,**kw):
     #    from bottle import template
     #    return template(file_or_string
-    #            ,template_lookup = [os.getcwd(),os.path.dirname(os.getcwd())]
+    #            ,template_lookup = [os.getcwd(),op.dirname(os.getcwd())]
     #            ,**kw
     #            ) 
     #fil=list(_read_stpl_lines('main.rest.stpl'))
     #lns=stpl('main.rest.stpl')
     flns = []
-    if os.path.exists(fn):
+    if op.exists(fn):
         flns = _read_lines(fn)
     else:
-        parnt = os.path.normpath(os.path.join(os.path.dirname(fn),'..',fn))
-        if os.path.exists(parnt):
+        parnt = updir(fn)
+        if op.exists(parnt):
             flns = _read_lines(parnt)
     for i,ln in enumerate(flns):
         m = restplinclude.match(ln)
         if m: 
-            yield from _read_stpl_lines(os.path.join(os.path.dirname(fn),m.group(1)))
+            yield from _read_stpl_lines(op.join(op.dirname(fn),m.group(1)))
         else:
             yield fn,i,ln
 
@@ -397,13 +399,14 @@ def rstincluded(
     Yield the files recursively included from an RST file.
     '''
 
+    p = ''
     for p in paths:
-        nfn = os.path.normpath(os.path.join(p,fn))
-        if os.path.exists(nfn+_stpl): #first, because original
+        nfn = nj(p,fn)
+        if op.exists(nfn+_stpl): #first, because original
             nfn = nfn+_stpl
             yield fn+_stpl
             break
-        elif os.path.exists(nfn): #while this might be generated
+        elif op.exists(nfn): #while this might be generated
             yield fn
             break
     else:
@@ -417,7 +420,7 @@ def rstincluded(
                 toctreedone = False
                 if e.startswith(' '):
                     fl=e.strip()
-                    if fl.endswith('.rest') and os.path.exists(fl):
+                    if fl.endswith('.rest') and op.exists(op.join(p,fl)):
                         toctreedone = True
                         yield from rstincluded(fl,paths)
                     continue
@@ -446,10 +449,14 @@ def rstincluded(
                 f,t,_=restplinclude.split(e)
                 nf = not f and t
                 if nf:
-                    try:
-                        yield from rstincluded(nf.strip(),paths)
-                    except:
-                        pass
+                    thisnf = op.join(p,nf)
+                    if not op.exists(thisnf):
+                        parntnf = op.join(p,'..',nf)
+                        if op.exists(parntnf): 
+                            nf = parntnf
+                        else:
+                            continue
+                    yield from rstincluded(nf.strip(),paths)
 
 def fldrincluded(
         directory='.'
@@ -477,7 +484,7 @@ def fldrincluded(
                 res = []
                 for ff in rstincluded(f,(p,)):
                     if trace_file_name in ff:
-                        trace_target = os.path.splitext(f)[0]
+                        trace_target = op.splitext(f)[0]
                     if any([x in ff for x in exclude_paths_substrings]):
                         continue
                     pth=nj(p,ff)
@@ -665,8 +672,8 @@ def gen(
             cd = re.split("#def |:",lns[i])[1]#gen(lns,**kw)
             gened += list(eval(cd))
     if target:
-        drn = os.path.dirname(target)
-        if drn and not os.path.exists(drn):
+        drn = op.dirname(target)
+        if drn and not op.exists(drn):
             os.makedirs(drn)
         with open(target,'w',encoding='utf-8') as o:
             o.write(''.join(((x or '\n') for x in gened)))
@@ -813,14 +820,14 @@ def tree(
                 return
             for i,d in enumerate(sorted(ds)):
                 yield prefix + entryprefix[i==lends+lenfs-1] + d
-                yield from _tree(os.path.join(p,d),prefix+subprefix[i==lends+lenfs-1])
+                yield from _tree(op.join(p,d),prefix+subprefix[i==lends+lenfs-1])
             del ds[:]
             if with_files:
                 for i,f in enumerate(sorted(fs)):
                     if with_dot_files or not f.startswith('.'):
                         yield prefix + entryprefix[i==lenfs-1] + f
                         if with_content:
-                            for ln in _read_lines(os.path.join(p,f)):
+                            for ln in _read_lines(op.join(p,f)):
                                 yield prefix + subprefix[1] + ln
     return '\n'.join(_tree(path, ''))
 
@@ -845,21 +852,21 @@ def fldrs(
         dcns=set([])
         for dcs in fldrincluded('.'): 
             rest = next(adc for adc in dcs if is_rest(adc))
-            restpath,restext = os.path.splitext(rest)
-            fldr,restname = os.path.split(restpath)
+            restpath,restext = op.splitext(rest)
+            fldr,restname = op.split(restpath)
             fldr_allfiles[fldr] |= set(dcs)
             if restext == _stpl:
                 reststpl = True
-                restname=os.path.splitext(restname)[0]
+                restname=op.splitext(restname)[0]
             else:
                 reststpl = False
             dcns.add(restname)
             for doc in dcs:
-                if doc==rest and reststpl and os.path.exists(restpath):
+                if doc==rest and reststpl and op.exists(restpath):
                     lns = _read_lines(restpath)
                     fil = _read_stpl_lines(doc)
                     tgts = list(make_tgts(lns,doc,fil))
-                elif not doc.endswith('.tpl') and not doc.endswith('.txt') and os.path.exists(doc):
+                elif not doc.endswith('.tpl') and not doc.endswith('.txt') and op.exists(doc):
                     #.txt are considered literal include
                     #%include('x.rst.tpl') were considered in first branch
                     lns = _read_lines(doc)
@@ -920,11 +927,11 @@ def lnksandtags(
     def tracelines():
         try:
             confpy = nj(fldr,'conf.py')
-            if not os.path.exists(confpy):
-                confpy = os.path.normpath(nj(fldr,'..','conf.py'))
+            if not op.exists(confpy):
+                confpy = op.normpath(nj(fldr,'..','conf.py'))
             config={}
             with open(confpy,encoding='utf-8') as f:
-                eval(compile(f.read(),os.path.abspath(confpy),'exec'),config)
+                eval(compile(f.read(),op.abspath(confpy),'exec'),config)
             file_id_color=config['file_id_color']
             def _drawnode(canvas,node,parent,c,r): 
                 od = []
@@ -961,8 +968,8 @@ def lnksandtags(
             f.writelines(tlines)
         ld = pyfca.LatticeDiagram(fca,4*297,4*210)
         mkdir(nj(fldr,"_images"))
-        tracesvg = os.path.abspath(nj(fldr,"_images",trace_file_name+'.svg'))
-        ttgt = lambda : trace_target.endswith('.rest') and os.path.splitext(trace_target)[0] or trace_target
+        tracesvg = op.abspath(nj(fldr,"_images",trace_file_name+'.svg'))
+        ttgt = lambda : trace_target.endswith('.rest') and op.splitext(trace_target)[0] or trace_target
         ld.svg(target=ttgt()+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
         try:
             import cairosvg
@@ -1060,7 +1067,7 @@ try:
         return res
     @lru_cache()
     def _pth_nde_parent(foldernode,name):
-        existsin = lambda x: os.path.exists(os.path.join(x.abspath(),name))
+        existsin = lambda x: op.exists(op.join(x.abspath(),name))
         _parent = foldernode.parent
         if existsin(_parent):
             pth = '../'+name
@@ -1158,13 +1165,13 @@ try:
         bldpath = bld.path.get_bld()
         ps = tsk.inputs[0].abspath()
         pt = tsk.outputs[0].abspath()
-        lookup,name=os.path.split(ps)
+        lookup,name=op.split(ps)
         env = tsk.env
         env.update(tsk.generator.__dict__)
         #if the .stpl needs a parameter, then this fails, since it is intended to be used as include file only: name it .tpl then
         st=bottle.template(name
                 ,template_settings={'esceape_func':lambda x:x}
-                ,template_lookup = [lookup,os.path.split(lookup)[0]]
+                ,template_lookup = [lookup,op.split(lookup)[0]]
                 ,bldpath = bldpath.abspath()
                 ,options = bld.options
                 ,__file__ = ps.replace('\\','/')
@@ -1224,7 +1231,8 @@ try:
         for dx in d[0]:
             if dx.name.endswith(_stpl):
                 target_in_src_folder = dx.get_src().parent.make_node(dx.name[:-len(_stpl)])
-                self.create_task('Stpl',dx,target_in_src_folder)
+                stpld = get_files_in_doc(self.path,dx)
+                self.create_task('Stpl',dx,target_in_src_folder,scan=lambda:stpld)
         rstscan = lambda: d
         if node.name != "index.rest":
             if 'docx' in docs or 'defaults' in docs:
@@ -1279,7 +1287,7 @@ try:
             dr = self.inputs[0].parent
             tgt = self.outputs[0].find_or_declare('html').abspath()
             relconfpy,confpy,_ = _pth_nde_parent(dr,'conf.py')
-            confdir = os.path.split(relconfpy)[0]
+            confdir = op.split(relconfpy)[0]
             cwd=self.get_cwd().abspath()
             subprocess.run(['sphinx-build','-Ea', '-b', 'html',dr.abspath(),tgt]+(
                 ['-c',confdir] if confdir else []),cwd=cwd)
@@ -1682,7 +1690,7 @@ def main(**args):
   verbose = args['verbose']
   if iroot:
     thisfile = str(Path(__file__).resolve()).replace('\\','/')
-    tex_ref = os.path.normpath(os.path.join(os.path.split(thisfile)[0],'..','reference.tex'))
+    tex_ref = op.normpath(op.join(op.split(thisfile)[0],'..','reference.tex'))
     tree=[l for l in example_tree.replace(
         '__file__',thisfile).replace('__tex_ref__',tex_ref).splitlines() if l.strip()]
     mkdir(iroot)
@@ -1701,7 +1709,7 @@ def main(**args):
             print(fldr)
         #generate files
         genpth = nj(fldr,'gen')
-        if os.path.exists(genpth):
+        if op.exists(genpth):
             for f,t,d,kw in parsegenfile(genpth):
                 gen(nj(fldr,f),target=nj(fldr,t),fun=d,**kw)
         lnksandtags(fldr,lnktgts,allfiles,alltgts)

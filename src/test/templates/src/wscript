@@ -13,3 +13,4 @@ def configure(cfg):
 def build(bld):
     docload(bld) #defines bld.stpl(), bld.gen_files(), bld.gen_links(), bld.build_docs()
     bld.recurse('doc')
+
