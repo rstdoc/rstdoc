@@ -55,7 +55,7 @@ If installed, ``./dcx.py`` in the following examples can be replaced by ``rstdcx
   $ make docx
   $ make pdf
 
-- Create the docs (and .tags and _links_xxx.rst) with waf:
+- Create the docs (and .tags and _links_xxx.rst) with waf (*preferred*):
 
   Instead of using ``make`` one can load this file in `waf <https://github.com/waf-project/waf>`__.
   ``waf`` also considers all recursively included files,
@@ -74,21 +74,24 @@ If installed, ``./dcx.py`` in the following examples can be replaced by ``rstdcx
 Conventions
 -----------
 
-- Main files have ``.rest`` extension, converted by Sphinx and Pandoc.
-- Included files have extension ``.rst`` ignored by Sphinx (see conf.py).
+- Files 
+
+  - main docs end in ``.rest``
+  - ``.rst`` are included and ignored by Sphinx (see conf.py).
+  - ``.txt`` are literally included (use :literal: option).
+  - templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately before ``.. include: y.rst``.
+  - ``some.rst.tpl`` are template included
+    Template lookup is done in in ``.`` and ``..`` with respect to the current file.
+
+    - with ``%include('some.rst.tpl',param="test")`` with optional parameters
+    - with ``%globals().update(include('utility.rst.tpl'))`` if it contains only definitions
+
 - ``.. _`id`:`` are targets.
+  *RST targets* must not be template-generated. The templates can have more targets than the generated file.
+  If one wants to generate also rst targets, then this must happen in a previous step, e.g. with ``gen``.
+
 - References use replacement `substitutions`_: ``|id|``.
-- ``x.rest.stpl`` and ``y.rst.stpl`` must be rendered separately before ``.. include: y.rst``.
-- ``.rst.tpl`` is included 
-
-  - with ``%include('some.rst.tpl',param="test")`` with optional parameters
-  - with ``%globals().update(include('utility.rst.tpl'))`` if it contains only definitions
-
-  Template lookup is done in in ``.`` and ``..``.
-
-  *Targets* must not be generated, but explicit and same in ``.rest.stpl`` and rendered ``.rest``.
-  If one wants to generate them, then this must happen in a previous step, e.g. with ``gen``.
-
+  
 See the example created with ``--init`` at the end of this file and the sources of the documentation of 
 `rstdoc <https://github.com/rpuntaie/rstdoc>`__.
 
@@ -486,7 +489,7 @@ def fldrincluded(
                     res.append(pth.replace("\\","/"))
                 yield res
 
-def links(lns):
+def make_lnks(lns):
     for i,ln in enumerate(lns):
         mo = rexlinksto.findall(ln)
         for g in mo:
@@ -856,12 +859,14 @@ def fldrs(
                 lns = _read_lines(restpath)
                 fil = _read_stpl_lines(doc)
                 tgts = list(make_tgts(lns,doc,fil))
-            elif not doc.endswith('.tpl') and os.path.exists(doc):#%include('x.rst.tpl') were considered in first branch
+            elif not doc.endswith('.tpl') and not doc.endswith('.txt') and os.path.exists(doc):
+                #.txt are considered literal include
+                #%include('x.rst.tpl') were considered in first branch
                 lns = _read_lines(doc)
                 tgts = list(make_tgts(lns,doc))
             else:
                 continue
-            lnks = list(links(lns))
+            lnks = list(make_lnks(lns))
             if fldr not in fldr_lnktgts:
                 fldr_lnktgts[fldr] = []
             fldr_lnktgts[fldr].append((restname,doc,len(lns),lnks,tgts))
