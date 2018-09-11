@@ -124,6 +124,7 @@ from functools import lru_cache
 from collections import OrderedDict,defaultdict
 from itertools import chain, tee
 from types import GeneratorType
+from argparse import Namespace
 
 try:
     import pyfca
@@ -144,6 +145,8 @@ def memoized(f):
 
 verbose = False
 _stpl = '.stpl'
+_tpl = '.tpl'
+_tikz = '.tikz'
 is_rest = lambda x: x.endswith('.rest') or x.endswith('.rest'+_stpl)
 is_rst = lambda x: x.endswith('.rst') or x.endswith('.rst'+_stpl) or x.endswith('.rst.tpl')
 
@@ -363,14 +366,6 @@ def _read_stpl_lines_it(fn):
     Targets must not be *explicit* in all .stpl. They must not be created by stpl.
     This is needed to make the .tags jump to the original and not the generated file.
     """
-    #def stpl(file_or_string,**kw):
-    #    from bottle import template
-    #    return template(file_or_string
-    #            ,template_lookup = [os.getcwd(),op.dirname(os.getcwd())]
-    #            ,**kw
-    #            ) 
-    #fil=list(_read_stpl_lines('main.rest.stpl'))
-    #lns=stpl('main.rest.stpl')
     flns = []
     if op.exists(fn):
         flns = _read_lines(fn)
@@ -508,6 +503,7 @@ def pair(a,b,cmp):
     ... list(pair(a,b,cmp))
     [(1, 1), (2, 2), (None, 3), (4, 4), (None, 5), (None, 6), (7, 7)]
     """
+    i = 0
     for i,(aa,bb) in enumerate(zip(a,b)):
         if not cmp(aa,bb):
             break
@@ -556,7 +552,7 @@ def make_tgts(
     if len(itgts)<len(itgts1):
         paired_itgts_itgts1 = pair(itgts,itgts1,lambda x,y:lns[x]==lns1[y])
     elif len(itgts)>len(itgts1):
-        raise RstDocError(".rest has more targets than .stpl. Targets cannot be generated.")
+        raise RstDocError(".rest has more targets (.. _`xx`:) than .stpl. Either not up-to-date (run 'stpl {0}' first) or targets generated (don't).".format(doc))
     else:
         paired_itgts_itgts1 = zip(itgts,itgts1)
     lenlns = len(lns)
@@ -840,7 +836,7 @@ def fldrs(
 
         fldr, (lnktgts,allfiles,alltgts)
 
-    These are used by |dcx.lnksandtags|.
+    These are used by |dcx.links_and_tags|.
     '''
 
     odir = os.getcwd()
@@ -887,7 +883,7 @@ def fldrs(
 
 doctypes = "sphinx docx pdf".split()
 
-def lnksandtags(
+def links_and_tags(
     fldr #folder path
     ,lnktgts  #list of links and targets in a document (restname, doc, lenlns, lnks, tgts)
     ,allfiles #all files in one folder
@@ -1050,7 +1046,7 @@ def lnksandtags(
 
 try:
     from waflib import TaskGen, Task
-    import stpl as bottle
+    import stpl
 
     @lru_cache()
     def _ant_glob_stpl(bldpath,stardotext):
@@ -1119,7 +1115,7 @@ try:
                     deps.append(nd)
         depsgensrc = [path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
         rs = [x for x in deps if x]+depsgensrc
-        return (rs,[])
+        return (list(sorted(set(rs),key=lambda a:a.name)),[])
     @lru_cache()
     def get_files_in_doc(path,node):
         srcpath = node.parent.get_src()
@@ -1148,28 +1144,35 @@ try:
             deps.append(nd)
         depsgensrc = [path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
         rs = [x for x in deps if x]+depsgensrc
-        return (rs,[])
+        return (list(sorted(set(rs),key=lambda a:a.name)),[])
     @TaskGen.feature('gen_links')
-    @TaskGen.before('process_rule')
+    @TaskGen.after('gen_files')
     def gen_links(self):
         docs=get_docs(self.bld)
         if docs:
-            linksandtags = [self.path.make_node(x) for x in ['_links_'+x+'.rst' for x in doctypes]+['.tags']]
-            self.create_task('rstindex',self.path,linksandtags,scan=lambda:get_files_in_folder(self.path))
-    class rstindex(Task.Task):
-        always_run = True
-        def run(self):
-            for fldr, (lnktgts,allfiles,alltgts) in fldrs(self.inputs[0].abspath()):
-                lnksandtags(fldr,lnktgts,allfiles,alltgts)
-    def stpl(tsk,bld):
+            for so in self.path.ant_glob('*.rest.stpl'):
+                tsk = Namespace()
+                tsk.inputs=(so,)
+                tsk.env = self.env
+                tsk.generator = self
+                render_stpl(tsk,self.bld)
+            for fldr, (lnktgts,allfiles,alltgts) in fldrs(self.path.abspath()):
+                links_and_tags(fldr,lnktgts,allfiles,alltgts)
+    def render_stpl(tsk,bld):
         bldpath = bld.path.get_bld()
         ps = tsk.inputs[0].abspath()
-        pt = tsk.outputs[0].abspath()
+        try:
+            pt = tsk.outputs[0].abspath()
+        except:
+            if ps.endswith(_stpl):
+                pt = ps[:-len(_stpl)]
+            else:
+                raise RstDocError('No target for %s'%ps)
         lookup,name=op.split(ps)
-        env = tsk.env
+        env = dict(tsk.env)
         env.update(tsk.generator.__dict__)
         #if the .stpl needs a parameter, then this fails, since it is intended to be used as include file only: name it .tpl then
-        st=bottle.template(name
+        st=stpl.template(name
                 ,template_settings={'esceape_func':lambda x:x}
                 ,template_lookup = [lookup,op.split(lookup)[0]]
                 ,bldpath = bldpath.abspath()
@@ -1182,7 +1185,7 @@ try:
     class Stpl(Task.Task):
         always_run = True
         def run(self):
-            stpl(self,self.generator.bld)
+            render_stpl(self,self.generator.bld)
     @TaskGen.extension(_stpl)
     def expand_stpl(self,node):#expand into same folder
         nn = node.parent.make_node(node.name[:-len(_stpl)])
@@ -1193,7 +1196,6 @@ try:
             pass
     def sphinxcontrib_tikz(tsk):
         from sphinxcontrib import tikz
-        from argparse import Namespace
         class Builder:
             def __init__(s):
                 s.config = Namespace(**config)
@@ -1218,33 +1220,27 @@ try:
     class Tikz(Task.Task):
         def run(self):
             sphinxcontrib_tikz(self)
-    @TaskGen.extension('.tikz')
+    @TaskGen.extension(_tikz)
     def tikz_to_png(self,node):#into _images or ../_images in source path
         srcfldr = node.parent.get_src()
         _,imgnde,__ = _pth_nde_parent(srcfldr,'_images')
-        self.create_task('Tikz',node,imgnde.make_node(node.name[:-5]+'.png'))
+        self.create_task('Tikz',node,imgnde.make_node(node.name[:-len(_tikz)]+'.png'))
     @TaskGen.extension('.rest')
     def gen_docs(self,node):
         docs=get_docs(self.bld)
-        linkdeps = [self.path.get_src().find_node(x) for x in ['_links_'+x+'.rst' for x in doctypes]]
         d = get_files_in_doc(self.path,node)
-        for dx in d[0]:
-            if dx.name.endswith(_stpl):
-                target_in_src_folder = dx.get_src().parent.make_node(dx.name[:-len(_stpl)])
-                stpld = get_files_in_doc(self.path,dx)
-                self.create_task('Stpl',dx,target_in_src_folder,scan=lambda:stpld)
         rstscan = lambda: d
         if node.name != "index.rest":
             if 'docx' in docs or 'defaults' in docs:
                 out_node_docx = node.parent.find_or_declare('docx/'+node.name[:-len('.rest')]+'.docx')
-                self.create_task('docx', [node]+linkdeps, out_node_docx, scan=rstscan)
+                self.create_task('docx', [node], out_node_docx, scan=rstscan)
             if 'pdf' in docs:
                 out_node_pdf = node.parent.find_or_declare('pdf/'+node.name[:-len('.rest')]+'.pdf')
-                self.create_task('pdf', [node]+linkdeps, out_node_pdf, scan=rstscan)
+                self.create_task('pdf', [node], out_node_pdf, scan=rstscan)
         else:
             if 'html' in docs:
                 out_node_html = node.parent.get_bld()
-                self.create_task('sphinx',[node]+linkdeps,out_node_html,cwd=node.parent.abspath(),scan=rstscan)
+                self.create_task('sphinx',[node],out_node_html,cwd=node.parent.abspath(),scan=rstscan)
     class pdfordocx(Task.Task):
         def run(self):
             frm = self.inputs[0].abspath()
@@ -1304,22 +1300,23 @@ try:
     def build(bld):
         bld.src2bld = lambda f: bld(features='subst',source=f,target=f,is_copy=True)
         def gen_files():
-            bld(features="gen_files")
-            bld.add_group()
+            bld(name="process gen file",features="gen_files")
         bld.gen_files = gen_files
         def gen_links():
-            bld(features="gen_links")
-            bld.add_group()
+            bld(name="create links and .tags",features="gen_links")
         bld.gen_links = gen_links
         bld.sphinxcontrib_tikz = sphinxcontrib_tikz
-        bld.stpl = lambda tsk: stpl(tsk,bld) #use like bld(rule=bld.stpl,source='x.h.stpl'), but rule actually not needed
+        bld.stpl = lambda tsk: render_stpl(tsk,bld) #use like bld(rule=bld.stpl,source='x.h.stpl') to compile stpl only, else do without rule
         def build_docs():
             docs=get_docs(bld)
             if docs:
+                bld(name="process gen file ",features="gen_files")
+                bld(name="create links and .tags",features="gen_links")
                 for tikz in _ant_glob_stpl(bld.path,'*.tikz'):
-                    bld(source=tikz)
+                    bld(name='build tikz',source=tikz)
                     bld.add_group()
-                bld(source=_ant_glob_stpl(bld.path,'*.rest'))
+                bld(name='build all rest',source=bld.path.ant_glob('*.rest'))
+                bld.add_group()
         bld.build_docs = build_docs
 
 except:
@@ -1712,7 +1709,7 @@ def main(**args):
         if op.exists(genpth):
             for f,t,d,kw in parsegenfile(genpth):
                 gen(nj(fldr,f),target=nj(fldr,t),fun=d,**kw)
-        lnksandtags(fldr,lnktgts,allfiles,alltgts)
+        links_and_tags(fldr,lnktgts,allfiles,alltgts)
 
 if __name__=='__main__':
   main()
