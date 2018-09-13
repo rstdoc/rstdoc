@@ -248,7 +248,7 @@ def test_makenostpl(makebuild):
       └─tp.html"""
     assert tree(makebuild[0],with_dot_files=False,max_depth=3)==expected
 
-@pytest.yield_fixture(params=['docx','pdf','html'])
+@pytest.yield_fixture(params=['docx','pdf','sphinx_html'])
 def wafbuild(request,rstsamples):
     r1=run(['waf','configure'])
     assert r1.returncode==0
@@ -297,7 +297,7 @@ def test_wafnostpl(wafbuild):
 │     ├─sr.pdf
 │     └─tp.pdf
 └─config.log"""
-    elif target=='html':
+    elif target=='sphinx_html':
         expected="""\
 ├─c4che
 │  ├─_cache.py
@@ -305,7 +305,7 @@ def test_wafnostpl(wafbuild):
 ├─code
 │  └─some_tst.c
 ├─doc
-│  └─html
+│  └─sphinx_html
 │     ├─.doctrees
 │     ├─_images
 │     ├─_sources
@@ -352,7 +352,7 @@ def wafit(doctype):
     yield (os.getcwd(),doctype)
     os.chdir(oldd)
 
-@pytest.yield_fixture(params=['docx','pdf','html'])
+@pytest.yield_fixture(params=['docx','pdf','sphinx_html'])
 def wafbuildwithstpl(request,rstsampleswithstpl):
     yield from wafit(request.param)
 
@@ -389,7 +389,7 @@ def test_wafwithstpl(wafbuildwithstpl):
 │     ├─sr.pdf
 │     └─tp.pdf
 └─config.log"""
-    elif target=='html':
+    elif target=='sphinx_html':
         expected="""\
 ├─c4che
 │  ├─_cache.py
@@ -397,7 +397,7 @@ def test_wafwithstpl(wafbuildwithstpl):
 ├─code
 │  └─some_tst.c
 ├─doc
-│  └─html
+│  └─sphinx_html
 │     ├─.doctrees
 │     ├─_images
 │     ├─_sources
@@ -444,7 +444,7 @@ def rststplsample(rstsamples):
     open('doc/index.rest','a',encoding='utf-8').write("\n   is.rest\n")
     yield os.getcwd()
 
-@pytest.yield_fixture(params=['docx','pdf','html'])
+@pytest.yield_fixture(params=['docx','pdf','sphinx_html'])
 def wafrststpl(request,rststplsample):
     yield from wafit(request.param)
 
@@ -483,7 +483,7 @@ def test_wafrststpl(wafrststpl):
 │     ├─sr.pdf
 │     └─tp.pdf
 └─config.log"""
-    elif target=='html':
+    elif target=='sphinx_html':
         expected="""\
 ├─c4che
 │  ├─_cache.py
@@ -491,7 +491,7 @@ def test_wafrststpl(wafrststpl):
 ├─code
 │  └─some_tst.c
 ├─doc
-│  └─html
+│  └─sphinx_html
 │     ├─.doctrees
 │     ├─_images
 │     ├─_sources
@@ -509,7 +509,7 @@ def test_wafrststpl(wafrststpl):
 └─config.log"""
     assert tree(wafrststpl[0],with_dot_files=False,max_depth=3)==expected
     assert sys.platform in open(glob.glob(os.path.join('..','src','doc','is1.rst'))[0],encoding='utf-8').read()
-    if target=='html':
+    if target=='sphinx_html':
         assert sys.platform in open(glob.glob(os.path.join('doc',target,'is.*'))[0],encoding='utf-8').read()
 
 def test_selfdoc():

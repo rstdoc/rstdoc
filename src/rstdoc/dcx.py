@@ -191,8 +191,13 @@ restplinclude = re.compile(r'''%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*''')
 
 
 op = os.path
-nj = lambda *x:op.normpath(op.join(*x))
-updir = lambda fn: nj(op.dirname(fn),'..',fn)
+opnj = lambda *x:op.normpath(op.join(*x))
+updir = lambda fn: opnj(op.dirname(fn),'..',op.split(fn)[1])
+#fn='x/y/../y/a.b'
+#updir(fn)#x\a.b
+#updir('a.b')#..\a.b
+#updir('a.b/a.b')#a.b
+#opnj(fn)#x\y\a.b
 
 trace_file_name = '_trace' #used for _trace.rst and _trace.svg
 trace_target= 'index'
@@ -255,6 +260,19 @@ def in2s(
 
     """
     return list(zip(nms[::2],nms[1::2]))
+
+
+def conf_py(fldr):
+    """
+    conf.py or ../conf.py is used for both sphinx and pandoc.
+    """
+    confpy = opnj(fldr,'conf.py')
+    if not op.exists(confpy):
+        confpy = updir(confpy)
+    config={}
+    with open(confpy,encoding='utf-8') as f:
+        eval(compile(f.read(),op.abspath(confpy),'exec'),config)
+    return config
 
 
 #re.search(reid,'OpenDevices = None').groups()
@@ -400,7 +418,7 @@ def rstincluded(
 
     p = ''
     for p in paths:
-        nfn = nj(p,fn)
+        nfn = opnj(p,fn)
         if op.exists(nfn+_stpl): #first, because original
             nfn = nfn+_stpl
             yield fn+_stpl
@@ -450,7 +468,7 @@ def rstincluded(
                 if nf:
                     thisnf = op.join(p,nf)
                     if not op.exists(thisnf):
-                        parntnf = op.join(p,'..',nf)
+                        parntnf = opnj(p,'..',nf)
                         if op.exists(parntnf): 
                             nf = parntnf
                         else:
@@ -472,7 +490,7 @@ def fldrincluded(
     for p,ds,fs in os.walk(directory):
         for f in reversed(sorted(fs)):
             if is_rest(f):
-                pf=nj(p,f)
+                pf=opnj(p,f)
                 if any([x in pf for x in exclude_paths_substrings]):
                     continue
                 if pf in sofar:
@@ -486,7 +504,7 @@ def fldrincluded(
                         trace_target = op.splitext(f)[0]
                     if any([x in ff for x in exclude_paths_substrings]):
                         continue
-                    pth=nj(p,ff)
+                    pth=opnj(p,ff)
                     if any([x in pth for x in exclude_paths_substrings]):
                         continue
                     res.append(pth.replace("\\","/"))
@@ -885,7 +903,7 @@ def fldrs(
     finally:
         os.chdir(odir)
 
-links_types = "sphinx html docx pdf".split()
+links_types = "sphinx latex html pdf docx odt".split()
 
 def links_and_tags(
     fldr #folder path
@@ -926,12 +944,7 @@ def links_and_tags(
     #unknowntgts = []
     def tracelines():
         try:
-            confpy = nj(fldr,'conf.py')
-            if not op.exists(confpy):
-                confpy = op.normpath(nj(fldr,'..','conf.py'))
-            config={}
-            with open(confpy,encoding='utf-8') as f:
-                eval(compile(f.read(),op.abspath(confpy),'exec'),config)
+            config = conf_py(fldr)
             file_id_color=config['file_id_color']
             def _drawnode(canvas,node,parent,c,r): 
                 od = []
@@ -959,7 +972,7 @@ def links_and_tags(
             legend=', '.join([fnm+" "+clr for fnm,(_,clr) in file_id_color.items()])
             tlines.extend([': '+legend,'\n'])
         tlines.append('\n')
-        with open(nj(fldr,trace_file_name+'.rst'),'w',encoding='utf-8') as f:
+        with open(opnj(fldr,trace_file_name+'.rst'),'w',encoding='utf-8') as f:
             f.write('.. raw:: html\n\n')
             #needs in conf.py: html_extra_path=["_images/_trace.svg"]
             f.write('    <object data="'+trace_file_name+'.svg" type="image/svg+xml"></object>\n')
@@ -967,8 +980,8 @@ def links_and_tags(
                 f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
             f.writelines(tlines)
         ld = pyfca.LatticeDiagram(fca,4*297,4*210)
-        mkdir(nj(fldr,"_images"))
-        tracesvg = op.abspath(nj(fldr,"_images",trace_file_name+'.svg'))
+        mkdir(opnj(fldr,"_images"))
+        tracesvg = op.abspath(opnj(fldr,"_images",trace_file_name+'.svg'))
         ttgt = lambda : trace_target.endswith('.rest') and op.splitext(trace_target)[0] or trace_target
         ld.svg(target=ttgt()+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
         try:
@@ -980,14 +993,12 @@ def links_and_tags(
         return tlines
     def add_target(tgt,lnkname,restname,upcnt,fi):
         for linktype,linklines in linkfiles:
+            if linktype == 'latex':
+                linktype = 'pdf'
             if linktype=='sphinx':
                 tgte = ".. |{0}| replace:: :ref:`{1}<{0}>`\n".format(tgt,lnkname)
-            if linktype=='html':
-                tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restname+'.html')
-            elif linktype=='docx':
-                tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restname+'.docx')
-            elif linktype=='pdf':
-                tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restname+'.pdf')
+            else:
+                tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restname+'.'+linktype)
             linklines.append(tgte)
         tagentries.append('{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fi[0],fi[1]))
     def add_linksto(i,tgt,iterlnks,ojlnk=None): #all the links away from the block following this tgt to next tgt
@@ -1042,9 +1053,12 @@ def links_and_tags(
             for (_,fi),tgt,lnkname in make_tgts(tlns,trace_file_name+'.rst') :
                 add_target(tgt,lnkname,trace_target,0,fi)
     for linktype,linklines in linkfiles:
-        with open(nj(fldr,'_links_%s.rst'%linktype),'w',encoding='utf-8') as f:
+        with open(opnj(fldr,'_links_%s.rst'%linktype),'w',encoding='utf-8') as f:
             f.write('\n'.join(linklines));
-    with open(nj(fldr,'.tags'),'wb') as f:
+    try:
+        subprocess.run(['ctags','-R','--sort=0','--fields=+n','--languages=python','--python-kinds=-i','-f','.tags','*'],cwd=fldr)
+    except: pass
+    with open(opnj(fldr,'.tags'),'ab') as f:
         f.write('\n'.join(tagentries).encode('utf-8'));
 
 
@@ -1241,30 +1255,48 @@ try:
                 if doctgt.startswith('sphinx_'):
                     continue
                 out_node = node.parent.find_or_declare("{0}/{1}.{0}".format(doctgt,node.name[:-len('.rest')]))
-                self.create_task(doctgt, [node], out_node, scan=rstscan)
+                pan = self.create_task('viapandoc', [node], out_node, scan=rstscan, pandoc_to=doctgt)
+                if doctgt == 'html':
+                    _images = node.parent.make_node('_images')
+                    if _images.exists():
+                        for x in _images.ant_glob('*'):
+                            tx = _images.parent.find_or_declare('html/_images/'+x.name)
+                            self.bld(features='subst',source=x,target=tx,is_copy=True)
         else:
             for doctgt in docs:
                 if not doctgt.startswith('sphinx_'):
                     continue
                 out_node = node.parent.get_bld()
-                self.create_task('sphinx',[node],out_node,cwd=node.parent.abspath(),scan=rstscan,sphinx_builder=doctgt)
+                self.create_task('viasphinx',[node],out_node,cwd=node.parent.abspath(),scan=rstscan,sphinx_builder=doctgt)
     class viapandoc(Task.Task):
         def run(self):
             frm = self.inputs[0].abspath()
             twd = self.outputs[0].abspath()
             dr = self.inputs[0].parent.get_src()
-            refoption,refdoc,cmd,linksdoc = self.refdoc_cmd(twd)
-            if refdoc:
-                rd = dr.find_resource(refdoc) or dr.parent.find_resource(refdoc)
-                if rd:
-                    cmd.append(refoption)
-                    cmd.append(rd.abspath())
+            config = conf_py(dr.abspath())
+            linksfile = '_links_'+self.pandoc_to+'.rst'
+            cmd = ['pandoc','--standalone','-f','rst']+config.get('pandoc_opts',{}).get(self.pandoc_to,[]
+                )+['-t','latex' if self.pandoc_to=='pdf' else self.pandoc_to,'-o',twd]
+            opt_refdoc = config.get('pandoc_doc_optref',{}).get(self.pandoc_to,'')
+            if opt_refdoc:
+                if isinstance(opt_refdoc,dict):
+                    opt_refdoc = opt_refdoc.get(inputs[0].name,'')
+                if opt_refdoc:
+                    refoption,refdoc = opt_refdoc.split()
+                    rd = dr.make_node(refdoc)
+                    if not rd.exists(): 
+                        rd = dr.parent.make_node(refdoc)
+                        if not rd.exists():
+                            rd = None
+                    if rd:
+                        cmd.append(refoption)
+                        cmd.append(rd.abspath())
             oldp = os.getcwd()
             os.chdir(dr.abspath())
             try:
                 with open(frm,'rb') as f:
                     k1 = f.read().replace(b'\n.. include:: _links_sphinx.rst',b'')
-                links_file = dr.find_resource(linksdoc)
+                links_file = dr.find_resource(linksfile)
                 with open(links_file.abspath(),'rb') as f:
                     k2 = f.read()
                 p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
@@ -1274,22 +1306,7 @@ try:
                 p.wait()
             finally:
                 os.chdir(oldp)
-    class pdf(viapandoc):
-        def refdoc_cmd(self,output):
-            pandoc = ['pandoc','--listings','--number-sections', 
-                '--pdf-engine','xelatex','-f', 'rst']+ list(chain.from_iterable(zip(['-V']*4,
-                ['titlepage','papersize=a4','toc','toc-depth=3','geometry:margin=2.5cm']
-                )))+ ['-o', output]
-            return '--template','reference.tex', pandoc, '_links_pdf.rst'
-    class docx(viapandoc):
-        def refdoc_cmd(self,output):
-            pandoc = ['pandoc','-f', 'rst', '-t', 'docx', '-o', output]
-            return '--reference-doc','reference.docx', pandoc, '_links_docx.rst'
-    class html(viapandoc):
-        def refdoc_cmd(self,output):
-            pandoc = ['pandoc','-f', 'rst', '-t', 'html', '--mathml', '--highlight-style', 'pygments', '-o', output]
-            return '','', pandoc, '_links_html.rst'
-    class sphinx(Task.Task):
+    class viasphinx(Task.Task):
         always_run = True
         def run(self):
             dr = self.inputs[0].parent
@@ -1607,7 +1624,6 @@ example_tree = r'''
                   ]
               numfig = False
               smartquotes = False
-              file_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
               default_role = 'math'
               templates_path = ['_templates']
               source_suffix = '.rest'
@@ -1641,6 +1657,18 @@ example_tree = r'''
               latex_documents = [
                   (master_doc, project.replace(' ','')+'.tex',project+' Documentation',author,'manual'),
               ]
+              #new in rstdoc
+              file_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
+              
+              pandoc_doc_optref={'latex': '--template reference.tex',
+                               'html': {},#each can also be dict of file:template
+                               'pdf': '--template reference.tex',
+                               'docx': '--reference-doc reference.docx',
+                               'odt': '--reference-doc reference.odt'
+                               }
+
+              latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
+              pandoc_opts = {'pdf':latex_pdf,'latex':latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
            └ Makefile
               SPHINXOPTS    = 
               SPHINXBUILD   = sphinx-build
@@ -1699,7 +1727,7 @@ def main(**args):
   verbose = args['verbose']
   if iroot:
     thisfile = str(Path(__file__).resolve()).replace('\\','/')
-    tex_ref = op.normpath(op.join(op.split(thisfile)[0],'..','reference.tex'))
+    tex_ref = opnj(op.split(thisfile)[0],'..','reference.tex')
     tree=[l for l in example_tree.replace(
         '__file__',thisfile).replace('__tex_ref__',tex_ref).splitlines() if l.strip()]
     mkdir(iroot)
@@ -1717,10 +1745,10 @@ def main(**args):
         if verbose:
             print(fldr)
         #generate files
-        genpth = nj(fldr,'gen')
+        genpth = opnj(fldr,'gen')
         if op.exists(genpth):
             for f,t,d,kw in parsegenfile(genpth):
-                gen(nj(fldr,f),target=nj(fldr,t),fun=d,**kw)
+                gen(opnj(fldr,f),target=opnj(fldr,t),fun=d,**kw)
         links_and_tags(fldr,lnktgts,allfiles,alltgts)
 
 if __name__=='__main__':
