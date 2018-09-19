@@ -1345,7 +1345,7 @@ try:
                 for tikz in _ant_glob_stpl(bld.path,'*.tikz'):
                     bld(name='build tikz',source=tikz)
                     bld.add_group()
-                bld(name='build all rest',source=_ant_glob_stpl(bld.path,'*.rest','*.rst'))
+                bld(name='build all rest',source=[x for x in _ant_glob_stpl(bld.path,'*.rest','*.rst')if not x.name.endswith('.rst')])
                 bld.add_group()
         bld.build_docs = build_docs
 
