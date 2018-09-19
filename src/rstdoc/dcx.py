@@ -1075,7 +1075,6 @@ try:
         for an_ext in stardotext:
           stplsfirst = bldpath.ant_glob(an_ext+_stpl)
           for anode in stplsfirst:
-              print('1',anode.name)
               sofar.append(anode.name[:-len(_stpl)])
               res.append(anode)
           nonstpls = bldpath.ant_glob(an_ext)
