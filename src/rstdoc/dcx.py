@@ -1079,7 +1079,6 @@ try:
               res.append(anode)
           nonstpls = bldpath.ant_glob(an_ext)
           for anode in nonstpls:
-              print('2',anode.name)
               if anode.name not in sofar:
                   res.append(anode)
         return res
