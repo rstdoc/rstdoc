@@ -1069,17 +1069,20 @@ try:
     import stpl
 
     @lru_cache()
-    def _ant_glob_stpl(bldpath,stardotext):
+    def _ant_glob_stpl(bldpath,*stardotext):
         res = []
         sofar = []
-        stplsfirst = bldpath.ant_glob(stardotext+_stpl)
-        for x in stplsfirst:
-            sofar.append(x.name[:-len(_stpl)])
-            res.append(x)
-        nonstpls = bldpath.ant_glob(stardotext)
-        for x in nonstpls:
-            if x.name not in sofar:
-                res.append(x)
+        for an_ext in stardotext:
+          stplsfirst = bldpath.ant_glob(an_ext+_stpl)
+          for anode in stplsfirst:
+              print('1',anode.name)
+              sofar.append(anode.name[:-len(_stpl)])
+              res.append(anode)
+          nonstpls = bldpath.ant_glob(an_ext)
+          for anode in nonstpls:
+              print('2',anode.name)
+              if anode.name not in sofar:
+                  res.append(anode)
         return res
     @lru_cache()
     def _pth_nde_parent(foldernode,name):
@@ -1339,12 +1342,12 @@ try:
         def build_docs():
             docs=get_docs(bld)
             if docs:
-                bld(name="process gen file ",features="gen_files")
-                bld(name="create links and .tags",features="gen_links")
+                bld.gen_files()
+                bld.gen_links()
                 for tikz in _ant_glob_stpl(bld.path,'*.tikz'):
                     bld(name='build tikz',source=tikz)
                     bld.add_group()
-                bld(name='build all rest',source=bld.path.ant_glob('*.rest'))
+                bld(name='build all rest',source=_ant_glob_stpl(bld.path,'*.rest','*.rst'))
                 bld.add_group()
         bld.build_docs = build_docs
 
@@ -1414,8 +1417,6 @@ example_tree = r'''
 
         └ doc
            ├ wscript_build
-           │    bld.gen_files()
-           │    bld.gen_links()
            │    bld.build_docs()
            ├ index.rest
            │  ============
