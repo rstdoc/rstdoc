@@ -498,7 +498,7 @@ def fldrincluded(
                 sofar.append(pf)
                 if pf.endswith(_stpl):
                     sofar.append(pf[:-len(_stpl)])
-                res = []
+                pths = []
                 for ff in rstincluded(f,(p,)):
                     if trace_file_name in ff:
                         trace_target = op.splitext(f)[0]
@@ -507,8 +507,8 @@ def fldrincluded(
                     pth=opnj(p,ff)
                     if any([x in pth for x in exclude_paths_substrings]):
                         continue
-                    res.append(pth.replace("\\","/"))
-                yield res
+                    pths.append(pth.replace("\\","/"))
+                yield pths
 
 def make_lnks(lns):
     for i,ln in enumerate(lns):
@@ -799,10 +799,12 @@ def mktree(
                     t0 = t1[c+1:f]
                     ct = re.search(r'[^\s│]',t0[0]).span()[0]
                     tt = [t[ct:]+'\n' for t in t0]
-                    with open(ef,'w') as fh:
+                    with open(ef,'w',encoding='utf-8') as fh:
                         fh.writelines(tt)
             elif eg:
-                request.urlretrieve(eg,ef)
+                try:
+                    request.urlretrieve(eg,ef)
+                except: pass
             elif ed and (('\\' in ed) or ('/' in ed)):
                 mkdir(ef)
             else:
@@ -904,6 +906,17 @@ def fldrs(
         os.chdir(odir)
 
 links_types = "sphinx latex html pdf docx odt".split()
+def create_link(linktype,filenoext,tgt,lnkname):
+    if linktype == 'latex':
+        linktype = 'pdf'
+    if linktype=='sphinx':
+        tgte = ".. |{0}| replace:: :ref:`{1}<{0}>`\n".format(tgt,lnkname)
+    elif linktype=='odt':
+        #https://github.com/jgm/pandoc/issues/3524
+        tgte = ".. |{0}| replace:: `{1} <../{2}#{0}>`__\n".format(tgt,lnkname,filenoext+'.'+linktype)
+    else:
+        tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`__\n".format(tgt,lnkname,filenoext+'.'+linktype)
+    return tgte
 
 def links_and_tags(
     fldr #folder path
@@ -993,13 +1006,7 @@ def links_and_tags(
         return tlines
     def add_target(tgt,lnkname,restname,upcnt,fi):
         for linktype,linklines in linkfiles:
-            if linktype == 'latex':
-                linktype = 'pdf'
-            if linktype=='sphinx':
-                tgte = ".. |{0}| replace:: :ref:`{1}<{0}>`\n".format(tgt,lnkname)
-            else:
-                tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`_\n".format(tgt,lnkname,restname+'.'+linktype)
-            linklines.append(tgte)
+            linklines.append(create_link(linktype,restname,tgt,lnkname))
         tagentries.append('{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fi[0],fi[1]))
     def add_linksto(i,tgt,iterlnks,ojlnk=None): #all the links away from the block following this tgt to next tgt
         linksto = []
@@ -1719,7 +1726,32 @@ def main(**args):
                         Afterwards run "make html" or "make docx" form "doc" folder.''')
     parser.add_argument('-v','--verbose', action='store_true',
                         help='''Show files recursively included by each rest''')
+    parser.add_argument('-o','--out', dest='doctype', action='store',
+                        help='''either .ext or out file to determine the type Create link replacements for this doc type.''')
+    parser.add_argument('infile', nargs='?',
+            help='Input file or - for stdin. If not given all directories below are scanned.')
+    parser.add_argument('outfile', nargs='?',
+            help='Output file or - or nothing to print to std out.')
+    parser.add_argument('outtype', nargs='?',default='html',
+            help='Extension with starting dot (default: html). The target file name will be the in-file with this extension.')
     args = parser.parse_args().__dict__
+
+
+  filelines = None
+  try:
+    filename = infile = args['infile']
+
+    isfile = infile and os.path.isfile(infile) or False
+    if not isfile and infile == '-':
+        try:
+            sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach()) 
+        except: pass
+        filelines = sys.stdin.readlines()
+    elif isfile:
+        file = filename.replace('\\','/')
+        with open(file,'r',encoding='utf-8') as f:
+            filelines = f.readlines()
+  except: pass
 
   iroot = args['root']
   global verbose
@@ -1738,6 +1770,35 @@ def main(**args):
         subprocess.run("pandoc --print-default-data-file reference.docx > reference.docx",shell=True)
     finally:
         os.chdir(oldd)
+  elif filelines:
+    outfile = args['outfile']
+    outtype = args['outtype']
+    outf = None
+    try:
+        if outfile is None or outfile=='-':
+            try:
+                sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+            except: pass
+            outf = sys.stdout
+            #TODO make tests 
+            #filename,outfile,outtype='example.txt','example.rst','html' #example.html
+            #filename,outfile,outtype='-','-','example.html' #-.html
+            #filename,outfile,outtype='-','-','html' #example.html
+            if filename == '-':
+                try:
+                    filename,outtype = outtype.split('.')
+                except: pass
+            outfile = os.path.splitext(filename)[0]+'.'+outtype 
+        else:
+            outf  = open(outfile,'w',encoding='utf-8')
+        filenoext=os.path.splitext(outfile)[0]
+        outf.write(''.join(filelines))
+        outf.write('\n')
+        for (i,fi),tgt,lnkname in make_tgts(filelines,filename):
+            outf.write(create_link(outtype,filenoext,tgt,lnkname))
+    finally:
+        if outf is not None and outf != sys.stdout:
+            outf.close()
   else:
     #link, gen and tags per folder
     for fldr, (lnktgts,allfiles,alltgts) in fldrs('.'):
