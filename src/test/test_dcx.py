@@ -76,7 +76,7 @@ ss""".splitlines(),('sy7','A Requirement Group')),
 ("""
 .. _`dz3`:
 
-.. figure:: _images/smpl.png
+.. figure:: _images/exampletikz.png
   :name:""".splitlines(),('dz3','Figure 1')),
 ("""
 .. _`dua`:
@@ -160,10 +160,14 @@ def test_init(rstsamples):
 │  ├─Makefile
 │  ├─conf.py
 │  ├─dd.rest
+│  ├─exampledot.dot.stpl
+│  ├─exampleplt.plt
+│  ├─examplesvg.svg.stpl
+│  ├─exampletikz.tikz
+│  ├─exampleuml.uml
 │  ├─gen
 │  ├─index.rest
 │  ├─ra.rest
-│  ├─smpl.tikz
 │  ├─sr.rest
 │  ├─tp.rest
 │  └─wscript_build

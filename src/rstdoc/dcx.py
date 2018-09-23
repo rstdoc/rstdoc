@@ -1549,7 +1549,7 @@ example_tree = r'''
            │  
            │  .. _`dz3`:
            │  
-           │  .. figure:: _images/smpl.png
+           │  .. figure:: _images/exampletikz.png
            │     :name:
            │  
            │     |dz3|: Caption here.
@@ -1557,6 +1557,16 @@ example_tree = r'''
            │     The usage of ``:name:`` produces: ``WARNING: Duplicate explicit target name: ""``. Ignore.
            │  
            │  Reference via |dz3|.
+           │  
+           │  ``.tikz``, ``.svg``, ``.dot``,  ``.uml`` or ``.plt``, or ``.stpl`` thereof, are converted to ``.png``.
+           │  
+           │  .. image:: _images/examplesvg.png
+           │  
+           │  .. image:: _images/exampledot.png
+           │  
+           │  .. image:: _images/exampleuml.png
+           │  
+           │  .. image:: _images/exampleplt.png
            │  
            │  .. _`dua`:
            │  
@@ -1653,11 +1663,50 @@ example_tree = r'''
            │
            │  .. include:: _links_sphinx.rst
            │
-           ├ smpl.tikz
-               [thick]
-               \draw (0,0) grid (3,3);
-               \foreach \c in {(0,0), (1,0), (2,0), (2,1), (1,2)}
-                   \fill \c + (0.5,0.5) circle (0.42);
+           ├ exampletikz.tikz
+              [thick]
+              \draw (0,0) grid (3,3);
+              \foreach \c in {(0,0), (1,0), (2,0), (2,1), (1,2)}
+                  \fill \c + (0.5,0.5) circle (0.42);
+           ├ examplesvg.svg.stpl
+              <?xml version="1.0" encoding="utf-8"?>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" width="172.079pt" height="115.386pt" stroke-width="0.566929" stroke-miterlimit="10.000000">
+              %for i in range(10):
+                <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,{{i*5}}" />
+              %end
+              %for i in range(10):
+                <path fill="none" stroke="#f40" stroke-width="1" d="M10,{{i*5}} C15,5 100,5 100,55" />
+              %end
+              </svg>
+           ├ exampledot.dot.stpl
+              digraph {
+              %for i in range(3):    
+                  "From {{i}}" -> "To {{i}}";
+              %end
+                  }
+           ├ exampleuml.uml
+              @startuml
+              'style options 
+              skinparam monochrome true
+              skinparam circledCharacterRadius 0
+              skinparam circledCharacterFontSize 0
+              skinparam classAttributeIconSize 0
+              hide empty members
+              Class01 <|-- Class02
+              Class03 *-- Class04
+              Class05 o-- Class06
+              Class07 .. Class08
+              Class09 -- Class10
+              @enduml
+           ├ exampleplt.plt
+              #vim: syntax=python
+              import matplotlib.pyplot as plt
+              import numpy as np
+              x = np.random.randn(1000)
+              plt.hist( x, 20)
+              plt.grid()
+              plt.title(r'Normal: $\mu=%.2f, \sigma=%.2f$'%(x.mean(), x.std()))
+              plt.show()
            ├ gen
               #from|to|gen_xxx|kwargs
               ../code/some.h | _sometst.rst                | tstdoc | {}
