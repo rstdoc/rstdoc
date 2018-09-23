@@ -310,7 +310,6 @@ def test_wafnostpl(wafbuild):
 │  └─some_tst.c
 ├─doc
 │  └─sphinx_html
-│     ├─.doctrees
 │     ├─_images
 │     ├─_sources
 │     ├─_static
@@ -324,7 +323,7 @@ def test_wafnostpl(wafbuild):
 │     ├─sr.html
 │     └─tp.html
 └─config.log"""
-    assert tree(wafbuild[0],with_dot_files=False,max_depth=3)==expected
+    assert set(tree(wafbuild[0],with_dot_files=False,max_depth=3).splitlines())-{'│     ├─.doctrees'}==set(expected.splitlines())
 
 
 @pytest.yield_fixture
@@ -402,7 +401,6 @@ def test_wafwithstpl(wafbuildwithstpl):
 │  └─some_tst.c
 ├─doc
 │  └─sphinx_html
-│     ├─.doctrees
 │     ├─_images
 │     ├─_sources
 │     ├─_static
@@ -416,7 +414,7 @@ def test_wafwithstpl(wafbuildwithstpl):
 │     ├─sr.html
 │     └─tp.html
 └─config.log"""
-    assert tree(wafbuildwithstpl[0],with_dot_files=False,max_depth=3)==expected
+    assert set(tree(wafbuildwithstpl[0],with_dot_files=False,max_depth=3).splitlines())-{'│     ├─.doctrees'}==set(expected.splitlines())
 
 
 @pytest.yield_fixture
@@ -440,7 +438,7 @@ def rststplsample(rstsamples):
          ├tictactoe.tikz.stpl
             [thick]
             \draw (0,0) grid (3,3);
-            %for i,j in {(0,0), (1,0), (2,0), (2,1), (1,2)}:
+            %for i,j in {(0,0), (1,0), (2,0), (2,1), (2,2), (1,2)}:
                   \fill ({{i+0.5}},{{j+0.5}}) circle (0.42);
             %end
         """.splitlines()
@@ -496,7 +494,6 @@ def test_wafrststpl(wafrststpl):
 │  └─some_tst.c
 ├─doc
 │  └─sphinx_html
-│     ├─.doctrees
 │     ├─_images
 │     ├─_sources
 │     ├─_static
@@ -511,7 +508,7 @@ def test_wafrststpl(wafrststpl):
 │     ├─sr.html
 │     └─tp.html
 └─config.log"""
-    assert tree(wafrststpl[0],with_dot_files=False,max_depth=3)==expected
+    assert set(tree(wafrststpl[0],with_dot_files=False,max_depth=3).splitlines())-{'│     ├─.doctrees'}==set(expected.splitlines())
     assert sys.platform in open(glob.glob(os.path.join('..','src','doc','is1.rst'))[0],encoding='utf-8').read()
     if target=='sphinx_html':
         assert sys.platform in open(glob.glob(os.path.join('doc',target,'is.*'))[0],encoding='utf-8').read()

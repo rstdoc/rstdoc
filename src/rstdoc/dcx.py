@@ -78,7 +78,8 @@ With ``rstdoc`` installed, ``./dcx.py`` in the following examples can be replace
   - `.dot <https://graphviz.gitlab.io/gallery/>`__ or ``.dot.stpl``
 
   - `.uml <http://plantuml.com/command-line>`__ or ``.uml.stpl``
-    This needs a plantuml.bat/sh with e.g. "java -jar %~dp0plantuml.jar %*".
+    This needs a plantuml.bat with e.g. ``java -jar %~dp0plantuml.jar %*`` 
+    or plantuml sh script with ``java -jar `dirname $BASH_SOURCE`/plantuml.jar "$@"``.
 
   - `.plt` should contain python matplotlib code with one ``show()`` line
 
@@ -135,11 +136,22 @@ from collections import OrderedDict,defaultdict
 from itertools import chain, tee
 from types import GeneratorType
 from argparse import Namespace
-import cairosvg
+
+try:
+    from cairosvg import svg2png
+    def csvg2png(file,write_to):
+        try:
+            svg2png(url="file:///"+file, write_to=write_to)
+        except:
+            svg2png(url="file://"+file, write_to=write_to)
+except Exception as e:
+    print('cairosvg svg2png not available:',e)
+    def csvg2png(file,write_to): pass
 
 try:
     import pyfca
-except:
+except Exception as e:
+    print('pyfca not available:',e)
     pyfca = None
 
 Tee = tee([], 1)[0].__class__
@@ -213,7 +225,7 @@ def rindices(
     r #regular expression string or compiled
     ,lns #lines
     ):
-    '''
+    r'''
     Return the indices matching the regular expression ``r``.
 
     ::
@@ -603,7 +615,7 @@ def make_tgts(
         tgt = rextgt.search(cur).group(1)
         #cur = ' .. _`x`:'
         try:#skip literal blocks
-            spc = re.search('\w',cur).span()[0]-3
+            spc = re.search(r'\w',cur).span()[0]-3
             if spc>0 and is_literal(ii,iis,spc):
                 continue
         except:
@@ -651,14 +663,14 @@ def gen(
     ,fun=None #use ``#gen_<fun>(lns,**kw):`` to extract the documtenation
     ,**kw #kw arguments to the gen_<fun>() function
     ):
-    ''' 
+    r''' 
     Take the ``gen_[fun]`` functions enclosed by ``#def gen_[fun](lns,**kw)`` to create a new file.
 
     Example::
 
         >>> source=[i+'\\n' for i in """
         ...        #def gen(lns,**kw):
-        ...        #  return [l.split('#@')[1] for l in rlines('^\s*#@',lns)]
+        ...        #  return [l.split('#@')[1] for l in rlines(r'^\s*#@',lns)]
         ...        #def gen
         ...        #@some lines
         ...        #@to extrace
@@ -681,7 +693,7 @@ def gen(
     if '.' not in sys.path:
         sys.path.append('.')
     if fun:
-        gen_regex = r'#def gen_'+fun+'(\w*(lns,\*\*kw):)*'
+        gen_regex = r'#def gen_'+fun+r'(\w*(lns,\*\*kw):)*'
     else:
         gen_regex = r'#def gen(\w*(lns,\*\*kw):)*'
     iblks = list(rindices(gen_regex,lns))
@@ -1004,17 +1016,13 @@ def links_and_tags(
         tracesvg = op.abspath(opnj(fldr,"_images",trace_file_name+'.svg'))
         ttgt = lambda : trace_target.endswith('.rest') and op.splitext(trace_target)[0] or trace_target
         ld.svg(target=ttgt()+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
-        try:
-            import cairosvg
-            pngf = tracesvg.replace('.svg','.png')
-            cairosvg.svg2png(url="file:///"+tracesvg, write_to=pngf)
-        except Exception as e:
-            print(e)
+        pngf = tracesvg.replace('.svg','.png')
+        csvg2png(file=tracesvg, write_to=pngf)
         return tlines
     def add_target(tgt,lnkname,restname,upcnt,fi):
         for linktype,linklines in linkfiles:
             linklines.append(create_link(linktype,restname,tgt,lnkname))
-        tagentries.append('{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fi[0],fi[1]))
+        tagentries.append(r'{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fi[0],fi[1]))
     def add_linksto(i,tgt,iterlnks,ojlnk=None): #all the links away from the block following this tgt to next tgt
         linksto = []
         if ojlnk and ojlnk[0] < i:
@@ -1265,7 +1273,7 @@ try:
         gen_ext_tsk(self,node,'.svg')
     class SVG(Task.Task):
         def run(self):
-            cairosvg.svg2png(url="file:///"+self.inputs[0].abspath(), write_to=self.outputs[0].abspath())
+            csvg2png(file=self.inputs[0].abspath(), write_to=self.outputs[0].abspath())
     @TaskGen.extension('.dot')
     def dot_to_png(self,node):
         gen_ext_tsk(self,node,'.dot')
@@ -1392,6 +1400,8 @@ try:
                 for anext in '*.tikz *.svg *.dot *.uml *.plt'.split():
                     for anextf in _ant_glob_stpl(bld.path,anext):
                         bld(name='build '+anext,source=anextf)
+                        if anext.endswith('tikz'):
+                            bld.add_group()#else test fails under linux
                 bld.add_group()
                 bld(name='build all rest',source=[x for x in _ant_glob_stpl(bld.path,'*.rest','*.rst')if not x.name.endswith('.rst')])
                 bld.add_group()
@@ -1411,7 +1421,7 @@ example_tree = r'''
         │   └ some.h
                 /*
                 #def gen_tst(lns,**kw):
-                #  return [l.split('@')[1] for l in rlines('^\s*@',lns)]
+                #  return [l.split('@')[1] for l in rlines(r'^\s*@',lns)]
                 #def gen_tst
                 #def gen_tstdoc(lns,**kw):
                 #  return ['#) '+l.split('**')[1] for l in rlines('^/\*\*',lns)]

@@ -132,11 +132,11 @@ def _write_confpy(
         fn #docx file name
         ):
     #Takes the conf.py from the ``example_tree`` in ``rstdoc.dcx``.
-    confpy = re.split('\s*.\s*Makefile',example_tree.split('conf.py')[1])[0]
+    confpy = re.split(r'\s*.\s*Makefile',example_tree.split('conf.py')[1])[0]
     pn = _prj_name(fn)
     confpy = confpy.replace('docxsample',pn).replace('2017',time.strftime('%Y'))
     lns=confpy.splitlines(True)
-    s=re.search('\w',lns[1]).span(0)[0]
+    s=re.search(r'\w',lns[1]).span(0)[0]
     confpy=''.join([l[s:] for l in lns])
     fnn = _fldrhere(fn)
     cpfn = os.path.normpath(os.path.join(fnn,'conf.py'))
@@ -168,9 +168,9 @@ def _write_makefile(
         fn #docx file name
         ):
     #Takes the Makefile from the ``example_tree`` in ``rstdoc.dcx``.
-    mf = re.split('\s+build\s+',re.split('└ Makefile',example_tree)[1])[0]
+    mf = re.split(r'\s+build\s+',re.split('└ Makefile',example_tree)[1])[0]
     lns=mf.splitlines(True)
-    s=re.search('\w',lns[1]).span(0)[0]
+    s=re.search(r'\w',lns[1]).span(0)[0]
     lns = [l[s:] for l in lns]
     rst = _rstname(fn)
     idoc = list(rindices('^docx:',lns))[0]
