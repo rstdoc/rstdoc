@@ -17,6 +17,7 @@ main.rest
 normalfromstpl.rst
 
 _*
+!src/doc/_links_sphinx.rst
 !_images
 !__init__.py
 
