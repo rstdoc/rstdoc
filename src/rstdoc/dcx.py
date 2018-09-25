@@ -175,7 +175,7 @@ is_rst = lambda x: x.endswith('.rst') or x.endswith('.rst'+_stpl) or x.endswith(
 
 rextgt = re.compile(r'(?:^|^[^\.\%\w]*\s|^\s*\(?\w+[\)\.]\s)\.\. _`?(\w[^:`]*)`?:\s*$')
 rextitle = re.compile(r'^([!"#$%&\'()*+,\-./:;<=>?@[\]^_`{|}~])\1+$')
-rexitem = re.compile(r'^\s*:?(\w[^:]*):\s*.*$')
+rexitem = re.compile(r'^\s*:?\**(\w[^:\*]*)\**:\s*.*$')
 rexoneword = re.compile(r'^\s*(\w+)\s*$')
 rexname = re.compile(r'^\s*:name:\s*(\w.*)*$')
 rexlinksto = re.compile(r'[^`]?\|(\w+)\|[^`]?')
@@ -194,7 +194,11 @@ reximg = re.compile(r'image:: ((?:\.|/|\\|\w).*)')
 #rextgt.search('.. .. _`_t11`:').group(1)#nok
 #rextgt.search('%# .. _`_t11`:').group(1)#nok
 #rexitem.match(':``t11``:').group(1)#nok
+#rexitem.match('.. _xx:').group(1)#nok
+#rexitem.match('.. xx:').group(1)#nok
 #rexitem.match(':t11:').group(1)#ok
+#rexitem.match('**t11**:').group(1)#ok
+#rexitem.match('*t11*:').group(1)#ok
 #reximg.search('.. image:: ..\img.png').group(1)
 #reximg.search(r'.. |c:\x y\im.jpg| image:: /tmp/img.png').group(1)
 #reximg.search(r'.. image:: c:\tmp\img.png').group(1)
@@ -207,7 +211,6 @@ restplinclude = re.compile(r'''%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*''')
 #restplinclude.split('%include("test.rst.stpl",v="aparam")')
 #restplinclude.split('%include("../test.rst.stpl",v="aparam")')
 #restplinclude.split('% include(  "../test.rst.stpl",v="aparam")')
-
 
 op = os.path
 opnj = lambda *x:op.normpath(op.join(*x))
@@ -593,7 +596,8 @@ def make_tgts(
     if len(itgts)<len(itgts1):
         paired_itgts_itgts1 = pair(itgts,itgts1,lambda x,y:lns[x]==lns1[y])
     elif len(itgts)>len(itgts1):
-        raise RstDocError(".rest has more targets (.. _`xx`:) than .stpl. Either not up-to-date (run 'stpl {0}' first) or targets generated (don't).".format(doc))
+        print("Warning: rest has more targets (.. _`xx`:) than stpl. Either not up-to-date (run 'stpl {0}' first) or targets generated: tags will not link to stpl.".format(doc))
+        paired_itgts_itgts1 = ((i,j) for (j,i) in pair(itgts1,itgts,lambda x,y:lns1[x]==lns[y]))
     else:
         paired_itgts_itgts1 = zip(itgts,itgts1)
     lenlns = len(lns)
@@ -655,7 +659,11 @@ def make_tgts(
                 lnkname, = itm.groups()
                 break
             lnkname = tgt
-        yield (i,fil[i1][:2] if fil else (doc,ii)), tgt, lnkname
+        #tgts
+        if i1:
+            yield (i,fil[i1][:2] if fil else (doc,ii)), tgt, lnkname
+        else:
+            yield (i,(doc.replace(_stpl,''),ii)), tgt, lnkname
 
 def gen(
     source #either a list of lines of a path to the source code
@@ -907,7 +915,7 @@ def fldrs(
                     tgts = list(make_tgts(lns,doc,fil))
                 elif not doc.endswith('.tpl') and not doc.endswith('.txt') and op.exists(doc):
                     #.txt are considered literal include
-                    #%include('x.rst.tpl') were considered in first branch
+                    #%include('x.rst.tpl') were considered via STPL in the first branch
                     lns = _read_lines(doc)
                     tgts = list(make_tgts(lns,doc))
                 else:
@@ -1078,11 +1086,14 @@ def links_and_tags(
         with open(opnj(fldr,'_links_%s.rst'%linktype),'w',encoding='utf-8') as f:
             f.write('\n'.join(linklines));
     try:
-        subprocess.run(['ctags','-R','--sort=0','--fields=+n','--languages=python','--python-kinds=-i','-f','.tags','*'],cwd=fldr)
-    except: pass
-    with open(opnj(fldr,'.tags'),'ab') as f:
-        f.write('\n'.join(tagentries).encode('utf-8'));
-
+        subprocess.run(['ctags','-R','--sort=0','--fields=+n','--languages=python','--python-kinds=-i','-f','.tags','*'],
+            cwd=fldr if fldr else os.getcwd())
+        with open(opnj(fldr,'.tags'),'ab') as f:
+            f.write('\n'.join(tagentries).encode('utf-8'));
+    except Exception as e: 
+        print('Warning: ctags failed with ', e, fldr)
+        with open(opnj(fldr,'.tags'),'wb') as f:
+            f.write('\n'.join(tagentries).encode('utf-8'));
 
 #==============> for building with WAF
 
