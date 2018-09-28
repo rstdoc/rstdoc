@@ -958,7 +958,8 @@ def links_and_tags(
 
     conf.py entries::
 
-      file_id_color={
+      target_id_group = lambda targetid: targetid[0]
+      target_id_color={
           "meta":("m","white"),
           "ra":("r","lightblue"),
           "sr":("s","red"),
@@ -967,7 +968,7 @@ def links_and_tags(
           "rstdoc":("o","pink")}
       html_extra_path=["_images/_trace.svg"]
 
-    IDs starting with the letter in file_id_color are assumed to be from that file.
+    The target IDs are grouped. To every group a color is associated. See ``conf.py``.
     This is used to color an FCA lattice diagram in "_trace.rst".
     The diagram nodes are clickable in HTML.
 
@@ -985,20 +986,22 @@ def links_and_tags(
     def tracelines():
         try:
             config = conf_py(fldr)
-            file_id_color=config['file_id_color']
-            def _drawnode(canvas,node,parent,c,r): 
-                od = []
-                its = {x[0] for x in node.intent}
-                for k,(k0,v) in file_id_color.items():
-                    if k0 in its:
-                        od.append(v)
-                odl = len(od)
-                for i in range(odl-1,-1,-1):
-                    rr = int(r*(i+1)/odl)
-                    parent.add(canvas.circle(c,rr,fill=od[i],stroke='black'))
+            target_id_group = config['target_id_group']
+            target_id_color = config['target_id_color']
+
+            def _drawnode(canvas,node,parent,center,radius): 
+                fillcolors = []
+                nodetgtgrps = {target_id_group(x) for x in node.intent}
+                for _,(groupid,groupcolor) in target_id_color.items():
+                    if groupid in nodetgtgrps:
+                        fillcolors.append(groupcolor)
+                n_grps = len(fillcolors)
+                for i in range(n_grps-1,-1,-1):
+                    rr = int(radius*(i+1)/n_grps)
+                    parent.add(canvas.circle(center,rr,fill=fillcolors[i],stroke='black'))
         except:
             _drawnode = None
-            file_id_color=None
+            target_id_color=None
         fca = pyfca.Lattice(objects,lambda x:x)
         tr = 'tr'
         reflist = lambda x,pfx=tr: ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
@@ -1008,15 +1011,15 @@ def links_and_tags(
         tlines = ''.join(trace).splitlines(keepends=True)
         tlines.extend(['.. _`trace`:\n','\n','.. figure:: _images/'+trace_file_name+'.png\n','   :name:\n','\n',
           '   |trace|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies'])
-        if file_id_color is not None:
-            legend=', '.join([fnm+" "+clr for fnm,(_,clr) in file_id_color.items()])
+        if target_id_color is not None:
+            legend=', '.join([fnm+" "+clr for fnm,(_,clr) in target_id_color.items()])
             tlines.extend([': '+legend,'\n'])
         tlines.append('\n')
         with open(opnj(fldr,trace_file_name+'.rst'),'w',encoding='utf-8') as f:
             f.write('.. raw:: html\n\n')
             #needs in conf.py: html_extra_path=["_images/_trace.svg"]
             f.write('    <object data="'+trace_file_name+'.svg" type="image/svg+xml"></object>\n')
-            if file_id_color is not None:
+            if target_id_color is not None:
                 f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
             f.writelines(tlines)
         ld = pyfca.LatticeDiagram(fca,4*297,4*210)
@@ -1775,7 +1778,8 @@ example_tree = r'''
                   (master_doc, project.replace(' ','')+'.tex',project+' Documentation',author,'manual'),
               ]
               #new in rstdoc
-              file_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
+              target_id_group = lambda targetid: targetid[0]
+              target_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
               
               pandoc_doc_optref={'latex': '--template reference.tex',
                                'html': {},#each can also be dict of file:template
