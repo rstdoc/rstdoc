@@ -999,7 +999,8 @@ def links_and_tags(
                 for i in range(n_grps-1,-1,-1):
                     rr = int(radius*(i+1)/n_grps)
                     parent.add(canvas.circle(center,rr,fill=fillcolors[i],stroke='black'))
-        except:
+        except Exception as e:
+            print('Warning: ',e)
             _drawnode = None
             target_id_color=None
         fca = pyfca.Lattice(objects,lambda x:x)
