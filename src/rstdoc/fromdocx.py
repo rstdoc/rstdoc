@@ -222,8 +222,7 @@ def main(
     fn = args['docx']
     extract_media(fn)
     fnrst = _docxrest(fn)
-    #pypandoc.convert_file(fn,'rst','docx',outputfile=fnrst)
-    rst=pypandoc.convert(fn,'rst','docx')
+    rst = pypandoc.convert_file(fn,'rst','docx')
     with open(fnrst,'w',encoding='utf-8',newline='\n') as f:
         f.write('.. vim: syntax=rst\n\n')
         f.writelines([x+'\n' for x in rst.splitlines()])

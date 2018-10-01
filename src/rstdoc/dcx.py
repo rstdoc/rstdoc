@@ -1439,7 +1439,7 @@ example_tree = r'''
                 #  return [l.split('@')[1] for l in rlines(r'^\s*@',lns)]
                 #def gen_tst
                 #def gen_tstdoc(lns,**kw):
-                #  return ['#) '+l.split('**')[1] for l in rlines('^/\*\*',lns)]
+                #  return ['#) '+l.split('**')[1] for l in rlines(r'^/\*\*',lns)]
                 #def gen_tstdoc
 
                 @//generated from some.h
