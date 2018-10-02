@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#encoding: utf-8 
+#encoding: utf-8
 
 ##lns=open(__file__).readlines()
 ##list(gen_head(lns))
