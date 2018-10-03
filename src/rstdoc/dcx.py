@@ -78,10 +78,13 @@ With ``rstdoc`` installed, ``./dcx.py`` in the following examples can be replace
   - `.dot <https://graphviz.gitlab.io/gallery/>`__ or ``.dot.stpl``
 
   - `.uml <http://plantuml.com/command-line>`__ or ``.uml.stpl``
-    This needs a plantuml.bat with e.g. ``java -jar %~dp0plantuml.jar %*`` 
+    This needs a plantuml.bat with e.g. ``java -jar "%~dp0plantuml.jar" %*`` 
     or plantuml sh script with ``java -jar `dirname $BASH_SOURCE`/plantuml.jar "$@"``.
 
-  - `.plt` should contain python matplotlib code with one ``show()`` line
+  - `.plt` containd python matplotlib code with one ``show()``
+
+  - `.pyx` contains python code that uses the pyx library. It must have one pyx canvas object.
+    The same code, with the canvas object on the last line, should produce the diagram also in ``jupyter notebook``.
 
 Conventions
 -----------
@@ -153,6 +156,12 @@ try:
 except Exception as e:
     print('pyfca not available:',e)
     pyfca = None
+
+try:
+    import pyx
+except Exception as e:
+    print('pyx not available:',e)
+    pyx = None
 
 Tee = tee([], 1)[0].__class__
 def memoized(f):
@@ -1309,6 +1318,18 @@ try:
             plt = "import matplotlib as mpl\nmpl.use('Agg')\n"+plt
             pltvars={}
             eval(compile(plt,self.inputs[0].abspath(),'exec'),pltvars)
+    @TaskGen.extension('.pyx')#python matplotlib plot: have one show() line in there
+    def pyx_to_png(self,node):
+        gen_ext_tsk(self,node,'.pyx')
+    class PYX(Task.Task):
+        def run(self):
+            pyxcode = self.inputs[0].read()
+            pyxvars={}
+            c=eval(compile(pyxcode,self.inputs[0].abspath(),'exec'),pyxvars)
+            for k,v in pyxvars.items():
+                if type(v)==pyx.canvas.canvas:
+                    v.writeGSfile(self.outputs[0].abspath())
+                    break
     @TaskGen.extension('.rest')
     def gen_docs(self,node):
         docs=get_docs(self.bld)
@@ -1412,7 +1433,7 @@ try:
             if docs:
                 bld.gen_files()
                 bld.gen_links()
-                for anext in '*.tikz *.svg *.dot *.uml *.plt'.split():
+                for anext in '*.tikz *.svg *.dot *.uml *.plt *.pyx'.split():
                     for anextf in _ant_glob_stpl(bld.path,anext):
                         bld(name='build '+anext,source=anextf)
                         if anext.endswith('tikz'):
@@ -1566,9 +1587,9 @@ example_tree = r'''
            │  
            │  ``dcx.py`` produces its own labeling consistent across DOCX, PDF, HTML.
            │  
-           │  .. _`dz7`:
+           │  .. _`d97`:
            │  
-           │  :dz7: Independent DD IDs
+           │  :d97: Independent DD IDs
            │  
            │    The relation with RS IDs is m-n. Links like |s3a| can be scattered over more DD entries.  
            │  
@@ -1577,7 +1598,7 @@ example_tree = r'''
            │  .. figure:: _images/exampletikz.png
            │     :name:
            │  
-           │     |dz3|: Caption here.
+           │     |dz3|: Create from exampletikz.tikz
            │  
            │     The usage of ``:name:`` produces: ``WARNING: Duplicate explicit target name: ""``. Ignore.
            │  
@@ -1585,13 +1606,40 @@ example_tree = r'''
            │  
            │  ``.tikz``, ``.svg``, ``.dot``,  ``.uml`` or ``.plt``, or ``.stpl`` thereof, are converted to ``.png``.
            │  
-           │  .. image:: _images/examplesvg.png
+           │  .. _`dz4`:
            │  
-           │  .. image:: _images/exampledot.png
+           │  .. figure:: _images/examplesvg.png
+           │     :name:
            │  
-           │  .. image:: _images/exampleuml.png
+           │     |dz4|: Created from examplesvg.svg.stpl
            │  
-           │  .. image:: _images/exampleplt.png
+           │  .. _`dz5`:
+           │  
+           │  .. figure:: _images/exampledot.png
+           │     :name:
+           │  
+           │     |dz5|: Created from exampledot.dot.stpl
+           │  
+           │  .. _`dz6`:
+           │  
+           │  .. figure:: _images/exampleuml.png
+           │     :name:
+           │  
+           │     |dz6|: Created from exampleuml.uml
+           │  
+           │  .. _`dz7`:
+           │  
+           │  .. figure:: _images/exampleplt.png
+           │     :name:
+           │  
+           │     |dz7|: Created from exampleplt.plt
+           │  
+           │  .. _`dz8`:
+           │  
+           │  .. figure:: _images/examplepyx.png
+           │     :name:
+           │  
+           │     |dz8|: Created from examplepyx.pyx
            │  
            │  .. _`dua`:
            │  
@@ -1695,7 +1743,7 @@ example_tree = r'''
                   \fill \c + (0.5,0.5) circle (0.42);
            ├ examplesvg.svg.stpl
               <?xml version="1.0" encoding="utf-8"?>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" width="172.079pt" height="115.386pt" stroke-width="0.566929" stroke-miterlimit="10.000000">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" width="110pt" height="60pt" stroke-width="0.566929" stroke-miterlimit="10.000000">
               %for i in range(10):
                 <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,{{i*5}}" />
               %end
@@ -1732,6 +1780,11 @@ example_tree = r'''
               plt.grid()
               plt.title(r'Normal: $\mu=%.2f, \sigma=%.2f$'%(x.mean(), x.std()))
               plt.show()
+           ├ examplepyx.pyx
+              import pyx
+              c = pyx.canvas.canvas()
+              c.stroke(pyx.path.circle(0,0,2),[pyx.style.linewidth.Thick,pyx.color.rgb.red])
+              c
            ├ gen
               #from|to|gen_xxx|kwargs
               ../code/some.h | _sometst.rst                | tstdoc | {}

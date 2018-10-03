@@ -53,7 +53,7 @@ setup(name = 'rstdoc',
     #optional dependencies, because only used to draw FCA diagram:
     #- pyfca: https://github.com//pyfca/pyfca
     #- cairosvg: http://cairosvg.org/
-    install_requires = ['pyfca','cairosvg','stpl','pypandoc','sphinx','sphinxcontrib-tikz','sphinx_bootstrap_theme'],
+    install_requires = ['pyx','pyfca','cairosvg','stpl','pypandoc','sphinx','sphinxcontrib-tikz','sphinx_bootstrap_theme'],
     extras_require = {'develop': ['mock','pytest-coverage'],'build':['waf']},
     long_description = long_description,
     packages=['rstdoc'],

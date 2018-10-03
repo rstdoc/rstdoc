@@ -162,6 +162,7 @@ def test_init(rstsamples):
 │  ├─dd.rest
 │  ├─exampledot.dot.stpl
 │  ├─exampleplt.plt
+│  ├─examplepyx.pyx
 │  ├─examplesvg.svg.stpl
 │  ├─exampletikz.tikz
 │  ├─exampleuml.uml
