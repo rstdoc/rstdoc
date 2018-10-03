@@ -160,6 +160,7 @@ def test_init(rstsamples):
 │  ├─Makefile
 │  ├─conf.py
 │  ├─dd.rest
+│  ├─examplecairo.pyx
 │  ├─exampledot.dot.stpl
 │  ├─exampleplt.plt
 │  ├─examplepyx.pyx

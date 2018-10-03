@@ -83,7 +83,12 @@ With ``rstdoc`` installed, ``./dcx.py`` in the following examples can be replace
 
   - `.plt` containd python matplotlib code with one ``show()``
 
-  - `.pyx` contains python code that uses the pyx library. It must have one pyx canvas object.
+  - `.pyx` contains python code that uses the 
+
+    - `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or 
+    - `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__. 
+    
+    It must have a pyx ``canvas`` or a cairo ``Surface`` object.
     The same code, with the canvas object on the last line, should produce the diagram also in ``jupyter notebook``.
 
 Conventions
@@ -141,14 +146,16 @@ from types import GeneratorType
 from argparse import Namespace
 
 try:
+    import cairocffi
     from cairosvg import svg2png
     def csvg2png(file,write_to):
         try:
-            svg2png(url="file:///"+file, write_to=write_to)
-        except:
             svg2png(url="file://"+file, write_to=write_to)
+        except:
+            svg2png(url="file:///"+file, write_to=write_to)
 except Exception as e:
     print('cairosvg svg2png not available:',e)
+    def svg2png(file,write_to): pass
     def csvg2png(file,write_to): pass
 
 try:
@@ -1327,8 +1334,11 @@ try:
             pyxvars={}
             c=eval(compile(pyxcode,self.inputs[0].abspath(),'exec'),pyxvars)
             for k,v in pyxvars.items():
-                if type(v)==pyx.canvas.canvas:
-                    v.writeGSfile(self.outputs[0].abspath())
+                if isinstance(v,pyx.canvas.canvas):
+                    svg2png(bytestring=v._repr_svg_(),write_to=self.outputs[0].abspath())
+                    break
+                elif isinstance(v,cairocffi.Surface):
+                    v.write_to_png(target=self.outputs[0].abspath())
                     break
     @TaskGen.extension('.rest')
     def gen_docs(self,node):
@@ -1641,6 +1651,13 @@ example_tree = r'''
            │  
            │     |dz8|: Created from examplepyx.pyx
            │  
+           │  .. _`dr8`:
+           │  
+           │  .. figure:: _images/examplecairo.png
+           │     :name:
+           │  
+           │     |dr8|: Created from examplecairo.pyx
+           │  
            │  .. _`dua`:
            │  
            │  |dua|: Table legend
@@ -1737,7 +1754,7 @@ example_tree = r'''
            │  .. include:: _links_sphinx.rst
            │
            ├ exampletikz.tikz
-              [thick]
+              [thick,red]
               \draw (0,0) grid (3,3);
               \foreach \c in {(0,0), (1,0), (2,0), (2,1), (1,2)}
                   \fill \c + (0.5,0.5) circle (0.42);
@@ -1750,6 +1767,7 @@ example_tree = r'''
               %for i in range(10):
                 <path fill="none" stroke="#f40" stroke-width="1" d="M10,{{i*5}} C15,5 100,5 100,55" />
               %end
+              <text x="50" y="50" fill="red">Hi!</text>
               </svg>
            ├ exampledot.dot.stpl
               digraph {
@@ -1784,7 +1802,26 @@ example_tree = r'''
               import pyx
               c = pyx.canvas.canvas()
               c.stroke(pyx.path.circle(0,0,2),[pyx.style.linewidth.Thick,pyx.color.rgb.red])
+              c.text(1, 1, 'Hi',[pyx.color.rgb.red])
               c
+           ├ examplecairo.pyx
+              import cairocffi as cairo
+              surface = cairo.SVGSurface(None, 200, 200)
+              context = cairo.Context(surface)
+              x, y, x1, y1 = 0.1, 0.5, 0.4, 0.9
+              x2, y2, x3, y3 = 0.6, 0.1, 0.9, 0.5
+              context.set_source_rgba(1, 0.2, 0.2, 0.6)
+              context.scale(200, 200)
+              context.set_line_width(0.04)
+              context.move_to(x, y)
+              context.curve_to(x1, y1, x2, y2, x3, y3)
+              context.stroke()
+              context.set_line_width(0.02)
+              context.move_to(x, y)
+              context.line_to(x1, y1)
+              context.move_to(x2, y2)
+              context.line_to(x3, y3)
+              context.stroke()
            ├ gen
               #from|to|gen_xxx|kwargs
               ../code/some.h | _sometst.rst                | tstdoc | {}
