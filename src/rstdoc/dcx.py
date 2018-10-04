@@ -81,16 +81,18 @@ With ``rstdoc`` installed, ``./dcx.py`` in the following examples can be replace
     This needs a plantuml.bat with e.g. ``java -jar "%~dp0plantuml.jar" %*`` 
     or plantuml sh script with ``java -jar `dirname $BASH_SOURCE`/plantuml.jar "$@"``.
 
-  - `.plt` containd python matplotlib code with one ``show()``
+  - ``.eps`__ or ``.eps.stpl`` embedded postscript files.
+    This needs ghostscript installed on the system.
 
-  - `.pyx` contains python code that uses the 
+  - `.pyg` contains python code that produces a graphic.
+    The following types are recognized
 
-    - `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or 
-    - `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__. 
+    - ``pyx.canvas.canvas`` from the `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or 
+    - ``cairocffi.Surface`` from `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
+    - ``matplotlib.pyplot`` from `matplotlib <https://matplotlib.org>`__
+    - ``pygal.Graph`` from `pygal <https://pygal.org>`__
+    - else there must be a ``save_to_png`` function defined
     
-    It must have a pyx ``canvas`` or a cairo ``Surface`` object.
-    The same code, with the canvas object on the last line, should produce the diagram also in ``jupyter notebook``.
-
 Conventions
 -----------
 
@@ -150,9 +152,9 @@ try:
     from cairosvg import svg2png
     def csvg2png(file,write_to):
         try:
-            svg2png(url="file://"+file, write_to=write_to)
+            svg2png(url="file://"+file, write_to=write_to, dpi=72)
         except:
-            svg2png(url="file:///"+file, write_to=write_to)
+            svg2png(url="file:///"+file, write_to=write_to, dpi=72)
 except Exception as e:
     print('cairosvg svg2png not available:',e)
     def svg2png(file,write_to): pass
@@ -165,10 +167,31 @@ except Exception as e:
     pyfca = None
 
 try:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+except Exception as e:
+    print('matplotlib not available:',e)
+    plt = None
+
+
+try:
     import pyx
 except Exception as e:
     print('pyx not available:',e)
     pyx = None
+
+try:
+    import pygal
+except Exception as e:
+    print('pygal not available:',e)
+    pygal = None
+
+try:
+    import ghostscript
+except Exception as e:
+    print('pygal not available:',e)
+    ghostscript = None
 
 Tee = tee([], 1)[0].__class__
 def memoized(f):
@@ -1315,31 +1338,53 @@ try:
         gen_ext_tsk(self,node,'.uml')
     class UML(Task.Task):
         run_str = "${plantuml} ${SRC} -o${TGT[0].parent.abspath()}"
-    @TaskGen.extension('.plt')#python matplotlib plot: have one show() line in there
-    def plt_to_png(self,node):
-        gen_ext_tsk(self,node,'.plt')
-    class PLT(Task.Task):
+    @TaskGen.extension('.eps')
+    def eps_to_png(self,node):
+        gen_ext_tsk(self,node,'.eps')
+    class EPS(Task.Task):
         def run(self):
-            plt = self.inputs[0].read()
-            plt = plt.replace('show()',"savefig(r'{}', format='png')".format(self.outputs[0].abspath()))
-            plt = "import matplotlib as mpl\nmpl.use('Agg')\n"+plt
-            pltvars={}
-            eval(compile(plt,self.inputs[0].abspath(),'exec'),pltvars)
-    @TaskGen.extension('.pyx')#python matplotlib plot: have one show() line in there
-    def pyx_to_png(self,node):
-        gen_ext_tsk(self,node,'.pyx')
-    class PYX(Task.Task):
+            epspng = self.outputs[0].abspath().encode('utf-8')
+            args = (b'rstdoc -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=bbox -sDEVICE=png16m -sOutputFile=%s'%epspng).split()
+            with ghostscript.Ghostscript(*args) as gs:
+                epsstr= self.inputs[0].read(flags='rb')
+                gs.run_string(epsstr)
+            ghostscript.cleanup()
+    @TaskGen.extension('.pyg')
+    def pyg_to_png(self,node):
+        gen_ext_tsk(self,node,'.pyg')
+    class PYG(Task.Task):
         def run(self):
-            pyxcode = self.inputs[0].read()
-            pyxvars={}
-            c=eval(compile(pyxcode,self.inputs[0].abspath(),'exec'),pyxvars)
-            for k,v in pyxvars.items():
-                if isinstance(v,pyx.canvas.canvas):
-                    svg2png(bytestring=v._repr_svg_(),write_to=self.outputs[0].abspath())
-                    break
-                elif isinstance(v,cairocffi.Surface):
-                    v.write_to_png(target=self.outputs[0].abspath())
-                    break
+            pygcode = self.inputs[0].read()
+            pygvars={}
+            eval(compile(pygcode,self.inputs[0].abspath(),'exec'),pygvars)
+            if 'save_to_png' in pygvars:
+                print('save_to_png')
+                pygvars['save_to_png'](self.outputs[0].abspath())
+            else:
+                for k,v in pygvars.items():
+                    if isinstance(v,pyx.canvas.canvas):
+                        svg2png(bytestring=v._repr_svg_(),write_to=self.outputs[0].abspath(), dpi=72)
+                        break
+                    elif isinstance(v,pygal.Graph):
+                        svg2png(bytestring=v.render(),write_to=self.outputs[0].abspath(), dpi=72)
+                        break
+                    elif isinstance(v,cairocffi.Surface):
+                        v.write_to_png(target=self.outputs[0].abspath())
+                        break
+                    else: #try matplotlib.pyplot
+                        try:
+                            fignums = plt.get_fignums()
+                            if len(fignums) == 0: 
+                                continue
+                            if len(fignums) > 1: 
+                                makename=lambda x,i: '{0}{2}{1}'.format(*list(os.path.splitext(x))+[i])
+                            else:
+                                makename=lambda x,i: x
+                            for i in plt.get_fignums():
+                                plt.figure(i).savefig(makename(self.outputs[0].abspath(),i),format='png')
+                            break
+                        except: 
+                            continue
     @TaskGen.extension('.rest')
     def gen_docs(self,node):
         docs=get_docs(self.bld)
@@ -1443,7 +1488,7 @@ try:
             if docs:
                 bld.gen_files()
                 bld.gen_links()
-                for anext in '*.tikz *.svg *.dot *.uml *.plt *.pyx'.split():
+                for anext in '*.tikz *.svg *.dot *.uml *.pyg *.eps'.split():
                     for anextf in _ant_glob_stpl(bld.path,anext):
                         bld(name='build '+anext,source=anextf)
                         if anext.endswith('tikz'):
@@ -1649,14 +1694,35 @@ example_tree = r'''
            │  .. figure:: _images/examplepyx.png
            │     :name:
            │  
-           │     |dz8|: Created from examplepyx.pyx
+           │     |dz8|: Created from examplepyx.pyg
            │  
            │  .. _`dr8`:
            │  
            │  .. figure:: _images/examplecairo.png
            │     :name:
            │  
-           │     |dr8|: Created from examplecairo.pyx
+           │     |dr8|: Created from examplecairo.pyg
+           │  
+           │  .. _`ds8`:
+           │  
+           │  .. figure:: _images/examplepygal.png
+           │     :name:
+           │  
+           │     |ds8|: Created from examplepygal.pyg
+           │  
+           │  .. _`dsx`:
+           │  
+           │  .. figure:: _images/exampleother.png
+           │     :name:
+           │  
+           │     |dsx|: Created from exampleother.pyg
+           │  
+           │  .. _`d98`:
+           │  
+           │  .. figure:: _images/exampleeps.png
+           │     :name:
+           │  
+           │     |d98|: Created from exampleeps.eps
            │  
            │  .. _`dua`:
            │  
@@ -1798,13 +1864,28 @@ example_tree = r'''
               plt.grid()
               plt.title(r'Normal: $\mu=%.2f, \sigma=%.2f$'%(x.mean(), x.std()))
               plt.show()
-           ├ examplepyx.pyx
+           ├ examplepyx.pyg
               import pyx
               c = pyx.canvas.canvas()
               c.stroke(pyx.path.circle(0,0,2),[pyx.style.linewidth.Thick,pyx.color.rgb.red])
               c.text(1, 1, 'Hi',[pyx.color.rgb.red])
-              c
-           ├ examplecairo.pyx
+           ├ examplepygal.pyg
+              import pygal
+              diagram=pygal.Bar()(1, 3, 3, 7)(1, 6, 6, 4)
+           ├ exampleother.pyg
+              from PIL import Image, ImageDraw, ImageFont
+              im = Image.new("RGBA",size=(50,50),color=(155,0,100))
+              draw = ImageDraw.Draw(im)
+              draw.rectangle(((0, 0), (40, 40)), fill="red")
+              draw.text((20, 20), "123")
+              save_to_png = lambda out_file: im.save(out_file, "PNG")
+           ├ exampleeps.eps
+              << /PageSize [50 59] >> setpagedevice
+              1 0 0 setrgbcolor
+              newpath 6 2 36 54 rectstroke
+              showpage
+              %%Trailer
+           ├ examplecairo.pyg
               import cairocffi as cairo
               surface = cairo.SVGSurface(None, 200, 200)
               context = cairo.Context(surface)
