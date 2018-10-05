@@ -82,16 +82,17 @@ With ``rstdoc`` installed, ``./dcx.py`` in the following examples can be replace
     or plantuml sh script with ``java -jar `dirname $BASH_SOURCE`/plantuml.jar "$@"``.
 
   - ``.eps`__ or ``.eps.stpl`` embedded postscript files.
-    This needs ghostscript installed on the system.
+    This needs Ghostscript installed on the system.
 
   - `.pyg` contains python code that produces a graphic.
-    The following types are recognized
+    If the python code defines a ``save_to_png`` function,
+    then that is used.
+    Else the following is tried
 
     - ``pyx.canvas.canvas`` from the `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or 
     - ``cairocffi.Surface`` from `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
-    - ``matplotlib.pyplot`` from `matplotlib <https://matplotlib.org>`__
     - ``pygal.Graph`` from `pygal <https://pygal.org>`__
-    - else there must be a ``save_to_png`` function defined
+    - `matplotlib <https://matplotlib.org>`__. If ``matplotlib.pyplot.get_fignums()>1`` the figures result ``<name><fignum>.png`` 
     
 Conventions
 -----------
@@ -139,6 +140,8 @@ import sys
 import os
 import re
 import subprocess
+import io
+from threading import Lock
 from pathlib import Path
 from urllib import request
 from functools import lru_cache
@@ -147,14 +150,18 @@ from itertools import chain, tee
 from types import GeneratorType
 from argparse import Namespace
 
+DPI = 72 #TODO command line option
+
+_tikzlock = Lock()
+
 try:
     import cairocffi
     from cairosvg import svg2png
     def csvg2png(file,write_to):
         try:
-            svg2png(url="file://"+file, write_to=write_to, dpi=72)
+            svg2png(url="file://"+file, write_to=write_to, dpi=DPI)
         except:
-            svg2png(url="file:///"+file, write_to=write_to, dpi=72)
+            svg2png(url="file:///"+file, write_to=write_to, dpi=DPI)
 except Exception as e:
     print('cairosvg svg2png not available:',e)
     def svg2png(file,write_to): pass
@@ -188,9 +195,24 @@ except Exception as e:
     pygal = None
 
 try:
+    from PIL import Image, ImageChops
+    def _trim_png(filename):
+        def trim(im):
+            bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
+            diff = ImageChops.difference(im, bg)
+            diff = ImageChops.add(diff, diff, 2.0, -100)
+            bbox = diff.getbbox()
+            if bbox:
+                return im.crop(bbox)
+        im = Image.open(filename)
+        im = trim(im)
+        im.save(filename)
+
     import ghostscript
+    rebbox = re.compile(r'%%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+')
+    _ghostscriptlock = Lock()
 except Exception as e:
-    print('pygal not available:',e)
+    print('ghostscript or PIL not available:',e)
     ghostscript = None
 
 Tee = tee([], 1)[0].__class__
@@ -1318,10 +1340,14 @@ try:
             tikzpth = self.inputs[0].parent.get_src()
             _,confpy,__ = _pth_nde_parent(tikzpth,'conf.py')
             config={}
-            eval(compile(confpy.read(encoding='utf-8'),confpy.abspath(),'exec'),config)
-            sphinxmock = SphinxMock()
-            tikzfn = tikz.render_tikz(sphinxmock,{'tikz':self.inputs[0].read(encoding='utf-8')},sphinxmock.builder.libs)
-            os.replace(tikzpth.make_node(tikzfn).abspath(),self.outputs[0].abspath())
+            try:
+                _tikzlock.acquire()
+                eval(compile(confpy.read(encoding='utf-8'),confpy.abspath(),'exec'),config)
+                sphinxmock = SphinxMock()
+                tikzfn = tikz.render_tikz(sphinxmock,{'tikz':self.inputs[0].read(encoding='utf-8')},sphinxmock.builder.libs)
+                os.replace(tikzpth.make_node(tikzfn).abspath(),self.outputs[0].abspath())
+            finally:
+                _tikzlock.release()
     @TaskGen.extension('.svg')
     def svg_to_png(self,node):
         gen_ext_tsk(self,node,'.svg')
@@ -1343,12 +1369,47 @@ try:
         gen_ext_tsk(self,node,'.eps')
     class EPS(Task.Task):
         def run(self):
-            epspng = self.outputs[0].abspath().encode('utf-8')
-            args = (b'rstdoc -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=bbox -sDEVICE=png16m -sOutputFile=%s'%epspng).split()
-            with ghostscript.Ghostscript(*args) as gs:
-                epsstr= self.inputs[0].read(flags='rb')
-                gs.run_string(epsstr)
-            ghostscript.cleanup()
+            epsfile = self.inputs[0].abspath().replace('\\','/')
+            epspng = self.outputs[0].abspath().replace('\\','/')
+
+            with open(epsfile,'rb') as f:
+                epscontent = f.read()
+
+            ################## this resizes to BoundingBox, but don't know how to translate first, to avoid clipping content
+            #args = ("-q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=bbox %s"%epsfile).encode('utf-8').split()
+            #try:
+            #    _ghostscriptlock.acquire()
+            #    outbbox = io.BytesIO()
+            #    errbbox = io.BytesIO()
+            #    with ghostscript.Ghostscript(*args,stdout=outbbox,stderr=errbbox) as gs:
+            #        gs.run_string(epscontent)
+            #    ghostscript.cleanup()
+            #finally:
+            #    _ghostscriptlock.release()
+            #errbbox.seek(0)
+            #outbb = errbbox.read().decode('utf-8')
+            #pagesize = ''
+            #try:
+            #    bbx = [int(x) for x in rebbox.search(outbb).groups()]
+            #    pagesize = '-g{}x{}'.format(bbx[2]-bbx[0],bbx[3]-bbx[1])
+            #    #translate="-{} -{} translate\n".format(bbx[0],bbx[1]).encode('utf-8')
+            #    #epscontent = translate+epscontent
+            #except: pass
+            #args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m "%DPI+pagesize+" -sOutputFile=%s %s"%(epspng,epsfile)).encode('utf-8').split()
+            ################## use _trim_png() instead
+
+            args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m -sOutputFile=%s %s"%(DPI,epspng,epsfile)).encode('utf-8').split()
+            try:
+                _ghostscriptlock.acquire()
+                out = io.BytesIO()
+                with ghostscript.Ghostscript(*args,stdout=out) as gs:
+                    gs.run_string(epscontent)
+                ghostscript.cleanup()
+            finally:
+                _ghostscriptlock.release()
+
+            _trim_png(epspng)
+
     @TaskGen.extension('.pyg')
     def pyg_to_png(self,node):
         gen_ext_tsk(self,node,'.pyg')
@@ -1358,15 +1419,14 @@ try:
             pygvars={}
             eval(compile(pygcode,self.inputs[0].abspath(),'exec'),pygvars)
             if 'save_to_png' in pygvars:
-                print('save_to_png')
                 pygvars['save_to_png'](self.outputs[0].abspath())
             else:
                 for k,v in pygvars.items():
                     if isinstance(v,pyx.canvas.canvas):
-                        svg2png(bytestring=v._repr_svg_(),write_to=self.outputs[0].abspath(), dpi=72)
+                        svg2png(bytestring=v._repr_svg_(),write_to=self.outputs[0].abspath(), dpi=DPI)
                         break
                     elif isinstance(v,pygal.Graph):
-                        svg2png(bytestring=v.render(),write_to=self.outputs[0].abspath(), dpi=72)
+                        svg2png(bytestring=v.render(),write_to=self.outputs[0].abspath(), dpi=DPI)
                         break
                     elif isinstance(v,cairocffi.Surface):
                         v.write_to_png(target=self.outputs[0].abspath())
@@ -1380,8 +1440,9 @@ try:
                                 makename=lambda x,i: '{0}{2}{1}'.format(*list(os.path.splitext(x))+[i])
                             else:
                                 makename=lambda x,i: x
-                            for i in plt.get_fignums():
+                            for i in fignums:
                                 plt.figure(i).savefig(makename(self.outputs[0].abspath(),i),format='png')
+                                plt.close(i)
                             break
                         except: 
                             continue
@@ -1491,8 +1552,6 @@ try:
                 for anext in '*.tikz *.svg *.dot *.uml *.pyg *.eps'.split():
                     for anextf in _ant_glob_stpl(bld.path,anext):
                         bld(name='build '+anext,source=anextf)
-                        if anext.endswith('tikz'):
-                            bld.add_group()#else test fails under linux
                 bld.add_group()
                 bld(name='build all rest',source=[x for x in _ant_glob_stpl(bld.path,'*.rest','*.rst')if not x.name.endswith('.rst')])
                 bld.add_group()
@@ -1648,6 +1707,13 @@ example_tree = r'''
            │  
            │    The relation with RS IDs is m-n. Links like |s3a| can be scattered over more DD entries.  
            │  
+           │  .. _`dx3`:
+           │  
+           │  .. figure:: _images/exampletikz1.png
+           │     :name:
+           │  
+           │     |dx3|: Create from exampletikz1.tikz
+           │  
            │  .. _`dz3`:
            │  
            │  .. figure:: _images/exampletikz.png
@@ -1659,7 +1725,7 @@ example_tree = r'''
            │  
            │  Reference via |dz3|.
            │  
-           │  ``.tikz``, ``.svg``, ``.dot``,  ``.uml`` or ``.plt``, or ``.stpl`` thereof, are converted to ``.png``.
+           │  ``.tikz``, ``.svg``, ``.dot``,  ``.uml``, ``.eps`` or ``.stpl`` thereof and ``.pyg``, are converted to ``.png``.
            │  
            │  .. _`dz4`:
            │  
@@ -1686,8 +1752,9 @@ example_tree = r'''
            │  
            │  .. figure:: _images/exampleplt.png
            │     :name:
+           │     :width: 30%
            │  
-           │     |dz7|: Created from exampleplt.plt
+           │     |dz7|: Created from exampleplt.pyg
            │  
            │  .. _`dz8`:
            │  
@@ -1707,6 +1774,7 @@ example_tree = r'''
            │  
            │  .. figure:: _images/examplepygal.png
            │     :name:
+           │     :width: 30%
            │  
            │     |ds8|: Created from examplepygal.pyg
            │  
@@ -1716,6 +1784,13 @@ example_tree = r'''
            │     :name:
            │  
            │     |dsx|: Created from exampleother.pyg
+           │  
+           │  .. _`du8`:
+           │  
+           │  .. figure:: _images/exampleeps1.png
+           │     :name:
+           │  
+           │     |du8|: Created from exampleeps1.eps
            │  
            │  .. _`d98`:
            │  
@@ -1824,6 +1899,16 @@ example_tree = r'''
               \draw (0,0) grid (3,3);
               \foreach \c in {(0,0), (1,0), (2,0), (2,1), (1,2)}
                   \fill \c + (0.5,0.5) circle (0.42);
+           ├ exampletikz1.tikz
+              \begin{scope}[blend group = soft light]
+              \fill[red!30!white]   ( 90:1.2) circle (2);
+              \fill[green!30!white] (210:1.2) circle (2);
+              \fill[blue!30!white]  (330:1.2) circle (2);
+              \end{scope}
+              \node at ( 90:2)    {Typography};
+              \node at ( 210:2)   {Design};
+              \node at ( 330:2)   {Coding};
+              \node [font=\Large] {\LaTeX};
            ├ examplesvg.svg.stpl
               <?xml version="1.0" encoding="utf-8"?>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" width="110pt" height="60pt" stroke-width="0.566929" stroke-miterlimit="10.000000">
@@ -1855,7 +1940,7 @@ example_tree = r'''
               Class07 .. Class08
               Class09 -- Class10
               @enduml
-           ├ exampleplt.plt
+           ├ exampleplt.pyg
               #vim: syntax=python
               import matplotlib.pyplot as plt
               import numpy as np
@@ -1880,11 +1965,13 @@ example_tree = r'''
               draw.text((20, 20), "123")
               save_to_png = lambda out_file: im.save(out_file, "PNG")
            ├ exampleeps.eps
-              << /PageSize [50 59] >> setpagedevice
               1 0 0 setrgbcolor
               newpath 6 2 36 54 rectstroke
               showpage
-              %%Trailer
+           ├ exampleeps1.eps
+              0 0 1 setrgbcolor
+              newpath 6 2 36 54 rectstroke
+              showpage
            ├ examplecairo.pyg
               import cairocffi as cairo
               surface = cairo.SVGSurface(None, 200, 200)
@@ -2067,7 +2154,6 @@ def main(**args):
                 sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
             except: pass
             outf = sys.stdout
-            #TODO make tests 
             #filename,outfile,outtype='example.txt','example.rst','html' #example.html
             #filename,outfile,outtype='-','-','example.html' #-.html
             #filename,outfile,outtype='-','-','html' #example.html

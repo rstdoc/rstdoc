@@ -10,7 +10,7 @@ from setuptools import setup
 import platform
 import os, os.path
 
-__version__ = '1.4'
+__version__ = '1.5'
 
 def read(fname):
     with open(os.path.join(os.path.dirname(__file__), fname),encoding='utf-8') as f:
@@ -53,7 +53,7 @@ setup(name = 'rstdoc',
     #optional dependencies, because only used to draw FCA diagram:
     #- pyfca: https://github.com//pyfca/pyfca
     #- cairosvg: http://cairosvg.org/
-    install_requires = ['pygal','ghostscript','pyx','pyfca','cairosvg','stpl','pypandoc','sphinx','sphinxcontrib-tikz','sphinx_bootstrap_theme'],
+    install_requires = ['pillow','ghostscript','pyx','pyfca','pygal','cairosvg','stpl','pypandoc','sphinx','sphinxcontrib-tikz','sphinx_bootstrap_theme'],
     extras_require = {'develop': ['mock','pytest-coverage'],'build':['waf']},
     long_description = long_description,
     packages=['rstdoc'],
