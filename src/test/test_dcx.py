@@ -521,8 +521,10 @@ def test_wafrststpl(wafrststpl):
         assert sys.platform in open(glob.glob(os.path.join('doc',target,'is.*'))[0],encoding='utf-8').read()
 
 def test_selfdoc():
+    selfdoc_accoridng_doc_gen=os.path.join('doc','_dcx_api.rst')
+    os.remove(selfdoc_accoridng_doc_gen)
     main(root=None,verbose=True)
-    assert os.path.exists(os.path.join('doc','_dcx_api.rst'))
+    assert os.path.exists(selfdoc_accoridng_doc_gen)
 
 def test_docparts_after():
     res = list(doc_parts(['/// \\brief\n',"/// afun's description\n","//\n"

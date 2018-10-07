@@ -49,15 +49,24 @@ import re
 import textwrap
 from .untable import untable
 
+
+'''
+The rst title order was partly taken from https://github.com/jimklo/atom-rst-snippets
+then converted to http://documentation-style-guide-sphinx.readthedocs.io/en/latest/style-guide.html
+'''
+title_some = """=-^"'`._~+:;,"""
+
+
 title_all=list(r'''#*=-^~+_.,"'!$%&\\()/:;<>?@[\]`{|}''')
-title_some = "=-`'.~*+^:;,_" #same as in vim_py3_rst
-titlerex = re.compile('''^([#*=\-^~+_.,"'!$%&\\\(\)/:;<>?@\[\]`{|}])\\1+\s*$''')
-#retitle.match('====')
-#retitle.match('\\\\\\')
-#retitle.match('----')
-#retitle.match('[[[[[[[')
-#retitle.match('@@@@@@@')
-#retitle.match('*******')
+titlerex = re.compile('''^(\s*)(([#*=\-^~+_.,"'!$%&\\\(\)/:;<>?@\[\]`{|}])\\3+)\s*$''')
+#titlerex.match('  ====  ').group(2)+'!'
+#titlerex.match('  ====  ').group(1)+'!'
+#titlerex.match('\\\\\\').group(2)+'!'
+#titlerex.match('------').group(2)+'!'
+#titlerex.match(' [[[[[[[').group(2)+'!'
+#titlerex.match('@@@@@@@').group(2)+'!'
+#titlerex.match('*******').group(2)+'!'
+#titlerex.match(' [[[[[[[==')==None
 
 def join_rows(rows, sep='\n'):
     """Given a list of rows (a list of lists) this function returns a
@@ -377,6 +386,17 @@ def re_title(
         ):
     '''
     Adjust the under- or overline of a title.
+
+    >>> lines="""\
+    ...   ###########
+    ...       title
+    ...   ###########
+    ...   """.splitlines()
+    >>> re_title(lines)
+    >>> lines
+    ['      #####', 'title', '      #####', '  ']
+
+
     '''
     upper, lower, indent = get_bounds(lines,row,col)
     t = None
@@ -386,19 +406,22 @@ def re_title(
             break
     if t == None:
         return
-    tstrip = t.strip()
+    trstrip = t.rstrip()
+    tstrip = trstrip.strip()
     leni = len(tstrip)
+    lenspace = len(trstrip)-leni
     for j in range(upper,lower+1):
         if i==j: 
-            lines[i] = tstrip
+            lines[i] = trstrip
             continue
-        if titlerex.match(lines[j]):
-            hl = lines[j]
+        mobj = titlerex.match(lines[j])
+        if mobj:
+            hl = mobj.group(2)[0]
             try:
                 nhl = title_some[title_some.index(hl[0])+down]
             except:
                 nhl = hl[0]
-            lines[j] = nhl*leni
+            lines[j] = ' '*lenspace+nhl*leni
 
 class doretable:
     def __init__(self):
