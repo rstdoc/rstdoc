@@ -157,8 +157,6 @@ def test_init(rstsamples):
 ├─code
 │  └─some.h
 ├─doc
-│  ├─Makefile
-│  ├─conf.py
 │  ├─dd.rest
 │  ├─examplecairo.pyg
 │  ├─exampledot.dot.stpl
@@ -178,9 +176,15 @@ def test_init(rstsamples):
 │  ├─sr.rest
 │  ├─tp.rest
 │  └─wscript_build
+├─conf.py
 ├─dcx.py
+├─docutils.conf
+├─Makefile
 ├─reference.docx
 ├─reference.tex
+├─waf
+├─waf.bat
+├─wafw.py
 └─wscript"""
 
 def test_dcx_alonenostpl(rstsamples,capfd):
@@ -259,7 +263,7 @@ def test_makenostpl(makebuild):
       └─tp.html"""
     assert tree(makebuild[0],with_dot_files=False,max_depth=3)==expected
 
-@pytest.yield_fixture(params=['docx','pdf','sphinx_html'])
+@pytest.yield_fixture(params=['docx','pdf','html','sphinx_html','rst_html'])
 def wafbuild(request,rstsamples):
     r1=run(['waf','configure'])
     assert r1.returncode==0
@@ -327,6 +331,36 @@ def test_wafnostpl(wafbuild):
 │     ├─ra.html
 │     ├─search.html
 │     ├─searchindex.js
+│     ├─sr.html
+│     └─tp.html
+└─config.log"""
+    elif target=='html':
+        expected="""\
+├─c4che
+│  ├─_cache.py
+│  └─build.config.py
+├─code
+│  └─some_tst.c
+├─doc
+│  └─html
+│     ├─_images
+│     ├─dd.html
+│     ├─ra.html
+│     ├─sr.html
+│     └─tp.html
+└─config.log"""
+    elif target=='rst_html':
+        expected="""\
+├─c4che
+│  ├─_cache.py
+│  └─build.config.py
+├─code
+│  └─some_tst.c
+├─doc
+│  └─rst_html
+│     ├─_images
+│     ├─dd.html
+│     ├─ra.html
 │     ├─sr.html
 │     └─tp.html
 └─config.log"""

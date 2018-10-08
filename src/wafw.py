@@ -17,7 +17,7 @@ except:
     from urllib.request import urlretrieve
 
 # Customize these variables to your needs.
-WAF_DIR         = 'waf'    # Where to store the Waf distribution.
+WAFDIR         = 'WAFDIR'    # Where to store the Waf distribution.
 WAF_PLUGINS     = [
     # To install a plugin with your Waf distribution, simply add a tuple
     # to this list with the plugin name and HTTP/HTTPS link to the plugin
@@ -27,22 +27,28 @@ WAF_PLUGINS     = [
     # ('eclipse', 'http://waf.googlecode.com/git/waflib/extras/eclipse.py'),
 ]
 
-if not os.path.exists(WAF_DIR):
+if not os.path.exists(WAFDIR):
     try:
         _url = urlretrieve('https://www.waf.io/pub/release/')
         with open(_url[0]) as f:
-            WRAPPER_VERSION = re.search(r'waf-(\d.\d.\d\d)',f.read()).groups(1)
+            WRAPPER_VERSION = re.search(r'waf-(\d.\d.\d\d)',f.read()).groups(1)[0]
     except: 
         WRAPPER_VERSION = '2.0.12' 
+else:
+    for wafx in os.listdir(WAFDIR):
+        _mo = re.search(r'waf-(\d.\d.\d\d)',wafx)
+        if _mo:
+            WRAPPER_VERSION = _mo.group(1)
+            break
 
 # Don't modify these! :P
-WAF_FILE        = WAF_DIR + '/waf-' + WRAPPER_VERSION
+WAF_FILE        = WAFDIR + '/waf-' + WRAPPER_VERSION
 USING_WINDOWS   = (platform.system() == 'Windows')
 
 def create_init_files():
     '''Create __init__.py files in the Waf directory (and its parent directories)
        so plugins can be imported.'''
-    dirs_to_check = WAF_DIR.split('/')
+    dirs_to_check = WAFDIR.split('/')
     i = 0
     while i < len(dirs_to_check):
         dir_to_check = dirs_to_check[i]
@@ -77,7 +83,7 @@ def get_plugins():
 
         print('Downloading Waf plugin:', name + '...')
         urlretrieve(url, filename)
-        move(filename, WAF_DIR)
+        move(filename, WAFDIR)
 
 def waf_exec():
     '''Execute argv arguments with the downloaded Waf release.'''
@@ -87,9 +93,9 @@ def waf_exec():
         os.system('./' + WAF_FILE + ' ' + ' '.join(sys.argv[1:]))
 
 if __name__ == '__main__':
-    if not os.path.exists(WAF_DIR):
+    if not os.path.exists(WAFDIR):
         print('Creating Waf directories...')
-        os.makedirs(WAF_DIR)
+        os.makedirs(WAFDIR)
         create_init_files()
 
     if os.path.exists(WAF_FILE):

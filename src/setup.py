@@ -10,7 +10,7 @@ from setuptools import setup
 import platform
 import os, os.path
 
-__version__ = '1.5'
+__version__ = '1.6.00'
 
 def read(fname):
     with open(os.path.join(os.path.dirname(__file__), fname),encoding='utf-8') as f:
@@ -58,7 +58,7 @@ setup(name = 'rstdoc',
     long_description = long_description,
     packages=['rstdoc'],
     #include_package_data=True,
-    package_data={'rstdoc':['../reference.tex','../reference.docx','../readme.rst']},
+    package_data={'rstdoc':['../reference.tex','../reference.docx','../readme.rst','../wafw.py']},
     zip_safe=False,
     tests_require=['pytest','pytest-coverage','mock'],
     entry_points={
