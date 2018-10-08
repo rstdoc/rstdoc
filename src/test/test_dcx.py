@@ -136,9 +136,20 @@ def tmpworkdir(tmpdir):
     os.chdir(tmpdir.strpath)
     yield tmpdir
     os.chdir(cwd)
+
+@pytest.yield_fixture
+def rststpl(tmpworkdir):
+    smpl='smpl'
+    r=run(['rstdcx','--stpl',smpl])
+    assert r.returncode == 0
+    oldd=os.getcwd()
+    #import pdb;pdb.set_trace()
+    os.chdir(os.path.join(tmpworkdir,smpl,'src'))
+    yield os.getcwd()
+    os.chdir(oldd)
     
 @pytest.yield_fixture
-def rstsamples(tmpworkdir):
+def rstinit(tmpworkdir):
     smpl='smpl'
     r=run(['rstdcx','--init',smpl])
     assert r.returncode == 0
@@ -148,7 +159,29 @@ def rstsamples(tmpworkdir):
     yield os.getcwd()
     os.chdir(oldd)
 
-def test_init(rstsamples):
+def test_rstincluded_stpl(rststpl):
+    assert list(rstincluded('ra.rest.stpl',(r'.\doc',))) == [
+            'ra.rest.stpl', '_links_sphinx.rst']
+    assert list(rstincluded('sy.rest.stpl',(r'.\doc',))) == [
+            'sy.rest.stpl', '_links_sphinx.rst']
+    assert list(rstincluded('sr.rest.stpl',(r'.\doc',))) == [
+            'sr.rest.stpl', '_links_sphinx.rst']
+    assert list(rstincluded('dd.rest.stpl',(r'.\doc',))) == [
+            'dd.rest.stpl', 'dd_tables.rst', 'dd_math.rst.stpl', 'dd_diagrams.tpl', '_links_sphinx.rst']
+    assert list(rstincluded('tp.rest.stpl',(r'.\doc',))) == [
+            'tp.rest.stpl', '_links_sphinx.rst']
+
+def test_rstincluded_init(rstinit):
+    assert list(rstincluded('ra.rest',(r'.\doc',))) == [
+            'ra.rest', '_links_sphinx.rst']
+    assert list(rstincluded('sr.rest',(r'.\doc',))) == [
+            'sr.rest', '_links_sphinx.rst', '_links_sphinx.rst']
+    assert list(rstincluded('dd.rest',(r'.\doc',))) == [
+            'dd.rest', 'somefile.rst', '_links_sphinx.rst']
+    assert list(rstincluded('tp.rest',(r'.\doc',))) == [
+            'tp.rest', '_sometst.rst', '_links_sphinx.rst']
+
+def test_init(rstinit):
     '''
     Tests |dcx.mktree|.
     Check tree created by ``rstdcx --init smpl``
@@ -187,7 +220,7 @@ def test_init(rstsamples):
 ├─wafw.py
 └─wscript"""
 
-def test_dcx_alonenostpl(rstsamples,capfd):
+def test_dcx_alonenostpl(rstinit,capfd):
     '''
     Check the output of rstdcx or dcx.py.
     '''
@@ -202,7 +235,7 @@ doc
     dd.rest"""
 
 @pytest.yield_fixture(params=['docx','pdf','html'])
-def makebuild(request,rstsamples):
+def makebuild(request,rstinit):
     oldd = os.getcwd()
     os.chdir('doc')
     r=run(['make',request.param])
@@ -264,7 +297,7 @@ def test_makenostpl(makebuild):
     assert tree(makebuild[0],with_dot_files=False,max_depth=3)==expected
 
 @pytest.yield_fixture(params=['docx','pdf','html','sphinx_html','rst_html'])
-def wafbuild(request,rstsamples):
+def wafbuild(request,rstinit):
     r1=run(['waf','configure'])
     assert r1.returncode==0
     r2=run(['waf','--docs',request.param])
@@ -368,7 +401,7 @@ def test_wafnostpl(wafbuild):
 
 
 @pytest.yield_fixture
-def rstsampleswithstpl(rstsamples):
+def rstsampleswithstpl(rstinit):
     os.rename('doc/ra.rest','doc/ra.rest.stpl')
     yield os.getcwd()
 
@@ -459,7 +492,7 @@ def test_wafwithstpl(wafbuildwithstpl):
 
 
 @pytest.yield_fixture
-def rststplsample(rstsamples):
+def rststplsample(rstinit):
     tree=r"""
         doc
          ├is.rest

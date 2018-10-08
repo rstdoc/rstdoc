@@ -289,7 +289,7 @@ restplinclude = re.compile(r'''%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*''')
 #rerstinclude.split('  .. include:: ../test.rst')
 #restplinclude.split('%include("test.rst.stpl",v="aparam")')
 #restplinclude.split('%include("../test.rst.stpl",v="aparam")')
-#restplinclude.split('% include(  "../test.rst.stpl",v="aparam")')
+#restplinclude.split(' % include(  "../test.rst.stpl",v="aparam")')
 
 op = os.path
 opnj = lambda *x:op.normpath(op.join(*x))
@@ -468,37 +468,6 @@ def doc_parts(
                 break;
         yield from (x[indent:] for x in lns[a+1:b])
 
-@lru_cache()
-def _read_lines(fn):
-    lns = []
-    with open(fn,'r',encoding='utf-8') as f:
-        lns = f.readlines()
-    return lns
-
-def _read_stpl_lines_it(fn):
-    """
-    This flattens the .stpl includes to have all targets align to those in the .rest file.
-    Targets must not be *explicit* in all .stpl. They must not be created by stpl.
-    This is needed to make the .tags jump to the original and not the generated file.
-    """
-    flns = []
-    if op.exists(fn):
-        flns = _read_lines(fn)
-    else:
-        parnt = updir(fn)
-        if op.exists(parnt):
-            flns = _read_lines(parnt)
-    for i,ln in enumerate(flns):
-        m = restplinclude.match(ln)
-        if m: 
-            yield from _read_stpl_lines(op.join(op.dirname(fn),m.group(1)))
-        else:
-            yield fn,i,ln
-
-@lru_cache()
-def _read_stpl_lines(fn):
-    return list(_read_stpl_lines_it(fn))
-
 #for generator function, instead of lru_cache()
 _Tee = tee([], 1)[0].__class__
 def _memoized(f):
@@ -511,6 +480,39 @@ def _memoized(f):
             return r
         return cache[args]
     return ret
+
+@lru_cache()
+def _read_lines(fn):
+    lns = []
+    with open(fn,'r',encoding='utf-8') as f:
+        lns = f.readlines()
+    return lns
+
+def _read_stpl_lines_it(fn):
+    """
+    This flattens the .stpl includes to have all targets align to those in the .rest file.
+    Targets must be *explicit* in all ``.stpl`` and ``.tpl``, i.e. they must not be created by stpl code.
+    This is needed to make the .tags jump to the original and not the generated file.
+    """
+    flns = []
+    if op.exists(fn):
+        flns = _read_lines(fn)
+    else:
+        parnt = updir(fn)
+        if op.exists(parnt):
+            flns = _read_lines(parnt)
+    for i,ln in enumerate(flns):
+        #ln = '% include("../test.rst.stpl",v="aparam")'
+        m = restplinclude.match(ln)
+        if m: 
+            includedtpl = m.group(1)
+            yield from _read_stpl_lines(op.join(op.dirname(fn),includedtpl))
+        else:
+            yield fn,i,ln
+
+@lru_cache()
+def _read_stpl_lines(fn):
+    return list(_read_stpl_lines_it(fn))
 
 @_memoized
 def rstincluded(
@@ -561,15 +563,18 @@ def rstincluded(
                     toctree = False
             if e.startswith('.. toctree::'):
                 toctree = True
-            elif e.startswith('.. '):
+            elif e.strip().startswith('.. '):
+                #e = '  .. include:: some.rst'
+                #e = '  .. include:: ../some.rst'
                 #e = '.. include:: some.rst'
                 #e = '.. include:: ../some.rst'
+                #e = '  .. image:: some.png'
                 #e = '.. image:: some.png'
-                #e = '.. figure:: some.png'
-                #e = '.. |x y| image:: some.png'
+                #e = '  .. figure:: some.png'
+                #e = '  .. |x y| image:: some.png'
                 try:
                     f,t,_ = rerstinclude.split(e)
-                    nf = not f and t
+                    nf = not f.strip() and t
                     if nf:
                         yield from rstincluded(nf.strip(),paths)
                 except:
@@ -579,8 +584,9 @@ def rstincluded(
                             yield m.group(1)
             elif restplinclude.match(e): 
                 #e="%include('some.rst.tpl',v='param')"
+                #e="   %include('some.rst.tpl',v='param')"
                 f,t,_=restplinclude.split(e)
-                nf = not f and t
+                nf = not f.strip() and t
                 if nf:
                     thisnf = op.join(p,nf)
                     if not op.exists(thisnf):
@@ -1048,6 +1054,7 @@ def fldrs(
                 elif not doc.endswith('.tpl') and not doc.endswith('.txt') and op.exists(doc):
                     #.txt are considered literal include
                     #%include('x.rst.tpl') were considered via STPL in the first branch
+                    #.tpl MUST NOT HAVE TARGETS
                     lns = _read_lines(doc)
                     tgts = list(make_tgts(lns,doc))
                 else:
@@ -1138,6 +1145,7 @@ def links_and_tags(
             print('Warning: ',e)
             _drawnode = None
             target_id_color=None
+        print('='*30+'1')#XXX
         fca = pyfca.Lattice(objects,lambda x:x)
         tr = 'tr'
         reflist = lambda x,pfx=tr: ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
@@ -1151,6 +1159,7 @@ def links_and_tags(
             legend=', '.join([fnm+" "+clr for fnm,(_,clr) in target_id_color.items()])
             tlines.extend([': '+legend,'\n'])
         tlines.append('\n')
+        print('='*30+'1')#XXX
         with open(opnj(fldr,trace_file_name+'.rst'),'w',encoding='utf-8') as f:
             f.write('.. raw:: html\n\n')
             #needs in conf.py: html_extra_path=["_images/_trace.svg"]
@@ -1172,6 +1181,7 @@ def links_and_tags(
         tagentries.append(r'{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fi[0],fi[1]))
     def add_linksto(i,tgt,iterlnks,ojlnk=None): #all the links away from the block following this tgt to next tgt
         linksto = []
+        print('='*40,ojlnk)#XXX
         if ojlnk and ojlnk[0] < i:
             if ojlnk[1] in alltgts:
                 linksto.append(ojlnk[1])
@@ -1198,15 +1208,8 @@ def links_and_tags(
             for _,linklines in linkfiles:
                 linklines.append(linksto)
         return ojlnk
-    orestname = None
+    olddc = None
     for name_without_rest, doc, lenlns, lnks, tgts in lnktgts:
-         if name_without_rest != orestname:
-             orestname = name_without_rest
-             if verbose:
-                 print('    '+name_without_rest+'.rest')
-         if not is_rest(doc):
-             if verbose:
-                 print('        '+doc)
          for _,linklines in linkfiles:
              linklines.append('\n.. .. {0}\n\n'.format(doc))
          iterlnks = iter(lnks)
@@ -1216,6 +1219,13 @@ def links_and_tags(
                ojlnk = add_linksto(i,tgt,iterlnks,ojlnk)
                add_target(tgt,lnkname,name_without_rest,upcnt,fi)
          ojlnk = add_linksto(lenlns,None,iterlnks,ojlnk)
+         if not verbose:
+             continue
+         if '/'+name_without_rest+'.' in doc:
+             print('    '+doc)
+         else:
+             print('        '+doc)
+    print('='*30+'1')#XXX
     if len(objects)>0:
         tlns = tracelines()
         if tlns:
