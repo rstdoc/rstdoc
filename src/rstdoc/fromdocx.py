@@ -168,7 +168,7 @@ def _write_makefile(
         fn #docx file name
         ):
     #Takes the Makefile from the ``example_tree`` in ``rstdoc.dcx``.
-    mf = re.split(r'\s+build\s+',re.split('└ Makefile',example_tree)[1])[0]
+    mf = re.split(r'\s+├ code\s+',re.split('├ Makefile',example_tree)[1])[0]
     lns=mf.splitlines(True)
     s=re.search(r'\w',lns[1]).span(0)[0]
     lns = [l[s:] for l in lns]

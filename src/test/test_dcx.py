@@ -29,6 +29,7 @@ from rstdoc.dcx import (
     ,mktree
     ,main
     ,doc_parts
+    ,rstincluded
     )
 
 
@@ -167,7 +168,7 @@ def test_rstincluded_stpl(rststpl):
     assert list(rstincluded('sr.rest.stpl',(r'.\doc',))) == [
             'sr.rest.stpl', '_links_sphinx.rst']
     assert list(rstincluded('dd.rest.stpl',(r'.\doc',))) == [
-            'dd.rest.stpl', 'dd_tables.rst', 'dd_math.rst.stpl', 'dd_diagrams.tpl', '_links_sphinx.rst']
+            'dd.rest.stpl', 'dd_included.rst.stpl', 'dd_tables.rst', 'dd_math.tpl', 'dd_diagrams.tpl', '_links_sphinx.rst']
     assert list(rstincluded('tp.rest.stpl',(r'.\doc',))) == [
             'tp.rest.stpl', '_links_sphinx.rst']
 
@@ -209,10 +210,10 @@ def test_init(rstinit):
 │  ├─sr.rest
 │  ├─tp.rest
 │  └─wscript_build
+├─Makefile
 ├─conf.py
 ├─dcx.py
 ├─docutils.conf
-├─Makefile
 ├─reference.docx
 ├─reference.tex
 ├─waf
@@ -229,18 +230,18 @@ def test_dcx_alonenostpl(rstinit,capfd):
     out, err = capfd.readouterr()
     assert '\n'.join(out.splitlines()) == """\
 doc
-    tp.rest
-    sr.rest
-    ra.rest
-    dd.rest"""
+    doc/tp.rest
+    doc/sr.rest
+    doc/ra.rest
+    doc/dd.rest
+    doc/index.rest"""
 
 @pytest.yield_fixture(params=['docx','pdf','html'])
 def makebuild(request,rstinit):
     oldd = os.getcwd()
-    os.chdir('doc')
     r=run(['make',request.param])
     assert r.returncode == 0
-    os.chdir(os.path.join('..','..','build'))
+    os.chdir(os.path.join('..','build'))
     yield (os.getcwd(),request.param)
     os.chdir(oldd)
 
@@ -285,6 +286,7 @@ def test_makenostpl(makebuild):
       ├─_images
       ├─_sources
       ├─_static
+      ├─_traceability_file.svg
       ├─dd.html
       ├─genindex.html
       ├─index.html
@@ -357,6 +359,7 @@ def test_wafnostpl(wafbuild):
 │     ├─_images
 │     ├─_sources
 │     ├─_static
+│     ├─_traceability_file.svg
 │     ├─dd.html
 │     ├─genindex.html
 │     ├─index.html
@@ -414,10 +417,11 @@ def test_dcx_alonewithstpl(rstsampleswithstpl,capfd):
     out, err = capfd.readouterr()
     assert '\n'.join(out.splitlines()) == """\
 doc
-    tp.rest
-    sr.rest
-    ra.rest
-    dd.rest"""
+    doc/tp.rest
+    doc/sr.rest
+    doc/ra.rest.stpl
+    doc/dd.rest
+    doc/index.rest"""
 
 def wafit(doctype):
     oldd = os.getcwd()
@@ -478,6 +482,7 @@ def test_wafwithstpl(wafbuildwithstpl):
 │     ├─_images
 │     ├─_sources
 │     ├─_static
+│     ├─_traceability_file.svg
 │     ├─dd.html
 │     ├─genindex.html
 │     ├─index.html
@@ -571,6 +576,7 @@ def test_wafrststpl(wafrststpl):
 │     ├─_images
 │     ├─_sources
 │     ├─_static
+│     ├─_traceability_file.svg
 │     ├─dd.html
 │     ├─genindex.html
 │     ├─index.html
@@ -589,14 +595,16 @@ def test_wafrststpl(wafrststpl):
 
 def test_selfdoc():
     selfdoc_accoridng_doc_gen=os.path.join('doc','_dcx_api.rst')
-    os.remove(selfdoc_accoridng_doc_gen)
-    main(root=None,verbose=True)
+    try:
+        os.remove(selfdoc_accoridng_doc_gen)
+    except: pass
+    main(initroot=None,stplroot=None,verbose=True)
     assert os.path.exists(selfdoc_accoridng_doc_gen)
 
 def test_docparts_after():
     res = list(doc_parts(['/// \\brief\n',"/// afun's description\n","//\n"
         ,'void afun(\n','int x //int variable\n',')\n','\n'],
         signature='cpp',relim=r'\\brief|//$',reid=r'\s(\w\+)\('))
-    assert res == ['.. code-block:: cpp\n', None, '   void afun(\n',
-        '   int x //int variable\n', '   )\n', None, "afun's description\n"]
+    assert res == ['.. code-block:: cpp\n', '', '   void afun(\n',
+        '   int x //int variable\n', '   )\n', '', "afun's description\n"]
 
