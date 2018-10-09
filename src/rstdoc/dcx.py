@@ -300,9 +300,6 @@ updir = lambda fn: opnj(op.dirname(fn),'..',op.split(fn)[1])
 #updir('a.b/a.b')#a.b
 #opnj(fn)#x\y\a.b
 
-trace_file_name = '_trace' #used for _trace.rst and _trace.svg
-trace_target= 'index'
-
 def rindices(
     r #regular expression string or compiled
     ,lns #lines
@@ -528,7 +525,7 @@ def rstincluded(
     >>> list(rstincluded('sr.rest',paths=('../doc',)))
     ['sr.rest', '_links_sphinx.rst']
     >>> list(rstincluded('meta.rest',paths=('../doc',)))
-    ['meta.rest', 'files.rst', '_trace.rst', '_links_sphinx.rst']
+    ['meta.rest', 'files.rst', '_traceability_file.rst', '_links_sphinx.rst']
     >>> 'dd.rest'in list(rstincluded('index.rest',paths=('../doc',)))
     True
 
@@ -597,9 +594,68 @@ def rstincluded(
                             continue
                     yield from rstincluded(nf.strip(),paths)
 
+traceability = None
+class Traceability:
+    traceability_file = '_traceability_file' #used for _traceability_file.rst and _traceability_file.svg
+    def __init__(self,tracehtmltarget):
+        self.tracehtmltarget= tracehtmltarget
+        self.fcaobjsets = [] #in FCA sense: set of target tgt with all its links to other targets 
+    def createfiles(self): #returns the rst lines of traceability_file
+        if not self.fcaobjsets:
+            return []
+        try:
+            config = conf_py(fldr)
+            target_id_group = config['target_id_group']
+            target_id_color = config['target_id_color']
+            def _drawnode(canvas,node,parent,center,radius): 
+                fillcolors = []
+                nodetgtgrps = {target_id_group(x) for x in node.intent}
+                for _,(groupid,groupcolor) in target_id_color.items():
+                    if groupid in nodetgtgrps:
+                        fillcolors.append(groupcolor)
+                n_grps = len(fillcolors)
+                for i in range(n_grps-1,-1,-1):
+                    rr = int(radius*(i+1)/n_grps)
+                    parent.add(canvas.circle(center,rr,fill=fillcolors[i],stroke='black'))
+        except Exception as e:
+            print('Warning: ',e)
+            _drawnode = None
+            target_id_color=None
+        print('='*30+'1')#XXX
+        fca = pyfca.Lattice(fcaobjsets,lambda x:x)
+        tr = 'tr'
+        reflist = lambda x,pfx=tr: ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
+        trace = [(".. _`"+tr+"{0}`:\n\n:"+tr+"{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n").format(
+                n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
+                for n in fca.nodes]
+        tlines = ''.join(trace).splitlines(keepends=True)
+        tlines.extend(['.. _`trace`:\n','\n','.. figure:: _images/'+Traceability.traceability_file+'.png\n','   :name:\n','\n',
+          '   |trace|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies'])
+        if target_id_color is not None:
+            legend=', '.join([fnm+" "+clr for fnm,(_,clr) in target_id_color.items()])
+            tlines.extend([': '+legend,'\n'])
+        tlines.append('\n')
+        print('='*30+'1')#XXX
+        with open(opnj(fldr,Traceability.traceability_file+'.rst'),'w',encoding='utf-8') as f:
+            f.write('.. raw:: html\n\n')
+            #needs in conf.py: html_extra_path=["_images/_traceability_file.svg"]
+            f.write('    <object data="'+Traceability.traceability_file+'.svg" type="image/svg+xml"></object>\n')
+            if target_id_color is not None:
+                f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
+            f.writelines(tlines)
+        ld = pyfca.LatticeDiagram(fca,4*297,4*210)
+        mkdir(opnj(fldr,"_images"))
+        tracesvg = op.abspath(opnj(fldr,"_images",Traceability.traceability_file+'.svg'))
+        ttgt = lambda : tracehtmltarget.endswith('.rest') and op.splitext(tracehtmltarget)[0] or tracehtmltarget
+        ld.svg(target=ttgt()+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
+        pngf = tracesvg.replace('.svg','.png')
+        csvg2png(file=tracesvg, write_to=pngf)
+        return tlines
+
+
 def fldrincluded(
         directory='.'
-        ,exclude_paths_substrings = ['_links_','index.rest',trace_file_name]
+        ,exclude_paths_substrings = ['_links_','index.rest',Traceability.traceability_file]
         ):
     ''' 
     Yield a list of .rest files for each directory below ``directory``.
@@ -612,23 +668,23 @@ def fldrincluded(
 
     '''
 
-    global trace_target
+    global traceability
     sofar = []
     for p,ds,fs in os.walk(directory):
         for f in reversed(sorted(fs)):
             if is_rest(f):
-                pf=opnj(p,f)
-                if any([x in pf for x in exclude_paths_substrings]):
+                fullpth=opnj(p,f)
+                if any([x in fullpth for x in exclude_paths_substrings]):
                     continue
-                if pf in sofar:
+                if fullpth in sofar:
                     continue
-                sofar.append(pf)
-                if pf.endswith(_stpl):
-                    sofar.append(pf[:-len(_stpl)])
+                sofar.append(fullpth)
+                if fullpth.endswith(_stpl):
+                    sofar.append(fullpth[:-len(_stpl)])
                 pths = []
                 for ff in rstincluded(f,(p,)):
-                    if trace_file_name in ff:
-                        trace_target = op.splitext(f)[0]
+                    if Traceability.traceability_file+'.rst' in ff:
+                        traceability = Traceability(op.splitext(f)[0])
                     if any([x in ff for x in exclude_paths_substrings]):
                         continue
                     pth=opnj(p,ff)
@@ -1054,7 +1110,6 @@ def fldrs(
                 elif not doc.endswith('.tpl') and not doc.endswith('.txt') and op.exists(doc):
                     #.txt are considered literal include
                     #%include('x.rst.tpl') were considered via STPL in the first branch
-                    #.tpl MUST NOT HAVE TARGETS
                     lns = _read_lines(doc)
                     tgts = list(make_tgts(lns,doc))
                 else:
@@ -1096,7 +1151,7 @@ def links_and_tags(
     '''
     Creates links_xxx.rst and .tags files for a folder ``fldr`` in that folder.
 
-    If ``pyfca`` is available also the dependencies file ``_trace.rst`` is created.
+    If ``pyfca`` is available also the dependencies file ``_traceability_file.rst`` is created.
 
     conf.py entries::
 
@@ -1108,80 +1163,29 @@ def links_and_tags(
           "dd":("d","yellow"), 
           "tp":("t","green"),
           "rstdoc":("o","pink")}
-      html_extra_path=["_images/_trace.svg"]
+      html_extra_path=["_images/_traceability_file.svg"]#
 
     The target IDs are grouped. To every group a color is associated. See ``conf.py``.
-    This is used to color an FCA lattice diagram in "_trace.rst".
+    This is used to color an FCA lattice diagram in "_traceability_file.rst".
     The diagram nodes are clickable in HTML.
 
-    For ``_trace.png`` one needs the cairosvg library.
+    For ``_traceability_file.png`` one needs the cairosvg library.
 
     '''
 
     linkfiles = [(linktype,[]) for linktype in links_types]
     tagentries = []
-    objects = [] #in FCA sense: set of target tgt with all its links to other targets 
     upcnt = 0
     if (fldr.strip()):
        upcnt = len(fldr.split(os.sep))
     #unknowntgts = []
-    def tracelines():
-        try:
-            config = conf_py(fldr)
-            target_id_group = config['target_id_group']
-            target_id_color = config['target_id_color']
-
-            def _drawnode(canvas,node,parent,center,radius): 
-                fillcolors = []
-                nodetgtgrps = {target_id_group(x) for x in node.intent}
-                for _,(groupid,groupcolor) in target_id_color.items():
-                    if groupid in nodetgtgrps:
-                        fillcolors.append(groupcolor)
-                n_grps = len(fillcolors)
-                for i in range(n_grps-1,-1,-1):
-                    rr = int(radius*(i+1)/n_grps)
-                    parent.add(canvas.circle(center,rr,fill=fillcolors[i],stroke='black'))
-        except Exception as e:
-            print('Warning: ',e)
-            _drawnode = None
-            target_id_color=None
-        print('='*30+'1')#XXX
-        fca = pyfca.Lattice(objects,lambda x:x)
-        tr = 'tr'
-        reflist = lambda x,pfx=tr: ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
-        trace = [(".. _`"+tr+"{0}`:\n\n:"+tr+"{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n").format(
-                n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
-                for n in fca.nodes]
-        tlines = ''.join(trace).splitlines(keepends=True)
-        tlines.extend(['.. _`trace`:\n','\n','.. figure:: _images/'+trace_file_name+'.png\n','   :name:\n','\n',
-          '   |trace|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies'])
-        if target_id_color is not None:
-            legend=', '.join([fnm+" "+clr for fnm,(_,clr) in target_id_color.items()])
-            tlines.extend([': '+legend,'\n'])
-        tlines.append('\n')
-        print('='*30+'1')#XXX
-        with open(opnj(fldr,trace_file_name+'.rst'),'w',encoding='utf-8') as f:
-            f.write('.. raw:: html\n\n')
-            #needs in conf.py: html_extra_path=["_images/_trace.svg"]
-            f.write('    <object data="'+trace_file_name+'.svg" type="image/svg+xml"></object>\n')
-            if target_id_color is not None:
-                f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
-            f.writelines(tlines)
-        ld = pyfca.LatticeDiagram(fca,4*297,4*210)
-        mkdir(opnj(fldr,"_images"))
-        tracesvg = op.abspath(opnj(fldr,"_images",trace_file_name+'.svg'))
-        ttgt = lambda : trace_target.endswith('.rest') and op.splitext(trace_target)[0] or trace_target
-        ld.svg(target=ttgt()+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
-        pngf = tracesvg.replace('.svg','.png')
-        csvg2png(file=tracesvg, write_to=pngf)
-        return tlines
     def add_target(tgt,lnkname,name_without_rest,upcnt,fi):
         for linktype,linklines in linkfiles:
             linklines.append(create_link(linktype,name_without_rest,tgt,lnkname))
         tagentries.append(r'{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fi[0],fi[1]))
     def add_linksto(i,tgt,iterlnks,ojlnk=None): #all the links away from the block following this tgt to next tgt
         linksto = []
-        print('='*40,ojlnk)#XXX
+        print('='*40,i,tgt,ojlnk)#XXX
         if ojlnk and ojlnk[0] < i:
             if ojlnk[1] in alltgts:
                 linksto.append(ojlnk[1])
@@ -1193,6 +1197,7 @@ def links_and_tags(
         if ojlnk is None:
             for j, lnk in iterlnks:
                 if j > i:#links upcnt to this target
+                    print('='*50,j,lnk,tgt)#XXX
                     ojlnk = j,lnk,tgt
                     break
                 else:
@@ -1201,9 +1206,11 @@ def links_and_tags(
                     elif lnk not in substitutions:
                         linksto.append('-'+lnk)
                         #unknowntgts.append(lnk)
+                    if linksto: print('='*50,linksto[-1])
         if linksto:
             if ojlnk:
-                objects.append(set([x for x in linksto if not x.startswith('-') and not x.startswith('_')]+[tgt]))
+                if traceability:
+                    traceability.append(set([x for x in linksto if not x.startswith('-') and not x.startswith('_')]+[tgt]))
             linksto = '.. .. ' + ','.join(linksto) + '\n\n'
             for _,linklines in linkfiles:
                 linklines.append(linksto)
@@ -1226,11 +1233,11 @@ def links_and_tags(
          else:
              print('        '+doc)
     print('='*30+'1')#XXX
-    if len(objects)>0:
-        tlns = tracelines()
+    if traceability:
+        tlns = traceability.createfiles(fldr)
         if tlns:
-            for (_,fi),tgt,lnkname in make_tgts(tlns,trace_file_name+'.rst') :
-                add_target(tgt,lnkname,trace_target,0,fi)
+            for (_,fi),tgt,lnkname in make_tgts(tlns,Traceability.traceability_file+'.rst') :
+                add_target(tgt,lnkname,tracehtmltarget,0,fi)
     for linktype,linklines in linkfiles:
         with open(opnj(fldr,'_links_%s.rst'%linktype),'w',encoding='utf-8') as f:
             f.write('\n'.join(linklines));
@@ -1745,7 +1752,7 @@ example_tree = r'''
             #new in rstdoc
             target_id_group = lambda targetid: targetid[0]
             target_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
-            html_extra_path=["doc/_images/_trace.svg"]
+            html_extra_path=["doc/_images/_traceability_file.svg"] #IF YOU DID .. include:: _traceability_file.rst
             pandoc_doc_optref={'latex': '--template reference.tex',
                              'html': {},#each can also be dict of file:template
                              'pdf': '--template reference.tex',
@@ -1845,7 +1852,7 @@ example_tree = r'''
                - pp.rest for the project plan
                  (with backlog, epics, stories, tasks)
                
-               .. include:: _trace.rst
+               .. include:: _traceability_file.rst
                
                .. include:: _links_sphinx.rst
                
@@ -2301,7 +2308,7 @@ _example_stpl = r'''
                - pp.rest for the project plan
                  (with backlog, epics, stories, tasks)
                
-               .. include:: _trace.rst
+               .. include:: _traceability_file.rst
                
                .. include:: _links_sphinx.rst
                
