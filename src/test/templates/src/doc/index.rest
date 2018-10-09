@@ -1,9 +1,0 @@
-
-``index.rest`` is needed for HTML creation.
-
-.. toctree::
-
-    main.rest
-
-
-.. include:: _links_sphinx.rst

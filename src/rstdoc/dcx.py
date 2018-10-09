@@ -127,6 +127,8 @@ Conventions
   e.g. with ``gen`` files mentioned above. 
 
 - References use replacement `substitutions <http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text>`__: ``|id|``.
+
+- Add ``.. include:: _traceability_file.rst`` to ``index.rst`` or another ``.rest`` file to get traceability information generated
   
 See the example created with ``--init`` of ``--stpl`` at the end of this file and the sources of the documentation of 
 `rstdoc <https://github.com/rpuntaie/rstdoc>`__.
@@ -245,8 +247,11 @@ verbose = False
 _stpl = '.stpl'
 _tpl = '.tpl'
 _tikz = '.tikz'
-is_rest = lambda x: x.endswith('.rest') or x.endswith('.rest'+_stpl)
-is_rst = lambda x: x.endswith('.rst') or x.endswith('.rst'+_stpl) or x.endswith('.rst.tpl')
+_rest = '.rest'
+_rst = '.rst'
+_txt = '.txt'
+is_rest = lambda x: x.endswith(_rest) or x.endswith(_rest+_stpl)
+is_rst = lambda x: x.endswith(_rst) or x.endswith(_rst+_stpl) or x.endswith(_rst+_tpl)
 
 rextgt = re.compile(r'(?:^|^[^\.\%\w]*\s|^\s*\(?\w+[\)\.]\s)\.\. _`?(\w[^:`]*)`?:\s*$')
 rexsubtgt = re.compile(r'(?:^|^[^\.\%\w]*\s|^\s*\(?\w+[\)\.]\s)\.\. \|(\w[^\|]*)\|\s\w+::')#no need to consider those not starting with \w, because rexlinksto starts with \w
@@ -254,9 +259,10 @@ rextitle = re.compile(r'^([!"#$%&\'()*+,\-./:;<=>?@[\]^_`{|}~])\1+$')
 rexitem = re.compile(r'^\s*:?\**(\w[^:\*]*)\**:\s*.*$')
 rexoneword = re.compile(r'^\s*(\w+)\s*$')
 rexname = re.compile(r'^\s*:name:\s*(\w.*)*$')
-rexlnks = re.compile(r'(?:^|\s)\|(\w+)\|(?:\s|$)')
-#list(rexlnks.findall('|xx| A `|lnk|` here |gos|\n'))#['xx', 'gos']
-#list(rexlnks.findall('| |xeps1| | |xeps|  |'))
+rexlnks = re.compile(r'(?:^|[^a-zA-Z`])\|(\w+)\|(?:$|[^a-zA-Z`])')
+#list(rexlnks.findall('|xx| A `|lnk|` here |gos11|\n'))#['xx', 'gos11']
+#list(rexlnks.findall('  | |xeps1| | |xeps|  |'))
+#list(rexlnks.findall('     |dd_figure|: Caption here.'))
 #rextgt.search('.. _`_t11`:').group(1)
 #rextgt.search('  .. _`_t11`:').group(1)
 #rextgt.search('#) .. _`_t11`:').group(1)
@@ -485,37 +491,12 @@ def _read_lines(fn):
         lns = f.readlines()
     return lns
 
-def _read_stpl_lines_it(fn):
-    """
-    This flattens the .stpl includes to have all targets align to those in the .rest file.
-    Targets must be *explicit* in all ``.stpl`` and ``.tpl``, i.e. they must not be created by stpl code.
-    This is needed to make the .tags jump to the original and not the generated file.
-    """
-    flns = []
-    if op.exists(fn):
-        flns = _read_lines(fn)
-    else:
-        parnt = updir(fn)
-        if op.exists(parnt):
-            flns = _read_lines(parnt)
-    for i,ln in enumerate(flns):
-        #ln = '% include("../test.rst.stpl",v="aparam")'
-        m = restplinclude.match(ln)
-        if m: 
-            includedtpl = m.group(1)
-            yield from _read_stpl_lines(op.join(op.dirname(fn),includedtpl))
-        else:
-            yield fn,i,ln
-
-@lru_cache()
-def _read_stpl_lines(fn):
-    return list(_read_stpl_lines_it(fn))
-
 @_memoized
 def rstincluded(
     fn #file name without path
     ,paths=() #paths where to look for fn
     ,withimg=False #also yield image files, not just other rst files
+    ,withrest=False #rest files are not supposed to be included
     ):
     '''
     Yield the files recursively included from an RST file.
@@ -552,14 +533,15 @@ def rstincluded(
                 toctreedone = False
                 if e.startswith(' '):
                     fl=e.strip()
-                    if fl.endswith('.rest') and op.exists(op.join(p,fl)):
+                    if fl.endswith(_rest) and op.exists(op.join(p,fl)):
                         toctreedone = True
                         yield from rstincluded(fl,paths)
                     continue
                 elif toctreedone:
                     toctree = False
             if e.startswith('.. toctree::'):
-                toctree = True
+                if withrest:
+                    toctree = True
             elif e.strip().startswith('.. '):
                 #e = '  .. include:: some.rst'
                 #e = '  .. include:: ../some.rst'
@@ -573,6 +555,8 @@ def rstincluded(
                     f,t,_ = rerstinclude.split(e)
                     nf = not f.strip() and t
                     if nf:
+                        if is_rest(nf) and not withrest:
+                            continue
                         yield from rstincluded(nf.strip(),paths)
                 except:
                     if withimg:
@@ -594,13 +578,19 @@ def rstincluded(
                             continue
                     yield from rstincluded(nf.strip(),paths)
 
-traceability = None
+_traceability_file = '_traceability_file' #used for _traceability_file.rst and _traceability_file.svg
+_traceability_instance = None
 class Traceability:
-    traceability_file = '_traceability_file' #used for _traceability_file.rst and _traceability_file.svg
     def __init__(self,tracehtmltarget):
         self.tracehtmltarget= tracehtmltarget
         self.fcaobjsets = [] #in FCA sense: set of target tgt with all its links to other targets 
-    def createfiles(self): #returns the rst lines of traceability_file
+        global _traceability_instance
+        _traceability_instance = self
+    def append(self,aset):
+        self.fcaobjsets.append(aset)
+    def isempty(self):
+        return len(self.fcaobjsets)==0
+    def createfiles(self,fldr): #returns the rst lines of _traceability_file
         if not self.fcaobjsets:
             return []
         try:
@@ -621,83 +611,79 @@ class Traceability:
             print('Warning: ',e)
             _drawnode = None
             target_id_color=None
-        print('='*30+'1')#XXX
-        fca = pyfca.Lattice(fcaobjsets,lambda x:x)
+        fca = pyfca.Lattice(self.fcaobjsets,lambda x:x)
         tr = 'tr'
         reflist = lambda x,pfx=tr: ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
         trace = [(".. _`"+tr+"{0}`:\n\n:"+tr+"{0}:\n\n{1}\n\nUp: {2}\n\nDown: {3}\n\n").format(
                 n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
                 for n in fca.nodes]
         tlines = ''.join(trace).splitlines(keepends=True)
-        tlines.extend(['.. _`trace`:\n','\n','.. figure:: _images/'+Traceability.traceability_file+'.png\n','   :name:\n','\n',
+        tlines.extend(['.. _`trace`:\n','\n','.. figure:: _images/'+_traceability_file+'.png\n','   :name:\n','\n',
           '   |trace|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies'])
         if target_id_color is not None:
             legend=', '.join([fnm+" "+clr for fnm,(_,clr) in target_id_color.items()])
             tlines.extend([': '+legend,'\n'])
         tlines.append('\n')
-        print('='*30+'1')#XXX
-        with open(opnj(fldr,Traceability.traceability_file+'.rst'),'w',encoding='utf-8') as f:
+        with open(opnj(fldr,_traceability_file+_rst),'w',encoding='utf-8') as f:
             f.write('.. raw:: html\n\n')
             #needs in conf.py: html_extra_path=["_images/_traceability_file.svg"]
-            f.write('    <object data="'+Traceability.traceability_file+'.svg" type="image/svg+xml"></object>\n')
+            f.write('    <object data="'+_traceability_file+'.svg" type="image/svg+xml"></object>\n')
             if target_id_color is not None:
                 f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
             f.writelines(tlines)
         ld = pyfca.LatticeDiagram(fca,4*297,4*210)
         mkdir(opnj(fldr,"_images"))
-        tracesvg = op.abspath(opnj(fldr,"_images",Traceability.traceability_file+'.svg'))
-        ttgt = lambda : tracehtmltarget.endswith('.rest') and op.splitext(tracehtmltarget)[0] or tracehtmltarget
+        tracesvg = op.abspath(opnj(fldr,"_images",_traceability_file+'.svg'))
+        ttgt = lambda : self.tracehtmltarget.endswith(_rest) and op.splitext(self.tracehtmltarget)[0] or self.tracehtmltarget
         ld.svg(target=ttgt()+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
         pngf = tracesvg.replace('.svg','.png')
         csvg2png(file=tracesvg, write_to=pngf)
         return tlines
 
-
 def fldrincluded(
-        directory='.'
-        ,exclude_paths_substrings = ['_links_','index.rest',Traceability.traceability_file]
+        directory='.' #directory to scan for included files
+        ,exclude_paths_substrings = ['_links_'] #+_traceability_file
         ):
     ''' 
-    Yield a list of .rest files for each directory below ``directory``.
-    The list also includes all files recursively included via these `.rest` files,
-    excluding those that contain ``exclude_paths_substrings``
+    Yield ``[.rest,recursively included file]`` for each rest for each directory below ``directory``,
+    excluding those that contain ``exclude_paths_substrings``.
+
+    Sphinx index.rest is processed last.
 
     >>> metafrozenset = frozenset(['../doc/meta.rest', '../doc/files.rst'])
-    >>> metafrozenset in set(frozenset(x) for x in fldrincluded('../doc'))
+    >>> metafrozenset in set(frozenset(x) for x in 
+    list(fldrincluded('../doc')) 
     True
 
     '''
-
-    global traceability
-    sofar = []
+    sofar=set([])
+    def rest_deps(f,fullpth):
+        pths = []
+        for ff in rstincluded(f,(p,)):
+            if _traceability_file+_rst in ff:
+                if _traceability_instance is None:#THERE CAN BE ONLY ONE
+                    Traceability(op.splitext(f)[0]) 
+                    continue
+            pth=opnj(p,ff).replace("\\","/")
+            if any([x in pth for x in exclude_paths_substrings]):
+                continue
+            pths.append(pth)
+        return pths
     for p,ds,fs in os.walk(directory):
-        for f in reversed(sorted(fs)):
+        sphinx_index = None
+        for f in reversed(sorted(fs)):#reversed puts the rest.stpl before the .rest
+            fullpth=opnj(p,f).replace("\\","/")
             if is_rest(f):
-                fullpth=opnj(p,f)
-                if any([x in fullpth for x in exclude_paths_substrings]):
+                if f.startswith('index.rest'):
+                    sphinx_index = fullpth
                     continue
-                if fullpth in sofar:
+                fullpth_nostpl = fullpth.replace(_stpl,'')
+                if fullpth_nostpl in sofar:
                     continue
-                sofar.append(fullpth)
-                if fullpth.endswith(_stpl):
-                    sofar.append(fullpth[:-len(_stpl)])
-                pths = []
-                for ff in rstincluded(f,(p,)):
-                    if Traceability.traceability_file+'.rst' in ff:
-                        traceability = Traceability(op.splitext(f)[0])
-                    if any([x in ff for x in exclude_paths_substrings]):
-                        continue
-                    pth=opnj(p,ff)
-                    if any([x in pth for x in exclude_paths_substrings]):
-                        continue
-                    pths.append(pth.replace("\\","/"))
-                yield pths
-
-def make_lnks(lns):
-    for i,ln in enumerate(lns):
-        mo = rexlnks.findall(ln)
-        for g in mo:
-            yield i,g
+                sofar.add(fullpth_nostpl)
+                yield rest_deps(f,fullpth)
+        if sphinx_index:
+            yield rest_deps(os.path.split(sphinx_index)[1],sphinx_index)
 
 def pair(
     alist #first list
@@ -708,22 +694,29 @@ def pair(
     pair two sorted lists where the second must be at least as long as the first
     
     >>> alist=[1,2,4,7]
+    >>> blist=[1,2,3,4,5,6,7]
+    >>> cmp = lambda x,y: x==y
+    >>> list(pair(alist,blist,cmp))
+    [(1, 1), (2, 2), (None, 3), (4, 4), (None, 5), (None, 6), (7, 7)]
+
+    >>> alist=[1,2,3,4,5,6,7]
     ... blist=[1,2,3,4,5,6,7]
     ... cmp = lambda x,y: x==y
     ... list(pair(alist,blist,cmp))
-    [(1, 1), (2, 2), (None, 3), (4, 4), (None, 5), (None, 6), (7, 7)]
+    [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)]
 
     '''
 
     i = 0
-    for i,(aa,bb) in enumerate(zip(alist,blist)):
+    for aa,bb in zip(alist,blist):
         if not cmp(aa,bb):
             break
+        i = i+1
         yield aa,bb
     alen = len(alist)
     tlen = max(alen,len(blist))
     d = 0
-    for j in range(i,alen):
+    for j in range(i+1,alen):
         for dd in range(tlen-j-d):
             bb = blist[j+d+dd]
             if not cmp(alist[j],bb):
@@ -759,14 +752,13 @@ def get_substitutions(
         if asub:
             yield asub.group(1)
 
-
 def make_tgts(
     lns  #lines of the document
     ,docrest #doc .rest or .rest.stpl file name
-    ,stpl_lns=None #the lines of the .stpl file that generated the .rest file
+    ,fn_i_ln=None #(fn,i,ln) of the .stpl with all stpl includes sequenced
     ):
     '''
-    Yields ((line index, linkname), target, link name) of ``lns`` of a restructureText file.
+    Yields ``((line index, linkname), target, link name)`` of ``lns`` of a restructureText file.
     For a .stpl file the linkname comes from the generated .rest file.
 
     '''
@@ -776,8 +768,8 @@ def make_tgts(
         g_counters[docrest] = {".. figure":1,".. math":1,".. table":1,".. code":1} #=list-table,code-block
     counters=g_counters[docrest]
     itgts = list(rindices(rextgt,lns))
-    if stpl_lns:
-        lns1 = [x[2] for x in stpl_lns]
+    if fn_i_ln:
+        lns1 = [x[2] for x in fn_i_ln]
         itgts1 = list(rindices(rextgt,lns1))
     else:
         lns1 = lns
@@ -850,7 +842,7 @@ def make_tgts(
             lnkname = tgt
         #tgts
         if i1:
-            yield (i,stpl_lns[i1][:2] if stpl_lns else (docrest,ii)), tgt, lnkname
+            yield (i,fn_i_ln[i1][:2] if fn_i_ln else (docrest,ii)), tgt, lnkname
         else:
             yield (i,(docrest.replace(_stpl,''),ii)), tgt, lnkname
 
@@ -1072,6 +1064,39 @@ def tree(
     return '\n'.join(_tree(path, ''))
 
 
+def _read_stpl_lines_it(fn):
+    """
+    This flattens the .stpl includes to have all targets align to those in the .rest file.
+    Targets must be *explicit* in all ``.stpl`` and ``.tpl``, i.e. they must not be created by stpl code.
+    This is needed to make the .tags jump to the original and not the generated file.
+    """
+    flns = []
+    if op.exists(fn):
+        flns = _read_lines(fn)
+    else:
+        parnt = updir(fn)
+        if op.exists(parnt):
+            flns = _read_lines(parnt)
+    for i,ln in enumerate(flns):
+        #ln = '% include("../test.rst.stpl",v="aparam")'
+        m = restplinclude.match(ln)
+        if m: 
+            includedtpl = m.group(1)
+            yield from _read_stpl_lines(op.join(op.dirname(fn),includedtpl))
+        else:
+            yield fn,i,ln
+
+@lru_cache()
+def _read_stpl_lines(fn):
+    return list(_read_stpl_lines_it(fn))
+
+
+def make_lnks(lns):
+    for i,ln in enumerate(lns):
+        mo = rexlnks.findall(ln)
+        for g in mo:
+            yield i,g
+
 def fldrs(
     scanroot='.' #root path to start scanning for independent doc folders
     ):
@@ -1090,24 +1115,18 @@ def fldrs(
         fldr_allfiles = defaultdict(set) #fldr, files
         fldr_alltgts = defaultdict(set) #all link target ids
         fldr_substitutions = defaultdict(set) #all link target ids
-        dcns=set([])
-        for dcs in fldrincluded('.'): 
-            rest = next(adc for adc in dcs if is_rest(adc))
-            restpath,restext = op.splitext(rest)
-            fldr,name_without_rest = op.split(restpath)
-            fldr_allfiles[fldr] |= set(dcs)
-            if restext == _stpl:
-                reststpl = True
-                name_without_rest=op.splitext(name_without_rest)[0]
-            else:
-                reststpl = False
-            dcns.add(name_without_rest)
+        for dcs in fldrincluded('.'): #.rest.stpl then no .rest
             for doc in dcs:
-                if doc==rest and reststpl and op.exists(restpath):
-                    lns = _read_lines(restpath)
-                    stpl_lns = _read_stpl_lines(doc)
-                    tgts = list(make_tgts(lns,doc,stpl_lns))
-                elif not doc.endswith('.tpl') and not doc.endswith('.txt') and op.exists(doc):
+                if is_rest(doc):
+                    fldr,name_without_rest = op.split(doc)
+                    fldr_allfiles[fldr] |= set(dcs)
+                    name_without_rest = name_without_rest.replace(_stpl,'').replace(_rest,'')
+                rstpath = doc.replace(_stpl,'')
+                if doc.endswith(_stpl) and op.exists(rstpath):
+                    lns = _read_lines(rstpath)
+                    fn_i_ln = _read_stpl_lines(doc)
+                    tgts = list(make_tgts(lns,doc,fn_i_ln))
+                elif not doc.endswith(_tpl) and not doc.endswith(_txt) and op.exists(doc):
                     #.txt are considered literal include
                     #%include('x.rst.tpl') were considered via STPL in the first branch
                     lns = _read_lines(doc)
@@ -1163,7 +1182,7 @@ def links_and_tags(
           "dd":("d","yellow"), 
           "tp":("t","green"),
           "rstdoc":("o","pink")}
-      html_extra_path=["_images/_traceability_file.svg"]#
+      html_extra_path=["_images/_traceability_file.svg"]#ONLY if there is an ``.. include:: _traceability_file.rst``
 
     The target IDs are grouped. To every group a color is associated. See ``conf.py``.
     This is used to color an FCA lattice diagram in "_traceability_file.rst".
@@ -1183,61 +1202,57 @@ def links_and_tags(
         for linktype,linklines in linkfiles:
             linklines.append(create_link(linktype,name_without_rest,tgt,lnkname))
         tagentries.append(r'{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fi[0],fi[1]))
-    def add_linksto(i,tgt,iterlnks,ojlnk=None): #all the links away from the block following this tgt to next tgt
+    def add_linksto(prevtgt,i,tgt,iterlnks,ojlnk=[0,None]): #all the links from the block following prevtgt up to (i,tgt) 
         linksto = []
-        print('='*40,i,tgt,ojlnk)#XXX
-        if ojlnk and ojlnk[0] < i:
+        def chkappend(x):
+            if x!=prevtgt: 
+                linksto.append(x)
+        if ojlnk[1] and ojlnk[0] < i:#for the first link in the new prevtgt
             if ojlnk[1] in alltgts:
-                linksto.append(ojlnk[1])
+                chkappend(ojlnk[1])
             elif ojlnk[1] not in substitutions:
                 linksto.append('-'+ojlnk[1])
                 #unknowntgts.append(ojlnk[1])
-            tgt = ojlnk[2]
-            ojlnk = None
-        if ojlnk is None:
+            ojlnk[1] = None
+        if ojlnk[1] is None:#the remaining links in prevtgt up to (i,tgt)
             for j, lnk in iterlnks:
                 if j > i:#links upcnt to this target
-                    print('='*50,j,lnk,tgt)#XXX
-                    ojlnk = j,lnk,tgt
+                    ojlnk[:] = j,lnk
                     break
                 else:
                     if lnk in alltgts:
-                        linksto.append(lnk)
+                        chkappend(lnk)
                     elif lnk not in substitutions:
                         linksto.append('-'+lnk)
                         #unknowntgts.append(lnk)
-                    if linksto: print('='*50,linksto[-1])
+        if _traceability_instance:
+            if prevtgt and linksto:
+                _traceability_instance.append(set([x for x in linksto if not x.startswith('-') and not x.startswith('_')]+[prevtgt]))
         if linksto:
-            if ojlnk:
-                if traceability:
-                    traceability.append(set([x for x in linksto if not x.startswith('-') and not x.startswith('_')]+[tgt]))
             linksto = '.. .. ' + ','.join(linksto) + '\n\n'
             for _,linklines in linkfiles:
                 linklines.append(linksto)
-        return ojlnk
-    olddc = None
     for name_without_rest, doc, lenlns, lnks, tgts in lnktgts:
          for _,linklines in linkfiles:
              linklines.append('\n.. .. {0}\n\n'.format(doc))
          iterlnks = iter(lnks)
-         ojlnk=None
+         prevtgt = None
          for (i,fi),tgt,lnkname in tgts:
              if i is not None:
-               ojlnk = add_linksto(i,tgt,iterlnks,ojlnk)
-               add_target(tgt,lnkname,name_without_rest,upcnt,fi)
-         ojlnk = add_linksto(lenlns,None,iterlnks,ojlnk)
-         if not verbose:
-             continue
-         if '/'+name_without_rest+'.' in doc:
-             print('    '+doc)
-         else:
-             print('        '+doc)
-    print('='*30+'1')#XXX
-    if traceability:
-        tlns = traceability.createfiles(fldr)
+                 add_linksto(prevtgt,i,tgt,iterlnks)
+                 add_target(tgt,lnkname,name_without_rest,upcnt,fi)
+                 prevtgt = tgt
+         add_linksto(prevtgt,lenlns,None,iterlnks)
+         if verbose:
+             if '/'+name_without_rest+'.' in doc:
+                 print('    '+doc)
+             else:
+                 print('        '+doc)
+    if _traceability_instance:
+        tlns = _traceability_instance.createfiles(fldr)
         if tlns:
-            for (_,fi),tgt,lnkname in make_tgts(tlns,Traceability.traceability_file+'.rst') :
-                add_target(tgt,lnkname,tracehtmltarget,0,fi)
+            for (_,fi),tgt,lnkname in make_tgts(tlns,_traceability_file+_rst) :
+                add_target(tgt,lnkname,_traceability_instance.tracehtmltarget,0,fi)
     for linktype,linklines in linkfiles:
         with open(opnj(fldr,'_links_%s.rst'%linktype),'w',encoding='utf-8') as f:
             f.write('\n'.join(linklines));
@@ -1260,15 +1275,15 @@ try:
     @lru_cache()
     def _ant_glob_stpl(bldpath,*stardotext):
         res = []
-        sofar = []
+        already = set([])
         for an_ext in stardotext:
           stplsfirst = bldpath.ant_glob(an_ext+_stpl)
           for anode in stplsfirst:
-              sofar.append(anode.name[:-len(_stpl)])
+              already.add(anode.name[:-len(_stpl)])
               res.append(anode)
           nonstpls = bldpath.ant_glob(an_ext)
           for anode in nonstpls:
-              if anode.name not in sofar:
+              if anode.name not in already:
                   res.append(anode)
         return res
     @lru_cache()
@@ -1309,35 +1324,17 @@ try:
             docs = [x.lower() for x in bld.env.docs]
         return docs
     @lru_cache()
-    def get_files_in_folder(path):
-        deps = []
-        for rest in _ant_glob_stpl(path,'*.rest'):
-            if not rest.name.startswith('index'):
-                fles = rstincluded(rest.name,(rest.parent.abspath(),))
-                for x in fles:
-                    isrst = is_rst(x)
-                    if isrst and x.startswith('_links_'):#else cyclic dependency for _links_xxx.rst
-                        continue
-                    nd = path.find_node(x)
-                    if not nd:
-                        if isrst and not x.endswith(_stpl) and not x.endswith('.tpl'):
-                            nd = path.find_node(x+_stpl)
-                    deps.append(nd)
-        depsgensrc = [path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
-        rs = [x for x in deps if x]+depsgensrc
-        return (list(sorted(set(rs),key=lambda a:a.name)),[])
-    @lru_cache()
     def get_files_in_doc(path,node):
         srcpath = node.parent.get_src()
         orgd = node.parent.abspath()
         d = srcpath.abspath()
         n = node.name
         nod = None
-        if node.is_bld() and not node.name.endswith(_stpl) and not x.endswith('.tpl'):
+        if node.is_bld() and not node.name.endswith(_stpl) and not x.endswith(_tpl):
             nod = srcpath.find_node(node.name+_stpl)
         if not nod:
             nod = node
-        ch = rstincluded(n,(d,orgd),True)
+        ch = rstincluded(n,(d,orgd),True,True)
         deps = []
         nodeitself=True
         for x in ch:
@@ -1349,7 +1346,7 @@ try:
                     continue
             nd = srcpath.find_node(x)
             if not nd:
-                if isrst and not x.endswith(_stpl) and not x.endswith('.tpl'):
+                if isrst and not x.endswith(_stpl) and not x.endswith(_tpl):
                     nd = srcpath.find_node(x+_stpl)
             deps.append(nd)
         depsgensrc = [path.find_node(gensrc[x]) for x in deps if x and x in gensrc] 
@@ -1528,7 +1525,7 @@ try:
                             if len(fignums) == 0: 
                                 continue
                             if len(fignums) > 1: 
-                                makename=lambda x,i: '{0}{2}{1}'.format(*list(os.path.splitext(x))+[i])
+                                makename=lambda x,i: '{0}{2}{1}'.format(*list(op.splitext(x))+[i])
                             else:
                                 makename=lambda x,i: x
                             for i in fignums:
@@ -1537,7 +1534,7 @@ try:
                             break
                         except: 
                             continue
-    @TaskGen.extension('.rest')
+    @TaskGen.extension(_rest)
     def gen_docs(self,node):
         docs=get_docs(self.bld)
         d = get_files_in_doc(self.path,node)
@@ -1552,8 +1549,8 @@ try:
                 else:
                     rsttool = 'pandoc'
                     doctype = doctgt
-                out_node = node.parent.find_or_declare("{0}/{1}.{2}".format(doctgt,node.name[:-len('.rest')],doctype))
-                linksfile = node.parent.get_src().find_resource('_links_'+doctype+'.rst')
+                out_node = node.parent.find_or_declare("{0}/{1}.{2}".format(doctgt,node.name[:-len(_rest)],doctype))
+                linksfile = node.parent.get_src().find_resource('_links_'+doctype+_rst)
                 self.create_task('NonSphinxTask', [node], out_node, scan=rstscan, rsttool='pandoc', doctype=doctype, linksfile=linksfile)
                 if doctgt.endswith('html') or doctgt.endswith('latex'):
                     _images = node.parent.make_node('_images')
@@ -1659,7 +1656,7 @@ try:
                     for anextf in _ant_glob_stpl(bld.path,anext):
                         bld(name='build '+anext,source=anextf)
                 bld.add_group()
-                bld(name='build all rest',source=[x for x in _ant_glob_stpl(bld.path,'*.rest','*.rst')if not x.name.endswith('.rst')])
+                bld(name='build all rest',source=[x for x in _ant_glob_stpl(bld.path,'*.rest','*.rst')if not x.name.endswith(_rst)])
                 bld.add_group()
         bld.build_docs = build_docs
 
@@ -1752,7 +1749,7 @@ example_tree = r'''
             #new in rstdoc
             target_id_group = lambda targetid: targetid[0]
             target_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
-            html_extra_path=["doc/_images/_traceability_file.svg"] #IF YOU DID .. include:: _traceability_file.rst
+            html_extra_path=["doc/_images/_traceability_file.svg"] #IF YOU DID ``.. include:: _traceability_file.rst``
             pandoc_doc_optref={'latex': '--template reference.tex',
                              'html': {},#each can also be dict of file:template
                              'pdf': '--template reference.tex',
@@ -1938,7 +1935,7 @@ example_tree = r'''
                   |dz3|: Create from exampletikz.tikz
                
                   The usage of ``:name:`` produces: ``WARNING: Duplicate explicit target name: ""``. Ignore.
-               
+
                Reference via |dz3|.
                
                ``.tikz``, ``.svg``, ``.dot``,  ``.uml``, ``.eps`` or ``.stpl`` thereof and ``.pyg``, are converted to ``.png``.
@@ -2478,27 +2475,46 @@ _example_stpl = r'''
                     |dd_figure|: Caption here.
                     Reference this via ``|dd_figure|``.
                
-                 .. _`dd_code`:
+               For testing purpose the following is rendered via include files.
                
-                 |dd_code|: Listing showing struct.
+               Include normal .rst way, where the .rst might be gnerated by a ``.rst.stpl``
                
-                 .. code-block:: cpp
-                    :name:
+               .. include:: dd_included.rst
                
-                    struct xxx{
-                       int yyy; //yyy for zzz
-                    }
+               Include the stpl way
                
-                 .. include normal .rst
-                 .. include:: dd_tables.rst
+               %include('dd_diagrams.tpl',DD=DD)#you optionally can provide python definitions
                
-                 .. include rst that was generated from .rst.stpl
-                 .. include:: dd_math.rst
+               Pandoc does not know about `definitions in included files <https://github.com/jgm/pandoc/issues/4160>`__.
                
-               .. include the stpl way
-               %include('dd_diagrams.tpl',DD=DD)#you need to provide python definitions
+               .. |eps1| image:: _images/exampleeps1.png
+               .. |eps| image:: _images/exampleeps.png
                
                .. include:: _links_sphinx.rst
+               
+           ├ dd_included.rst.stpl
+               .. encoding: utf-8
+               .. vim: syntax=rst
+               
+               .. _`dd_code`:
+               
+               |dd_code|: Listing showing struct.
+               
+               .. code-block:: cpp
+                  :name:
+               
+                  struct xxx{
+                     int yyy; //yyy for zzz
+                  }
+               
+               Include normal ``.rst``.
+               
+               .. include:: dd_tables.rst
+               
+               Again include the stpl way.
+               
+               %include('dd_math.tpl')
+               
            ├ dd_tables.rst
                .. encoding: utf-8
                .. vim: syntax=rst
@@ -2533,10 +2549,7 @@ _example_stpl = r'''
                
                Reference |dd_table| or |dd_list_table| does not show ``dd_table`` or ``dd_list_table``.
                
-               .. |eps1| image:: _images/exampleeps1.png
-               .. |eps| image:: _images/exampleeps.png
-               
-           ├ dd_math.rst.stpl
+           ├ dd_math.tpl
                .. encoding: utf-8
                .. vim: syntax=rst
                
@@ -2660,10 +2673,10 @@ _example_stpl = r'''
                     :name:
                  
                     |exampleeps|: Created from exampleeps.eps
-
+                 
                  %if False:
                  .. _`target_more_than_in_rest`:
-
+                 
                     It is OK to have more targets in the .stpl file.
                  %end
                
@@ -2749,7 +2762,7 @@ def main(**args):
   try:
     filename = infile = args['infile']
 
-    isfile = infile and os.path.isfile(infile) or False
+    isfile = infile and op.isfile(infile) or False
     if not isfile and infile == '-':
         try:
             sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach()) 
@@ -2804,10 +2817,10 @@ def main(**args):
                 try:
                     filename,outtype = outtype.split('.')
                 except: pass
-            outfile = os.path.splitext(filename)[0]+'.'+outtype 
+            outfile = op.splitext(filename)[0]+'.'+outtype 
         else:
             outf  = open(outfile,'w',encoding='utf-8')
-        filenoext=os.path.splitext(outfile)[0]
+        filenoext=op.splitext(outfile)[0]
         outf.write(''.join(filelines))
         outf.write('\n')
         for (i,fi),tgt,lnkname in make_tgts(filelines,filename):

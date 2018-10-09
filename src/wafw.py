@@ -10,7 +10,7 @@ import os
 import sys
 import platform
 import re
-from shutil import move
+from shutil import move, copy
 try:
     from urllib import urlretrieve
 except:
@@ -27,23 +27,42 @@ WAF_PLUGINS     = [
     # ('eclipse', 'http://waf.googlecode.com/git/waflib/extras/eclipse.py'),
 ]
 
-if not os.path.exists(WAFDIR):
-    try:
-        _url = urlretrieve('https://www.waf.io/pub/release/')
-        with open(_url[0]) as f:
-            WRAPPER_VERSION = re.search(r'waf-(\d.\d.\d\d)',f.read()).groups(1)[0]
-    except: 
-        WRAPPER_VERSION = '2.0.12' 
-else:
-    for wafx in os.listdir(WAFDIR):
+# Don't modify these! :P
+WAF_FILE        = lambda: WAFDIR + '/waf-' + WRAPPER_VERSION
+USING_WINDOWS   = (platform.system() == 'Windows')
+
+def set_version_by_dir(adir):
+    global WRAPPER_VERSION
+    for wafx in os.listdir(adir):
         _mo = re.search(r'waf-(\d.\d.\d\d)',wafx)
         if _mo:
             WRAPPER_VERSION = _mo.group(1)
-            break
+            return True
+    return False
 
-# Don't modify these! :P
-WAF_FILE        = WAFDIR + '/waf-' + WRAPPER_VERSION
-USING_WINDOWS   = (platform.system() == 'Windows')
+def init_waf_version():
+    global WRAPPER_VERSION
+    if not os.path.exists(WAFDIR):
+        if 'WAFDIR' in os.environ and set_version_by_dir(os.environ['WAFDIR']):
+            existing_waf = os.path.join(os.environ['WAFDIR'],'waf-'+WRAPPER_VERSION)
+            try:
+                if not os.path.exists(WAFDIR):
+                    os.makedirs(WAFDIR)
+                copy(existing_waf, WAF_FILE())
+                print('Copied from ', existing_waf)
+                return
+            except Exception as e:
+                print('Warning: ', e)
+        try:
+            _url = urlretrieve('https://www.waf.io/pub/release/')
+            with open(_url[0]) as f:
+                WRAPPER_VERSION = re.search(r'waf-(\d.\d.\d\d)',f.read()).groups(1)[0]
+        except: 
+            WRAPPER_VERSION = '2.0.12' 
+    else:
+        set_version_by_dir(WAFDIR)
+
+init_waf_version()
 
 def create_init_files():
     '''Create __init__.py files in the Waf directory (and its parent directories)
@@ -71,7 +90,7 @@ def get_waf(version):
 
     print('Downloading', filename + '...')
     urlretrieve(url, filename)
-    move(filename, WAF_FILE)
+    move(filename, WAF_FILE())
 
 def get_plugins():
     create_init_files()
@@ -88,9 +107,9 @@ def get_plugins():
 def waf_exec():
     '''Execute argv arguments with the downloaded Waf release.'''
     if USING_WINDOWS:
-        os.system('python.exe ' + WAF_FILE + ' ' + ' '.join(sys.argv[1:]))
+        os.system('python.exe ' + WAF_FILE() + ' ' + ' '.join(sys.argv[1:]))
     else:
-        os.system('./' + WAF_FILE + ' ' + ' '.join(sys.argv[1:]))
+        os.system('./' + WAF_FILE() + ' ' + ' '.join(sys.argv[1:]))
 
 if __name__ == '__main__':
     if not os.path.exists(WAFDIR):
@@ -98,10 +117,10 @@ if __name__ == '__main__':
         os.makedirs(WAFDIR)
         create_init_files()
 
-    if os.path.exists(WAF_FILE):
+    if os.path.exists(WAF_FILE()):
         waf_exec()
     else:
         get_waf(WRAPPER_VERSION)
         get_plugins()
-        if not USING_WINDOWS: os.system('chmod +x ' + WAF_FILE)
+        if not USING_WINDOWS: os.system('chmod +x ' + WAF_FILE())
         waf_exec()
