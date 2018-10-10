@@ -522,7 +522,7 @@ def test_selfdoc():
     try:
         os.remove(selfdoc_accoridng_doc_gen)
     except: pass
-    main(initroot=None,stplroot=None,verbose=True)
+    main(verbose=True)
     assert os.path.exists(selfdoc_accoridng_doc_gen)
 
 def test_docparts_after():
