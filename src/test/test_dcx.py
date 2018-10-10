@@ -22,16 +22,7 @@ import os
 sys.path = ['..','test/mocks','mocks'] + sys.path
 import pytest
 import glob
-from rstdoc.dcx import (
-    g_counters
-    ,make_tgts
-    ,tree
-    ,mktree
-    ,main
-    ,doc_parts
-    ,rstincluded
-    )
-
+from rstdoc.dcx import *
 
 '''
 
@@ -122,11 +113,52 @@ def test_lnkname(lnsres):
 
         header, figure, list-table, table, code-block, code, math, definition (:id:) 
     '''
-    #lns,res=_lnkname[6]
     lns,res = lnsres
     g_counters.clear()
     got = list(make_tgts(lns,0))[0][1:]
     assert got==res
+
+def test_dcx_regex():
+    assert list(rexlnks.findall('|xx| A `|lnk|` here |gos11|\n')) == ['xx', 'gos11']
+    assert list(rexlnks.findall('  | |xeps1| | |xeps|  |')) == ['xeps1', 'xeps']
+    assert list(rexlnks.findall('     |dd_figure|: Caption here.')) == ['dd_figure']
+    assert rextgt.search('.. _`_t11`:').group(1) == '_t11'
+    assert rextgt.search('  .. _`_t11`:').group(1) == '_t11'
+    assert rextgt.search('#) .. _`_t11`:').group(1) == '_t11'
+    assert rextgt.search('- .. _`_t11`:').group(1) == '_t11'
+    assert rextgt.search('2) .. _`_t11`:').group(1) == '_t11'
+    assert rextgt.search('2. .. _`_t11`:').group(1) == '_t11'
+    assert rextgt.search('(a) .. _`_t11`:').group(1) == '_t11'
+    assert rextgt.search('| .. _`_t11`:').group(1) == '_t11'
+    assert rextgt.search('  * - .. _`_t11`:').group(1) == '_t11'
+    assert rexitem.match(':t11:').group(1) == 't11'
+    assert rexitem.match('**t11**:').group(1) == 't11'
+    assert rexitem.match('*t11*:').group(1) == 't11'
+    assert reximg.search('.. image:: ..\img.png').group(1) == '..\img.png' 
+    assert reximg.search(r'.. |c:\x y\im.jpg| image:: /tmp/img.png').group(1) == '/tmp/img.png'
+    assert reximg.search(r'.. image:: c:\tmp\img.png').group(1) == r'c:\tmp\img.png'
+    assert reximg.search(r'.. figure:: \\public\img.png').group(1) == r'\\public\img.png'
+    assert rerstinclude.split('.. include:: test.rst') == ['', 'test.rst', '']
+    assert rerstinclude.split('.. include:: ../test.rst') == ['', '../test.rst', '']
+    assert rerstinclude.split('  .. include:: ../test.rst') == ['  ', '../test.rst', '']
+    assert restplinclude.split('%include("test.rst.stpl",v="aparam")') == ['', 'test.rst.stpl', '']
+    assert restplinclude.split('%include("../test.rst.stpl",v="aparam")') == ['', '../test.rst.stpl', '']
+    assert restplinclude.split(' % include(  "../test.rst.stpl",v="aparam")') == [' ', '../test.rst.stpl', '']
+    with pytest.raises(AttributeError):
+        rextgt.search('x  .. _`_t11`:').group(1)
+    with pytest.raises(AttributeError):
+        rextgt.search('.. .. _`_t11`:').group(1)
+    with pytest.raises(AttributeError):
+        rextgt.search('%# .. _`_t11`:').group(1)
+    rexsubtgt.search(' .. |t-1| image:: ').group(1) == 't-1'
+    with pytest.raises(AttributeError):
+        rextgt.search('%# .. |t11| xx::').group(1)
+    with pytest.raises(AttributeError):
+        rexitem.match(':``t11``:').group(1)
+    with pytest.raises(AttributeError):
+        rexitem.match('.. _xx:').group(1)
+    with pytest.raises(AttributeError):
+        rexitem.match('.. xx:').group(1)
 
 @pytest.yield_fixture
 def tmpworkdir(tmpdir):
@@ -138,56 +170,82 @@ def tmpworkdir(tmpdir):
     yield tmpdir
     os.chdir(cwd)
 
-@pytest.yield_fixture
-def rststpl(tmpworkdir):
-    smpl='smpl'
-    r=run(['rstdcx','--stpl',smpl])
+@pytest.yield_fixture(params=['rest','stpl'])
+def rstinit(request,tmpworkdir):
+    smpl='tmp_%s'%request.param
+    r=run(['rstdcx','--'+request.param,smpl])
     assert r.returncode == 0
     oldd=os.getcwd()
-    #import pdb;pdb.set_trace()
-    os.chdir(os.path.join(tmpworkdir,smpl,'src'))
-    yield os.getcwd()
-    os.chdir(oldd)
-    
-@pytest.yield_fixture
-def rstinit(tmpworkdir):
-    smpl='smpl'
-    r=run(['rstdcx','--init',smpl])
-    assert r.returncode == 0
-    oldd=os.getcwd()
-    #import pdb;pdb.set_trace()
     os.chdir(os.path.join(tmpworkdir,smpl,'src'))
     yield os.getcwd()
     os.chdir(oldd)
 
-def test_rstincluded_stpl(rststpl):
-    assert list(rstincluded('ra.rest.stpl',(r'.\doc',))) == [
-            'ra.rest.stpl', '_links_sphinx.rst']
-    assert list(rstincluded('sy.rest.stpl',(r'.\doc',))) == [
-            'sy.rest.stpl', '_links_sphinx.rst']
-    assert list(rstincluded('sr.rest.stpl',(r'.\doc',))) == [
-            'sr.rest.stpl', '_links_sphinx.rst']
-    assert list(rstincluded('dd.rest.stpl',(r'.\doc',))) == [
-            'dd.rest.stpl', 'dd_included.rst.stpl', 'dd_tables.rst', 'dd_math.tpl', 'dd_diagrams.tpl', '_links_sphinx.rst']
-    assert list(rstincluded('tp.rest.stpl',(r'.\doc',))) == [
-            'tp.rest.stpl', '_links_sphinx.rst']
-
-def test_rstincluded_init(rstinit):
-    assert list(rstincluded('ra.rest',(r'.\doc',))) == [
-            'ra.rest', '_links_sphinx.rst']
-    assert list(rstincluded('sr.rest',(r'.\doc',))) == [
-            'sr.rest', '_links_sphinx.rst', '_links_sphinx.rst']
-    assert list(rstincluded('dd.rest',(r'.\doc',))) == [
-            'dd.rest', 'somefile.rst', '_links_sphinx.rst']
-    assert list(rstincluded('tp.rest',(r'.\doc',))) == [
-            'tp.rest', '_sometst.rst', '_links_sphinx.rst']
+def test_rstincluded(rstinit):
+    if 'tmp_stpl' in rstinit:
+        assert list(rstincluded('ra.rest.stpl',(r'./doc',))) == [
+                'ra.rest.stpl', '_links_sphinx.rst']
+        assert list(rstincluded('sy.rest.stpl',(r'./doc',))) == [
+                'sy.rest.stpl', '_links_sphinx.rst']
+        assert list(rstincluded('sr.rest.stpl',(r'./doc',))) == [
+                'sr.rest.stpl', '_links_sphinx.rst']
+        assert list(rstincluded('dd.rest.stpl',(r'./doc',))) == [
+                'dd.rest.stpl', 'dd_included.rst.stpl', 'dd_tables.rst', 'dd_math.tpl', 'dd_diagrams.tpl', '_links_sphinx.rst']
+        assert list(rstincluded('tp.rest.stpl',(r'./doc',))) == [
+                'tp.rest.stpl', '_links_sphinx.rst']
+    elif 'tmp_rest' in rstinit:
+        assert list(rstincluded('ra.rest',(r'./doc',))) == [
+                'ra.rest', '_links_sphinx.rst']
+        assert list(rstincluded('sr.rest',(r'./doc',))) == [
+                'sr.rest', '_links_sphinx.rst', '_links_sphinx.rst']
+        assert list(rstincluded('dd.rest',(r'./doc',))) == [
+                'dd.rest', 'somefile.rst', '_links_sphinx.rst']
+        assert list(rstincluded('tp.rest',(r'./doc',))) == [
+                'tp.rest', '_sometst.rst', '_links_sphinx.rst']
 
 def test_init(rstinit):
-    '''
-    Tests |dcx.mktree|.
-    Check tree created by ``rstdcx --init smpl``
-    '''
-    assert tree('.')=="""\
+    if 'tmp_stpl' in rstinit:
+        assert tree('.')=="""\
+├─code
+│  └─some.h
+├─doc
+│  ├─dd.rest.stpl
+│  ├─dd_diagrams.tpl
+│  ├─dd_included.rst.stpl
+│  ├─dd_math.tpl
+│  ├─dd_tables.rst
+│  ├─examplecairo.pyg
+│  ├─exampledot.dot.stpl
+│  ├─exampleeps.eps
+│  ├─exampleeps1.eps
+│  ├─exampleother.pyg
+│  ├─exampleplt.pyg
+│  ├─examplepygal.pyg
+│  ├─examplepyx.pyg
+│  ├─examplesvg.svg.stpl
+│  ├─exampletikz.tikz
+│  ├─exampletikz1.tikz
+│  ├─exampleuml.uml
+│  ├─gen
+│  ├─index.rest
+│  ├─model.py
+│  ├─ra.rest.stpl
+│  ├─sr.rest.stpl
+│  ├─sy.rest.stpl
+│  ├─tp.rest.stpl
+│  ├─utility.rst.tpl
+│  └─wscript_build
+├─Makefile
+├─conf.py
+├─dcx.py
+├─docutils.conf
+├─reference.docx
+├─reference.tex
+├─waf
+├─waf.bat
+├─wafw.py
+└─wscript"""
+    elif 'tmp_rest' in rstinit:
+        assert tree('.')=="""\
 ├─code
 │  └─some.h
 ├─doc
@@ -221,20 +279,36 @@ def test_init(rstinit):
 ├─wafw.py
 └─wscript"""
 
-def test_dcx_alonenostpl(rstinit,capfd):
-    '''
-    Check the output of rstdcx or dcx.py.
-    '''
+def test_dcx_alone_samples(rstinit,capfd):
     r=run([Python,'dcx.py','--verbose'])
     assert r.returncode == 0
     out, err = capfd.readouterr()
-    assert '\n'.join(out.splitlines()) == """\
+    if 'tmp_rest' in rstinit:
+        assert '\n'.join(out.splitlines()) == """\
 doc
     doc/tp.rest
     doc/sr.rest
     doc/ra.rest
     doc/dd.rest
     doc/index.rest"""
+    elif 'tmp_stpl' in rstinit:
+        assert '\n'.join(out.splitlines()) == """\
+doc
+    doc/tp.rest.stpl
+    doc/sy.rest.stpl
+    doc/sr.rest.stpl
+    doc/ra.rest.stpl
+    doc/dd.rest.stpl
+        doc/dd_included.rst.stpl
+        doc/dd_tables.rst
+    doc/index.rest"""
+
+def test_dcx_in_out(capfd):
+    r=run([Python,'rstdoc/dcx.py','./doc/dd.rest','-','html'])
+    assert r.returncode == 0
+    out, err = capfd.readouterr()
+    assert out.startswith('.. default-role:: math')
+    assert '.. |d1w| replace:: `d1w <dd.html#d1w>`__' in out
 
 @pytest.yield_fixture(params=['docx','pdf','html'])
 def makebuild(request,rstinit):
@@ -245,33 +319,24 @@ def makebuild(request,rstinit):
     yield (os.getcwd(),request.param)
     os.chdir(oldd)
 
-def test_makenostpl(makebuild):
-    '''
-    Run make with the sample Makefile.
-    '''
-    target=makebuild[1]
-    if target=='docx':
-        expected="""\
+tree3 = lambda x: tree(x,with_dot_files=False,max_depth=3)
+
+def test_make_samples(makebuild):
+    dir,target = makebuild
+    if 'tmp_rest' in dir:
+        expected_no_html="""\
 ├─code
 │  └─some_tst.c
 └─doc
-   └─docx
-      ├─dd.docx
-      ├─ra.docx
-      ├─sr.docx
-      └─tp.docx"""
-    elif target=='pdf':
-        expected="""\
-├─code
-│  └─some_tst.c
-└─doc
-   └─pdf
-      ├─dd.pdf
-      ├─ra.pdf
-      ├─sr.pdf
-      └─tp.pdf"""
-    elif target=='html':
-        expected="""\
+   └─{0}
+      ├─dd.{0}
+      ├─ra.{0}
+      ├─sr.{0}
+      └─tp.{0}"""
+        if target in ['docx','pdf']:
+            expected=expected_no_html.format(target)
+        elif target=='html':
+            expected="""\
 ├─code
 │  └─some_tst.c
 └─doc
@@ -296,9 +361,55 @@ def test_makenostpl(makebuild):
       ├─searchindex.js
       ├─sr.html
       └─tp.html"""
-    assert tree(makebuild[0],with_dot_files=False,max_depth=3)==expected
+        assert tree3(makebuild[0])==expected
+    elif 'tmp_stpl' in dir:
+        expected_no_html="""\
+├─code
+│  └─some_tst.c
+└─doc
+   └─{0}
+      ├─dd.{0}
+      ├─ra.{0}
+      ├─sr.{0}
+      ├─sy.{0}
+      └─tp.{0}"""
+        if target in ['docx','pdf']:
+            expected=expected_no_html.format(target)
+        elif target=='html':
+            expected="""\
+├─code
+│  └─some_tst.c
+└─doc
+   ├─doctrees
+   │  ├─dd.doctree
+   │  ├─environment.pickle
+   │  ├─index.doctree
+   │  ├─ra.doctree
+   │  ├─sr.doctree
+   │  ├─sy.doctree
+   │  └─tp.doctree
+   └─html
+      ├─_images
+      ├─_sources
+      ├─_static
+      ├─_traceability_file.svg
+      ├─dd.html
+      ├─genindex.html
+      ├─index.html
+      ├─objects.inv
+      ├─ra.html
+      ├─search.html
+      ├─searchindex.js
+      ├─sr.html
+      ├─sy.html
+      └─tp.html"""
+        assert tree3(makebuild[0])==expected
 
-@pytest.yield_fixture(params=['docx','pdf','html','sphinx_html','rst_html'])
+waf_some = ['docx','odt','pdf','html','latex','sphinx_html','sphinx_latex','rst_html','rst_latex','rst_odt']
+waf_non_sphinx = [x for x in waf_some if not x.startswith('sphinx')]
+waf_sphinx = [x for x in waf_some if x.startswith('sphinx')]
+
+@pytest.yield_fixture(params=waf_some)
 def wafbuild(request,rstinit):
     r1=run(['waf','configure'])
     assert r1.returncode==0
@@ -309,7 +420,7 @@ def wafbuild(request,rstinit):
     yield (os.getcwd(),request.param)
     os.chdir(oldd)
 
-def test_wafnostpl(wafbuild):
+def test_waf_samples(wafbuild):
     '''
     Run Waf on the sample project.
     Waf needs to be installed 
@@ -319,21 +430,29 @@ def test_wafnostpl(wafbuild):
 
     '''
     target=wafbuild[1]
-    if target=='docx':
-        expected="""\
+    expected_non_sphinx="""\
 ├─c4che
 │  ├─_cache.py
 │  └─build.config.py
 ├─code
 │  └─some_tst.c
 ├─doc
-│  └─docx
-│     ├─dd.docx
-│     ├─ra.docx
-│     ├─sr.docx
-│     └─tp.docx
+│  └─{0}{2}
+│     ├─dd.{1}
+│     ├─ra.{1}
+│     ├─sr.{1}
+│     └─tp.{1}
 └─config.log"""
-    elif target=='pdf':
+    if target in waf_non_sphinx:
+        try:
+            _,ext = target.split('_')
+        except: ext = target
+        if ext.endswith('latex') or ext.endswith('html'):
+            extra = '\n│     ├─_images'
+        else:
+            extra = ''
+        expected=expected_non_sphinx.format(target,ext,extra)
+    elif target=='sphinx_latex':
         expected="""\
 ├─c4che
 │  ├─_cache.py
@@ -341,11 +460,37 @@ def test_wafnostpl(wafbuild):
 ├─code
 │  └─some_tst.c
 ├─doc
-│  └─pdf
-│     ├─dd.pdf
-│     ├─ra.pdf
-│     ├─sr.pdf
-│     └─tp.pdf
+│  └─sphinx_latex
+│     ├─LICRcyr2utf8.xdy
+│     ├─LICRlatin2utf8.xdy
+│     ├─LatinRules.xdy
+│     ├─Makefile
+│     ├─_static
+│     ├─_traceability_file.png
+│     ├─examplecairo.png
+│     ├─exampledot.png
+│     ├─exampleeps.png
+│     ├─exampleeps1.png
+│     ├─exampleother.png
+│     ├─exampleplt.png
+│     ├─examplepygal.png
+│     ├─examplepyx.png
+│     ├─examplesvg.png
+│     ├─exampletikz.png
+│     ├─exampletikz1.png
+│     ├─exampleuml.png
+│     ├─footnotehyper-sphinx.sty
+│     ├─latexmkjarc
+│     ├─latexmkrc
+│     ├─make.bat
+│     ├─python.ist
+│     ├─sample.tex
+│     ├─sphinx.sty
+│     ├─sphinx.xdy
+│     ├─sphinxhighlight.sty
+│     ├─sphinxhowto.cls
+│     ├─sphinxmanual.cls
+│     └─sphinxmulticell.sty
 └─config.log"""
     elif target=='sphinx_html':
         expected="""\
@@ -370,228 +515,7 @@ def test_wafnostpl(wafbuild):
 │     ├─sr.html
 │     └─tp.html
 └─config.log"""
-    elif target=='html':
-        expected="""\
-├─c4che
-│  ├─_cache.py
-│  └─build.config.py
-├─code
-│  └─some_tst.c
-├─doc
-│  └─html
-│     ├─_images
-│     ├─dd.html
-│     ├─ra.html
-│     ├─sr.html
-│     └─tp.html
-└─config.log"""
-    elif target=='rst_html':
-        expected="""\
-├─c4che
-│  ├─_cache.py
-│  └─build.config.py
-├─code
-│  └─some_tst.c
-├─doc
-│  └─rst_html
-│     ├─_images
-│     ├─dd.html
-│     ├─ra.html
-│     ├─sr.html
-│     └─tp.html
-└─config.log"""
-    assert set(tree(wafbuild[0],with_dot_files=False,max_depth=3).splitlines())-{'│     ├─.doctrees'}==set(expected.splitlines())
-
-
-@pytest.yield_fixture
-def rstsampleswithstpl(rstinit):
-    os.rename('doc/ra.rest','doc/ra.rest.stpl')
-    yield os.getcwd()
-
-def test_dcx_alonewithstpl(rstsampleswithstpl,capfd):
-    '''
-    Check the output of rstdcx or dcx.py when there is a ``.stpl`` file.
-    '''
-    r=run([Python,'dcx.py','--verbose'])
-    assert r.returncode == 0
-    out, err = capfd.readouterr()
-    assert '\n'.join(out.splitlines()) == """\
-doc
-    doc/tp.rest
-    doc/sr.rest
-    doc/ra.rest.stpl
-    doc/dd.rest
-    doc/index.rest"""
-
-def wafit(doctype):
-    oldd = os.getcwd()
-    r1=run(['waf','configure'])
-    assert r1.returncode==0
-    r2=run(['waf','--docs',doctype])
-    assert r2.returncode==0
-    os.chdir(os.path.join('..','build'))
-    yield (os.getcwd(),doctype)
-    os.chdir(oldd)
-
-@pytest.yield_fixture(params=['docx','pdf','sphinx_html'])
-def wafbuildwithstpl(request,rstsampleswithstpl):
-    yield from wafit(request.param)
-
-def test_wafwithstpl(wafbuildwithstpl):
-    '''
-    Run Waf for the case when a main file exists as template (``.stpl``).
-    '''
-    target=wafbuildwithstpl[1]
-    if target=='docx':
-        expected="""\
-├─c4che
-│  ├─_cache.py
-│  └─build.config.py
-├─code
-│  └─some_tst.c
-├─doc
-│  └─docx
-│     ├─dd.docx
-│     ├─ra.docx
-│     ├─sr.docx
-│     └─tp.docx
-└─config.log"""
-    elif target=='pdf':
-        expected="""\
-├─c4che
-│  ├─_cache.py
-│  └─build.config.py
-├─code
-│  └─some_tst.c
-├─doc
-│  └─pdf
-│     ├─dd.pdf
-│     ├─ra.pdf
-│     ├─sr.pdf
-│     └─tp.pdf
-└─config.log"""
-    elif target=='sphinx_html':
-        expected="""\
-├─c4che
-│  ├─_cache.py
-│  └─build.config.py
-├─code
-│  └─some_tst.c
-├─doc
-│  └─sphinx_html
-│     ├─_images
-│     ├─_sources
-│     ├─_static
-│     ├─_traceability_file.svg
-│     ├─dd.html
-│     ├─genindex.html
-│     ├─index.html
-│     ├─objects.inv
-│     ├─ra.html
-│     ├─search.html
-│     ├─searchindex.js
-│     ├─sr.html
-│     └─tp.html
-└─config.log"""
-    assert set(tree(wafbuildwithstpl[0],with_dot_files=False,max_depth=3).splitlines())-{'│     ├─.doctrees'}==set(expected.splitlines())
-
-
-@pytest.yield_fixture
-def rststplsample(rstinit):
-    tree=r"""
-        doc
-         ├is.rest
-            Issues
-            ======
-            This file includes an rst file.
-
-            .. include:: is1.rst
-
-            The rst file is generated from an rst.stpl file.
-         ├is1.rst.stpl
-            %import sys
-
-            .. image:: _images/tictactoe.png
-
-            We are in {{sys.platform}}.
-         ├tictactoe.tikz.stpl
-            [thick]
-            \draw (0,0) grid (3,3);
-            %for i,j in {(0,0), (1,0), (2,0), (2,1), (2,2), (1,2)}:
-                  \fill ({{i+0.5}},{{j+0.5}}) circle (0.42);
-            %end
-        """.splitlines()
-    mktree(tree)
-    open('doc/index.rest','a',encoding='utf-8').write("\n   is.rest\n")
-    yield os.getcwd()
-
-@pytest.yield_fixture(params=['docx','pdf','sphinx_html'])
-def wafrststpl(request,rststplsample):
-    yield from wafit(request.param)
-
-def test_wafrststpl(wafrststpl):
-    '''
-    Run Waf for the case when an included file exists as template (``.stpl``).
-    '''
-    target=wafrststpl[1]
-    if target=='docx':
-        expected="""\
-├─c4che
-│  ├─_cache.py
-│  └─build.config.py
-├─code
-│  └─some_tst.c
-├─doc
-│  └─docx
-│     ├─dd.docx
-│     ├─is.docx
-│     ├─ra.docx
-│     ├─sr.docx
-│     └─tp.docx
-└─config.log"""
-    elif target=='pdf':
-        expected="""\
-├─c4che
-│  ├─_cache.py
-│  └─build.config.py
-├─code
-│  └─some_tst.c
-├─doc
-│  └─pdf
-│     ├─dd.pdf
-│     ├─is.pdf
-│     ├─ra.pdf
-│     ├─sr.pdf
-│     └─tp.pdf
-└─config.log"""
-    elif target=='sphinx_html':
-        expected="""\
-├─c4che
-│  ├─_cache.py
-│  └─build.config.py
-├─code
-│  └─some_tst.c
-├─doc
-│  └─sphinx_html
-│     ├─_images
-│     ├─_sources
-│     ├─_static
-│     ├─_traceability_file.svg
-│     ├─dd.html
-│     ├─genindex.html
-│     ├─index.html
-│     ├─is.html
-│     ├─objects.inv
-│     ├─ra.html
-│     ├─search.html
-│     ├─searchindex.js
-│     ├─sr.html
-│     └─tp.html
-└─config.log"""
-    assert set(tree(wafrststpl[0],with_dot_files=False,max_depth=3).splitlines())-{'│     ├─.doctrees'}==set(expected.splitlines())
-    assert sys.platform in open(glob.glob(os.path.join('..','src','doc','is1.rst'))[0],encoding='utf-8').read()
-    if target=='sphinx_html':
-        assert sys.platform in open(glob.glob(os.path.join('doc',target,'is.*'))[0],encoding='utf-8').read()
+    assert set(tree3(wafbuild[0]).splitlines())-{'│     ├─.doctrees'}==set(expected.splitlines())
 
 def test_selfdoc():
     selfdoc_accoridng_doc_gen=os.path.join('doc','_dcx_api.rst')

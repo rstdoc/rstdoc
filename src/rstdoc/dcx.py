@@ -27,7 +27,7 @@ from restructuredText (RST) using either
 
 ``rstdcx``, or ``dcx.py`` 
 
-- processes ``gen`` files (see examples produced by --init)
+- processes ``gen`` files (see examples produced by --rest)
 
 - handles `.stpl <https://bottlepy.org/docs/dev/stpl.html>`__ files
 
@@ -44,7 +44,7 @@ With ``rstdoc`` installed, ``./dcx.py`` in the following examples can be replace
 
 - Initialize example tree with one of::
 
-  $ ./dcx.py --init tmp #.rest files
+  $ ./dcx.py --rest tmp #.rest files
   $ ./dcx.py --stpl tmp #.rest.stpl files
 
 - Only create .tags and _links_xxx.rst::
@@ -130,7 +130,7 @@ Conventions
 
 - Add ``.. include:: _traceability_file.rst`` to ``index.rst`` or another ``.rest`` file to get traceability information generated
   
-See the example created with ``--init`` of ``--stpl`` at the end of this file and the sources of the documentation of 
+See the example created with ``--rest`` of ``--stpl`` at the end of this file and the sources of the documentation of 
 `rstdoc <https://github.com/rpuntaie/rstdoc>`__.
 
 """
@@ -228,21 +228,6 @@ except Exception as e:
     print('ghostscript or PIL not available:',e)
     ghostscript = None
 
-@lru_cache()
-def conf_py(fldr):
-    """
-    ``conf.py`` or ``../conf.py`` is used for both sphinx and pandoc.
-
-    """
-
-    confpy = opnj(fldr,'conf.py')
-    if not op.exists(confpy):
-        confpy = updir(confpy)
-    config={}
-    with open(confpy,encoding='utf-8') as f:
-        eval(compile(f.read(),op.abspath(confpy),'exec'),config)
-    return config
-
 verbose = False
 _stpl = '.stpl'
 _tpl = '.tpl'
@@ -260,42 +245,9 @@ rexitem = re.compile(r'^\s*:?\**(\w[^:\*]*)\**:\s*.*$')
 rexoneword = re.compile(r'^\s*(\w+)\s*$')
 rexname = re.compile(r'^\s*:name:\s*(\w.*)*$')
 rexlnks = re.compile(r'(?:^|[^a-zA-Z`])\|(\w+)\|(?:$|[^a-zA-Z`])')
-#list(rexlnks.findall('|xx| A `|lnk|` here |gos11|\n'))#['xx', 'gos11']
-#list(rexlnks.findall('  | |xeps1| | |xeps|  |'))
-#list(rexlnks.findall('     |dd_figure|: Caption here.'))
-#rextgt.search('.. _`_t11`:').group(1)
-#rextgt.search('  .. _`_t11`:').group(1)
-#rextgt.search('#) .. _`_t11`:').group(1)
-#rextgt.search('- .. _`_t11`:').group(1)
-#rextgt.search('2) .. _`_t11`:').group(1)
-#rextgt.search('2. .. _`_t11`:').group(1)
-#rextgt.search('(a) .. _`_t11`:').group(1)
-#rextgt.search('| .. _`_t11`:').group(1)
-#rextgt.search('  * - .. _`_t11`:').group(1)
-#rextgt.search('x  .. _`_t11`:').group(1)#nok
-#rextgt.search('.. .. _`_t11`:').group(1)#nok
-#rextgt.search('%# .. _`_t11`:').group(1)#nok
-#rexsubtgt.search(' .. |t-1| image:: ').group(1)#ok
-#rextgt.search('%# .. |t11| xx::').group(1)#nok
-#rexitem.match(':``t11``:').group(1)#nok
-#rexitem.match('.. _xx:').group(1)#nok
-#rexitem.match('.. xx:').group(1)#nok
-#rexitem.match(':t11:').group(1)#ok
-#rexitem.match('**t11**:').group(1)#ok
-#rexitem.match('*t11*:').group(1)#ok
 reximg = re.compile(r'(?:image|figure):: ((?:\.|/|\\|\w).*)')
-#reximg.search('.. image:: ..\img.png').group(1)
-#reximg.search(r'.. |c:\x y\im.jpg| image:: /tmp/img.png').group(1)
-#reximg.search(r'.. image:: c:\tmp\img.png').group(1)
-#reximg.search(r'.. figure:: \\public\img.png').group(1)
 rerstinclude = re.compile(r'\.\. include::\s*([\./\w\\].*)')
 restplinclude = re.compile(r'''%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*''')
-#rerstinclude.split('.. include:: test.rst')
-#rerstinclude.split('.. include:: ../test.rst')
-#rerstinclude.split('  .. include:: ../test.rst')
-#restplinclude.split('%include("test.rst.stpl",v="aparam")')
-#restplinclude.split('%include("../test.rst.stpl",v="aparam")')
-#restplinclude.split(' % include(  "../test.rst.stpl",v="aparam")')
 
 op = os.path
 opnj = lambda *x:op.normpath(op.join(*x))
@@ -305,6 +257,22 @@ updir = lambda fn: opnj(op.dirname(fn),'..',op.split(fn)[1])
 #updir('a.b')#..\a.b
 #updir('a.b/a.b')#a.b
 #opnj(fn)#x\y\a.b
+
+
+@lru_cache()
+def conf_py(fldr):
+    """
+    ``conf.py`` or ``../conf.py`` is used for both sphinx and pandoc.
+
+    """
+
+    confpy = opnj(fldr,'conf.py')
+    if not op.exists(confpy):
+        confpy = updir(confpy)
+    config={}
+    with open(confpy,encoding='utf-8') as f:
+        eval(compile(f.read(),op.abspath(confpy),'exec'),config)
+    return config
 
 def rindices(
     r #regular expression string or compiled
@@ -365,12 +333,10 @@ def in2s(
     """
     return list(zip(nms[::2],nms[1::2]))
 
-
 #re.search(reid,'OpenDevices = None').groups()
 #re.search(reid,'def OpenDevices(None)').groups()
 #re.search(reid,'class OpenDevices:').groups()
 #re.search(reid,'    def __init__(a,b):').groups()
-
 #re.search(relim,"  '''prefix. ").groups()
 #re.search(relim,"  '''").groups()
 
@@ -1760,38 +1726,45 @@ example_tree = r'''
             pandoc_opts = {'pdf':latex_pdf,'latex':latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
             rst2_opts = {'odt':['--leave-comments'],'html':['--leave-comments']}#see ``rst2html.py --help`` or ``rst2odt.py --help``
         ├ Makefile
-            SPHINXOPTS    = -c .
-            SPHINXBUILD   = sphinx-build
-            SPHINXPROJ    = sample
-            SOURCEDIR     = ./doc#./ needed due to the follwing subst
-            BUILDDIR      = ../build/doc
-            SOURCEFILES   = $(filter-out $(SOURCEDIR)/index.rest,$(wildcard $(SOURCEDIR)/*.rest))
-            DOCXFILES     = $(subst $(SOURCEDIR),$(BUILDDIR)/docx,$(SOURCEFILES:%.rest=%.docx))
-            PDFFILES      = $(subst $(SOURCEDIR),$(BUILDDIR)/pdf,$(SOURCEFILES:%.rest=%.pdf))
-            .PHONY: docx help Makefile docxdir pdfdir index
-            docxdir: ${BUILDDIR}/docx
-            pdfdir: ${BUILDDIR}/pdf
+            SPHINXOPTS  = -c .
+            SPHINXBLD   = sphinx-build
+            SPHINXPROJ  = sample
+            SRCDIR      = ./doc
+            SRCBACK     = ..
+            BLDDIR      = ../build/doc
+            STPLS       = $(wildcard $(SRCDIR)/*.stpl)
+            STPLTGTS    = $(STPLS:%.stpl=%)
+            SRCS        = $(filter-out $(SRCDIR)/index.rest,$(wildcard $(SRCDIR)/*.rest))
+            SRCSTPL     = $(wildcard $(SRCDIR)/*.rest.stpl)
+            DOCXS       = $(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCS:%.rest=%.docx))$(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCSTPL:%.rest.stpl=%.docx))
+            PDFS        = $(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCS:%.rest=%.pdf))$(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCSTPL:%.rest.stpl=%.pdf))
+            .PHONY: docx help Makefile docxdir pdfdir index stpl
+            stpl: $(STPLTGTS)
+            %:%.stpl
+            	@cd $(SRCDIR) && stpl "$(<F)"
+            docxdir: ${BLDDIR}/docx
+            pdfdir: ${BLDDIR}/pdf
             MKDIR_P = mkdir -p
-            ${BUILDDIR}/docx:
-            	@${MKDIR_P} ${BUILDDIR}/docx
-            ${BUILDDIR}/pdf:
-            	@${MKDIR_P} ${BUILDDIR}/pdf
+            ${BLDDIR}/docx:
+            	@${MKDIR_P} ${BLDDIR}/docx
+            ${BLDDIR}/pdf:
+            	@${MKDIR_P} ${BLDDIR}/pdf
+            #will expand the stpl files
             index:
-            	@python $(SOURCEDIR)/../dcx.py
+            	@python ./dcx.py
             help:
-            	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+            	@$(SPHINXBLD) -M help "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
             	@echo "  docx        to docx"
             	@echo "  pdf         to pdf"
             #http://www.sphinx-doc.org/en/stable/usage/builders/
             html dirhtml singlehtml htmlhelp qthelp applehelp devhelp epub latex text man texinfo pickle json xml pseudoxml: Makefile index
-            	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
-            docx:  docxdir index $(DOCXFILES)
-            # in the following the ../ needs to be repeated for every dir in SOURCEDIR
-            $(BUILDDIR)/docx/%.docx:$(SOURCEDIR)/%.rest
-            	@cd $(SOURCEDIR) && echo .. default-role:: math | cat - "$(<:$(subst ./,,$(SOURCEDIR))/%=%)" _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx --reference-doc ../reference.docx -o ../"$@"
-            pdf: pdfdir index $(PDFFILES)
-            $(BUILDDIR)/pdf/%.pdf:$(SOURCEDIR)/%.rest
-            	@cd $(SOURCEDIR) && echo .. default-role:: math | cat - "$(<:$(subst ./,,$(SOURCEDIR))/%=%)" _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm --template ../reference.tex -o ../"$@"
+            	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
+            docx:  docxdir index $(DOCXS)
+            $(BLDDIR)/docx/%.docx:$(SRCDIR)/%.rest
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - docx | pandoc -f rst -t docx --reference-doc $(SRCBACK)/reference.docx -o $(SRCBACK)/"$@"
+            pdf: pdfdir index $(PDFS)
+            $(BLDDIR)/pdf/%.pdf:$(SRCDIR)/%.rest
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - pdf | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm --template $(SRCBACK)/reference.tex -o $(SRCBACK)/"$@"
         ├ code
             └ some.h
                 /*
@@ -2743,7 +2716,7 @@ def main(**args):
     parser = argparse.ArgumentParser(description='''Sample RST Documentation for HTML and DOCX.
       Creates |substitution| links and ctags for link targets.
       ''')
-    parser.add_argument('--init', dest='initroot', action='store',
+    parser.add_argument('--rest', dest='restroot', action='store',
                         help='Create a sample folder structure.')
     parser.add_argument('--stpl', dest='stplroot', action='store',
                         help='Create a stpl templated sample folder structure.')
@@ -2774,11 +2747,18 @@ def main(**args):
             filelines = f.readlines()
   except: pass
 
-  initroot = args['initroot']
-  stplroot = args['stplroot']
   global verbose
-  verbose = args['verbose']
-  if initroot is not None or stplroot is not None:
+
+  restroot = None
+  stplroot = None
+  verbose = False
+  if 'restroot' in args:
+      restroot = args['restroot']
+  if 'stplroot' in args:
+      stplroot = args['stplroot']
+  if 'verbose' in args:
+      verbose = args['verbose']
+  if restroot is not None or stplroot is not None:
     thisfile = str(Path(__file__).resolve()).replace('\\','/')
     tex_ref = opnj(op.split(thisfile)[0],'..','reference.tex')
     wafw = opnj(op.split(thisfile)[0],'..','wafw.py')
@@ -2786,11 +2766,11 @@ def main(**args):
         '__file__',thisfile).replace(
         '__tex_ref__',tex_ref).replace(
         '__wafw__',wafw).splitlines()]
-    if initroot is None:
+    if restroot is None:
         _replace_lines = lambda origlns,start,stop,insertlns: origlns[
             :list(rindices(start,origlns))[0]]+insertlns+origlns[list(rindices(stop,origlns))[0]:]
         inittree = _replace_lines(inittree,'├ index.rest','├ exampletikz.tikz',_example_stpl.splitlines())
-    doroot = lambda x: initroot and x(initroot) or stplroot and x(stplroot)
+    doroot = lambda x: restroot and x(restroot) or stplroot and x(stplroot)
     doroot(mkdir)
     oldd = os.getcwd()
     try:
@@ -2810,18 +2790,16 @@ def main(**args):
                 sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
             except: pass
             outf = sys.stdout
-            #filename,outfile,outtype='example.txt','example.rst','html' #example.html
-            #filename,outfile,outtype='-','-','example.html' #-.html
-            #filename,outfile,outtype='-','-','html' #example.html
             if filename == '-':
                 try:
                     filename,outtype = outtype.split('.')
                 except: pass
-            outfile = op.splitext(filename)[0]+'.'+outtype 
+            outfile = op.splitext(op.split(filename)[1])[0]+'.'+outtype 
         else:
             outf  = open(outfile,'w',encoding='utf-8')
         filenoext=op.splitext(outfile)[0]
-        outf.write(''.join(filelines))
+        outf.write('.. default-role:: math\n')
+        outf.write(''.join(x for x in filelines if not '.. include:: _links_sphinx.rst' in x))
         outf.write('\n')
         for (i,fi),tgt,lnkname in make_tgts(filelines,filename):
             outf.write(create_link(outtype,filenoext,tgt,lnkname))
@@ -2829,6 +2807,25 @@ def main(**args):
         if outf is not None and outf != sys.stdout:
             outf.close()
   else:
+    #we need to do the templates here already, because fldrs() needs them
+    for p,ds,fs in os.walk('.'):
+        for f in fs:
+            if f.endswith(_stpl):
+                fullpth = opnj(p,f).replace("\\","/")
+                #fullpth = 'ra.rest.stpl'
+                outpth = op.splitext(fullpth)[0]
+                stpl_newer = False
+                try:
+                    stpl_newer = op.getmtime(outpth) > op.getmtime(fullpth)
+                except: pass
+                if not stpl_newer:
+                    st=stpl.template(f
+                            ,template_settings={'esceape_func':lambda x:x}
+                            ,template_lookup = [p,op.split(p)[0]]
+                            ,__file__ = fullpth
+                            )
+                    with open(outpth,mode='w',encoding="utf-8",newline="\n") as outf:
+                        outf.write(st)
     #link, gen and tags per folder
     for fldr, (lnktgts,allfiles,alltgts,substitutions) in fldrs('.'):
         if verbose:
