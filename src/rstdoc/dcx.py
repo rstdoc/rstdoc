@@ -154,6 +154,7 @@ import os
 import re
 import subprocess
 import io
+from tempfile import NamedTemporaryFile
 from threading import Lock
 from pathlib import Path
 from urllib import request
@@ -251,7 +252,7 @@ restplinclude = re.compile(r'''%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*''')
 
 op = os.path
 opnj = lambda *x:op.normpath(op.join(*x))
-updir = lambda fn: opnj(op.dirname(fn),'..',op.split(fn)[1])
+updir = lambda fn: opnj(op.dirname(fn),'..',op.basename(fn))
 #fn='x/y/../y/a.b'
 #updir(fn)#x\a.b
 #updir('a.b')#..\a.b
@@ -278,8 +279,8 @@ def conf_py(fldr):
     return config
 
 #graphic files
-_tikz = '.tikz'
 _svg = '.svg'
+_tikz = '.tikz'
 _dot = '.dot'
 _uml = '.uml'
 _eps = '.eps'
@@ -296,7 +297,7 @@ def _imgout(inf):
     return outf
 
 def converter_svg(
-    infile, #a .svg file
+    infile, #a .svg file name or list of lines
     outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
     ):
     '''
@@ -305,13 +306,16 @@ def converter_svg(
     `.svg <http://svgpocketguide.com/book/>`__ or ``.svg.stpl``
 
     '''
-    if not outfile:
-        outfile = _imgout(infile)
-    csvg2png(file=infile,write_to=outfile)
+    if isinstance(infile,str):
+        if not outfile:
+            outfile = _imgout(infile)
+        csvg2png(file=infile,write_to=outfile)
+    else:
+        svg2png('\n'.join(infile),write_to=outfile)
 
 _tikzlock = Lock()
 def converter_tikz(
-    infile #a .tikz file
+    infile #a .tikz file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
     ):
     '''
@@ -322,9 +326,12 @@ def converter_tikz(
 
     '''
     from sphinxcontrib import tikz
-    if not outfile:
-        outfile = _imgout(infile)
-    confpy = conf_py(op.dirname(infile))
+    if isinstance(infile,str):
+        if not outfile:
+            outfile = _imgout(infile)
+        confpy = conf_py(op.dirname(infile))
+    else:
+        confpy = conf_py(os.getcwd())
     class Builder:
         def __init__(s):
             s.config = Namespace(**confpy)
@@ -343,15 +350,28 @@ def converter_tikz(
     try:
         _tikzlock.acquire()
         sphinxmock = SphinxMock()
-        with open(infile,'r',encoding='utf-8') as f:
-            tikzcontent = f.read()
-            tikzfn = tikz.render_tikz(sphinxmock,{'tikz':tikzcontent},sphinxmock.builder.libs)
-            os.replace(opnj(tikzfn),outfile)
+        if isinstance(infile,str):
+            with open(infile,'r',encoding='utf-8') as f:
+                tikzcontent = f.read()
+        else:
+            tikzcontent = '\n'.join(infile)
+        tikzfn = tikz.render_tikz(sphinxmock,{'tikz':tikzcontent},sphinxmock.builder.libs)
+        os.replace(opnj(tikzfn),outfile)
     finally:
         _tikzlock.release()
 
+def _run_via_tmp(suffix,cmdlist,data):
+    try:
+      with NamedTemporaryFile('w+',suffix=suffix,delete=False) as f:
+          filename = f.name
+          f.write(data)
+          cmdlist[cmdlist.index(None)] = filename
+      subprocess.run(cmdlist)
+    finally:
+        os.remove(filename)
+
 def converter_dot(
-    infile #a .dot file
+    infile #a .dot file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
     ):
     '''
@@ -360,12 +380,15 @@ def converter_dot(
     `.dot <https://graphviz.gitlab.io/gallery/>`__ or ``.dot.stpl``
 
     '''
-    if not outfile:
-        outfile = _imgout(infile)
-    subprocess.run(['dot','-Tpng',infile,'-o',outfile])
+    if isinstance(infile,str):
+        if not outfile:
+            outfile = _imgout(infile)
+        subprocess.run(['dot','-Tpng',infile,'-o',outfile])
+    else:
+        _run_via_tmp('.dot',['dot','-Tpng',None,'-o',outfile],'\n'.join(infile))
 
 def converter_uml(
-    infile #a .uml file
+    infile #a .uml file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
     ):
     '''
@@ -376,13 +399,16 @@ def converter_uml(
     or plantuml sh script with ``java -jar `dirname $BASH_SOURCE`/plantuml.jar "$@"``.
 
     '''
-    if not outfile:
-        outfile = _imgout(infile)
-    subprocess.run(['plantuml',infile,'-o'+op.relpath(outfile)])
+    if isinstance(infile,str):
+        if not outfile:
+            outfile = _imgout(infile)
+        subprocess.run(['plantuml',infile,'-o'+op.dirname(outfile)],shell=True)
+    else:
+        _run_via_tmp('.uml',['plantuml',None,'-o'+op.dirname(outfile)],'\n'.join(infile))
 
 _ghostscriptlock = Lock()
 def converter_eps(
-    infile #a .eps file
+    infile #a .eps file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
     ):
     '''
@@ -392,10 +418,13 @@ def converter_eps(
     This needs Ghostscript installed on the system.
 
     '''
-    if not outfile:
-        outfile = _imgout(infile)
-    with open(infile,'rb') as f:
-        epscontent = f.read()
+    if isinstance(infile,str):
+        if not outfile:
+            outfile = _imgout(infile)
+        with open(infile,'rb') as f:
+            epscontent = f.read()
+    else:
+        epscontent = '\n'.join(infile).encode('utf-8')
 
     #rebbox
     ################## this resizes to BoundingBox, but don't know how to translate first, to avoid clipping content
@@ -418,10 +447,10 @@ def converter_eps(
     #    #translate="-{} -{} translate\n".format(bbx[0],bbx[1]).encode('utf-8')
     #    #epscontent = translate+epscontent
     #except: pass
-    #args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m "%DPI+pagesize+" -sOutputFile=%s %s"%(outfile,infile)).encode('utf-8').split()
+    #args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m "%DPI+pagesize+" -sOutputFile=%s"%(outfile,infile)).encode('utf-8').split()
     ################## use _trim_png() instead
 
-    args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m -sOutputFile=%s %s"%(DPI,outfile,infile)).encode('utf-8').split()
+    args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m -sOutputFile=%s"%(DPI,outfile)).encode('utf-8').split()
     try:
         _ghostscriptlock.acquire()
         out = io.BytesIO()
@@ -434,7 +463,7 @@ def converter_eps(
 
 _pyglock = Lock()
 def converter_pyg(
-    infile #a .pyg file
+    infile #a .pyg file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
     ):
     '''
@@ -451,10 +480,14 @@ def converter_pyg(
     - `matplotlib <https://matplotlib.org>`__. If ``matplotlib.pyplot.get_fignums()>1`` the figures result ``<name><fignum>.png`` 
 
     '''
-    if not outfile:
-        outfile = _imgout(infile)
-    with open(infile) as pygf:
-        pygcode = pygf.read()
+    if isinstance(infile,str):
+        if not outfile:
+            outfile = _imgout(infile)
+        with open(infile) as pygf:
+            pygcode = pygf.read()
+    else:
+        pygcode = '\n'.join(infile)
+        infile = outfile
     pygvars={}
     try:
         _pyglock.acquire()
@@ -501,14 +534,139 @@ def converter_pyg(
                 finally:
                     _pyglock.release()
 
-fileconverters = {
+def converter_stpl(
+    infile #a .stpl file name or list of lines
+    ,outfile=None #if not provided the expanded is returned
+    ,lookup=['.']
+    ):
+    '''
+    Expands an `.stpl <https://bottlepy.org/docs/dev/stpl.html>`__ file.
+    '''
+    stpl_newer = False
+    if isinstance(infile,str):
+        filename = infile
+        try:
+            stpl_newer = outfile is not None and op.getmtime(outfile) > op.getmtime(infile)
+        except: pass
+    else:
+        infile = '\n'.join(infile)
+        filename = outfile
+    if not stpl_newer:
+        st=stpl.template(infile
+                ,template_settings={'esceape_func':lambda x:x}
+                ,template_lookup = lookup
+                ,__file__ = op.abspath(filename)
+                )
+    if outfile:
+        with open(outfile,mode='w',encoding="utf-8",newline="\n") as outf:
+            outf.write(st)
+    else:
+        return st.splitlines(keepends=True)
+
+def converter_rest(
+    infile #a .stpl file name or list of lines
+    ,outfile=None  #None and '-' mean standard out, else a text file
+    ,outtype='html'  #or 'docx', 'odt', ...  or 'file.docx',... no folders!
+                     #This is used to create the link replacement substitutions. 
+                     #Does not apply to images.
+    ):
+    '''
+    Default interpreted text role is set to math.
+    The link lines are added to a .rest file.
+
+    '''
+    if isinstance(infile,str):
+        with open(infile,'r',encoding='utf-8') as f:
+            filelines = f.readlines()
+    else:
+        filelines = infile
+    outf = None
+    try:
+        if outfile is None or outfile=='-':
+            try:
+                sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+            except: pass
+            outf = sys.stdout
+            if isinstance(infile,list):
+                try:
+                    infile,outtype = outtype.split('.')
+                except:
+                    infile,outtype = '',outtype
+            outfile = op.splitext(op.basename(infile))[0]+'.'+outtype 
+        else:
+            infile = op.splitext(outfile)[0]
+            outf  = open(outfile,'w',encoding='utf-8')
+        filenoext=op.splitext(outfile)[0]
+        outf.write('.. default-role:: math\n')
+        links_done = False
+        for x in filelines:
+            if x.startswith('.. include:: _links_sphinx.rst'):
+                linksfilename = '_links_'+outtype+'.rst'
+                if op.exists(linksfilename):
+                    with open(linksfilename,encoding='utf-8') as f:
+                        outf.write(f.read())
+                        links_done = True
+            else:
+                outf.write(x)
+        if not links_done:
+            outf.write('\n')
+            for (i,fi),tgt,lnkname in make_tgts(filelines,infile):
+                outf.write(create_link(outtype,filenoext,tgt,lnkname))
+    finally:
+        if outf is not None and outf != sys.stdout:
+            outf.close()
+
+converters = {
     _svg:   converter_svg
     ,_tikz: converter_tikz
     ,_dot:  converter_dot
     ,_uml:  converter_uml
     ,_eps:  converter_eps
     ,_pyg:  converter_pyg
+    ,_stpl:  converter_stpl
+    ,_rst:  converter_rest
+    ,_rest:  converter_rest
+    ,_txt:  converter_rest
 }
+
+
+def converter_any(
+    infile #any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else reST is assumed
+    ,outfile = None  #'-' means standard out, else a file name
+    ,type = 'html'  #or 'docx', 'odt', ...  or 'file.docx',... interpet input as rest, 
+                    #else this selects the image source type
+    ):
+    '''
+    Converts the known files.
+
+    Stpl files are immediately forwarded to the next converter.
+
+    '''
+    isfile = infile and op.isfile(infile) or False
+    if not isfile and infile == '-':
+        try:
+            sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach()) 
+        except: pass
+        infile = sys.stdin.readlines()
+    if infile:
+        if isinstance(infile,str):
+            nextinfile,fext = op.splitext(infile)
+        else:
+            if type in converters:
+                fext = type
+            else:
+                fext = _rest
+        while fext in converters:
+            try:
+                infile = converters[fext](infile, outfile if fext!=_stpl else None, type)
+            except:
+                infile = converters[fext](infile, outfile if fext!=_stpl else None)
+            if infile is None:
+                return
+            fext = op.splitext(nextinfile)[1]
+            if fext in [_svg,_tikz,_dot,_uml,_eps,_pyg]:
+                outfile = _imgout(nextinfile)
+
 
 def rindices(
     r #regular expression string or compiled
@@ -1569,7 +1727,7 @@ try:
         #if the .stpl needs a parameter, then this fails, since it is intended to be used as include file only: name it .tpl then
         st=stpl.template(name
                 ,template_settings={'esceape_func':lambda x:x}
-                ,template_lookup = [lookup,op.split(lookup)[0]]
+                ,template_lookup = [lookup,op.dirname(lookup)]
                 ,bldpath = bldpath.abspath()
                 ,options = bld.options
                 ,__file__ = ps.replace('\\','/')
@@ -1599,13 +1757,13 @@ try:
         gen_ext_tsk(self,node,_tikz)
     class TIKZ(Task.Task):
         def run(self):
-            fileconverters[_tikz](self.inputs[0].abspath(),self.outputs[0].abspath())
+            converter_tikz(self.inputs[0].abspath(),self.outputs[0].abspath())
     @TaskGen.extension('.svg')
     def svg_to_png(self,node):
         gen_ext_tsk(self,node,'.svg')
     class SVG(Task.Task):
         def run(self):
-            fileconverters[_svg](self.inputs[0].abspath(),self.outputs[0].abspath())
+            converter_svg(self.inputs[0].abspath(),self.outputs[0].abspath())
     @TaskGen.extension('.dot')
     def dot_to_png(self,node):
         gen_ext_tsk(self,node,'.dot')
@@ -1621,13 +1779,13 @@ try:
         gen_ext_tsk(self,node,'.eps')
     class EPS(Task.Task):
         def run(self):
-            fileconverters[_eps](self.inputs[0].abspath(),self.outputs[0].abspath())
+            converter_eps(self.inputs[0].abspath(),self.outputs[0].abspath())
     @TaskGen.extension('.pyg')
     def pyg_to_png(self,node):
         gen_ext_tsk(self,node,'.pyg')
     class PYG(Task.Task):
         def run(self):
-            fileconverters[_pyg](self.inputs[0].abspath(),self.outputs[0].abspath())
+            converter_pyg(self.inputs[0].abspath(),self.outputs[0].abspath())
     @TaskGen.extension(_rest)
     def gen_docs(self,node):
         docs=get_docs(self.bld)
@@ -1709,7 +1867,7 @@ try:
         always_run = True
         def run(self):
             dr = self.inputs[0].parent.abspath()
-            confdir = op.split(here_or_updir(dr,'conf.py'))[0]
+            confdir = op.dirname(here_or_updir(dr,'conf.py'))
             cwd=self.get_cwd().abspath()
             subprocess.run(['sphinx-build','-Ea', '-b', self.doctype, dr, self.sphinxoutput]+(
                 ['-c',confdir] if confdir else []),cwd=cwd)
@@ -1857,18 +2015,57 @@ example_tree = r'''
             SPHINXBLD   = sphinx-build
             SPHINXPROJ  = sample
             SRCDIR      = ./doc
-            SRCBACK     = ..
+            SRCBACK     = ../
             BLDDIR      = ../build/doc
             STPLS       = $(wildcard $(SRCDIR)/*.stpl)
             STPLTGTS    = $(STPLS:%.stpl=%)
             SRCS        = $(filter-out $(SRCDIR)/index.rest,$(wildcard $(SRCDIR)/*.rest))
             SRCSTPL     = $(wildcard $(SRCDIR)/*.rest.stpl)
+            #IMGS        = $(wildcard $(SRCDIR)/*.pyg)
+            #PNGS = $(subst $(SRCDIR),$(SRCDIR)/_images,$(IMGS:%.pyg=%.png))
+            IMGS        = \
+            $(wildcard $(SRCDIR)/*.pyg)\
+            $(wildcard $(SRCDIR)/*.eps)\
+            $(wildcard $(SRCDIR)/*.tikz)\
+            $(wildcard $(SRCDIR)/*.svg)\
+            $(wildcard $(SRCDIR)/*.uml)\
+            $(wildcard $(SRCDIR)/*.dot)\
+            $(wildcard $(SRCDIR)/*.eps.stpl)\
+            $(wildcard $(SRCDIR)/*.tikz.stpl)\
+            $(wildcard $(SRCDIR)/*.svg.stpl)\
+            $(wildcard $(SRCDIR)/*.uml.stpl)\
+            $(wildcard $(SRCDIR)/*.dot.stpl)
+            PNGS=\
+            $(patsubst %.eps,%.png,\
+            $(patsubst %.pyg,%.png,\
+            $(patsubst %.tikz,%.png,\
+            $(patsubst %.svg,%.png,\
+            $(patsubst %.uml,%.png,\
+            $(patsubst %.dot,%.png,\
+            $(patsubst %.eps.stpl,%.png,\
+            $(patsubst %.dot.stpl,%.png,\
+            $(patsubst %.tikz.stpl,%.png,\
+            $(patsubst %.svg.stpl,%.png,\
+            $(patsubst %.uml.stpl,%.png,$(IMGS))))))))))))
             DOCXS       = $(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCS:%.rest=%.docx))$(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCSTPL:%.rest.stpl=%.docx))
             PDFS        = $(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCS:%.rest=%.pdf))$(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCSTPL:%.rest.stpl=%.pdf))
-            .PHONY: docx help Makefile docxdir pdfdir index stpl
+            .PHONY: docx help Makefile docxdir pdfdir index stpl imgs
             stpl: $(STPLTGTS)
             %:%.stpl
-            	@cd $(SRCDIR) && stpl "$(<F)"
+            	@cd $(SRCDIR) && stpl "$(<F)" "$(@F)"
+            imgs: $(PNGS)
+            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.pyg
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
+            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.eps
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
+            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.tikz
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
+            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.svg
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
+            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.uml
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
+            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.dot
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
             docxdir: ${BLDDIR}/docx
             pdfdir: ${BLDDIR}/pdf
             MKDIR_P = mkdir -p
@@ -1884,14 +2081,14 @@ example_tree = r'''
             	@echo "  docx        to docx"
             	@echo "  pdf         to pdf"
             #http://www.sphinx-doc.org/en/stable/usage/builders/
-            html dirhtml singlehtml htmlhelp qthelp applehelp devhelp epub latex text man texinfo pickle json xml pseudoxml: Makefile index
+            html dirhtml singlehtml htmlhelp qthelp applehelp devhelp epub latex text man texinfo pickle json xml pseudoxml: Makefile stpl index imgs
             	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
-            docx:  docxdir index $(DOCXS)
+            docx:  docxdir stpl index imgs $(DOCXS)
             $(BLDDIR)/docx/%.docx:$(SRCDIR)/%.rest
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - docx | pandoc -f rst -t docx --reference-doc $(SRCBACK)/reference.docx -o $(SRCBACK)/"$@"
-            pdf: pdfdir index $(PDFS)
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - docx | pandoc -f rst -t docx --reference-doc $(SRCBACK)/reference.docx -o "$(SRCBACK)/$@"
+            pdf: pdfdir stpl index imgs $(PDFS)
             $(BLDDIR)/pdf/%.pdf:$(SRCDIR)/%.rest
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - pdf | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm --template $(SRCBACK)/reference.tex -o $(SRCBACK)/"$@"
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - pdf | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm --template $(SRCBACK)/reference.tex -o "$(SRCBACK)/$@"
         ├ code
             └ some.h
                 /*
@@ -2831,53 +3028,6 @@ example_stp_subtree = r'''
                .. include:: _links_sphinx.rst
                '''
 
-def converter_any(
-    infile #any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else reST is assumed
-    ,outfile = '-'  #applies for reST input. '-' means standard out, else a text file
-    ,outtype = 'html' #or 'docx', 'odt', ... This is used to create the link replacement substitutions
-    ):
-    '''
-    Converts the known files.
-
-    '''
-    isfile = infile and op.isfile(infile) or False
-    if not isfile and infile == '-':
-        try:
-            sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach()) 
-        except: pass
-        filelines = sys.stdin.readlines()
-    elif isfile:
-        fext = op.splitext(infile)
-        if fext in fileconverters:
-            fileconverters[fext](infile)
-            return
-        else:
-            with open(infile,'r',encoding='utf-8') as f:
-                filelines = f.readlines()
-    outf = None
-    try:
-        if outfile is None or outfile=='-':
-            try:
-                sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-            except: pass
-            outf = sys.stdout
-            if infile == '-':
-                try:
-                    infile,outtype = outtype.split('.')
-                except: pass
-            outfile = op.splitext(op.split(infile)[1])[0]+'.'+outtype 
-        else:
-            outf  = open(outfile,'w',encoding='utf-8')
-        filenoext=op.splitext(outfile)[0]
-        outf.write('.. default-role:: math\n')
-        outf.write(''.join(x for x in filelines if not '.. include:: _links_sphinx.rst' in x))
-        outf.write('\n')
-        for (i,fi),tgt,lnkname in make_tgts(filelines,infile):
-            outf.write(create_link(outtype,filenoext,tgt,lnkname))
-    finally:
-        if outf is not None and outf != sys.stdout:
-            outf.close()
-
 def initroot(
     rootfldr #folder name that becomes root of the sample tree
     ,sampletype #either 'stpl' for the templated sample tree, or 'rest'
@@ -2890,8 +3040,8 @@ def initroot(
     stpltype = sampletype == 'stpl'
     resttype = sampletype == 'stpl'
     thisfile = str(Path(__file__).resolve()).replace('\\','/')
-    tex_ref = opnj(op.split(thisfile)[0],'..','reference.tex')
-    wafw = opnj(op.split(thisfile)[0],'..','wafw.py')
+    tex_ref = opnj(op.dirname(thisfile),'..','reference.tex')
+    wafw = opnj(op.dirname(thisfile),'..','wafw.py')
     inittree=[l for l in example_tree.replace(
         '__file__',thisfile).replace(
         '__tex_ref__',tex_ref).replace(
@@ -2928,20 +3078,8 @@ def index_folder(
         for f in fs:
             if f.endswith(_stpl):
                 fullpth = opnj(p,f).replace("\\","/")
-                #fullpth = 'ra.rest.stpl'
                 outpth = op.splitext(fullpth)[0]
-                stpl_newer = False
-                try:
-                    stpl_newer = op.getmtime(outpth) > op.getmtime(fullpth)
-                except: pass
-                if not stpl_newer:
-                    st=stpl.template(f
-                            ,template_settings={'esceape_func':lambda x:x}
-                            ,template_lookup = [p,op.split(p)[0]]
-                            ,__file__ = fullpth
-                            )
-                    with open(outpth,mode='w',encoding="utf-8",newline="\n") as outf:
-                        outf.write(st)
+                converter_stpl(fullpth,outpth,[p,op.dirname(p)])
     #link, gen and tags per folder
     for fldr, (lnktgts,allfiles,alltgts,substitutions) in fldrs(root):
         if verbose:
@@ -2996,7 +3134,9 @@ def main(**args):
     if 'restroot' in args and args['restroot']:
         initroot(args['restroot'],'rest')
 
-    if all(x in args and args[x] is not None for x in ['infile','outfile','outtype']):
+    if 'infile' in args and args['infile']:
+        for x in 'infile outfile'.split():
+            if x not in args: args[x] = None
         converter_any(args['infile'],args['outfile'],args['outtype'])
   
 
