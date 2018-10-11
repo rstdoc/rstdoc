@@ -81,7 +81,7 @@ With ``rstdoc`` installed, ``./dcx.py`` in the following examples can be replace
   The following image languages should be parallel to the ``.rest`` files and are automatically converted to ``.png`` and and placed into ``images``.
 
   - ``.tikz`` or ``.tikz.stpl``. 
-    This needs LaTex and `sphinxcontrib-tikz <https://bitbucket.org/philexander/tikz>`__ and is rather slow.
+    This needs LaTex.
 
   - `.svg <http://svgpocketguide.com/book/>`__ or ``.svg.stpl``
 
@@ -154,30 +154,34 @@ import os
 import re
 import subprocess
 import io
-from tempfile import NamedTemporaryFile
+import contextlib
+import shutil
+from tempfile import NamedTemporaryFile, mkdtemp
 from threading import Lock
 from pathlib import Path
 from urllib import request
-from functools import lru_cache
+from functools import lru_cache, wraps
 from collections import OrderedDict,defaultdict
 from itertools import chain, tee
 from types import GeneratorType
 from argparse import Namespace
+
+class RstDocError(Exception):
+    pass
 
 DPI = 72
 
 try:
     import cairocffi
     from cairosvg import svg2png
-    def csvg2png(file,write_to):
+    def csvg2png(file,write_to,dpi):
+        fullfile = op.abspath(file)
         try:
-            svg2png(url="file://"+file, write_to=write_to, dpi=DPI)
+            svg2png(url="file://"+fullfile, write_to=write_to, dpi=dpi)
         except:
-            svg2png(url="file:///"+file, write_to=write_to, dpi=DPI)
+            svg2png(url="file:///"+fullfile, write_to=write_to, dpi=dpi)
 except Exception as e:
     print('cairosvg svg2png not available:',e)
-    def svg2png(file,write_to): pass
-    def csvg2png(file,write_to): pass
 
 try:
     import pyfca
@@ -276,6 +280,12 @@ def conf_py(fldr):
     config={}
     with open(confpy,encoding='utf-8') as f:
         eval(compile(f.read(),op.abspath(confpy),'exec'),config)
+    global GSDEVICE
+    if 'gsdevice' in config:
+        GSDEVICE = config['gsdevice']
+    global DPI
+    if 'dpi' in config:
+        DPI = config['dpi']
     return config
 
 #graphic files
@@ -296,6 +306,97 @@ def _imgout(inf):
     outf = opnj(outp,outname)
     return outf
 
+_ghostscriptlock = Lock()
+def process_eps_png(
+    gsdata #a byte string of eps or pdf content 
+    ,outfile #the png output file
+    ):
+    '''
+    Translates ps, eps or pdf byte string to png and writes it to the outfile.
+    White space in the outfile is trimmed away.
+
+    '''
+
+    #rebbox
+    ################## this resizes to BoundingBox, but don't know how to translate first, to avoid clipping content
+    #args = ("-q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=bbox %s"%infile).encode('utf-8').split()
+    #try:
+    #    _ghostscriptlock.acquire()
+    #    outbbox = io.BytesIO()
+    #    errbbox = io.BytesIO()
+    #    with ghostscript.Ghostscript(*args,stdout=outbbox,stderr=errbbox) as gs:
+    #        gs.run_string(gsdata)
+    #    ghostscript.cleanup()
+    #finally:
+    #    _ghostscriptlock.release()
+    #errbbox.seek(0)
+    #outbb = errbbox.read().decode('utf-8')
+    #pagesize = ''
+    #try:
+    #    bbx = [int(x) for x in rebbox.search(outbb).groups()]
+    #    pagesize = '-g{}x{}'.format(bbx[2]-bbx[0],bbx[3]-bbx[1])
+    #    #translate="-{} -{} translate\n".format(bbx[0],bbx[1]).encode('utf-8')
+    #    #gsdata = translate+gsdata
+    #except: pass
+    #args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=%s "%DPI+pagesize+" -sOutputFile=%s"%(outfile,GSDEVICE,infile)).encode('utf-8').split()
+    ################## use _trim_png() instead
+
+    args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=%s -sOutputFile=%s"%(DPI,GSDEVICE,outfile)).encode('utf-8').split()
+    try:
+        _ghostscriptlock.acquire()
+        out = io.BytesIO()
+        with ghostscript.Ghostscript(*args,stdout=out) as gs:
+            gs.run_string(gsdata)
+        ghostscript.cleanup()
+    finally:
+        _ghostscriptlock.release()
+    _trim_png(outfile)
+
+@contextlib.contextmanager
+def tmpdir():
+    '''
+    Can be used as::
+
+        with tmpdir:
+            #we are in the tempory directory here
+    '''
+    atmpdir = mkdtemp()
+    curdir = os.getcwd()
+    os.chdir(atmpdir)
+    try:
+        yield
+    finally:
+        os.chdir(curdir)
+        shutil.rmtree(atmpdir)
+
+def chinout(f):
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        infile = args[0]
+        ndir = None
+        if isinstance(infile,str):
+            ndir,inf = op.split(infile)
+        else:
+            inf = infile
+        outf = None
+        if len(args)>0:
+            outfile = args[1]
+            if ndir and outfile:
+                outf = op.relpath(outfile,start=ndir)
+            else:
+                outf = outfile
+        if ndir:
+            curdir = os.getcwd()
+            os.chdir(ndir)
+            try:
+                return f(inf, outf, *args[2:], **kwds)
+            finally:
+                os.chdir(curdir)
+        else:
+            return f(inf, outf, *args[2:], **kwds)
+    return wrapper
+
+@chinout
 def converter_svg(
     infile, #a .svg file name or list of lines
     outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
@@ -309,11 +410,11 @@ def converter_svg(
     if isinstance(infile,str):
         if not outfile:
             outfile = _imgout(infile)
-        csvg2png(file=infile,write_to=outfile)
+        csvg2png(file=infile,write_to=outfile,dpi=DPI)
     else:
-        svg2png('\n'.join(infile),write_to=outfile)
+        svg2png(bytestring='\n'.join(infile),write_to=outfile,dpi=DPI)
 
-_tikzlock = Lock()
+@chinout
 def converter_tikz(
     infile #a .tikz file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
@@ -322,54 +423,89 @@ def converter_tikz(
     Converts a .tikz file to a png file.
 
     ``.tikz`` or ``.tikz.stpl``. 
-    This needs LaTex and `sphinxcontrib-tikz <https://bitbucket.org/philexander/tikz>`__ and is rather slow.
+    This needs LaTex.
+    The png is generated using the ghostscipt python library.
 
     '''
-    from sphinxcontrib import tikz
+
     if isinstance(infile,str):
         if not outfile:
             outfile = _imgout(infile)
         confpy = conf_py(op.dirname(infile))
+        with open(infile,'rb') as f:
+            tikzcontent = f.read()
     else:
         confpy = conf_py(os.getcwd())
-    class Builder:
-        def __init__(s):
-            s.config = Namespace(**confpy)
-            s.imgpath = op.dirname(outfile)
-            s.outdir = op.dirname(s.imgpath)
-            s.name = 'html'
-            try:
-                s.libs = s.config.tikz_tikzlibraries
-                s.libs = s.libs.replace(' ', '').replace('\t', '').strip(', ')
-            except AttributeError as e:
-                raise ValueError(str(e).replace('Namespace','conf.py'))
-    class SphinxMock:
-        def __init__(s):
-            s.builder = Builder()
-            tikz.builder_inited(s)
-    try:
-        _tikzlock.acquire()
-        sphinxmock = SphinxMock()
-        if isinstance(infile,str):
-            with open(infile,'r',encoding='utf-8') as f:
-                tikzcontent = f.read()
-        else:
-            tikzcontent = '\n'.join(infile)
-        tikzfn = tikz.render_tikz(sphinxmock,{'tikz':tikzcontent},sphinxmock.builder.libs)
-        os.replace(opnj(tikzfn),outfile)
-    finally:
-        _tikzlock.release()
+        tikzcontent = '\n'.join(infile).encode('utf-8')
+
+    if 'latex_engine' in confpy:
+        binary = confpy['latex_engine']
+    else:
+        binary = 'xelatex'
+
+    tikzcontent = tikzcontent.replace(b'\r\n', b'\n')
+    tikzcontent = re.sub(br'^\s*%.*$\n', '', tikzcontent, 0, re.MULTILINE)
+    tikzcontent = re.sub(br'^\s*$\n', '', tikzcontent, 0, re.MULTILINE)
+    if not tikzcontent.startswith(br'\begin{tikzpicture}'):
+        tikzcontent = b'\\begin{tikzpicture}\n' + tikzcontent + b'\n\\end{tikzpicture}'
+
+    DOC_HEAD = r'''
+\documentclass[12pt,tikz]{standalone}
+'''+(r'''\usepackage[utf8]{inputenc}
+''' if binary!='xelatex' else '') +r'''
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\usetikzlibrary{%s}
+\pagestyle{empty}
+'''
+    DOC_BODY = r'''
+\begin{document}
+%s
+\end{document}
+'''
+    libs = confpy['tikz_tikzlibraries']
+    libs = libs.replace(' ', '').replace('\t', '').strip(', ')
+    latex = DOC_HEAD % libs
+    latex += confpy['tikz_latex_preamble']
+    latex += DOC_BODY % tikzcontent.decode('utf-8')
+    def raiseRstDocError(atxt):
+        raise RstDocError(atxt+': %s exited with error:'
+                           '\n[stderr]\n%s\n[r.stdout]\n%s\n[tex file]\n%s'
+                           % (binary, r.stderr.decode('utf-8'), r.stdout.decode('utf-8'), latex))
+    gsdata = None
+    with tmpdir():
+        with open('tikz.tex', 'wb') as tf:
+            tf.write(latex.encode('utf-8'))
+        try:
+            r = subprocess.run([binary, '-interaction=nonstopmode', 'tikz.tex'], 
+                stdout=subprocess.PIPE,stderr=subprocess.PIPE,stdin=subprocess.PIPE)
+            if r.returncode != 0:
+                raiseRstDocError('Error '+binary+' (tikz extension)')
+        except OSError as err:
+            if err.errno != ENOENT:   # No such file or directory
+                raise
+            print('%s command cannot be run'%binary)
+            print(err)
+            return
+        rgs = subprocess.run(['pdftops','-eps','tikz.pdf','-'],stdout=subprocess.PIPE)
+        if r.returncode != 0:
+            raiseRstDocError('Error pdftops -eps tikz.pdf (tikz extension)')
+        gsdata = rgs.stdout
+
+    if gsdata:
+        process_eps_png(gsdata,outfile)
 
 def _run_via_tmp(suffix,cmdlist,data):
     try:
-      with NamedTemporaryFile('w+',suffix=suffix,delete=False) as f:
-          filename = f.name
-          f.write(data)
-          cmdlist[cmdlist.index(None)] = filename
-      subprocess.run(cmdlist)
+        with NamedTemporaryFile('w+',suffix=suffix,delete=False) as f:
+            filename = f.name
+            f.write(data)
+            cmdlist[cmdlist.index(None)] = filename
+        subprocess.run(cmdlist)
     finally:
         os.remove(filename)
 
+@chinout
 def converter_dot(
     infile #a .dot file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
@@ -380,6 +516,7 @@ def converter_dot(
     `.dot <https://graphviz.gitlab.io/gallery/>`__ or ``.dot.stpl``
 
     '''
+
     if isinstance(infile,str):
         if not outfile:
             outfile = _imgout(infile)
@@ -387,6 +524,7 @@ def converter_dot(
     else:
         _run_via_tmp('.dot',['dot','-Tpng',None,'-o',outfile],'\n'.join(infile))
 
+@chinout
 def converter_uml(
     infile #a .uml file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
@@ -399,6 +537,7 @@ def converter_uml(
     or plantuml sh script with ``java -jar `dirname $BASH_SOURCE`/plantuml.jar "$@"``.
 
     '''
+
     if isinstance(infile,str):
         if not outfile:
             outfile = _imgout(infile)
@@ -406,7 +545,7 @@ def converter_uml(
     else:
         _run_via_tmp('.uml',['plantuml',None,'-o'+op.dirname(outfile)],'\n'.join(infile))
 
-_ghostscriptlock = Lock()
+@chinout
 def converter_eps(
     infile #a .eps file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
@@ -418,50 +557,19 @@ def converter_eps(
     This needs Ghostscript installed on the system.
 
     '''
+
     if isinstance(infile,str):
         if not outfile:
             outfile = _imgout(infile)
         with open(infile,'rb') as f:
-            epscontent = f.read()
+            gsdata = f.read()
     else:
-        epscontent = '\n'.join(infile).encode('utf-8')
+        gsdata = '\n'.join(infile).encode('utf-8')
 
-    #rebbox
-    ################## this resizes to BoundingBox, but don't know how to translate first, to avoid clipping content
-    #args = ("-q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=bbox %s"%infile).encode('utf-8').split()
-    #try:
-    #    _ghostscriptlock.acquire()
-    #    outbbox = io.BytesIO()
-    #    errbbox = io.BytesIO()
-    #    with ghostscript.Ghostscript(*args,stdout=outbbox,stderr=errbbox) as gs:
-    #        gs.run_string(epscontent)
-    #    ghostscript.cleanup()
-    #finally:
-    #    _ghostscriptlock.release()
-    #errbbox.seek(0)
-    #outbb = errbbox.read().decode('utf-8')
-    #pagesize = ''
-    #try:
-    #    bbx = [int(x) for x in rebbox.search(outbb).groups()]
-    #    pagesize = '-g{}x{}'.format(bbx[2]-bbx[0],bbx[3]-bbx[1])
-    #    #translate="-{} -{} translate\n".format(bbx[0],bbx[1]).encode('utf-8')
-    #    #epscontent = translate+epscontent
-    #except: pass
-    #args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m "%DPI+pagesize+" -sOutputFile=%s"%(outfile,infile)).encode('utf-8').split()
-    ################## use _trim_png() instead
-
-    args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m -sOutputFile=%s"%(DPI,outfile)).encode('utf-8').split()
-    try:
-        _ghostscriptlock.acquire()
-        out = io.BytesIO()
-        with ghostscript.Ghostscript(*args,stdout=out) as gs:
-            gs.run_string(epscontent)
-        ghostscript.cleanup()
-    finally:
-        _ghostscriptlock.release()
-    _trim_png(outfile)
+    process_eps_png(gsdata,outfile)
 
 _pyglock = Lock()
+@chinout
 def converter_pyg(
     infile #a .pyg file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
@@ -480,6 +588,7 @@ def converter_pyg(
     - `matplotlib <https://matplotlib.org>`__. If ``matplotlib.pyplot.get_fignums()>1`` the figures result ``<name><fignum>.png`` 
 
     '''
+
     if isinstance(infile,str):
         if not outfile:
             outfile = _imgout(infile)
@@ -534,6 +643,7 @@ def converter_pyg(
                 finally:
                     _pyglock.release()
 
+@chinout
 def converter_stpl(
     infile #a .stpl file name or list of lines
     ,outfile=None #if not provided the expanded is returned
@@ -542,6 +652,7 @@ def converter_stpl(
     '''
     Expands an `.stpl <https://bottlepy.org/docs/dev/stpl.html>`__ file.
     '''
+
     stpl_newer = False
     if isinstance(infile,str):
         filename = infile
@@ -563,6 +674,7 @@ def converter_stpl(
     else:
         return st.splitlines(keepends=True)
 
+@chinout
 def converter_rest(
     infile #a .stpl file name or list of lines
     ,outfile=None  #None and '-' mean standard out, else a text file
@@ -575,6 +687,7 @@ def converter_rest(
     The link lines are added to a .rest file.
 
     '''
+
     if isinstance(infile,str):
         with open(infile,'r',encoding='utf-8') as f:
             filelines = f.readlines()
@@ -642,6 +755,7 @@ def converter_any(
     Stpl files are immediately forwarded to the next converter.
 
     '''
+
     isfile = infile and op.isfile(infile) or False
     if not isfile and infile == '-':
         try:
@@ -657,9 +771,9 @@ def converter_any(
             else:
                 fext = _rest
         while fext in converters:
-            try:
+            if converters[fext] == converter_rest:
                 infile = converters[fext](infile, outfile if fext!=_stpl else None, type)
-            except:
+            else:
                 infile = converters[fext](infile, outfile if fext!=_stpl else None)
             if infile is None:
                 return
@@ -695,6 +809,7 @@ def rlines(
     ):
     '''
     Return the lines matched by ``r``.
+
     '''
 
     return [lns[i] for i in rindices(r,lns)]
@@ -997,7 +1112,7 @@ class Traceability:
         ttgt = lambda : self.tracehtmltarget.endswith(_rest) and op.splitext(self.tracehtmltarget)[0] or self.tracehtmltarget
         ld.svg(target=ttgt()+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
         tracepng = tracesvg[:-len(_svg)]+_png
-        csvg2png(file=tracesvg, write_to=tracepng)
+        csvg2png(file=tracesvg, write_to=tracepng, dpi=DPI)
         return tlines
 
 def fldrincluded(
@@ -1016,6 +1131,7 @@ def fldrincluded(
     True
 
     '''
+
     sofar=set([])
     def rest_deps(f,fullpth):
         pths = []
@@ -1088,9 +1204,6 @@ def pair(
         else:
             return
 
-class RstDocError(Exception):
-    pass
-
 g_counters=defaultdict(dict)
 
 def get_substitutions(
@@ -1105,8 +1218,8 @@ def get_substitutions(
     ...   """.splitlines()))
     ['sub', 's-b']
 
-
     '''
+
     for i,ln in enumerate(lns):
         asub = rexsubtgt.search(ln)
         if asub:
@@ -1868,7 +1981,7 @@ try:
         def run(self):
             dr = self.inputs[0].parent.abspath()
             confdir = op.dirname(here_or_updir(dr,'conf.py'))
-            cwd=self.get_cwd().abspath()
+            cwd = self.get_cwd().abspath()
             subprocess.run(['sphinx-build','-Ea', '-b', self.doctype, dr, self.sphinxoutput]+(
                 ['-c',confdir] if confdir else []),cwd=cwd)
 
@@ -1982,8 +2095,8 @@ example_tree = r'''
             html_theme = 'bootstrap'
             html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
             latex_engine = 'xelatex'
-            tikz_transparent = True
-            tikz_proc_suite = 'ImageMagick'
+            gsdevice = 'pngalpha'
+            dpi = 72
             tikz_tikzlibraries = 'arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections'
             tikz_latex_preamble = r"""
             \usepackage{unicode-math}
@@ -2021,8 +2134,6 @@ example_tree = r'''
             STPLTGTS    = $(STPLS:%.stpl=%)
             SRCS        = $(filter-out $(SRCDIR)/index.rest,$(wildcard $(SRCDIR)/*.rest))
             SRCSTPL     = $(wildcard $(SRCDIR)/*.rest.stpl)
-            #IMGS        = $(wildcard $(SRCDIR)/*.pyg)
-            #PNGS = $(subst $(SRCDIR),$(SRCDIR)/_images,$(IMGS:%.pyg=%.png))
             IMGS        = \
             $(wildcard $(SRCDIR)/*.pyg)\
             $(wildcard $(SRCDIR)/*.eps)\
@@ -2035,7 +2146,7 @@ example_tree = r'''
             $(wildcard $(SRCDIR)/*.svg.stpl)\
             $(wildcard $(SRCDIR)/*.uml.stpl)\
             $(wildcard $(SRCDIR)/*.dot.stpl)
-            PNGS=\
+            PNGS=$(subst $(SRCDIR),$(SRCDIR)/_images,\
             $(patsubst %.eps,%.png,\
             $(patsubst %.pyg,%.png,\
             $(patsubst %.tikz,%.png,\
@@ -2046,10 +2157,10 @@ example_tree = r'''
             $(patsubst %.dot.stpl,%.png,\
             $(patsubst %.tikz.stpl,%.png,\
             $(patsubst %.svg.stpl,%.png,\
-            $(patsubst %.uml.stpl,%.png,$(IMGS))))))))))))
+            $(patsubst %.uml.stpl,%.png,$(IMGS)))))))))))))
             DOCXS       = $(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCS:%.rest=%.docx))$(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCSTPL:%.rest.stpl=%.docx))
             PDFS        = $(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCS:%.rest=%.pdf))$(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCSTPL:%.rest.stpl=%.pdf))
-            .PHONY: docx help Makefile docxdir pdfdir index stpl imgs
+            .PHONY: docx help Makefile docxdir pdfdir stpl index imgs
             stpl: $(STPLTGTS)
             %:%.stpl
             	@cd $(SRCDIR) && stpl "$(<F)" "$(@F)"
@@ -2073,7 +2184,6 @@ example_tree = r'''
             	@${MKDIR_P} ${BLDDIR}/docx
             ${BLDDIR}/pdf:
             	@${MKDIR_P} ${BLDDIR}/pdf
-            #will expand the stpl files
             index:
             	@python ./dcx.py
             help:
@@ -2081,12 +2191,12 @@ example_tree = r'''
             	@echo "  docx        to docx"
             	@echo "  pdf         to pdf"
             #http://www.sphinx-doc.org/en/stable/usage/builders/
-            html dirhtml singlehtml htmlhelp qthelp applehelp devhelp epub latex text man texinfo pickle json xml pseudoxml: Makefile stpl index imgs
+            html dirhtml singlehtml htmlhelp qthelp applehelp devhelp epub latex text man texinfo pickle json xml pseudoxml: Makefile index stpl imgs
             	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
-            docx:  docxdir stpl index imgs $(DOCXS)
+            docx:  docxdir index stpl imgs $(DOCXS)
             $(BLDDIR)/docx/%.docx:$(SRCDIR)/%.rest
             	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - docx | pandoc -f rst -t docx --reference-doc $(SRCBACK)/reference.docx -o "$(SRCBACK)/$@"
-            pdf: pdfdir stpl index imgs $(PDFS)
+            pdf: pdfdir index stpl imgs $(PDFS)
             $(BLDDIR)/pdf/%.pdf:$(SRCDIR)/%.rest
             	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - pdf | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm --template $(SRCBACK)/reference.tex -o "$(SRCBACK)/$@"
         ├ code
@@ -2126,6 +2236,7 @@ example_tree = r'''
                 @}
                 */
         └ doc
+           ├ _images/
            ├ wscript_build
                bld.build_docs()
            ├ index.rest
@@ -2217,19 +2328,19 @@ example_tree = r'''
                
                .. _`dx3`:
                
-               .. figure:: _images/exampletikz1.png
+               .. figure:: _images/egtikz1.png
                   :name:
                   :width: 30%
                
-                  |dx3|: Create from exampletikz1.tikz
+                  |dx3|: Create from egtikz1.tikz
                
                .. _`dz3`:
                
-               .. figure:: _images/exampletikz.png
+               .. figure:: _images/egtikz.png
                   :name:
                   :width: 50%
                
-                  |dz3|: Create from exampletikz.tikz
+                  |dz3|: Create from egtikz.tikz
                
                   The usage of ``:name:`` produces: ``WARNING: Duplicate explicit target name: ""``. Ignore.
 
@@ -2239,75 +2350,75 @@ example_tree = r'''
                
                .. _`dz4`:
                
-               .. figure:: _images/examplesvg.png
+               .. figure:: _images/egsvg.png
                   :name:
                
-                  |dz4|: Created from examplesvg.svg.stpl
+                  |dz4|: Created from egsvg.svg.stpl
                
                .. _`dz5`:
                
-               .. figure:: _images/exampledot.png
+               .. figure:: _images/egdot.png
                   :name:
                
-                  |dz5|: Created from exampledot.dot.stpl
+                  |dz5|: Created from egdot.dot.stpl
                
                .. _`dz6`:
                
-               .. figure:: _images/exampleuml.png
+               .. figure:: _images/eguml.png
                   :name:
                
-                  |dz6|: Created from exampleuml.uml
+                  |dz6|: Created from eguml.uml
                
                .. _`dz7`:
                
-               .. figure:: _images/exampleplt.png
+               .. figure:: _images/egplt.png
                   :name:
                   :width: 30%
                
-                  |dz7|: Created from exampleplt.pyg
+                  |dz7|: Created from egplt.pyg
                
                .. _`dz8`:
                
-               .. figure:: _images/examplepyx.png
+               .. figure:: _images/egpyx.png
                   :name:
                
-                  |dz8|: Created from examplepyx.pyg
+                  |dz8|: Created from egpyx.pyg
                
                .. _`dr8`:
                
-               .. figure:: _images/examplecairo.png
+               .. figure:: _images/egcairo.png
                   :name:
                
-                  |dr8|: Created from examplecairo.pyg
+                  |dr8|: Created from egcairo.pyg
                
                .. _`ds8`:
                
-               .. figure:: _images/examplepygal.png
+               .. figure:: _images/egpygal.png
                   :name:
                   :width: 30%
                
-                  |ds8|: Created from examplepygal.pyg
+                  |ds8|: Created from egpygal.pyg
                
                .. _`dsx`:
                
-               .. figure:: _images/exampleother.png
+               .. figure:: _images/egother.png
                   :name:
                
-                  |dsx|: Created from exampleother.pyg
+                  |dsx|: Created from egother.pyg
                
                .. _`du8`:
                
-               .. figure:: _images/exampleeps1.png
+               .. figure:: _images/egeps1.png
                   :name:
                
-                  |du8|: Created from exampleeps1.eps
+                  |du8|: Created from egeps1.eps
                
                .. _`d98`:
                
-               .. figure:: _images/exampleeps.png
+               .. figure:: _images/egeps.png
                   :name:
                
-                  |d98|: Created from exampleeps.eps
+                  |d98|: Created from egeps.eps
                
                .. _`dua`:
                
@@ -2372,8 +2483,8 @@ example_tree = r'''
                  
                  .. include:: somefile.rst   
                
-               .. |eps1| image:: _images/exampleeps1.png
-               .. |eps| image:: _images/exampleeps.png
+               .. |eps1| image:: _images/egeps1.png
+               .. |eps| image:: _images/egeps.png
                
                .. include:: _links_sphinx.rst
               
@@ -2422,12 +2533,12 @@ example_tree = r'''
                
                .. include:: _links_sphinx.rst
                
-           ├ exampletikz.tikz
+           ├ egtikz.tikz
                [thick,red]
                \draw (0,0) grid (3,3);
                \foreach \c in {(0,0), (1,0), (2,0), (2,1), (1,2)}
                    \fill \c + (0.5,0.5) circle (0.42);
-           ├ exampletikz1.tikz
+           ├ egtikz1.tikz
                \begin{scope}[blend group = soft light]
                \fill[red!30!white]   ( 90:1.2) circle (2);
                \fill[green!30!white] (210:1.2) circle (2);
@@ -2437,7 +2548,7 @@ example_tree = r'''
                \node at ( 210:2)   {Design};
                \node at ( 330:2)   {Coding};
                \node [font=\Large] {\LaTeX};
-           ├ examplesvg.svg.stpl
+           ├ egsvg.svg.stpl
                <?xml version="1.0" encoding="utf-8"?>
                <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" width="110pt" height="60pt" stroke-width="0.566929" stroke-miterlimit="10.000000">
                %for i in range(10):
@@ -2448,13 +2559,13 @@ example_tree = r'''
                %end
                <text x="50" y="50" fill="red">Hi!</text>
                </svg>
-           ├ exampledot.dot.stpl
+           ├ egdot.dot.stpl
                digraph {
                %for i in range(3):    
                    "From {{i}}" -> "To {{i}}";
                %end
                    }
-           ├ exampleuml.uml
+           ├ eguml.uml
                @startuml
                'style options 
                skinparam monochrome true
@@ -2468,7 +2579,7 @@ example_tree = r'''
                Class07 .. Class08
                Class09 -- Class10
                @enduml
-           ├ exampleplt.pyg
+           ├ egplt.pyg
                #vim: syntax=python
                import matplotlib.pyplot as plt
                import numpy as np
@@ -2477,30 +2588,30 @@ example_tree = r'''
                plt.grid()
                plt.title(r'Normal: $\mu=%.2f, \sigma=%.2f$'%(x.mean(), x.std()))
                plt.show()
-           ├ examplepyx.pyg
+           ├ egpyx.pyg
                import pyx
                c = pyx.canvas.canvas()
                c.stroke(pyx.path.circle(0,0,2),[pyx.style.linewidth.Thick,pyx.color.rgb.red])
                c.text(1, 1, 'Hi',[pyx.color.rgb.red])
-           ├ examplepygal.pyg
+           ├ egpygal.pyg
                import pygal
                diagram=pygal.Bar()(1, 3, 3, 7)(1, 6, 6, 4)
-           ├ exampleother.pyg
+           ├ egother.pyg
                from PIL import Image, ImageDraw, ImageFont
                im = Image.new("RGBA",size=(50,50),color=(155,0,100))
                draw = ImageDraw.Draw(im)
                draw.rectangle(((0, 0), (40, 40)), fill="red")
                draw.text((20, 20), "123")
                save_to_png = lambda out_file: im.save(out_file, "PNG")
-           ├ exampleeps.eps
+           ├ egeps.eps
                1 0 0 setrgbcolor
                newpath 6 2 36 54 rectstroke
                showpage
-           ├ exampleeps1.eps
+           ├ egeps1.eps
                0 0 1 setrgbcolor
                newpath 6 2 36 54 rectstroke
                showpage
-           ├ examplecairo.pyg
+           ├ egcairo.pyg
                import cairocffi as cairo
                surface = cairo.SVGSurface(None, 200, 200)
                context = cairo.Context(surface)
@@ -2523,7 +2634,7 @@ example_tree = r'''
                ../code/some.h | _sometst.rst                | tstdoc | {}
                ../code/some.h | ../../build/code/some_tst.c | tst    | {}'''
 
-#replaces from '├ index.rest' to '├ exampletikz.tikz'
+#replaces from '├ index.rest' to '├ egtikz.tikz'
 example_stp_subtree = r'''
            ├ model.py
                """
@@ -2765,7 +2876,7 @@ example_stp_subtree = r'''
                
                  .. _`dd_figure`:
                
-                 .. figure:: _images/exampletikz.png
+                 .. figure:: _images/egtikz.png
                     :name:
                     :width: 50%
                
@@ -2784,8 +2895,8 @@ example_stp_subtree = r'''
                
                Pandoc does not know about `definitions in included files <https://github.com/jgm/pandoc/issues/4160>`__.
                
-               .. |eps1| image:: _images/exampleeps1.png
-               .. |eps| image:: _images/exampleeps.png
+               .. |eps1| image:: _images/egeps1.png
+               .. |eps| image:: _images/egeps.png
                
                .. include:: _links_sphinx.rst
                
@@ -2887,11 +2998,11 @@ example_stp_subtree = r'''
                
                  .. _`exampletikz1`:
                  
-                 .. figure:: _images/exampletikz1.png
+                 .. figure:: _images/egtikz1.png
                     :name:
                     :width: 30%
                  
-                    |exampletikz1|: Create from exampletikz1.tikz
+                    |exampletikz1|: Create from egtikz1.tikz
                  
                     The usage of ``:name:`` produces: ``WARNING: Duplicate explicit target name: ""``. Ignore.
                  
@@ -2901,75 +3012,75 @@ example_stp_subtree = r'''
                  
                  .. _`examplesvg`:
                  
-                 .. figure:: _images/examplesvg.png
+                 .. figure:: _images/egsvg.png
                     :name:
                  
-                    |examplesvg|: Created from examplesvg.svg.stpl
+                    |examplesvg|: Created from egsvg.svg.stpl
                  
                  .. _`exampledot`:
                  
-                 .. figure:: _images/exampledot.png
+                 .. figure:: _images/egdot.png
                     :name:
                  
-                    |exampledot|: Created from exampledot.dot.stpl
+                    |exampledot|: Created from egdot.dot.stpl
                  
                  .. _`exampleuml`:
                  
-                 .. figure:: _images/exampleuml.png
+                 .. figure:: _images/eguml.png
                     :name:
                  
-                    |exampleuml|: Created from exampleuml.uml
+                    |exampleuml|: Created from eguml.uml
                  
                  .. _`exampleplt`:
                  
-                 .. figure:: _images/exampleplt.png
+                 .. figure:: _images/egplt.png
                     :name:
                     :width: 30%
                  
-                    |exampleplt|: Created from exampleplt.pyg
+                    |exampleplt|: Created from egplt.pyg
                  
                  .. _`examplepyx`:
                  
-                 .. figure:: _images/examplepyx.png
+                 .. figure:: _images/egpyx.png
                     :name:
                  
-                    |examplepyx|: Created from examplepyx.pyg
+                    |examplepyx|: Created from egpyx.pyg
                  
                  .. _`examplecairo`:
                  
-                 .. figure:: _images/examplecairo.png
+                 .. figure:: _images/egcairo.png
                     :name:
                  
-                    |examplecairo|: Created from examplecairo.pyg
+                    |examplecairo|: Created from egcairo.pyg
                  
                  .. _`examplepygal`:
                  
-                 .. figure:: _images/examplepygal.png
+                 .. figure:: _images/egpygal.png
                     :name:
                     :width: 30%
                  
-                    |examplepygal|: Created from examplepygal.pyg
+                    |examplepygal|: Created from egpygal.pyg
                  
                  .. _`exampleother`:
                  
-                 .. figure:: _images/exampleother.png
+                 .. figure:: _images/egother.png
                     :name:
                  
-                    |exampleother|: Created from exampleother.pyg
+                    |exampleother|: Created from egother.pyg
                  
                  .. _`exampleeps1`:
                  
-                 .. figure:: _images/exampleeps1.png
+                 .. figure:: _images/egeps1.png
                     :name:
                  
-                    |exampleeps1|: Created from exampleeps1.eps
+                    |exampleeps1|: Created from egeps1.eps
                  
                  .. _`exampleeps`:
                  
-                 .. figure:: _images/exampleeps.png
+                 .. figure:: _images/egeps.png
                     :name:
                  
-                    |exampleeps|: Created from exampleeps.eps
+                    |exampleeps|: Created from egeps.eps
                  
                  %if False:
                  .. _`target_more_than_in_rest`:
@@ -3049,7 +3160,7 @@ def initroot(
     if stpltype:
         _replace_lines = lambda origlns,start,stop,insertlns: origlns[
             :list(rindices(start,origlns))[0]]+insertlns+origlns[list(rindices(stop,origlns))[0]:]
-        inittree = _replace_lines(inittree,'├ index.rest','├ exampletikz.tikz',example_stp_subtree.splitlines())
+        inittree = _replace_lines(inittree,'├ index.rest','├ egtikz.tikz',example_stp_subtree.splitlines())
     mkdir(rootfldr)
     oldd = os.getcwd()
     try:
@@ -3108,6 +3219,10 @@ def main(**args):
                             help='Create a sample folder structure.')
         parser.add_argument('--stpl', dest='stplroot', action='store',
                             help='Create a stpl templated sample folder structure.')
+        parser.add_argument('--dpi', action='store', nargs='?', default='72',
+                            help='''Set DPI value for PNG output of graphic files.''')
+        parser.add_argument('--gsdevice', action='store', nargs='?', default='pngalpha',
+                            help='''This is the output device used by ghostscript for png generation.''')
         parser.add_argument('-v','--verbose', action='store_true',
                             help='''Show files recursively included by each rest''')
         parser.add_argument('infile', nargs='?',
@@ -3117,6 +3232,13 @@ def main(**args):
         parser.add_argument('outtype', nargs='?',default='html',
                 help='Extension with starting dot (default: html). The target file name will be the in-file with this extension.')
         args = parser.parse_args().__dict__
+
+    global DPI
+    if 'dpi' in args:
+        DPI = int(args['dpi'])
+    global GSDEVICE
+    if 'gsdevice' in args:
+        GSDEVICE = args['gsdevice']
   
     global verbose
     verbose = False
