@@ -169,7 +169,7 @@ from argparse import Namespace
 class RstDocError(Exception):
     pass
 
-DPI = 72
+DPI = 600
 
 try:
     import cairocffi
@@ -473,6 +473,7 @@ def converter_tikz(
                            '\n[stderr]\n%s\n[r.stdout]\n%s\n[tex file]\n%s'
                            % (binary, r.stderr.decode('utf-8'), r.stdout.decode('utf-8'), latex))
     gsdata = None
+    outf = op.abspath(outfile)
     with tmpdir():
         with open('tikz.tex', 'wb') as tf:
             tf.write(latex.encode('utf-8'))
@@ -487,13 +488,14 @@ def converter_tikz(
             print('%s command cannot be run'%binary)
             print(err)
             return
-        rgs = subprocess.run(['pdftops','-eps','tikz.pdf','-'],stdout=subprocess.PIPE)
-        if r.returncode != 0:
-            raiseRstDocError('Error pdftops -eps tikz.pdf (tikz extension)')
-        gsdata = rgs.stdout
-
-    if gsdata:
-        process_eps_png(gsdata,outfile)
+        subprocess.run(['inkscape','tikz.pdf','-z','--export-dpi=%s'%DPI,'--export-area-drawing','--export-png='+outf])
+        ## the following leads to bad results
+        #rgs = subprocess.run(['pdftops','-noshrink','-level3','-eps','tikz.pdf','-'],stdout=subprocess.PIPE)
+        #if r.returncode != 0:
+        #    raiseRstDocError('Error pdftops -eps tikz.pdf (tikz extension)')
+        #gsdata = rgs.stdout
+    #if gsdata:
+    #    process_eps_png(gsdata,outfile)
 
 def _run_via_tmp(suffix,cmdlist,data):
     try:
@@ -2096,7 +2098,7 @@ example_tree = r'''
             html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
             latex_engine = 'xelatex'
             gsdevice = 'pngalpha'
-            dpi = 72
+            dpi = 600
             tikz_tikzlibraries = 'arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections'
             tikz_latex_preamble = r"""
             \usepackage{unicode-math}
@@ -2135,31 +2137,33 @@ example_tree = r'''
             SRCS        = $(filter-out $(SRCDIR)/index.rest,$(wildcard $(SRCDIR)/*.rest))
             SRCSTPL     = $(wildcard $(SRCDIR)/*.rest.stpl)
             IMGS        = \
-            $(wildcard $(SRCDIR)/*.pyg)\
-            $(wildcard $(SRCDIR)/*.eps)\
-            $(wildcard $(SRCDIR)/*.tikz)\
-            $(wildcard $(SRCDIR)/*.svg)\
-            $(wildcard $(SRCDIR)/*.uml)\
-            $(wildcard $(SRCDIR)/*.dot)\
-            $(wildcard $(SRCDIR)/*.eps.stpl)\
-            $(wildcard $(SRCDIR)/*.tikz.stpl)\
-            $(wildcard $(SRCDIR)/*.svg.stpl)\
-            $(wildcard $(SRCDIR)/*.uml.stpl)\
-            $(wildcard $(SRCDIR)/*.dot.stpl)
+            	$(wildcard $(SRCDIR)/*.pyg)\
+            	$(wildcard $(SRCDIR)/*.eps)\
+            	$(wildcard $(SRCDIR)/*.tikz)\
+            	$(wildcard $(SRCDIR)/*.svg)\
+            	$(wildcard $(SRCDIR)/*.uml)\
+            	$(wildcard $(SRCDIR)/*.dot)\
+            	$(wildcard $(SRCDIR)/*.eps.stpl)\
+            	$(wildcard $(SRCDIR)/*.tikz.stpl)\
+            	$(wildcard $(SRCDIR)/*.svg.stpl)\
+            	$(wildcard $(SRCDIR)/*.uml.stpl)\
+            	$(wildcard $(SRCDIR)/*.dot.stpl)
             PNGS=$(subst $(SRCDIR),$(SRCDIR)/_images,\
-            $(patsubst %.eps,%.png,\
-            $(patsubst %.pyg,%.png,\
-            $(patsubst %.tikz,%.png,\
-            $(patsubst %.svg,%.png,\
-            $(patsubst %.uml,%.png,\
-            $(patsubst %.dot,%.png,\
-            $(patsubst %.eps.stpl,%.png,\
-            $(patsubst %.dot.stpl,%.png,\
-            $(patsubst %.tikz.stpl,%.png,\
-            $(patsubst %.svg.stpl,%.png,\
-            $(patsubst %.uml.stpl,%.png,$(IMGS)))))))))))))
-            DOCXS       = $(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCS:%.rest=%.docx))$(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCSTPL:%.rest.stpl=%.docx))
-            PDFS        = $(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCS:%.rest=%.pdf))$(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCSTPL:%.rest.stpl=%.pdf))
+            	$(patsubst %.eps,%.png,\
+            	$(patsubst %.pyg,%.png,\
+            	$(patsubst %.tikz,%.png,\
+            	$(patsubst %.svg,%.png,\
+            	$(patsubst %.uml,%.png,\
+            	$(patsubst %.dot,%.png,\
+            	$(patsubst %.eps.stpl,%.png,\
+            	$(patsubst %.dot.stpl,%.png,\
+            	$(patsubst %.tikz.stpl,%.png,\
+            	$(patsubst %.svg.stpl,%.png,\
+            	$(patsubst %.uml.stpl,%.png,$(IMGS)))))))))))))
+            DOCXS = $(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCS:%.rest=%.docx))\
+            	$(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCSTPL:%.rest.stpl=%.docx))
+            PDFS  = $(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCS:%.rest=%.pdf))\
+            	$(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCSTPL:%.rest.stpl=%.pdf))
             .PHONY: docx help Makefile docxdir pdfdir stpl index imgs
             stpl: $(STPLTGTS)
             %:%.stpl
@@ -3219,7 +3223,7 @@ def main(**args):
                             help='Create a sample folder structure.')
         parser.add_argument('--stpl', dest='stplroot', action='store',
                             help='Create a stpl templated sample folder structure.')
-        parser.add_argument('--dpi', action='store', nargs='?', default='72',
+        parser.add_argument('--dpi', action='store', nargs='?', default='600',
                             help='''Set DPI value for PNG output of graphic files.''')
         parser.add_argument('--gsdevice', action='store', nargs='?', default='pngalpha',
                             help='''This is the output device used by ghostscript for png generation.''')
