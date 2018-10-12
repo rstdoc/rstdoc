@@ -85,14 +85,21 @@ With ``rstdoc`` installed, ``./dcx.py`` in the following examples can be replace
 
   - `.svg <http://svgpocketguide.com/book/>`__ or ``.svg.stpl``
 
-  - `.dot <https://graphviz.gitlab.io/gallery/>`__ or ``.dot.stpl``
+  - ``.dot`` or ``.dot.stpl``
+    
+    This needs `graphviz <https://graphviz.gitlab.io/gallery/>`__.
 
   - `.uml <http://plantuml.com/command-line>`__ or ``.uml.stpl``
-    This needs a plantuml.bat with e.g. ``java -jar "%~dp0plantuml.jar" %*`` 
-    or plantuml sh script with ``java -jar `dirname $BASH_SOURCE`/plantuml.jar "$@"``.
 
-  - ``.eps`__ or ``.eps.stpl`` embedded postscript files.
-    This needs Ghostscript installed on the system.
+    This needs `plantuml <http://plantuml.com/command-line>`__ .
+    Provide either 
+
+    - ``plantuml.bat`` with e.g. ``java -jar "%~dp0plantuml.jar" %*``  or
+    - ``plantuml`` sh script with ``java -jar `dirname $BASH_SOURCE`/plantuml.jar "$@"``
+
+  - ``.eps`` or ``.eps.stpl`` embedded postscript files.
+
+    This needs `inkscape <https://inkscape.org/en/>`__.
 
   - ``.pyg`` contains python code that produces a graphic.
     If the python code defines a ``save_to_png`` function,
@@ -210,27 +217,6 @@ except Exception as e:
     print('pygal not available:',e)
     pygal = None
 
-try:
-    from PIL import Image, ImageChops
-    def _trim_png(filename):
-        def trim(im):
-            bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
-            diff = ImageChops.difference(im, bg)
-            diff = ImageChops.add(diff, diff, 2.0, -100)
-            bbox = diff.getbbox()
-            if bbox:
-                return im.crop(bbox)
-        im = Image.open(filename)
-        im = trim(im)
-        im.save(filename)
-
-    import ghostscript
-    #rebbox = re.compile(r'%%BoundingBox:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+')
-except Exception as e:
-    print('ghostscript or PIL not available:',e)
-    ghostscript = None
-
-
 verbose = False
 
 #other
@@ -288,6 +274,34 @@ def conf_py(fldr):
         DPI = config['dpi']
     return config
 
+_fillwith = lambda u,v: [x or v for x in u]
+
+def run_may_tmp(
+    cmdlist #command list with one None that will be replaced by the temp file
+    ,data=None #if data, it is place into the temp file
+    ,suffix=None #suffix of temp file
+    ,**kwargs #arguments forwarded to subprocess.run()
+    ):
+    '''
+    Runs a ``cmdlist`` via subprocess.run, possibly on a temporary file filled with ``data``.
+    For that the ``cmdlist`` has None instead of the file name.
+
+    '''
+
+    try:
+        if data:
+            with NamedTemporaryFile('w+',suffix=suffix,delete=False) as f:
+                filename = f.name
+                f.write(data)
+                cmdlist = _fillwith(cmdlist,filename)
+        r = subprocess.run(cmdlist,**kwargs)
+        if r.returncode != 0:
+            raise RstDocError('Error code %s returned from'%r.returncode 
+                +' '.join(cmdlist)+' in '+os.getcwd())
+    finally:
+        if data:
+            os.remove(filename)
+
 #graphic files
 _svg = '.svg'
 _tikz = '.tikz'
@@ -306,51 +320,25 @@ def _imgout(inf):
     outf = opnj(outp,outname)
     return outf
 
-_ghostscriptlock = Lock()
-def process_eps_png(
-    gsdata #a byte string of eps or pdf content 
-    ,outfile #the png output file
+def inkscape_to_png(
+    infile #via .svg, .eps, .pdf filename string or list with actual .eps or .svg data
+    ,outfile #.png file name
+    ,suffix=None #if infile is a list of strings, then this specifies the type (``.eps``, ``.svg``)
     ):
     '''
-    Translates ps, eps or pdf byte string to png and writes it to the outfile.
-    White space in the outfile is trimmed away.
+    Uses ``inkscape`` commandline to convert to ``.png``
 
     '''
 
-    #rebbox
-    ################## this resizes to BoundingBox, but don't know how to translate first, to avoid clipping content
-    #args = ("-q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=bbox %s"%infile).encode('utf-8').split()
-    #try:
-    #    _ghostscriptlock.acquire()
-    #    outbbox = io.BytesIO()
-    #    errbbox = io.BytesIO()
-    #    with ghostscript.Ghostscript(*args,stdout=outbbox,stderr=errbbox) as gs:
-    #        gs.run_string(gsdata)
-    #    ghostscript.cleanup()
-    #finally:
-    #    _ghostscriptlock.release()
-    #errbbox.seek(0)
-    #outbb = errbbox.read().decode('utf-8')
-    #pagesize = ''
-    #try:
-    #    bbx = [int(x) for x in rebbox.search(outbb).groups()]
-    #    pagesize = '-g{}x{}'.format(bbx[2]-bbx[0],bbx[3]-bbx[1])
-    #    #translate="-{} -{} translate\n".format(bbx[0],bbx[1]).encode('utf-8')
-    #    #gsdata = translate+gsdata
-    #except: pass
-    #args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=%s "%DPI+pagesize+" -sOutputFile=%s"%(outfile,GSDEVICE,infile)).encode('utf-8').split()
-    ################## use _trim_png() instead
-
-    args = ("-r%s -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=%s -sOutputFile=%s"%(DPI,GSDEVICE,outfile)).encode('utf-8').split()
-    try:
-        _ghostscriptlock.acquire()
-        out = io.BytesIO()
-        with ghostscript.Ghostscript(*args,stdout=out) as gs:
-            gs.run_string(gsdata)
-        ghostscript.cleanup()
-    finally:
-        _ghostscriptlock.release()
-    _trim_png(outfile)
+    iscmd = lambda i,o: ['inkscape','-z','--export-dpi=%s'%DPI,
+            '--export-area-drawing','--export-background-opacity=0',
+            i,'--export-png='+o]
+    if isinstance(infile,str):
+        if not outfile:
+            outfile = _imgout(infile)
+        run_may_tmp(iscmd(infile,outfile))
+    else:
+        run_may_tmp(iscmd(None,outfile),'\n'.join(infile),suffix)
 
 @contextlib.contextmanager
 def tmpdir():
@@ -369,7 +357,7 @@ def tmpdir():
         os.chdir(curdir)
         shutil.rmtree(atmpdir)
 
-def chinout(f):
+def chdirin(f):
     @wraps(f)
     def wrapper(*args, **kwds):
         infile = args[0]
@@ -396,15 +384,13 @@ def chinout(f):
             return f(inf, outf, *args[2:], **kwds)
     return wrapper
 
-@chinout
+@chdirin
 def converter_svg(
     infile, #a .svg file name or list of lines
     outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
     ):
     '''
-    Converts a .tikz file to a png file.
-
-    `.svg <http://svgpocketguide.com/book/>`__ or ``.svg.stpl``
+    Converts a .svg file to a png file.
 
     '''
     if isinstance(infile,str):
@@ -414,17 +400,13 @@ def converter_svg(
     else:
         svg2png(bytestring='\n'.join(infile),write_to=outfile,dpi=DPI)
 
-@chinout
+@chdirin
 def converter_tikz(
     infile #a .tikz file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
     ):
     '''
     Converts a .tikz file to a png file.
-
-    ``.tikz`` or ``.tikz.stpl``. 
-    This needs LaTex.
-    The png is generated using the ghostscipt python library.
 
     '''
 
@@ -468,7 +450,7 @@ def converter_tikz(
     latex = DOC_HEAD % libs
     latex += confpy['tikz_latex_preamble']
     latex += DOC_BODY % tikzcontent.decode('utf-8')
-    def raiseRstDocError(atxt):
+    def raiseRstDocError(r,atxt):
         raise RstDocError(atxt+': %s exited with error:'
                            '\n[stderr]\n%s\n[r.stdout]\n%s\n[tex file]\n%s'
                            % (binary, r.stderr.decode('utf-8'), r.stdout.decode('utf-8'), latex))
@@ -481,33 +463,16 @@ def converter_tikz(
             r = subprocess.run([binary, '-interaction=nonstopmode', 'tikz.tex'], 
                 stdout=subprocess.PIPE,stderr=subprocess.PIPE,stdin=subprocess.PIPE)
             if r.returncode != 0:
-                raiseRstDocError('Error '+binary+' (tikz extension)')
+                raiseRstDocError(r,'Error '+binary+' (tikz extension)')
         except OSError as err:
             if err.errno != ENOENT:   # No such file or directory
                 raise
             print('%s command cannot be run'%binary)
             print(err)
             return
-        subprocess.run(['inkscape','tikz.pdf','-z','--export-dpi=%s'%DPI,'--export-area-drawing','--export-png='+outf])
-        ## the following leads to bad results
-        #rgs = subprocess.run(['pdftops','-noshrink','-level3','-eps','tikz.pdf','-'],stdout=subprocess.PIPE)
-        #if r.returncode != 0:
-        #    raiseRstDocError('Error pdftops -eps tikz.pdf (tikz extension)')
-        #gsdata = rgs.stdout
-    #if gsdata:
-    #    process_eps_png(gsdata,outfile)
+        inkscape_to_png('tikz.png',outf)
 
-def _run_via_tmp(suffix,cmdlist,data):
-    try:
-        with NamedTemporaryFile('w+',suffix=suffix,delete=False) as f:
-            filename = f.name
-            f.write(data)
-            cmdlist[cmdlist.index(None)] = filename
-        subprocess.run(cmdlist)
-    finally:
-        os.remove(filename)
-
-@chinout
+@chdirin
 def converter_dot(
     infile #a .dot file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
@@ -515,18 +480,17 @@ def converter_dot(
     '''
     Converts a .dot file to a png file.
 
-    `.dot <https://graphviz.gitlab.io/gallery/>`__ or ``.dot.stpl``
-
     '''
 
+    dotcmd = lambda i,o: ['dot','-Tpng',i,'-o',o]
     if isinstance(infile,str):
         if not outfile:
             outfile = _imgout(infile)
-        subprocess.run(['dot','-Tpng',infile,'-o',outfile])
+        run_may_tmp(dotcmd(infile,outfile))
     else:
-        _run_via_tmp('.dot',['dot','-Tpng',None,'-o',outfile],'\n'.join(infile))
+        run_may_tmp(dotcmd(None,outfile),'\n'.join(infile),'.dot')
 
-@chinout
+@chdirin
 def converter_uml(
     infile #a .uml file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
@@ -534,44 +498,30 @@ def converter_uml(
     '''
     Converts a .uml file to a png file.
 
-    `.uml <http://plantuml.com/command-line>`__ or ``.uml.stpl``
-    This needs a plantuml.bat with e.g. ``java -jar "%~dp0plantuml.jar" %*`` 
-    or plantuml sh script with ``java -jar `dirname $BASH_SOURCE`/plantuml.jar "$@"``.
-
     '''
 
+    umlcmd = lambda i,o: ['plantuml',i,'-o'+op.dirname(o)]
     if isinstance(infile,str):
         if not outfile:
             outfile = _imgout(infile)
-        subprocess.run(['plantuml',infile,'-o'+op.dirname(outfile)],shell=True)
+        run_may_tmp(umlcmd(infile,outfile),shell=True)
     else:
-        _run_via_tmp('.uml',['plantuml',None,'-o'+op.dirname(outfile)],'\n'.join(infile))
+        run_may_tmp(umlcmd(None,outfile),'\n'.join(infile),'.uml',shell=True)
 
-@chinout
+@chdirin
 def converter_eps(
     infile #a .eps file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
     ):
     '''
-    Converts an .eps file to a png file.
-
-    ``.eps`__ or ``.eps.stpl`` embedded postscript files.
-    This needs Ghostscript installed on the system.
+    Converts an .eps file to a png file using inkscape.
 
     '''
 
-    if isinstance(infile,str):
-        if not outfile:
-            outfile = _imgout(infile)
-        with open(infile,'rb') as f:
-            gsdata = f.read()
-    else:
-        gsdata = '\n'.join(infile).encode('utf-8')
-
-    process_eps_png(gsdata,outfile)
+    inkscape_to_png(infile,outfile,suffix='.eps')
 
 _pyglock = Lock()
-@chinout
+@chdirin
 def converter_pyg(
     infile #a .pyg file name or list of lines
     ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
@@ -580,8 +530,7 @@ def converter_pyg(
     Converts a .pyg file to a png file.
 
     ``.pyg`` contains python code that produces a graphic.
-    If the python code defines a ``save_to_png`` function,
-    then that is used.
+    If the python code defines a ``save_to_png`` function, then that is used.
     Else the following is tried
 
     - ``pyx.canvas.canvas`` from the `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or 
@@ -645,7 +594,7 @@ def converter_pyg(
                 finally:
                     _pyglock.release()
 
-@chinout
+@chdirin
 def converter_stpl(
     infile #a .stpl file name or list of lines
     ,outfile=None #if not provided the expanded is returned
@@ -676,7 +625,7 @@ def converter_stpl(
     else:
         return st.splitlines(keepends=True)
 
-@chinout
+@chdirin
 def converter_rest(
     infile #a .stpl file name or list of lines
     ,outfile=None  #None and '-' mean standard out, else a text file
@@ -3216,17 +3165,17 @@ def main(**args):
     import argparse
   
     if not args:
-        parser = argparse.ArgumentParser(description='''Sample RST Documentation for HTML and DOCX.
-            Creates |substitution| links and ctags for link targets.
-            ''')
+        parser = argparse.ArgumentParser(description='''This
+          - creates |substitution| links and .tags ctags for reST targets (without arguments)
+          - creates a sample folders (--rest/--stpl xx)
+          - processes known files through pandoc, sphinx, inkscape, dot, planuml, latex
+
+          Configuration is in ``conf.py`` or ``conf.py`` (see a generated example folder)
+          ''')
         parser.add_argument('--rest', dest='restroot', action='store',
                             help='Create a sample folder structure.')
         parser.add_argument('--stpl', dest='stplroot', action='store',
                             help='Create a stpl templated sample folder structure.')
-        parser.add_argument('--dpi', action='store', nargs='?', default='600',
-                            help='''Set DPI value for PNG output of graphic files.''')
-        parser.add_argument('--gsdevice', action='store', nargs='?', default='pngalpha',
-                            help='''This is the output device used by ghostscript for png generation.''')
         parser.add_argument('-v','--verbose', action='store_true',
                             help='''Show files recursively included by each rest''')
         parser.add_argument('infile', nargs='?',
@@ -3237,13 +3186,6 @@ def main(**args):
                 help='Extension with starting dot (default: html). The target file name will be the in-file with this extension.')
         args = parser.parse_args().__dict__
 
-    global DPI
-    if 'dpi' in args:
-        DPI = int(args['dpi'])
-    global GSDEVICE
-    if 'gsdevice' in args:
-        GSDEVICE = args['gsdevice']
-  
     global verbose
     verbose = False
     if 'verbose' in args:
