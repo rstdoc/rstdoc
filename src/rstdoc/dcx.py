@@ -206,7 +206,10 @@ except Exception as e:
     print('pyfca not available:',e)
     pyfca = None
 
-op = os.path
+import sphinx_bootstrap_theme
+html_theme_path = ','.join(sphinx_bootstrap_theme.get_html_theme_path()).replace('\\','/')
+
+import posixpath as op
 opnj = lambda *x:op.normpath(op.join(*x))
 updir = lambda fn: opnj(op.dirname(fn),'..',op.basename(fn))
 #fn='x/y/../y/a.b'
@@ -259,6 +262,31 @@ def here_or_updir(fldr,file):
         filepth = updir(filepth)
     return filepth
 
+#master_doc and latex_documents is determined automatically
+sphinx_config_keys = '''
+    project
+    author
+    copyright
+    version
+    release
+    html_theme
+    html_theme_path
+    latex_elements
+    '''.split()
+
+sphinx_enforced = {
+    'numfig': 0
+    ,'smartquotes': 0
+    ,'source_suffix': '.rest'
+    ,'templates_path': []
+    ,'language': None
+    ,'highlight_language': "none"
+    ,'default_role': 'math'
+    ,'latex_engine': 'xelatex'
+    ,'pygments_style': 'sphinx'
+    ,'exclude_patterns': ['_build', 'Thumbs.db', '.DS_Store']
+    ,'todo_include_todos': 0}
+
 @lru_cache()
 def conf_py(fldr):
     """
@@ -278,10 +306,13 @@ def conf_py(fldr):
             DPI = config['dpi']
     except: 
         pass
+    config.update(sphinx_enforced)
+    config['html_theme_path'] = ','.join(config['html_theme_path']).replace('\\','/')
     return config
 
 _fillwith = lambda u,v: [x or v for x in u]
 
+_nbstr = lambda x: x.replace(b'\r\n',b'\n').decode('utf-8')
 def run_may_tmp(
     cmdlist #command list with one None that will be replaced by the temp file
     ,data=None #if data, it is place into the temp file
@@ -304,10 +335,14 @@ def run_may_tmp(
             print(cmdlist,'suffix=%s'%suffix,kwargs)
             return
         try:
+            for x in 'out err'.split():
+                kwargs['std'+x]=subprocess.PIPE
             r = subprocess.run(cmdlist,**kwargs)
             if r.returncode != 0:
-                raise RstDocError('Error code %s returned from'%r.returncode 
-                    +' '.join(cmdlist)+' in '+os.getcwd())
+                raise RstDocError('Error code %s returned from \n%s\nin\n%s\n'%(r.returncode 
+                    ,' '.join(cmdlist),os.getcwd())
+                    +'\n[stdout]\n%s\n[stderr]\n%s'%(
+                      _nbstr(r.stdout),_nbstr(r.stderr)))
         except OSError as err:
             if err.errno != ENOENT:   # No such file or directory
                 raise
@@ -357,27 +392,71 @@ def run_inkscape(
 
 def run_sphinx(
     infile #.txt, .rst, .rest filename (normally index.rest)
-    ,outdir #the path to the target directory
-    ,outtype #html,... or any other sphinx writer
-    ,config={}
+    ,outfile #the path to the target file (not it target dir)
+    ,outtype = None #html,... or any other sphinx writer
+    ,config={ #uses this config and not conf.py
+            'project': 'rstdoc'
+            ,'author': 'rstdoc'
+            ,'copyright': '2018, rstdoc'
+            ,'version': '1.0'
+            ,'release': '1.0.0'
+            ,'html_theme': 'bootstrap'
+            ,'html_theme_path': html_theme_path}
     ):
     '''
     Run Sphinx on infile.
 
+    >>> global dry_run
+    >>> dry_run = True
+    >>> os.chdir('../doc')
+
+    >>> run_sphinx('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
+    ['sphinx-build', '-b', 'html', ..., '-D', 'master-doc=index.rest'] ...
+
+    >>> run_sphinx('dd.rest','../../build/doc/sphinx_html/dd.html') # doctest: +ELLIPSIS
+    ['sphinx-build', '-b', 'singlehtml', ..., '-D', 'master-doc=dd.rest'] ...
+
+    >>> run_sphinx('dd.rest','../../build/doc/sphinx_latex/dd.tex') # doctest: +ELLIPSIS
+    ['sphinx-build', '-b', 'latex', ..., '-D', 'project=rstdoc', ...] ...
+
     '''
     dfn = lambda n,v:['-D',n+'='+v]
-    dr = op.dirname(infile)
-    project = op.splitext(op.basename(infile))[0]
-    confdir = here_or_updir(dr,'conf.py')
-    if op.exists(confdir):
-        confdir = op.dirname(condir)
-    else:
-        confdir = None
-    sphinxcmd = ['sphinx-build','-Ea','-b',outtype,dr,outdir
-        ]+(['-c',confdir] if confdir else [])+(
-          dfn('master_doc',infile)+dfn('project',project)
-          if not op.basename(infile).startswith('index.') else []
-          )
+    indr,infn = op.split(infile)
+    if not indr:
+        indr = '.'
+    outdr,outn = op.split(outfile)
+    cfg = {}
+    cfg.update({k:v for k,v in config.items() if k in sphinx_config_keys and 'latex' not in k})
+    cfg.update({k:v for k,v in sphinx_enforced.items() if 'latex' not in k})
+    cfg['master_doc'] = infn
+    if not outtype:
+        if outn.endswith('html'):
+            if infn.startswith('index.'):
+                outtype = 'html'
+            else:
+                outtype = 'singlehtml'
+        elif outn.endswith('tex'):
+            outtype = 'latex'
+        else:
+            outtype = op.splitext(outn)[1]
+    latex_elements = []
+    latex_documents = []
+    if 'latex' in outtype:
+        cfg.update({k:v for k,v in config.items() if k in sphinx_config_keys and 'latex' in k})
+        cfg.update({k:v for k,v in sphinx_enforced.items() if 'latex' in k})
+        try:
+            latex_elements = ([['-D',"latex_elements.%s=%s"%(k,v.replace('\n',''))] for k,v in cfg['latex_elements'].items()]+
+                [['-D','latex_engine=xelatex']])
+        except: pass
+        project = cfg.get('project',op.splitext(infn)[0])
+        author = cfg.get('author','')
+        latex_documents = [['-D',"latex_documents=%s,%s,%s,%s,%s,%s"%(
+                                infn,project.replace(' ','')+'.tex',project,author,'manual',0
+                                )]]
+    extras = ['-C']+reduce(lambda x,y:x+y,
+        [['-D',"%s=%s"%(k,(','.join(v)if isinstance(v,list) else v))
+          ] for k,v in cfg.items()]+ latex_elements + latex_documents)
+    sphinxcmd = ['sphinx-build','-b',outtype,indr,outdr]+extras
     run_may_tmp(sphinxcmd)
 
 def is_newer(infile,outfile):
@@ -391,7 +470,7 @@ def _copy_images_for(infile,outfile):
     _images = here_or_updir(op.dirname(infile),'_images')
     _images_tgt = here_or_updir(op.dirname(outfile),'_images')
     if op.exists(_images) and _images!=_images_tgt:
-        if not os.path.exists(_images_tgt):
+        if not op.exists(_images_tgt):
             if dry_run:
                 print('makedirs({})'.format(_images_tgt))
             else:
@@ -418,7 +497,6 @@ def run_pandoc(
     pandoccmd = ['pandoc','--standalone','-f','rst']+config.get('pandoc_opts',{}).get(outtype,[]
         )+['-t','latex' if outtype=='pdf' else outtype,infile,'-o',outfile]
     opt_refdoc = config.get('pandoc_doc_optref',{}).get(outtype,'')
-    #opt_refdoc = '--reference-doc reference.docx'
     if opt_refdoc:
         if isinstance(opt_refdoc,dict):
             opt_refdoc = opt_refdoc.get(inputs[0].name,'')
@@ -511,7 +589,7 @@ def convert_svg(
     if isinstance(infile,str):
         if not outfile:
             outfile = _imgout(infile)
-        csvg2png(file=infile,write_to=outfile,dpi=DPI)
+        csvg2png(infile,write_to=outfile,dpi=DPI)
     else:
         csvg2png(lambda:'\n'.join(infile),write_to=outfile,dpi=DPI)
 
@@ -535,7 +613,7 @@ def convert_tikz(
         config = conf_py(os.getcwd())
         tikzcontent = '\n'.join(infile).encode('utf-8')
 
-    binary = config.get('latex_engine','xelatex')
+    binary = 'xelatex'
 
     tikzcontent = tikzcontent.replace(b'\r\n', b'\n')
     tikzcontent = re.sub(br'^\s*%.*$\n', '', tikzcontent, 0, re.MULTILINE)
@@ -608,7 +686,7 @@ def convert_uml(
 
     '''
 
-    umlcmd = lambda i,o: ['plantuml',i,'-o'+op.dirname(o)]
+    umlcmd = lambda i,o: ['plantuml','-tpng',i,'-o'+op.dirname(o)]
     if isinstance(infile,str):
         if not outfile:
             outfile = _imgout(infile)
@@ -758,7 +836,7 @@ def convert_rest(
                   #'sphinx_html',... via sphinx
                   #'rst_html',... via rst2xxx frontend tools
                   #'file.docx',... is also possible: it will be used in the substitutions, if no ``_links_sphinx.rst``
-    ,fn_i_ln=None #(fn,i,ln) of the .stpl with all stpl includes sequenced (used by convert_any)
+    ,fn_i_ln=None #(fn,i,ln) of the .stpl with all stpl includes sequenced (used by convert())
     ):
     '''
     Default interpreted text role is set to math.
@@ -767,23 +845,32 @@ def convert_rest(
     >>> global dry_run
     >>> dry_run = True
     >>> os.chdir('../doc')
+
     >>> convert_rest('dd.rest') # doctest: +ELLIPSIS
     .. default-role:: math...
+
     >>> convert_rest('ra.rest.stpl') # doctest: +ELLIPSIS
     .. default-role:: math...
+
     >>> convert_rest(['hi there']) # doctest: +ELLIPSIS
     .. default-role:: math...
     hi there
+
     >>> convert_rest(['hi there'],None,'html') # doctest: +ELLIPSIS
     ['pandoc', ..., '-o', '-'] ...
+
     >>> convert_rest('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
     ['pandoc', ..., '-o', 'ra.docx', ...
+
     >>> convert_rest(['hi there'],'test.html') # doctest: +ELLIPSIS
     ['pandoc', ..., '-o', 'test.html'] ...
+
     >>> convert_rest(['hi there'],'test.html','sphinx_html') # doctest: +ELLIPSIS
     ['sphinx-build',...
+
     >>> convert_rest(['hi there'],'test.html','sphinx') # doctest: +ELLIPSIS
     ['sphinx-build',...
+
     >>> convert_rest(['hi there'],'test.odt','rst') # doctest: +ELLIPSIS
     ['rst2odt.py', ...
     
@@ -794,10 +881,10 @@ def convert_rest(
             filelines = f.readlines()
     else:
         filelines = infile
-    tool = rest_tools['pandoc']
+    rsttool = rest_tools['pandoc']
     try:
-        tool,outtype = outtype.split('_')
-        tool = rest_tools[tool]
+        rsttool,outtype = outtype.split('_')
+        rsttool = rest_tools[rsttool]
     except: pass
     outf = None
     finalf = None
@@ -821,12 +908,12 @@ def convert_rest(
             if not outtype:
                 outtype = _outtype
             elif outtype in rest_tools:
-                tool = rest_tools[outtype]
+                rsttool = rest_tools[outtype]
                 outtype = _outtype
             if isinstance(infile,list):
                 infile = 'rest'
         if any(x.endswith(outtype) for x in [_rest,_rst,_txt]):
-            tool = None #no further processing wanted, outf is final
+            rsttool = None #no further processing wanted, outf is final
             if not outf:
                 outf  = open(outfile,'w',encoding='utf-8')
         else:
@@ -846,18 +933,18 @@ def convert_rest(
             outf.write('\n')
             for (i,fi),tgt,lnkname in make_tgts(filelines,infile,fn_i_ln):
                 filenoext=op.splitext(outfile)[0]
-                outf.write(create_link(outtype if tool!=run_sphinx else 'sphinx',filenoext,tgt,lnkname))
+                outf.write(create_link(outtype if rsttool!=run_sphinx else 'sphinx',filenoext,tgt,lnkname))
     finally:
         if finalf == sys.stdout:
             outfile = '-'
         for x in [outf,finalf]:
             if x is not None and x != sys.stdout:
                 x.close()
-    if tool:
+    if rsttool:
         config = conf_py(op.dirname(infile))
         if outf:
             infile = outf.name
-        tool(infile,outfile,outtype,config)
+        rsttool(infile,outfile,outtype,config)
 
 converters = {
     _svg:   convert_svg
@@ -872,38 +959,47 @@ converters = {
     ,_txt:  convert_rest
 }
 
-
-def convert_any(
+def convert(
     infile #any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else stpl is assumed
     ,outfile = None  #'-' means standard out, else a file name, or like outtype, if infile is a file name
-    ,outtype = None  #or 'html', 'sphinx_html', 'docx', 'odt', 'file.docx',... interpet input as rest, 
-    ,intype = None   #if infile is a list of strings, this specifies the type (default: stpl)
+    ,outtype = None  #or 'html', 'sphinx_html', 'docx', 'odt', 'file.docx',... interpet input as rest, else specifies graph type
+    ,intype = None   #if ``infile`` is a list of strings, ``intype`` specifies the type (default: stpl)
     ):
     '''
     Converts the known files.
 
     Stpl files are immediately forwarded to the next converter.
 
+    The main job is to normalized the input params, because this is called from main() and via Python.
+    The it forwards to the right converter.
+
     >>> global dry_run
     >>> dry_run = True
     >>> os.chdir('../doc')
-    >>> convert_any(['hi {{2+3}}!']) # doctest: +ELLIPSIS
+
+    >>> convert(['hi {{2+3}}!']) # doctest: +ELLIPSIS
     ['hi 5!']
-    >>> convert_any(["newpath {{' '.join(str(i)for i in range(4))}} rectstroke showpage"],'tst.png','eps') # doctest: +ELLIPSIS
+
+    >>> convert(["newpath {{' '.join(str(i)for i in range(4))}} rectstroke showpage"],'tst.png','eps') # doctest: +ELLIPSIS
     ['inkscape', ..., '--export-png=tst.png'] ...
-    >>> convert_any('ra.rest.stpl') # doctest: +ELLIPSIS
+
+    >>> convert('ra.rest.stpl') # doctest: +ELLIPSIS
     .. default-role:: math
     ...
-    >>> convert_any('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
+    >>> convert('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
     ['pandoc', ..., '-o', 'ra.docx', ...
-    >>> convert_any('ra.rest.stpl','ra.docx','sphinx') # doctest: +ELLIPSIS
+
+    >>> convert('ra.rest.stpl','ra.docx','sphinx') # doctest: +ELLIPSIS
     ['sphinx-build', ...
-    >>> convert_any('dd.rest',None,'html') # doctest: +ELLIPSIS
+
+    >>> convert('dd.rest',None,'html') # doctest: +ELLIPSIS
     ['pandoc', ..., '-o', '-'] ...
-    >>> convert_any('dd.rest','html') # doctest: +ELLIPSIS
+
+    >>> convert('dd.rest','html') # doctest: +ELLIPSIS
     ['pandoc', ..., '-o', 'dd.html'] ...
-    >>> convert_any('dd.rest','out/dir/sphinx_html') # doctest: +ELLIPSIS
-    ['sphinx-build', ..., 'out/dir/dd.html', ...
+
+    >>> convert('index.rest','../../build/doc/sphinx_singlehtml') # doctest: +ELLIPSIS
+    ['sphinx-build', '-b', 'singlehtml', ..., '../../build/doc', ...] ...
                
 
     '''
@@ -921,16 +1017,20 @@ def convert_any(
     if infile:
         if isinstance(infile,str):
             nextinfile,fext = op.splitext(infile)
-            try:
-                o,n = op.split(outfile)
-                ot,oe = op.splitext(n)
-                if not outtype and not oe:
-                    inn = op.basename(infile).split('.')[0]
-                    ott = outtype = ot
+            try: #swap outfile with outtype
+                outd,outf = op.split(outfile)
+                outf.index('.')
+            except ValueError:
+                if not outtype or op.split(outtype)[1].find('.')>=0:
+                    outtype = outf
+                    inn = op.splitext(op.basename(infile))[0]
                     try:
-                        ott = ott.split('_')[1]
-                    except: pass
-                    outfile = opnj(o,inn)+'.'+ott
+                        ott = outtype.split('_')[1]
+                    except:
+                        ott = outtype
+                    if ott.endswith('html'):
+                        ott='html'
+                    outfile = opnj(outd,inn)+'.'+ott
             except: pass
         else:
             if intype in converters:
@@ -951,15 +1051,16 @@ def convert_any(
                 nextinfile,fextnext = op.splitext(nextinfile)
             except:
                 fextnext = None
-            if converters[fext] == convert_rest:
-                infile = converters[fext](infile, outfile if not fextnext else None, outtype, fn_i_ln)
+            thisconverter = converters[fext]
+            if  thisconverter == convert_rest:
+                infile = thisconverter(infile, outfile if not fextnext else None, outtype, fn_i_ln)
             else:
                 if fext == _stpl:
                     if isinstance(infile,list):
                         fn_i_ln = list(_read_stpl_lines_it(infile))
                     else:
                         fn_i_ln = _read_stpl_lines(infile)
-                infile = converters[fext](infile, outfile if not fextnext else None)
+                infile = thisconverter(infile, outfile if not fextnext else None)
             if not infile:
                 break
             if not fextnext:
@@ -1292,7 +1393,7 @@ class Traceability:
         tlines.append('\n')
         with open(opnj(fldr,_traceability_file+_rst),'w',encoding='utf-8') as f:
             f.write('.. raw:: html\n\n')
-            #needs in conf.py: html_extra_path=["_images/_traceability_file.svg"]
+            #for sphinx: needs in conf.py: html_extra_path=["_images/_traceability_file.svg"]
             f.write('    <object data="'+_traceability_file+'.svg" type="image/svg+xml"></object>\n')
             if target_id_color is not None:
                 f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
@@ -1303,7 +1404,7 @@ class Traceability:
         ttgt = lambda : self.tracehtmltarget.endswith(_rest) and op.splitext(self.tracehtmltarget)[0] or self.tracehtmltarget
         ld.svg(target=ttgt()+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
         tracepng = tracesvg[:-len(_svg)]+_png
-        csvg2png(file=tracesvg, write_to=tracepng, dpi=DPI)
+        csvg2png(tracesvg, write_to=tracepng, dpi=DPI)
         return tlines
 
 def fldrincluded(
@@ -1350,7 +1451,7 @@ def fldrincluded(
                 sofar.add(fullpth_nostpl)
                 yield rest_deps(f,fullpth)
         if sphinx_index:
-            yield rest_deps(os.path.split(sphinx_index)[1],sphinx_index)
+            yield rest_deps(op.split(sphinx_index)[1],sphinx_index)
 
 def pair(
     alist #first list
@@ -1786,9 +1887,9 @@ def fldrs(
         for dcs in fldrincluded('.'): #.rest.stpl then no .rest
             for doc in dcs:
                 if is_rest(doc):
-                    fldr,name_without_rest = op.split(doc)
+                    fldr,namenoext = op.split(doc)
                     fldr_allfiles[fldr] |= set(dcs)
-                    name_without_rest = name_without_rest.replace(_stpl,'').replace(_rest,'')
+                    namenoext = namenoext.replace(_stpl,'').replace(_rest,'')
                 rstpath = doc.replace(_stpl,'')
                 if doc.endswith(_stpl) and op.exists(rstpath):
                     lns = _read_lines(rstpath)
@@ -1804,7 +1905,7 @@ def fldrs(
                 lnks = list(make_lnks(lns))
                 if fldr not in fldr_lnktgts:
                     fldr_lnktgts[fldr] = []
-                fldr_lnktgts[fldr].append((name_without_rest,doc,len(lns),lnks,tgts))
+                fldr_lnktgts[fldr].append((namenoext,doc,len(lns),lnks,tgts))
                 fldr_alltgts[fldr] |= set([n for _,n,_ in tgts])
                 fldr_substitutions[fldr] |= set(get_substitutions(lns)) 
         for fldr,lnktgts in fldr_lnktgts.items():
@@ -1830,7 +1931,7 @@ def create_link(linktype,filenoext,tgt,lnkname):
 
 def links_and_tags(
     fldr #folder path
-    ,lnktgts  #list of links and targets in a document (name_without_rest, doc, lenlns, lnks, tgts)
+    ,lnktgts  #list of links and targets in a document (namenoext, doc, lenlns, lnks, tgts)
     ,allfiles #all files in one folder
     ,alltgts  #all targets of the whole folder
     ,substitutions  #all substitution definitions in the whole folder
@@ -1866,9 +1967,9 @@ def links_and_tags(
     if (fldr.strip()):
        upcnt = len(fldr.split(os.sep))
     #unknowntgts = []
-    def add_target(tgt,lnkname,name_without_rest,upcnt,fi):
+    def add_target(tgt,lnkname,namenoext,upcnt,fi):
         for linktype,linklines in linkfiles:
-            linklines.append(create_link(linktype,name_without_rest,tgt,lnkname))
+            linklines.append(create_link(linktype,namenoext,tgt,lnkname))
         tagentries.append(r'{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(tgt,"../"*upcnt+fi[0],fi[1]))
     def add_linksto(prevtgt,i,tgt,iterlnks,ojlnk=[0,None]): #all the links from the block following prevtgt up to (i,tgt) 
         linksto = []
@@ -1900,7 +2001,7 @@ def links_and_tags(
             linksto = '.. .. ' + ','.join(linksto) + '\n\n'
             for _,linklines in linkfiles:
                 linklines.append(linksto)
-    for name_without_rest, doc, lenlns, lnks, tgts in lnktgts:
+    for namenoext, doc, lenlns, lnks, tgts in lnktgts:
          for _,linklines in linkfiles:
              linklines.append('\n.. .. {0}\n\n'.format(doc))
          iterlnks = iter(lnks)
@@ -1908,11 +2009,11 @@ def links_and_tags(
          for (i,fi),tgt,lnkname in tgts:
              if i is not None:
                  add_linksto(prevtgt,i,tgt,iterlnks)
-                 add_target(tgt,lnkname,name_without_rest,upcnt,fi)
+                 add_target(tgt,lnkname,namenoext,upcnt,fi)
                  prevtgt = tgt
          add_linksto(prevtgt,lenlns,None,iterlnks)
          if verbose:
-             if '/'+name_without_rest+'.' in doc:
+             if '/'+namenoext+'.' in doc:
                  print('    '+doc)
              else:
                  print('        '+doc)
@@ -2211,34 +2312,29 @@ example_tree = r'''
             halt_level: severe
             report_level: error
         ├ conf.py
-            extensions = ['sphinx.ext.autodoc',
-                'sphinx.ext.todo',
-                'sphinx.ext.mathjax',
-                'sphinx.ext.viewcode',
-                'sphinx.ext.graphviz',
-                ]
-            numfig = False
-            smartquotes = False
-            default_role = 'math'
-            templates_path = ['_templates']
-            source_suffix = '.rest'
-            master_doc = 'index'
             project = 'sample'
             author = project+' Project Team'
             copyright = '2018, '+author
             version = '1.0'
             release = '1.0.0'
+            html_theme = 'bootstrap'
+            import sphinx_bootstrap_theme
+            html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+            
+            #determined automatically or enforced if compiled via rstdcx/dcx.py
+            master_doc = 'index'
+            default_role = 'math'
+            numfig = False
+            source_suffix = '.rest'
+            smartquotes = False
+            templates_path = []
             language = None
             highlight_language = "none"
-            exclude_patterns = []
-            pygments_style = 'sphinx'
-            todo_include_todos = True
-            import sphinx_bootstrap_theme
-            html_theme = 'bootstrap'
-            html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+            todo_include_todos = False
             latex_engine = 'xelatex'
-            gsdevice = 'pngalpha'
-            dpi = 600
+            pygments_style = 'sphinx'
+            exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+            
             tikz_tikzlibraries = 'arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections'
             tikz_latex_preamble = r"""
             \usepackage{unicode-math}
@@ -2252,7 +2348,10 @@ example_tree = r'''
             latex_documents = [
                 (master_doc, project.replace(' ','')+'.tex',project+' Documentation',author,'manual'),
             ]
-            #new in rstdoc
+            
+            #new in rstdcx/dcx/py
+            gsdevice = 'pngalpha'
+            dpi = 600
             target_id_group = lambda targetid: targetid[0]
             target_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
             html_extra_path=["doc/_images/_traceability_file.svg"] #IF YOU DID ``.. include:: _traceability_file.rst``
@@ -2801,8 +2900,9 @@ example_stp_subtree = r'''
                # Definitions
                max_charging_time = 3.5*u.hour #in |hw_charger|
            ├ utility.rst.tpl
-               % import sys, os
-               % sys.path.append(os.path.dirname(__file__))
+               % import sys
+               % import posixpath as op
+               % sys.path.append(op.dirname(__file__))
                % from model import *
                % cntr = lambda alist0,prefix='',width=2: alist0.append(alist0[-1]+1) or ("{}{:0>%s}"%width).format(prefix,alist0[-1])
                % II=lambda prefix,alist0,short:':{}: **{}**'.format(cntr(alist0,prefix),short)
@@ -3401,7 +3501,7 @@ def main(**args):
     if 'infile' in args and args['infile']:
         for x in 'infile outfile'.split():
             if x not in args: args[x] = None
-        convert_any(args['infile'],args['outfile'],args['outtype'])
+        convert(args['infile'],args['outfile'],args['outtype'])
   
 
 if __name__=='__main__':
