@@ -163,6 +163,7 @@ import subprocess
 import io
 import contextlib
 import shutil
+import atexit
 from tempfile import NamedTemporaryFile, mkdtemp
 from threading import Lock
 from pathlib import Path
@@ -173,6 +174,7 @@ from itertools import chain, tee
 from types import GeneratorType
 from argparse import Namespace
 
+import svgwrite.drawing
 import pyx
 import pygal
 import matplotlib
@@ -180,44 +182,23 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import cairocffi
-from cairosvg import svg2png
-def csvg2png(file,**kwargs):
-    if isinstance(file,str):
-        fullfile = op.abspath(file)
-        try:
-            if dry_run:
-                print('svg2png: url="file://"'+fullfile,kwargs)
-                return
-            svg2png(url="file://"+fullfile, **kwargs)
-        except:
-            if dry_run:
-                print('svg2png: url="file:///"'+fullfile,kwargs)
-                return
-            svg2png(url="file:///"+fullfile, **kwargs)
-    else:
-        if dry_run:
-            print('svg2png: bytestring="',file,kwargs)
-            return
-        svg2png(bytestring=file(), **kwargs)
+import cairosvg
 
-try:
-    import pyfca
-except Exception as e:
-    print('pyfca not available:',e)
-    pyfca = None
+import pyfca
+
+from hashlib import sha1 as sha
 
 import sphinx_bootstrap_theme
 html_theme_path = ','.join(sphinx_bootstrap_theme.get_html_theme_path()).replace('\\','/')
 
 import posixpath as op
-opnj = lambda *x:op.normpath(op.join(*x))
+opnj = lambda *x:op.normpath(op.join(*x)).replace("\\","/")
 updir = lambda fn: opnj(op.dirname(fn),'..',op.basename(fn))
 #fn='x/y/../y/a.b'
 #updir(fn)#x\a.b
 #updir('a.b')#..\a.b
 #updir('a.b/a.b')#a.b
 #opnj(fn)#x\y\a.b
-
 
 class RstDocError(Exception):
     pass
@@ -274,6 +255,57 @@ sphinx_config_keys = '''
     latex_elements
     '''.split()
 
+latex_elements = {'preamble':r"""
+\usepackage{pgfplots}
+\usepackage{unicode-math}
+\usepackage{tikz}
+\usepackage{caption}
+\captionsetup[figure]{labelformat=empty}
+\usetikzlibrary{arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections}
+"""
+}
+
+tex_wrap = r"""
+\documentclass[12pt,tikz]{standalone}
+\usepackage{amsmath}
+"""+latex_elements['preamble']+r"""
+\pagestyle{empty}
+\begin{document}
+%s
+\end{document}
+"""
+
+target_id_group = lambda targetid: targetid[0]
+target_id_color = {"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
+html_extra_path = ["doc/_images/_traceability_file.svg"] #IF YOU DID ``.. include:: _traceability_file.rst``
+pandoc_doc_optref = {'latex': '--template reference.tex',
+                 'html': {},#each can also be dict of file:template
+                 'pdf': '--template reference.tex',
+                 'docx': '--reference-doc reference.docx',
+                 'odt': '--reference-doc reference.odt'
+                 }
+_pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
+pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
+rst2_opts = {'odt':['--leave-comments'],'html':['--leave-comments']}#see ``rst2html.py --help`` or ``rst2odt.py --help``
+
+config_defaults = {
+    'project': 'rstdoc'
+    ,'author': 'rstdoc'
+    ,'copyright': '2018, rstdoc'
+    ,'version': '1.0'
+    ,'release': '1.0.0'
+    ,'html_theme': 'bootstrap'
+    ,'html_theme_path': html_theme_path
+    ,'latex_elements': latex_elements
+    ,'tex_wrap': tex_wrap
+    ,'target_id_group': target_id_group
+    ,'target_id_color': target_id_color
+    ,'html_extra_path': html_extra_path
+    ,'pandoc_doc_optref': pandoc_doc_optref
+    ,'pandoc_opts': pandoc_opts
+    ,'rst2_opts': rst2_opts
+    }
+
 sphinx_enforced = {
     'numfig': 0
     ,'smartquotes': 0
@@ -285,7 +317,8 @@ sphinx_enforced = {
     ,'latex_engine': 'xelatex'
     ,'pygments_style': 'sphinx'
     ,'exclude_patterns': ['_build', 'Thumbs.db', '.DS_Store']
-    ,'todo_include_todos': 0}
+    ,'todo_include_todos': 0
+    }
 
 @lru_cache()
 def conf_py(fldr):
@@ -295,6 +328,7 @@ def conf_py(fldr):
     """
     confpy = here_or_updir(fldr,'conf.py')
     config={}
+    config.update(config_defaults)
     try:
         with open(confpy,encoding='utf-8') as f:
             eval(compile(f.read(),op.abspath(confpy),'exec'),config)
@@ -307,10 +341,19 @@ def conf_py(fldr):
     except: 
         pass
     config.update(sphinx_enforced)
-    config['html_theme_path'] = ','.join(config['html_theme_path']).replace('\\','/')
+    try:
+        config['html_theme_path'] = ','.join(config['html_theme_path']).replace('\\','/')
+    except: pass
     return config
 
 _fillwith = lambda u,v: [x or v for x in u]
+
+def _joinlines(lns):
+    if lns[0].endswith('\n'):
+        tmp = ''.join(lns)
+    else:
+        tmp = '\n'.join(lns)
+    return tmp.replace('\r\n', '\n')
 
 _nbstr = lambda x: x.replace(b'\r\n',b'\n').decode('utf-8')
 def run_may_tmp(
@@ -363,13 +406,131 @@ _png = '.png' #target of all others
 
 def _imgout(inf): 
     inp,inname = op.split(inf)
+    infn,infe = op.splitext(inname)
+    if not infe in graphic_extensions:
+        raise ValueError('%s is not an image source'%inf)
     outp = here_or_updir(inp,'_images')
     if not op.exists(outp):
         outp = inp
-    outname = inname[:-len(op.splitext(inname)[1])]+_png
+    outname = infn+_png
     outf = opnj(outp,outname)
     return outf
 
+@contextlib.contextmanager
+def tmpdir():
+    '''
+    Can be used as::
+
+        with tmpdir:
+            #we are in the tempory directory here
+    '''
+    atmpdir = mkdtemp()
+    curdir = os.getcwd()
+    os.chdir(atmpdir)
+    try:
+        yield
+    finally:
+        os.chdir(curdir)
+        shutil.rmtree(atmpdir)
+
+#_ext('x')#.x
+#_ext('.x')#.x
+_ext = lambda x: x[0]=='.' and x or '.'+x
+
+def normoutfile(f,suffix=None):
+    """
+    Make outfile from infile by appending suffix,
+    or ``.png`` in ``./_images`` or ``../_images``  or ``./`` from infile dir.
+    The outfile is returned.
+    """
+    @wraps(f)
+    def wrapper(args, **kwds):
+        (infile,outfile),args = args[:2],args[2:]
+        if isinstance(infile,str):
+            if not outfile:
+                if suffix:
+                    infn,infe = op.splitext(infile)
+                    outfile = infn + _ext(suffix)
+                else:
+                    outfile = _imgout(infile)
+        f(infile, outfile, *args, **kwds)
+        return outfile
+    return wrapper
+
+def chdirin(f):
+    """
+    Changes into the dir of the infile if infile is a file name string.
+    """
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        (infile,outfile),args = args[:2],args[2:]
+        if isinstance(infile,str):
+            ndir,inf = op.split(infile)
+        else:
+            ndir,inf = '',infile
+        if ndir:
+            if outfile:
+                outfile = op.relpath(outfile,start=ndir)
+            curdir = os.getcwd()
+            os.chdir(ndir)
+            try:
+                return f(inf, outfile, *args, **kwds)
+            finally:
+                os.chdir(curdir)
+        return f(infile, outfile, *args, **kwds)
+    return wrapper
+
+def intmpiflist(f,suffix=None):
+    """
+    Wraps f(infile,outfile) returning None
+    to produce a temporary dir/file for when infile is a list of strings.
+    The temporary dir/file is removed only via atexit. 
+
+    To make this have an effect use after ``readin``
+
+    - includes ``normoutfile``
+    - ``chdirin`` only applies for actual file name while this for lists of strings
+
+    If outfile is None, outfile is derived from suffix,
+    which can be `rest.stpl`, `png.svg`;
+    If suffix is `.svg`, ..., png is assumed and will be placed into ``_images``.
+
+    """
+
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        (infile,outfile),args = args[:2],args[2:]
+        suf0,suf1 = suffix.split('.')
+        if isinstance(infile,list) and infile:
+            if outfile:
+                outfile = op.abspath(outfile)
+            atmpdir = mkdtemp()
+            atexit(os.rmtree,atmpdir)
+            curdir = os.getcwd()
+            os.chdir(atmpdir)
+            try:
+                content = _joinlines(infile).encode('utf-8')
+                infn = sha(content).hexdigest()
+                infile = infn+suf1
+                with open(infile,'bw') as ff:
+                    ff.write(content)
+                return normoutfile(f,suf0)(infile, outfile, *args, **kwds)
+            finally:
+                os.chdir(curdir)
+        return normoutfile(f,suf0)(infile, outfile, *args, **kwds)
+    return wrapper
+
+def readin(f):
+    @wraps(f)
+    def wrapper(args, **kwds):
+        (infile,outfile),args = args[:2],args[2:]
+        if isinstance(infile,str):
+            with open(infile,encoding) as inf:
+                return f(inf.readlines(),outfile,*args,**kwds)
+        return f(infile, outfile, *args, **kwds)
+    return wrapper
+
+@normoutfile
 def run_inkscape(
     infile #.svg, .eps, .pdf filename string or list with actual .eps or .svg data
     ,outfile #.png file name
@@ -384,8 +545,6 @@ def run_inkscape(
             '--export-area-drawing','--export-background-opacity=0',
             i,'--export-png='+o]
     if isinstance(infile,str):
-        if not outfile:
-            outfile = _imgout(infile)
         run_may_tmp(iscmd(infile,outfile))
     else:
         run_may_tmp(iscmd(None,outfile),'\n'.join(infile),suffix)
@@ -393,15 +552,8 @@ def run_inkscape(
 def run_sphinx(
     infile #.txt, .rst, .rest filename (normally index.rest)
     ,outfile #the path to the target file (not it target dir)
-    ,outtype = None #html,... or any other sphinx writer
-    ,config={ #uses this config and not conf.py
-            'project': 'rstdoc'
-            ,'author': 'rstdoc'
-            ,'copyright': '2018, rstdoc'
-            ,'version': '1.0'
-            ,'release': '1.0.0'
-            ,'html_theme': 'bootstrap'
-            ,'html_theme_path': html_theme_path}
+    ,outtype=None #html,... or any other sphinx writer
+    ,config=config_defaults #uses this config and not conf.py
     ):
     '''
     Run Sphinx on infile.
@@ -425,20 +577,21 @@ def run_sphinx(
     if not indr:
         indr = '.'
     outdr,outn = op.split(outfile)
+    outnn,outne = op.splitext(outn)
     cfg = {}
     cfg.update({k:v for k,v in config.items() if k in sphinx_config_keys and 'latex' not in k})
     cfg.update({k:v for k,v in sphinx_enforced.items() if 'latex' not in k})
     cfg['master_doc'] = infn
     if not outtype:
-        if outn.endswith('html'):
+        if outne=='html':
             if infn.startswith('index.'):
                 outtype = 'html'
             else:
                 outtype = 'singlehtml'
-        elif outn.endswith('tex'):
+        elif outne=='tex':
             outtype = 'latex'
         else:
-            outtype = op.splitext(outn)[1]
+            outtype = outne
     latex_elements = []
     latex_documents = []
     if 'latex' in outtype:
@@ -488,7 +641,7 @@ def run_pandoc(
     infile #.txt, .rst, .rest filename
     ,outfile #the path to the target document
     ,outtype #html,... 
-    ,config={}
+    ,config=config_defaults #use this config and not from conf.py
     ):
     '''
     Run Pandoc on infile.
@@ -533,135 +686,89 @@ rest_tools = {
     ,'rst': run_rst
     }
 
-@contextlib.contextmanager
-def tmpdir():
-    '''
-    Can be used as::
-
-        with tmpdir:
-            #we are in the tempory directory here
-    '''
-    atmpdir = mkdtemp()
-    curdir = os.getcwd()
-    os.chdir(atmpdir)
-    try:
-        yield
-    finally:
-        os.chdir(curdir)
-        shutil.rmtree(atmpdir)
-
-def chdirin(f):
-    @wraps(f)
-    def wrapper(*args, **kwds):
-        infile = args[0]
-        ndir = None
-        if isinstance(infile,str):
-            ndir,inf = op.split(infile)
-        else:
-            inf = infile
-        outf = None
-        if len(args)>1:
-            outfile = args[1]
-            if ndir and outfile:
-                outf = op.relpath(outfile,start=ndir)
-            else:
-                outf = outfile
-        if ndir:
-            curdir = os.getcwd()
-            os.chdir(ndir)
-            try:
-                return f(inf, outf, *args[2:], **kwds)
-            finally:
-                os.chdir(curdir)
-        else:
-            return f(inf, outf, *args[2:], **kwds)
-    return wrapper
-
+@normoutfile
 @chdirin
-def convert_svg(
+@readin
+def svgpng(
     infile, #a .svg file name or list of lines
-    outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
+    outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``.``
     ):
     '''
     Converts a .svg file to a png file.
 
     '''
-    if isinstance(infile,str):
-        if not outfile:
-            outfile = _imgout(infile)
-        csvg2png(infile,write_to=outfile,dpi=DPI)
-    else:
-        csvg2png(lambda:'\n'.join(infile),write_to=outfile,dpi=DPI)
+    cairosvg.svg2png(bytestring='\n'.join(infile),write_to=outfile,dpi=DPI)
 
 @chdirin
-def convert_tikz(
-    infile #a .tikz file name or list of lines
-    ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
+@intmpiflist
+def texpng(
+    infile #a .tex file name or list of lines
+    ,outfile=None #if not provided, the input file with .png either in ``./_images`` or ``../_images`` or ``.``
     ):
     '''
-    Converts a .tikz file to a png file.
+    Latex has several graphic packages, like
+
+    - tikz
+    - chemfig
+
+    that can be converted to .png with this function.
+
+    For ``.tikz`` file use |tikzpng|.
 
     '''
 
-    if isinstance(infile,str):
-        if not outfile:
-            outfile = _imgout(infile)
-        config = conf_py(op.dirname(infile))
-        with open(infile,'rb') as f:
-            tikzcontent = f.read()
-    else:
-        config = conf_py(os.getcwd())
-        tikzcontent = '\n'.join(infile).encode('utf-8')
+    latex = _joinlines(infile)
+    with open(infile, 'wb') as tf:
+        tf.write(latex.encode('utf-8'))
+    try:
+        run_may_tmp([binary, '-interaction=nonstopmode', infile])
+    except RstDocError as e:
+        print('\n[latex]\n',latex)
+        raise
+    pdffile = op.splitext(infile)[0]+'.pdf'
+    run_inkscape(pdffile,outfile)
 
-    binary = 'xelatex'
+def _texwrap(f):
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        (inlist,outfile,config),args = args[:3],args[3:]
+        content = _joinlines(infile)
+        latex = config['tex_wrap']%content
+        return f(latex.splitlines(),*args, **kwds)
+    return wrapper
 
-    tikzcontent = tikzcontent.replace(b'\r\n', b'\n')
-    tikzcontent = re.sub(br'^\s*%.*$\n', '', tikzcontent, 0, re.MULTILINE)
-    tikzcontent = re.sub(br'^\s*$\n', '', tikzcontent, 0, re.MULTILINE)
-    if not tikzcontent.startswith(br'\begin{tikzpicture}'):
-        tikzcontent = b'\\begin{tikzpicture}\n' + tikzcontent + b'\n\\end{tikzpicture}'
-
-    DOC_HEAD = r'''
-\documentclass[12pt,tikz]{standalone}
-'''+(r'''\usepackage[utf8]{inputenc}
-''' if binary!='xelatex' else '') +r'''
-\usepackage{amsmath}
-\usepackage{pgfplots}
-\usetikzlibrary{%s}
-\pagestyle{empty}
 '''
-    DOC_BODY = r'''
-\begin{document}
-%s
-\end{document}
+Decorator that wraps the file or list of strings of first input parameter by ``tex_wrap`` as given by conf.py.
 '''
-    libs = config.get('tikz_tikzlibraries',
-        'arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections')
-    libs = libs.replace(' ', '').replace('\t', '').strip(', ')
-    latex = DOC_HEAD % libs
-    latex += config.get('tikz_latex_preamble',r"""
-\usepackage{unicode-math}
-\usepackage{tikz}
-\usepackage{caption}
-\captionsetup[figure]{labelformat=empty}
-""")
-    latex += DOC_BODY % tikzcontent.decode('utf-8')
+texwrap = lambda f: readin(intmpiflist(_texwrap(f)))
 
-    outf = op.abspath(outfile)
-    with tmpdir():
-        with open('tikz.tex', 'wb') as tf:
-            tf.write(latex.encode('utf-8'))
-        try:
-            run_may_tmp([binary, '-interaction=nonstopmode', 'tikz.tex'])
-        except RstDocError as e:
-            print('\n[latex]\n',latex)
-            raise
-        run_inkscape('tikz.png',outf)
+def _tikzwrap(f):
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        (tikzlns),args = args[:1],args[1:]
+        content = _joinlines(tikzlns).strip()
+        tikzenclose = [r'\begin{tikzpicture}','%s',r'\end{tikzpicture}']
+        if not content.startswith(tikzenclose[0]):
+            content = '\n'.join(tikzenclose)%content
+        return f(content.splitlines(),*args, **kwds)
+    return wrapper
 
+
+'''
+Decorator that wraps the file or list of strings of first input parameter by tikzpicture and ``tex_wrap`` as given by conf.py.
+'''
+tikzwrap = lambda f: readin(intmpiflist(_tikzwrap(_texwrap(f))))
+
+'''
+Converts a .tikz file to a png file.
+'''
+tikzpng = tikzwrap(texpng)
+
+@normoutfile
 @chdirin
-def convert_dot(
+def dotpng(
     infile #a .dot file name or list of lines
-    ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
+    ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
     ):
     '''
     Converts a .dot file to a png file.
@@ -670,16 +777,15 @@ def convert_dot(
 
     dotcmd = lambda i,o: ['dot','-Tpng',i,'-o',o]
     if isinstance(infile,str):
-        if not outfile:
-            outfile = _imgout(infile)
         run_may_tmp(dotcmd(infile,outfile))
     else:
         run_may_tmp(dotcmd(None,outfile),'\n'.join(infile),'.dot')
 
+@normoutfile
 @chdirin
-def convert_uml(
+def umlpng(
     infile #a .uml file name or list of lines
-    ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
+    ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
     ):
     '''
     Converts a .uml file to a png file.
@@ -688,16 +794,15 @@ def convert_uml(
 
     umlcmd = lambda i,o: ['plantuml','-tpng',i,'-o'+op.dirname(o)]
     if isinstance(infile,str):
-        if not outfile:
-            outfile = _imgout(infile)
         run_may_tmp(umlcmd(infile,outfile),shell=True)
     else:
         run_may_tmp(umlcmd(None,outfile),'\n'.join(infile),'.uml',shell=True)
 
+@normoutfile
 @chdirin
-def convert_eps(
+def epspng(
     infile #a .eps file name or list of lines
-    ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
+    ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
     ):
     '''
     Converts an .eps file to a png file using inkscape.
@@ -707,10 +812,12 @@ def convert_eps(
     run_inkscape(infile,outfile,suffix='.eps')
 
 _pyglock = Lock()
+@normoutfile
 @chdirin
-def convert_pyg(
+@readin
+def pygpng(
     infile #a .pyg file name or list of lines
-    ,outfile=None #if not provided the input file with new extension .png either in ./_images or ../_images or ./
+    ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
     ):
     '''
     Converts a .pyg file to a png file.
@@ -720,24 +827,18 @@ def convert_pyg(
     Else the following is tried
 
     - ``pyx.canvas.canvas`` from the `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or 
+    - ``svgwrite.drawing.Drawing`` from the `svgwrite <https://svgwrite.readthedocs.io>`__ library or 
     - ``cairocffi.Surface`` from `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
     - ``pygal.Graph`` from `pygal <https://pygal.org>`__
     - `matplotlib <https://matplotlib.org>`__. If ``matplotlib.pyplot.get_fignums()>1`` the figures result ``<name><fignum>.png`` 
 
     '''
 
-    if isinstance(infile,str):
-        if not outfile:
-            outfile = _imgout(infile)
-        with open(infile) as pygf:
-            pygcode = pygf.read()
-    else:
-        pygcode = '\n'.join(infile)
-        infile = outfile
+    pygcode = '\n'.join(infile)
     pygvars={}
     try:
         _pyglock.acquire()
-        eval(compile(pygcode,infile,'exec'),pygvars)
+        eval(compile(pygcode,outfile,'exec'),pygvars)
     finally:
         _pyglock.release()
     if 'save_to_png' in pygvars:
@@ -747,19 +848,26 @@ def convert_pyg(
             if isinstance(v,pyx.canvas.canvas):
                 try:
                     _pyglock.acquire()
-                    csvg2png(v._repr_svg_,write_to=outfile, dpi=DPI)
+                    cairosvg.svg2png(bytestring=v._repr_svg_(),write_to=outfile, dpi=DPI)
                 finally:
                     _pyglock.release()
                 break
             elif isinstance(v,pygal.Graph):
                 try:
                     _pyglock.acquire()
-                    csvg2png(v.render,write_to=outfile, dpi=DPI)
+                    cairosvg.svg2png(bytestring=v.render(),write_to=outfile, dpi=DPI)
                 finally:
                     _pyglock.release()
                 break
             elif isinstance(v,cairocffi.Surface):
                 v.write_to_png(target=outfile)
+                break
+            elif isinstance(v,svgwrite.drawing.Drawing):
+                svgio = io.StringIO()
+                d.write(svgio)
+                svgio.seek(0)
+                svgsrc= svgio.read()
+                cairosvg.svg2png(bytestring=svgsrc,write_to=outfile, dpi=DPI)
                 break
             else: #try matplotlib.pyplot
                 try:
@@ -781,7 +889,7 @@ def convert_pyg(
                     _pyglock.release()
 
 @chdirin
-def convert_stpl(
+def dostpl(
     infile #a .stpl file name or list of lines
     ,outfile=None #if not provided the expanded is returned
     ,lookup=['.','..']
@@ -792,7 +900,7 @@ def convert_stpl(
     >>> global dry_run
     >>> dry_run = True
     >>> os.chdir('../doc')
-    >>> convert_stpl(['hi {{2+3}}!']) # doctest: +ELLIPSIS
+    >>> dostpl(['hi {{2+3}}!']) # doctest: +ELLIPSIS
     ['hi 5!']
 
 
@@ -819,7 +927,7 @@ def convert_stpl(
                 )
     if outfile:
         if dry_run:
-            print('convert_stpl write to '+outfile)
+            print('dostpl write to '+outfile)
             return
         with open(outfile,mode='w',encoding="utf-8",newline="\n") as outf:
             outf.write(st)
@@ -827,7 +935,7 @@ def convert_stpl(
         return st.splitlines(keepends=True)
 
 @chdirin
-def convert_rest(
+def dorest(
     infile #a .rest, .rst, .txt file name or list of lines
     ,outfile=None #None and '-' mean standard out
                   #for .rest |xxx| substitutions for reST link targets in infile are appended if no ``_links_sphinx.rst`` there
@@ -846,38 +954,38 @@ def convert_rest(
     >>> dry_run = True
     >>> os.chdir('../doc')
 
-    >>> convert_rest('dd.rest') # doctest: +ELLIPSIS
+    >>> dorest('dd.rest') # doctest: +ELLIPSIS
     .. default-role:: math...
 
-    >>> convert_rest('ra.rest.stpl') # doctest: +ELLIPSIS
+    >>> dorest('ra.rest.stpl') # doctest: +ELLIPSIS
     .. default-role:: math...
 
-    >>> convert_rest(['hi there']) # doctest: +ELLIPSIS
+    >>> dorest(['hi there']) # doctest: +ELLIPSIS
     .. default-role:: math...
     hi there
 
-    >>> convert_rest(['hi there'],None,'html') # doctest: +ELLIPSIS
+    >>> dorest(['hi there'],None,'html') # doctest: +ELLIPSIS
     ['pandoc', ..., '-o', '-'] ...
 
-    >>> convert_rest('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
+    >>> dorest('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
     ['pandoc', ..., '-o', 'ra.docx', ...
 
-    >>> convert_rest(['hi there'],'test.html') # doctest: +ELLIPSIS
+    >>> dorest(['hi there'],'test.html') # doctest: +ELLIPSIS
     ['pandoc', ..., '-o', 'test.html'] ...
 
-    >>> convert_rest(['hi there'],'test.html','sphinx_html') # doctest: +ELLIPSIS
+    >>> dorest(['hi there'],'test.html','sphinx_html') # doctest: +ELLIPSIS
     ['sphinx-build',...
 
-    >>> convert_rest(['hi there'],'test.html','sphinx') # doctest: +ELLIPSIS
+    >>> dorest(['hi there'],'test.html','sphinx') # doctest: +ELLIPSIS
     ['sphinx-build',...
 
-    >>> convert_rest(['hi there'],'test.odt','rst') # doctest: +ELLIPSIS
+    >>> dorest(['hi there'],'test.odt','rst') # doctest: +ELLIPSIS
     ['rst2odt.py', ...
     
     '''
 
     if isinstance(infile,str):
-        with open(infile,'r',encoding='utf-8') as f:
+        with open(infile) as f:
             filelines = f.readlines()
     else:
         filelines = infile
@@ -924,7 +1032,7 @@ def convert_rest(
             if x.startswith('.. include:: _links_sphinx.rst'):
                 linksfilename = '_links_'+outtype+'.rst'
                 if op.exists(linksfilename):
-                    with open(linksfilename,encoding='utf-8') as f:
+                    with open(linksfilename) as f:
                         outf.write(f.read())
                         links_done = True
             else:
@@ -947,17 +1055,18 @@ def convert_rest(
         rsttool(infile,outfile,outtype,config)
 
 converters = {
-    _svg:   convert_svg
-    ,_tikz: convert_tikz
-    ,_dot:  convert_dot
-    ,_uml:  convert_uml
-    ,_eps:  convert_eps
-    ,_pyg:  convert_pyg
-    ,_stpl:  convert_stpl
-    ,_rst:  convert_rest
-    ,_rest:  convert_rest
-    ,_txt:  convert_rest
+    _svg:   svgpng
+    ,_tikz: tikzpng
+    ,_dot:  dotpng
+    ,_uml:  umlpng
+    ,_eps:  epspng
+    ,_pyg:  pygpng
+    ,_stpl:  dostpl
+    ,_rst:  dorest
+    ,_rest:  dorest
+    ,_txt:  dorest
 }
+graphic_extensions = {_svg,_tikz,_dot,_uml,_eps,_pyg}
 
 def convert(
     infile #any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else stpl is assumed
@@ -1038,7 +1147,7 @@ def convert(
             else:
                 fext = _stpl
             try:
-                if not any(x.endswith(outtype) for x in [_svg,_tikz,_dot,_uml,_eps,_pyg]):
+                if not any(x.endswith(outtype) for x in graphic_extensions):
                     nextinfile = 'rest'+_rest
                 else:
                     nextinfile = outtype+'.'+outtype
@@ -1052,7 +1161,7 @@ def convert(
             except:
                 fextnext = None
             thisconverter = converters[fext]
-            if  thisconverter == convert_rest:
+            if  thisconverter == dorest:
                 infile = thisconverter(infile, outfile if not fextnext else None, outtype, fn_i_ln)
             else:
                 if fext == _stpl:
@@ -1065,12 +1174,11 @@ def convert(
                 break
             if not fextnext:
                 break
-            if fextnext in [_svg,_tikz,_dot,_uml,_eps,_pyg]:
+            if fextnext in graphic_extensions:
                 if not outfile:
                     outfile = _imgout(nextinfile+fextnext)
             fext = fextnext
         return infile
-
 
 def rindices(
     r #regular expression string or compiled
@@ -1155,7 +1263,7 @@ def doc_parts(
 
     ::
 
-      >>> with open(__file__,encoding='utf-8') as f:
+      >>> with open(__file__) as f:
       ...     lns = f.readlines()
       ...     docparts = list(doc_parts(lns,signature='py'))
       ...     doc_parts_line = rlines('doc_parts',docparts)
@@ -1252,7 +1360,7 @@ def _memoized(f):
 @lru_cache()
 def _read_lines(fn):
     lns = []
-    with open(fn,'r',encoding='utf-8') as f:
+    with open(fn) as f:
         lns = f.readlines()
     return lns
 
@@ -1356,28 +1464,21 @@ class Traceability:
     def isempty(self):
         return len(self.fcaobjsets)==0
     def createfiles(self,fldr): #returns the rst lines of _traceability_file
-        if not pyfca:
-            return
         if not self.fcaobjsets:
             return []
-        try:
-            config = conf_py(fldr)
-            target_id_group = config.get('target_id_group',lambda targetid: targetid[0])
-            target_id_color = config.get('target_id_color',{"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")})
-            def _drawnode(canvas,node,parent,center,radius): 
-                fillcolors = []
-                nodetgtgrps = {target_id_group(x) for x in node.intent}
-                for _,(groupid,groupcolor) in target_id_color.items():
-                    if groupid in nodetgtgrps:
-                        fillcolors.append(groupcolor)
-                n_grps = len(fillcolors)
-                for i in range(n_grps-1,-1,-1):
-                    rr = int(radius*(i+1)/n_grps)
-                    parent.add(canvas.circle(center,rr,fill=fillcolors[i],stroke='black'))
-        except Exception as e:
-            print('Warning: ',e)
-            _drawnode = None
-            target_id_color=None
+        config = conf_py(fldr)
+        target_id_group = config['target_id_group']
+        target_id_color = config['target_id_color']
+        def _drawnode(canvas,node,parent,center,radius): 
+            fillcolors = []
+            nodetgtgrps = {target_id_group(x) for x in node.intent}
+            for _,(groupid,groupcolor) in target_id_color.items():
+                if groupid in nodetgtgrps:
+                    fillcolors.append(groupcolor)
+            n_grps = len(fillcolors)
+            for i in range(n_grps-1,-1,-1):
+                rr = int(radius*(i+1)/n_grps)
+                parent.add(canvas.circle(center,rr,fill=fillcolors[i],stroke='black'))
         fca = pyfca.Lattice(self.fcaobjsets,lambda x:x)
         tr = 'tr'
         reflist = lambda x,pfx=tr: ('|'+pfx+('|, |'+pfx).join([str(x)for x in sorted(x)])+'|') if x else ''
@@ -1393,7 +1494,6 @@ class Traceability:
         tlines.append('\n')
         with open(opnj(fldr,_traceability_file+_rst),'w',encoding='utf-8') as f:
             f.write('.. raw:: html\n\n')
-            #for sphinx: needs in conf.py: html_extra_path=["_images/_traceability_file.svg"]
             f.write('    <object data="'+_traceability_file+'.svg" type="image/svg+xml"></object>\n')
             if target_id_color is not None:
                 f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
@@ -1404,7 +1504,7 @@ class Traceability:
         ttgt = lambda : self.tracehtmltarget.endswith(_rest) and op.splitext(self.tracehtmltarget)[0] or self.tracehtmltarget
         ld.svg(target=ttgt()+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
         tracepng = tracesvg[:-len(_svg)]+_png
-        csvg2png(tracesvg, write_to=tracepng, dpi=DPI)
+        svgpng(tracesvg,tracepng)
         return tlines
 
 def fldrincluded(
@@ -1939,20 +2039,6 @@ def links_and_tags(
     '''
     Creates links_xxx.rst and .tags files for a folder ``fldr`` in that folder.
 
-    If ``pyfca`` is available also the dependencies file ``_traceability_file.rst`` is created.
-
-    conf.py entries::
-
-      target_id_group = lambda targetid: targetid[0]
-      target_id_color={
-          "meta":("m","white"),
-          "ra":("r","lightblue"),
-          "sr":("s","red"),
-          "dd":("d","yellow"), 
-          "tp":("t","green"),
-          "rstdoc":("o","pink")}
-      html_extra_path=["_images/_traceability_file.svg"]#ONLY if there is an ``.. include:: _traceability_file.rst``
-
     The target IDs are grouped. To every group a color is associated. See ``conf.py``.
     This is used to color an FCA lattice diagram in "_traceability_file.rst".
     The diagram nodes are clickable in HTML.
@@ -2148,7 +2234,7 @@ try:
         def run(self):
             render_stpl(self,self.generator.bld)
     @TaskGen.extension(_stpl)
-    def expand_stpl(self,node):#expand into same folder
+    def dostpl(self,node):#expand into same folder
         nn = node.parent.make_node(node.name[:-len(_stpl)])
         self.create_task('Stpl',node,nn)
         try:
@@ -2165,13 +2251,13 @@ try:
         gen_ext_tsk(self,node,_tikz)
     class TIKZ(Task.Task):
         def run(self):
-            convert_tikz(self.inputs[0].abspath(),self.outputs[0].abspath())
+            tikzpng(self.inputs[0].abspath(),self.outputs[0].abspath())
     @TaskGen.extension('.svg')
     def svg_to_png(self,node):
         gen_ext_tsk(self,node,'.svg')
     class SVG(Task.Task):
         def run(self):
-            convert_svg(self.inputs[0].abspath(),self.outputs[0].abspath())
+            svgpng(self.inputs[0].abspath(),self.outputs[0].abspath())
     @TaskGen.extension('.dot')
     def dot_to_png(self,node):
         gen_ext_tsk(self,node,'.dot')
@@ -2187,13 +2273,13 @@ try:
         gen_ext_tsk(self,node,'.eps')
     class EPS(Task.Task):
         def run(self):
-            convert_eps(self.inputs[0].abspath(),self.outputs[0].abspath())
+            epspng(self.inputs[0].abspath(),self.outputs[0].abspath())
     @TaskGen.extension('.pyg')
     def pyg_to_png(self,node):
         gen_ext_tsk(self,node,'.pyg')
     class PYG(Task.Task):
         def run(self):
-            convert_pyg(self.inputs[0].abspath(),self.outputs[0].abspath())
+            pygpng(self.inputs[0].abspath(),self.outputs[0].abspath())
     @TaskGen.extension(_rest)
     def gen_docs(self,node):
         docs=get_docs(self.bld)
@@ -2219,7 +2305,7 @@ try:
                 self.create_task('SphinxTask',[node],out_node,cwd=node.parent.abspath(),scan=rstscan,doctype=doctype)
     class NonSphinxTask(Task.Task):
         def run(self):
-            convert_rest(
+            dorest(
                 self.inputs[0].abspath()
                 ,self.outputs[0].abspath()
                 ,self.doctgt
@@ -2335,21 +2421,26 @@ example_tree = r'''
             pygments_style = 'sphinx'
             exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
             
-            tikz_tikzlibraries = 'arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections'
-            tikz_latex_preamble = r"""
+            latex_elements = {'preamble':r"""
+            \usepackage{pgfplots}
             \usepackage{unicode-math}
             \usepackage{tikz}
             \usepackage{caption}
             \captionsetup[figure]{labelformat=empty}
+            \usetikzlibrary{arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections}
             """
-            latex_elements = {
-            'preamble':tikz_latex_preamble+r"\usetikzlibrary{""" + tikz_tikzlibraries+ '}'
             }
-            latex_documents = [
-                (master_doc, project.replace(' ','')+'.tex',project+' Documentation',author,'manual'),
-            ]
             
             #new in rstdcx/dcx/py
+            tex_wrap = r"""
+            \documentclass[12pt,tikz]{standalone}
+            \usepackage{amsmath}
+            """+latex_elements['preamble']+"""
+            \pagestyle{empty}
+            \begin{document}
+            %s
+            \end{document}
+            """
             gsdevice = 'pngalpha'
             dpi = 600
             target_id_group = lambda targetid: targetid[0]
@@ -2361,8 +2452,8 @@ example_tree = r'''
                              'docx': '--reference-doc reference.docx',
                              'odt': '--reference-doc reference.odt'
                              }
-            latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
-            pandoc_opts = {'pdf':latex_pdf,'latex':latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
+            _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
+            pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
             rst2_opts = {'odt':['--leave-comments'],'html':['--leave-comments']}#see ``rst2html.py --help`` or ``rst2odt.py --help``
         ├ Makefile
             SPHINXOPTS  = -c .
@@ -3439,7 +3530,7 @@ def index_folder(
             if f.endswith(_stpl):
                 fullpth = opnj(p,f).replace("\\","/")
                 outpth = op.splitext(fullpth)[0]
-                convert_stpl(fullpth,outpth,[p,op.dirname(p)])
+                dostpl(fullpth,outpth,[p,op.dirname(p)])
     #link, gen and tags per folder
     for fldr, (lnktgts,allfiles,alltgts,substitutions) in fldrs(root):
         if verbose:
