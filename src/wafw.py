@@ -90,6 +90,8 @@ def get_waf(version):
 
     print('Downloading', filename + '...')
     urlretrieve(url, filename)
+    if 'WAFDIR' in os.environ:
+        copy(filename,os.path.join(os.environ['WAFDIR'],'waf-'+WRAPPER_VERSION))
     move(filename, WAF_FILE())
 
 def get_plugins():

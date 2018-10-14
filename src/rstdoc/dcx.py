@@ -206,7 +206,6 @@ class RstDocError(Exception):
 '''
 If true then tool execution is replaced by a print.
 '''
-dry_run = False
 
 '''
 Used for png creation.
@@ -374,9 +373,6 @@ def run_may_tmp(
                 filename = f.name
                 f.write(data)
                 cmdlist = _fillwith(cmdlist,filename)
-        if dry_run:
-            print(cmdlist,'suffix=%s'%suffix,kwargs)
-            return
         try:
             for x in 'out err'.split():
                 kwargs['std'+x]=subprocess.PIPE
@@ -558,11 +554,11 @@ def run_sphinx(
     '''
     Run Sphinx on infile.
 
-    >>> global dry_run
-    >>> dry_run = True
-    >>> os.chdir('../doc')
+    >>> from unittest.mock import MagicMock as MM
+    >>> run_may_tmp, op = MM(), MM()
 
-    >>> run_sphinx('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
+    >>> infile,outfile = ('index.rest','../../build/doc/sphinx_html/index.html')
+    >>> run_sphinx(infile,outfile) # doctest: +ELLIPSIS
     ['sphinx-build', '-b', 'html', ..., '-D', 'master-doc=index.rest'] ...
 
     >>> run_sphinx('dd.rest','../../build/doc/sphinx_html/dd.html') # doctest: +ELLIPSIS
@@ -624,17 +620,11 @@ def _copy_images_for(infile,outfile):
     _images_tgt = here_or_updir(op.dirname(outfile),'_images')
     if op.exists(_images) and _images!=_images_tgt:
         if not op.exists(_images_tgt):
-            if dry_run:
-                print('makedirs({})'.format(_images_tgt))
-            else:
-                shutil.makedirs(_images_tgt)
+            shutil.makedirs(_images_tgt)
         for x in os.listdir(_images):
             frm,twd =  opnj(_images,x),opnj(_images_tgt,x)
             docpy = is_newer(frm,twd)
             if docpy:
-                if dry_run:
-                    print("cp({},{}".format(frm,twd))
-                    return
                 shutil.cp(frm,twd)
 
 def run_pandoc(
@@ -925,14 +915,11 @@ def dostpl(
                 ,template_lookup = lookup
                 ,__file__ = filename
                 )
-    if outfile:
-        if dry_run:
-            print('dostpl write to '+outfile)
-            return
-        with open(outfile,mode='w',encoding="utf-8",newline="\n") as outf:
-            outf.write(st)
-    else:
-        return st.splitlines(keepends=True)
+        if outfile:
+            with open(outfile,mode='w',encoding="utf-8",newline="\n") as outf:
+                outf.write(st)
+        else:
+            return st.splitlines(keepends=True)
 
 @chdirin
 def dorest(
