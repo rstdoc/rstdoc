@@ -157,13 +157,13 @@ The functions in ``dcx.py`` are available to the ``gen_xxx(lns,**kw)`` functions
 '''
 
 import sys
-import os
 import re
-import subprocess
 import io
-import contextlib
+import os
 import shutil
 import atexit
+import contextlib
+import subprocess as sp
 from tempfile import NamedTemporaryFile, mkdtemp
 from threading import Lock
 from pathlib import Path
@@ -191,7 +191,103 @@ from hashlib import sha1 as sha
 import sphinx_bootstrap_theme
 html_theme_path = ','.join(sphinx_bootstrap_theme.get_html_theme_path()).replace('\\','/')
 
-import posixpath as op
+
+class RstDocError(Exception):
+    pass
+
+'''
+Increase output if set to True.
+'''
+verbose = False
+
+
+class _Tools:
+    def svg2png(self,*args,**kwargs):
+        cairosvg.svg2png(*args,**kwargs)
+    def ctags_python(self,fldr):
+        return sp.run(['ctags','-R','--sort=0','--fields=+n','--languages=python','--python-kinds=-i','-f','.tags','*'],
+            cwd=fldr if fldr else os.getcwd())
+    def make_pandoc_doc_reference(self):
+        return sp.run("pandoc --print-default-data-file reference.docx > reference.docx",shell=True)
+    def run(*args,**kwargs):
+        del kwargs['outfile']
+        return sp.run(*args,**kwargs)
+    def doCleanups(self):
+        pass
+
+class _DryTools:
+    def _make_file(file,content=b''):
+        with open(file,'wb') as f:
+            f.write(content)
+    def svg2png(*args,**kwargs):
+        _make_file(kwargs['write_to'])
+    def ctags_python(fldr):
+        _make_file('.tags')
+    def make_pandoc_doc_reference(self):
+        _make_file('reference.docx')
+    def run(*args,**kwargs):
+        outfile = kwargs['outfile']
+        del kwargs['outfile']
+        _make_file(outfile)
+        
+class _Verbose:
+    def __init__(self, tools):
+        self.tools = tools
+    def svg2png(*args,**kwargs):
+        print('svg2png(',args,kwargs,')')
+        tools.svg2png(*args,**kwargs)
+    def ctags_python(fldr):
+        print('ctags on python files in '+fldr)
+        tools.ctags_python(fldr)
+    def make_pandoc_doc_reference(self):
+        print('Create pandoc reference.docx in '+os.getcwd())
+        tools.make_pandoc_doc_reference(self)
+    def run(*args,**kwargs):
+        print('run(',args,kwargs,')')
+
+os, op, shutil, fakefs, tools  = [None]*5
+def dry_run(
+    dry=False #If True then tool execution is replaced by a print.
+    ):
+    '''
+    Adjusts ``dcx`` classes to produce a dry run.
+
+    '''
+    
+    global os, op, shutil, tools, fakefs 
+    if dry:
+        from pyfakefs.fake_filesystem_unittest import TestCaseMixin
+        class FakeFs(TestCaseMixin):
+            def __init__(self):
+                self._cleanups = []
+            def addCleanup(self, function, *args, **kwargs):
+                self._cleanups.append((function, args, kwargs))
+            def doCleanups(self):
+                while self._cleanups:
+                    function, args, kwargs = self._cleanups.pop()
+                    function(*args, **kwargs)
+        fakefs = FakeFs()
+        fakefs.setUpPyfakefs()
+        #from pyfakefs import fake_filesystem
+        #fakefs = fake_filesystem.fakefs()
+        #os = fake_filesystem.FakeOsModule(fakefs)
+        #shutil = fake_filesystem.FakeShutilModule(fakefs)
+        op = os.path
+        tools = _Verbose(_DryTools())
+    else:
+        if fakefs:
+            tools.doCleanups()
+            del fakefs
+            fakefs = None
+        import os
+        import posixpath as op
+        import shutil
+        if verbose:
+            tools = _Tools()
+        else:
+            tools = _Verbose(_Tools())
+
+dry_run(False)
 opnj = lambda *x:op.normpath(op.join(*x)).replace("\\","/")
 updir = lambda fn: opnj(op.dirname(fn),'..',op.basename(fn))
 #fn='x/y/../y/a.b'
@@ -200,19 +296,10 @@ updir = lambda fn: opnj(op.dirname(fn),'..',op.basename(fn))
 #updir('a.b/a.b')#a.b
 #opnj(fn)#x\y\a.b
 
-class RstDocError(Exception):
-    pass
-
-'''
-If true then tool execution is replaced by a print.
-'''
-
 '''
 Used for png creation.
 '''
 DPI = 600
-
-verbose = False
 
 #other
 _stpl = '.stpl'
@@ -331,9 +418,6 @@ def conf_py(fldr):
     try:
         with open(confpy,encoding='utf-8') as f:
             eval(compile(f.read(),op.abspath(confpy),'exec'),config)
-        global GSDEVICE
-        if 'gsdevice' in config:
-            GSDEVICE = config['gsdevice']
         global DPI
         if 'dpi' in config:
             DPI = config['dpi']
@@ -355,41 +439,29 @@ def _joinlines(lns):
     return tmp.replace('\r\n', '\n')
 
 _nbstr = lambda x: x.replace(b'\r\n',b'\n').decode('utf-8')
-def run_may_tmp(
-    cmdlist #command list with one None that will be replaced by the temp file
-    ,data=None #if data, it is place into the temp file
-    ,suffix=None #suffix of temp file
+def cmd(
+    cmdlist #command as list
     ,**kwargs #arguments forwarded to subprocess.run()
     ):
     '''
-    Runs a ``cmdlist`` via subprocess.run, possibly on a temporary file filled with ``data``.
-    For that the ``cmdlist`` has None instead of the file name.
+    Runs ``cmdlist`` via subprocess.run.
 
     '''
 
     try:
-        if data:
-            with NamedTemporaryFile('w+',suffix=suffix,delete=False) as f:
-                filename = f.name
-                f.write(data)
-                cmdlist = _fillwith(cmdlist,filename)
-        try:
-            for x in 'out err'.split():
-                kwargs['std'+x]=subprocess.PIPE
-            r = subprocess.run(cmdlist,**kwargs)
-            if r.returncode != 0:
-                raise RstDocError('Error code %s returned from \n%s\nin\n%s\n'%(r.returncode 
-                    ,' '.join(cmdlist),os.getcwd())
-                    +'\n[stdout]\n%s\n[stderr]\n%s'%(
-                      _nbstr(r.stdout),_nbstr(r.stderr)))
-        except OSError as err:
-            if err.errno != ENOENT:   # No such file or directory
-                raise
-            raise RstDocError('Error: Cannot run '
-                +' '.join(cmdlist)+' in '+os.getcwd() + str(err))
-    finally:
-        if data:
-            os.remove(filename)
+        for x in 'out err'.split():
+            kwargs['std'+x]=sp.PIPE
+        r = tools.run(cmdlist,**kwargs)
+        if r.returncode != 0:
+            raise RstDocError('Error code %s returned from \n%s\nin\n%s\n'%(r.returncode 
+                ,' '.join(cmdlist),os.getcwd())
+                +'\n[stdout]\n%s\n[stderr]\n%s'%(
+                  _nbstr(r.stdout),_nbstr(r.stderr)))
+    except OSError as err:
+        if err.errno != ENOENT:   # No such file or directory
+            raise
+        raise RstDocError('Error: Cannot run '
+            +' '.join(cmdlist)+' in '+os.getcwd() + str(err))
 
 #graphic files
 _svg = '.svg'
@@ -440,7 +512,7 @@ def normoutfile(f,suffix=None):
     The outfile is returned.
     """
     @wraps(f)
-    def wrapper(args, **kwds):
+    def wrapper(args, **kwargs):
         (infile,outfile),args = args[:2],args[2:]
         if isinstance(infile,str):
             if not outfile:
@@ -449,7 +521,7 @@ def normoutfile(f,suffix=None):
                     outfile = infn + _ext(suffix)
                 else:
                     outfile = _imgout(infile)
-        f(infile, outfile, *args, **kwds)
+        f(infile, outfile, *args, **kwargs)
         return outfile
     return wrapper
 
@@ -458,7 +530,7 @@ def chdirin(f):
     Changes into the dir of the infile if infile is a file name string.
     """
     @wraps(f)
-    def wrapper(*args, **kwds):
+    def wrapper(*args, **kwargs):
         (infile,outfile),args = args[:2],args[2:]
         if isinstance(infile,str):
             ndir,inf = op.split(infile)
@@ -470,10 +542,10 @@ def chdirin(f):
             curdir = os.getcwd()
             os.chdir(ndir)
             try:
-                return f(inf, outfile, *args, **kwds)
+                return f(inf, outfile, *args, **kwargs)
             finally:
                 os.chdir(curdir)
-        return f(infile, outfile, *args, **kwds)
+        return f(infile, outfile, *args, **kwargs)
     return wrapper
 
 def intmpiflist(f,suffix=None):
@@ -494,9 +566,9 @@ def intmpiflist(f,suffix=None):
     """
 
     @wraps(f)
-    def wrapper(*args, **kwds):
+    def wrapper(*args, **kwargs):
         (infile,outfile),args = args[:2],args[2:]
-        suf0,suf1 = suffix.split('.')
+        suf0,suf1 = suffix and suffix.split('.') or ('','.txt')
         if isinstance(infile,list) and infile:
             if outfile:
                 outfile = op.abspath(outfile)
@@ -506,27 +578,31 @@ def intmpiflist(f,suffix=None):
             os.chdir(atmpdir)
             try:
                 content = _joinlines(infile).encode('utf-8')
-                infn = sha(content).hexdigest()
+                if outfile:
+                    infn = op.splitext(op.basename(outfile))[0]
+                else:
+                    infn = sha(content).hexdigest()
                 infile = infn+suf1
                 with open(infile,'bw') as ff:
                     ff.write(content)
-                return normoutfile(f,suf0)(infile, outfile, *args, **kwds)
+                return normoutfile(f,suf0)(infile, outfile, *args, **kwargs)
             finally:
                 os.chdir(curdir)
-        return normoutfile(f,suf0)(infile, outfile, *args, **kwds)
+        return normoutfile(f,suf0)(infile, outfile, *args, **kwargs)
     return wrapper
 
 def readin(f):
     @wraps(f)
-    def wrapper(args, **kwds):
+    def wrapper(args, **kwargs):
         (infile,outfile),args = args[:2],args[2:]
         if isinstance(infile,str):
             with open(infile,encoding) as inf:
-                return f(inf.readlines(),outfile,*args,**kwds)
-        return f(infile, outfile, *args, **kwds)
+                return f(inf.readlines(),outfile,*args,**kwargs)
+        return f(infile, outfile, *args, **kwargs)
     return wrapper
 
-@normoutfile
+@chdirin
+@intmpiflist
 def run_inkscape(
     infile #.svg, .eps, .pdf filename string or list with actual .eps or .svg data
     ,outfile #.png file name
@@ -537,28 +613,59 @@ def run_inkscape(
 
     '''
 
-    iscmd = lambda i,o: ['inkscape','-z','--export-dpi=%s'%DPI,
-            '--export-area-drawing','--export-background-opacity=0',
-            i,'--export-png='+o]
-    if isinstance(infile,str):
-        run_may_tmp(iscmd(infile,outfile))
-    else:
-        run_may_tmp(iscmd(None,outfile),'\n'.join(infile),suffix)
+    cmd(
+        ['inkscape','-z','--export-dpi=%s'%DPI,
+         '--export-area-drawing','--export-background-opacity=0',
+         infile,'--export-png='+outfile]
+      ,outfile=outfile)
 
+@chdirin
+@intmpiflist
 def run_sphinx(
     infile #.txt, .rst, .rest filename (normally index.rest)
-    ,outfile #the path to the target file (not it target dir)
+    ,outfile #the path to the target file (not target dir)
     ,outtype=None #html,... or any other sphinx writer
     ,config=config_defaults #uses this config and not conf.py
     ):
     '''
     Run Sphinx on infile.
 
-    >>> from unittest.mock import MagicMock as MM
-    >>> run_may_tmp, op = MM(), MM()
 
-    >>> infile,outfile = ('index.rest','../../build/doc/sphinx_html/index.html')
-    >>> run_sphinx(infile,outfile) # doctest: +ELLIPSIS
+    >>> from unittest.mock import MagicMock as MM
+    >>> sp.CompletedProcess, sp.Popen = MM(), MM()
+
+    process_mock = mock.Mock()
+    attrs = {'communicate.return_value': ('output', 'error')}
+    process_mock.configure_mock(**attrs)
+    mock_subproc_popen.return_value = process_mock 
+    am.account_manager("path") # this calls run_script somewhere, is that right?
+    self.assertTrue(mock_subproc_popen.called)
+
+
+    >>> dry_run(True)
+    >>> run_sphinx('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
+    >>> sp.Popen.assert_called()
+
+    >>> run_sphinx('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    rstdoc.RstDocError: Error code <MagicMock ...
+    sphinx-build -b .html . ../../build/doc/sphinx_html -C -D project=rstdoc ... -D master_doc=index.rest
+    ...
+
+    [stdout]
+    <MagicMock name='mock().stdout.replace().decode()' id='2222582256136'>
+    [stderr]
+    <MagicMock name='mock().stderr.replace().decode()' id='2222582334800'>
+    def getex():
+      try:
+        return run_sphinx('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
+      except Exception as e:
+        x= str(e)
+      return x
+    ex = getex()
+    ex
+
     ['sphinx-build', '-b', 'html', ..., '-D', 'master-doc=index.rest'] ...
 
     >>> run_sphinx('dd.rest','../../build/doc/sphinx_html/dd.html') # doctest: +ELLIPSIS
@@ -568,6 +675,7 @@ def run_sphinx(
     ['sphinx-build', '-b', 'latex', ..., '-D', 'project=rstdoc', ...] ...
 
     '''
+    outtype = outtype.strip('. ')
     dfn = lambda n,v:['-D',n+'='+v]
     indr,infn = op.split(infile)
     if not indr:
@@ -606,7 +714,7 @@ def run_sphinx(
         [['-D',"%s=%s"%(k,(','.join(v)if isinstance(v,list) else v))
           ] for k,v in cfg.items()]+ latex_elements + latex_documents)
     sphinxcmd = ['sphinx-build','-b',outtype,indr,outdr]+extras
-    run_may_tmp(sphinxcmd)
+    cmd(sphinxcmd,outfile=outfile)
 
 def is_newer(infile,outfile):
     res = True
@@ -627,6 +735,8 @@ def _copy_images_for(infile,outfile):
             if docpy:
                 shutil.cp(frm,twd)
 
+@chdirin
+@intmpiflist
 def run_pandoc(
     infile #.txt, .rst, .rest filename
     ,outfile #the path to the target document
@@ -637,6 +747,7 @@ def run_pandoc(
     Run Pandoc on infile.
 
     '''
+    outtype = outtype.strip('. ')
     pandoccmd = ['pandoc','--standalone','-f','rst']+config.get('pandoc_opts',{}).get(outtype,[]
         )+['-t','latex' if outtype=='pdf' else outtype,infile,'-o',outfile]
     opt_refdoc = config.get('pandoc_doc_optref',{}).get(outtype,'')
@@ -649,10 +760,12 @@ def run_pandoc(
             if op.exists(refdoc):
                 pandoccmd.append(refoption)
                 pandoccmd.append(op.abspath(refdoc))
-    run_may_tmp(pandoccmd)
+    cmd(pandoccmd,outfile=outfile)
     if outtype.endswith('html') or outtype.endswith('latex'):
         _copy_images_for(infile,outfile)
 
+@chdirin
+@intmpiflist
 def run_rst(
     infile #.txt, .rst, .rest filename
     ,outfile #the path to the target document
@@ -663,9 +776,10 @@ def run_rst(
     Run the rst2xxx docutils fontend tool on infile.
 
     '''
+    outtype = outtype.strip('. ')
     rstcmd = ['rst2'+outtype+'.py','-r3','--input-encoding=utf-8',infile,outfile]+ config.get(
         'rst2_opts',{}).get(outtype,[])
-    run_may_tmp(rstcmd)
+    cmd(rstcmd,outfile=outfile)
     if outtype.endswith('html') or outtype.endswith('latex'):
         _copy_images_for(infile,outfile)
 
@@ -687,7 +801,7 @@ def svgpng(
     Converts a .svg file to a png file.
 
     '''
-    cairosvg.svg2png(bytestring='\n'.join(infile),write_to=outfile,dpi=DPI)
+    tools.svg2png(bytestring='\n'.join(infile),write_to=outfile,dpi=DPI)
 
 @chdirin
 @intmpiflist
@@ -707,24 +821,21 @@ def texpng(
 
     '''
 
-    latex = _joinlines(infile)
-    with open(infile, 'wb') as tf:
-        tf.write(latex.encode('utf-8'))
+    pdffile = op.splitext(infile)[0]+'.pdf'
     try:
-        run_may_tmp([binary, '-interaction=nonstopmode', infile])
+        cmd([binary, '-interaction=nonstopmode', infile],outfile=pdffile)
     except RstDocError as e:
         print('\n[latex]\n',latex)
         raise
-    pdffile = op.splitext(infile)[0]+'.pdf'
     run_inkscape(pdffile,outfile)
 
 def _texwrap(f):
     @wraps(f)
-    def wrapper(*args, **kwds):
+    def wrapper(*args, **kwargs):
         (inlist,outfile,config),args = args[:3],args[3:]
         content = _joinlines(infile)
         latex = config['tex_wrap']%content
-        return f(latex.splitlines(),*args, **kwds)
+        return f(latex.splitlines(),*args, **kwargs)
     return wrapper
 
 '''
@@ -734,13 +845,13 @@ texwrap = lambda f: readin(intmpiflist(_texwrap(f)))
 
 def _tikzwrap(f):
     @wraps(f)
-    def wrapper(*args, **kwds):
+    def wrapper(*args, **kwargs):
         (tikzlns),args = args[:1],args[1:]
         content = _joinlines(tikzlns).strip()
         tikzenclose = [r'\begin{tikzpicture}','%s',r'\end{tikzpicture}']
         if not content.startswith(tikzenclose[0]):
             content = '\n'.join(tikzenclose)%content
-        return f(content.splitlines(),*args, **kwds)
+        return f(content.splitlines(),*args, **kwargs)
     return wrapper
 
 
@@ -754,8 +865,8 @@ Converts a .tikz file to a png file.
 '''
 tikzpng = tikzwrap(texpng)
 
-@normoutfile
 @chdirin
+@intmpiflist
 def dotpng(
     infile #a .dot file name or list of lines
     ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
@@ -765,14 +876,13 @@ def dotpng(
 
     '''
 
-    dotcmd = lambda i,o: ['dot','-Tpng',i,'-o',o]
-    if isinstance(infile,str):
-        run_may_tmp(dotcmd(infile,outfile))
-    else:
-        run_may_tmp(dotcmd(None,outfile),'\n'.join(infile),'.dot')
+    cmd(
+        ['dot','-Tpng',infile,'-o',outfile]
+        ,outfile=outfile
+        )
 
-@normoutfile
 @chdirin
+@intmpiflist
 def umlpng(
     infile #a .uml file name or list of lines
     ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
@@ -782,14 +892,14 @@ def umlpng(
 
     '''
 
-    umlcmd = lambda i,o: ['plantuml','-tpng',i,'-o'+op.dirname(o)]
-    if isinstance(infile,str):
-        run_may_tmp(umlcmd(infile,outfile),shell=True)
-    else:
-        run_may_tmp(umlcmd(None,outfile),'\n'.join(infile),'.uml',shell=True)
+    cmd(
+        ['plantuml','-tpng',infile,'-o'+op.dirname(outfile)]
+        ,shell=True
+        ,outfile=outfile
+        )
 
-@normoutfile
 @chdirin
+@intmpiflist
 def epspng(
     infile #a .eps file name or list of lines
     ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
@@ -838,14 +948,14 @@ def pygpng(
             if isinstance(v,pyx.canvas.canvas):
                 try:
                     _pyglock.acquire()
-                    cairosvg.svg2png(bytestring=v._repr_svg_(),write_to=outfile, dpi=DPI)
+                    tools.svg2png(bytestring=v._repr_svg_(),write_to=outfile, dpi=DPI)
                 finally:
                     _pyglock.release()
                 break
             elif isinstance(v,pygal.Graph):
                 try:
                     _pyglock.acquire()
-                    cairosvg.svg2png(bytestring=v.render(),write_to=outfile, dpi=DPI)
+                    tools.svg2png(bytestring=v.render(),write_to=outfile, dpi=DPI)
                 finally:
                     _pyglock.release()
                 break
@@ -857,7 +967,7 @@ def pygpng(
                 d.write(svgio)
                 svgio.seek(0)
                 svgsrc= svgio.read()
-                cairosvg.svg2png(bytestring=svgsrc,write_to=outfile, dpi=DPI)
+                tools.svg2png(bytestring=svgsrc,write_to=outfile, dpi=DPI)
                 break
             else: #try matplotlib.pyplot
                 try:
@@ -887,8 +997,6 @@ def dostpl(
     '''
     Expands an `.stpl <https://bottlepy.org/docs/dev/stpl.html>`__ file.
 
-    >>> global dry_run
-    >>> dry_run = True
     >>> os.chdir('../doc')
     >>> dostpl(['hi {{2+3}}!']) # doctest: +ELLIPSIS
     ['hi 5!']
@@ -937,8 +1045,6 @@ def dorest(
     Default interpreted text role is set to math.
     The link lines are added to a .rest file.
 
-    >>> global dry_run
-    >>> dry_run = True
     >>> os.chdir('../doc')
 
     >>> dorest('dd.rest') # doctest: +ELLIPSIS
@@ -1069,8 +1175,6 @@ def convert(
     The main job is to normalized the input params, because this is called from main() and via Python.
     The it forwards to the right converter.
 
-    >>> global dry_run
-    >>> dry_run = True
     >>> os.chdir('../doc')
 
     >>> convert(['hi {{2+3}}!']) # doctest: +ELLIPSIS
@@ -2099,8 +2203,9 @@ def links_and_tags(
         with open(opnj(fldr,'_links_%s.rst'%linktype),'w',encoding='utf-8') as f:
             f.write('\n'.join(linklines));
     try:
-        subprocess.run(['ctags','-R','--sort=0','--fields=+n','--languages=python','--python-kinds=-i','-f','.tags','*'],
-            cwd=fldr if fldr else os.getcwd())
+        r = tools.ctags_python(fldr)
+        if r.returncode != 0:
+            print("Warning: ctags on python files failed")
         with open(opnj(fldr,'.tags'),'ab') as f:
             f.write('\n'.join(tagentries).encode('utf-8'));
     except Exception as e: 
@@ -2428,7 +2533,6 @@ example_tree = r'''
             %s
             \end{document}
             """
-            gsdevice = 'pngalpha'
             dpi = 600
             target_id_group = lambda targetid: targetid[0]
             target_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
@@ -3487,14 +3591,11 @@ def initroot(
     oldd = os.getcwd()
     try:
         os.chdir(rootfldr)
-        if dry_run:
-            print(inittree)
-            print('chdir src')
-            print("pandoc --print-default-data-file reference.docx > reference.docx")
-        else:
-            mktree(inittree)
-            os.chdir('src')
-            subprocess.run("pandoc --print-default-data-file reference.docx > reference.docx",shell=True)
+        mktree(inittree)
+        os.chdir('src')
+        r = tools.make_pandoc_doc_reference()
+        if r.returncode != 0:
+            print("Warning: Failed to create Pandoc reference.docx")
     finally:
         os.chdir(oldd)
 
@@ -3552,6 +3653,8 @@ def main(**args):
                             help='Create a stpl templated sample folder structure.')
         parser.add_argument('-v','--verbose', action='store_true',
                             help='''Show files recursively included by each rest''')
+        parser.add_argument('-n','--dry-run', action='store_true',
+                            help='''Don't actually run, just print.''')
         parser.add_argument('infile', nargs='?',
                 help='Input file or - for stdin. If not given all directories below are scanned.')
         parser.add_argument('outfile', nargs='?',
@@ -3564,7 +3667,11 @@ def main(**args):
     verbose = False
     if 'verbose' in args:
         verbose = args['verbose']
-        del args['verbose']
+
+    if 'dry_run' in args:
+        dry_run(args['dry_run'])
+    else:
+        dry_run(False)
 
     if not args:
         index_folder('.')
