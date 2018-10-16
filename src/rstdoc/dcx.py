@@ -161,12 +161,12 @@ import re
 import io
 import os
 import shutil
-import atexit
 import contextlib
+import posixpath
+import atexit
 import subprocess as sp
 from tempfile import NamedTemporaryFile, mkdtemp
 from threading import Lock
-from pathlib import Path
 from urllib import request
 from functools import lru_cache, wraps
 from collections import OrderedDict,defaultdict
@@ -188,9 +188,15 @@ import pyfca
 
 from hashlib import sha1 as sha
 
-import sphinx_bootstrap_theme
-html_theme_path = ','.join(sphinx_bootstrap_theme.get_html_theme_path()).replace('\\','/')
+cwd = lambda: os.getcwd()
+mkdir = lambda x: os.makedirs(x)
+cd = lambda x: os.chdir(x)
+ls = lambda x='.': [e for e in sorted(os.listdir(x))]
+rmrf = lambda x: shutil.rmtree(x)
 
+import sphinx_bootstrap_theme
+_commajoinslash = lambda x: ','.join(x).replace('\\','/')
+html_theme_path = _commajoinslash(sphinx_bootstrap_theme.get_html_theme_path())
 
 class RstDocError(Exception):
     pass
@@ -204,48 +210,53 @@ verbose = False
 class _Tools:
     def svg2png(self,*args,**kwargs):
         cairosvg.svg2png(*args,**kwargs)
-    def ctags_python(self,fldr):
-        return sp.run(['ctags','-R','--sort=0','--fields=+n','--languages=python','--python-kinds=-i','-f','.tags','*'],
-            cwd=fldr if fldr else os.getcwd())
-    def make_pandoc_doc_reference(self):
-        return sp.run("pandoc --print-default-data-file reference.docx > reference.docx",shell=True)
-    def run(*args,**kwargs):
+    def run(self,*args,**kwargs):
         del kwargs['outfile']
         return sp.run(*args,**kwargs)
-    def doCleanups(self):
-        pass
-
-class _DryTools:
-    def _make_file(file,content=b''):
+class _DryTools: #together with FakeFs
+    def _make_file(self,file,content=b''):
+        try:
+            os.makedirs(op.dirname(file))
+        except: pass
         with open(file,'wb') as f:
             f.write(content)
-    def svg2png(*args,**kwargs):
-        _make_file(kwargs['write_to'])
-    def ctags_python(fldr):
-        _make_file('.tags')
-    def make_pandoc_doc_reference(self):
-        _make_file('reference.docx')
-    def run(*args,**kwargs):
+            if verbose:
+                print('created fake ', file)
+    def svg2png(self,*args,**kwargs):
+        self._make_file(kwargs['write_to'])
+    def run(self,*args,**kwargs):
         outfile = kwargs['outfile']
-        del kwargs['outfile']
-        _make_file(outfile)
-        
+        self._make_file(outfile)
+        return sp.CompletedProcess([],0,'')
 class _Verbose:
     def __init__(self, tools):
         self.tools = tools
-    def svg2png(*args,**kwargs):
-        print('svg2png(',args,kwargs,')')
-        tools.svg2png(*args,**kwargs)
-    def ctags_python(fldr):
-        print('ctags on python files in '+fldr)
-        tools.ctags_python(fldr)
-    def make_pandoc_doc_reference(self):
-        print('Create pandoc reference.docx in '+os.getcwd())
-        tools.make_pandoc_doc_reference(self)
-    def run(*args,**kwargs):
-        print('run(',args,kwargs,')')
+    def svg2png(self,*args,**kwargs):
+        print('svg2png',args,kwargs)
+        return self.tools.svg2png(*args,**kwargs)
+    def run(self,*args,**kwargs):
+        print('run',args,kwargs)
+        return self.tools.run(*args,**kwargs)
 
-os, op, shutil, fakefs, tools  = [None]*5
+from pyfakefs.fake_filesystem_unittest import TestCaseMixin
+class FakeFs(TestCaseMixin):
+    def __init__(self):
+        self.stack = []
+    def addCleanup(self, function, *args, **kwargs):
+        self.stack.append((function, args, kwargs))
+    def doCleanups(self):
+        while self.stack:
+            function, args, kwargs = self.stack.pop()
+            function(*args, **kwargs)
+    def setup(self):
+        if self.stack:
+            return
+        self.setUpPyfakefs()
+    def teardown(self):
+        self.doCleanups()
+
+fakefs = FakeFs()
+
 def dry_run(
     dry=False #If True then tool execution is replaced by a print.
     ):
@@ -254,38 +265,31 @@ def dry_run(
 
     '''
     
-    global os, op, shutil, tools, fakefs 
+    global tools, op
     if dry:
-        from pyfakefs.fake_filesystem_unittest import TestCaseMixin
-        class FakeFs(TestCaseMixin):
-            def __init__(self):
-                self._cleanups = []
-            def addCleanup(self, function, *args, **kwargs):
-                self._cleanups.append((function, args, kwargs))
-            def doCleanups(self):
-                while self._cleanups:
-                    function, args, kwargs = self._cleanups.pop()
-                    function(*args, **kwargs)
-        fakefs = FakeFs()
-        fakefs.setUpPyfakefs()
-        #from pyfakefs import fake_filesystem
-        #fakefs = fake_filesystem.fakefs()
-        #os = fake_filesystem.FakeOsModule(fakefs)
-        #shutil = fake_filesystem.FakeShutilModule(fakefs)
         op = os.path
-        tools = _Verbose(_DryTools())
+        rstdir = op.dirname(op.dirname(__file__))
+        cdir = cwd()
+        fakefs.setup()
+        try:
+            fakefs.fs.add_real_directory(rstdir)
+            fakefs.fs.add_real_directory(cdir)
+            cd(cdir)
+            if verbose:
+                print('We are now in fake %s'%cwd())
+            tools = _Verbose(_DryTools())
+        except:
+            fakefs.teardown()
+            op = posixpath
     else:
-        if fakefs:
-            tools.doCleanups()
-            del fakefs
-            fakefs = None
-        import os
-        import posixpath as op
-        import shutil
+        fakefs.teardown()
+        op = posixpath
         if verbose:
             tools = _Tools()
         else:
             tools = _Verbose(_Tools())
+        if verbose:
+            print('We are now in %s'%cwd())
 
 dry_run(False)
 opnj = lambda *x:op.normpath(op.join(*x)).replace("\\","/")
@@ -425,7 +429,7 @@ def conf_py(fldr):
         pass
     config.update(sphinx_enforced)
     try:
-        config['html_theme_path'] = ','.join(config['html_theme_path']).replace('\\','/')
+        config['html_theme_path'] = _commajoinslash(config['html_theme_path'])
     except: pass
     return config
 
@@ -448,20 +452,22 @@ def cmd(
 
     '''
 
+    cmdstr = ' '.join(cmdlist)
     try:
         for x in 'out err'.split():
             kwargs['std'+x]=sp.PIPE
         r = tools.run(cmdlist,**kwargs)
+        stdout,stderr = _nbstr(r.stdout),_nbstr(r.stderr)
         if r.returncode != 0:
             raise RstDocError('Error code %s returned from \n%s\nin\n%s\n'%(r.returncode 
-                ,' '.join(cmdlist),os.getcwd())
-                +'\n[stdout]\n%s\n[stderr]\n%s'%(
-                  _nbstr(r.stdout),_nbstr(r.stderr)))
+                ,cmdstr,cwd())
+                +'\n[stdout]\n%s\n[stderr]\n%s'%(stdout,stderr))
+        return stdout
     except OSError as err:
         if err.errno != ENOENT:   # No such file or directory
             raise
         raise RstDocError('Error: Cannot run '
-            +' '.join(cmdlist)+' in '+os.getcwd() + str(err))
+            +cmdstr+' in '+cwd() + str(err))
 
 #graphic files
 _svg = '.svg'
@@ -484,27 +490,9 @@ def _imgout(inf):
     outf = opnj(outp,outname)
     return outf
 
-@contextlib.contextmanager
-def tmpdir():
-    '''
-    Can be used as::
-
-        with tmpdir:
-            #we are in the tempory directory here
-    '''
-    atmpdir = mkdtemp()
-    curdir = os.getcwd()
-    os.chdir(atmpdir)
-    try:
-        yield
-    finally:
-        os.chdir(curdir)
-        shutil.rmtree(atmpdir)
-
 #_ext('x')#.x
 #_ext('.x')#.x
 _ext = lambda x: x[0]=='.' and x or '.'+x
-
 def normoutfile(f,suffix=None):
     """
     Make outfile from infile by appending suffix,
@@ -512,7 +500,7 @@ def normoutfile(f,suffix=None):
     The outfile is returned.
     """
     @wraps(f)
-    def wrapper(args, **kwargs):
+    def normoutfiler(*args, **kwargs):
         (infile,outfile),args = args[:2],args[2:]
         if isinstance(infile,str):
             if not outfile:
@@ -523,14 +511,23 @@ def normoutfile(f,suffix=None):
                     outfile = _imgout(infile)
         f(infile, outfile, *args, **kwargs)
         return outfile
-    return wrapper
+    return normoutfiler
 
-def chdirin(f):
+@contextlib.contextmanager
+def new_cwd(apth):
+    prev_cwd = cwd()
+    cd(apth)
+    try:
+        yield
+    finally:
+        cd(prev_cwd)
+
+def infilecwd(f):
     """
     Changes into the dir of the infile if infile is a file name string.
     """
     @wraps(f)
-    def wrapper(*args, **kwargs):
+    def infilecwder(*args, **kwargs):
         (infile,outfile),args = args[:2],args[2:]
         if isinstance(infile,str):
             ndir,inf = op.split(infile)
@@ -539,14 +536,10 @@ def chdirin(f):
         if ndir:
             if outfile:
                 outfile = op.relpath(outfile,start=ndir)
-            curdir = os.getcwd()
-            os.chdir(ndir)
-            try:
+            with new_cwd(ndir):
                 return f(inf, outfile, *args, **kwargs)
-            finally:
-                os.chdir(curdir)
         return f(infile, outfile, *args, **kwargs)
-    return wrapper
+    return infilecwder
 
 def intmpiflist(f,suffix=None):
     """
@@ -557,7 +550,7 @@ def intmpiflist(f,suffix=None):
     To make this have an effect use after ``readin``
 
     - includes ``normoutfile``
-    - ``chdirin`` only applies for actual file name while this for lists of strings
+    - ``infilecwd`` only applies for actual file name while this for lists of strings
 
     If outfile is None, outfile is derived from suffix,
     which can be `rest.stpl`, `png.svg`;
@@ -566,7 +559,7 @@ def intmpiflist(f,suffix=None):
     """
 
     @wraps(f)
-    def wrapper(*args, **kwargs):
+    def intmpiflister(*args, **kwargs):
         (infile,outfile),args = args[:2],args[2:]
         suf0,suf1 = suffix and suffix.split('.') or ('','.txt')
         if isinstance(infile,list) and infile:
@@ -574,9 +567,7 @@ def intmpiflist(f,suffix=None):
                 outfile = op.abspath(outfile)
             atmpdir = mkdtemp()
             atexit(os.rmtree,atmpdir)
-            curdir = os.getcwd()
-            os.chdir(atmpdir)
-            try:
+            with new_cwd(atmpdir):
                 content = _joinlines(infile).encode('utf-8')
                 if outfile:
                     infn = op.splitext(op.basename(outfile))[0]
@@ -586,22 +577,20 @@ def intmpiflist(f,suffix=None):
                 with open(infile,'bw') as ff:
                     ff.write(content)
                 return normoutfile(f,suf0)(infile, outfile, *args, **kwargs)
-            finally:
-                os.chdir(curdir)
         return normoutfile(f,suf0)(infile, outfile, *args, **kwargs)
-    return wrapper
+    return intmpiflister
 
 def readin(f):
     @wraps(f)
-    def wrapper(args, **kwargs):
+    def readiner(*args, **kwargs):
         (infile,outfile),args = args[:2],args[2:]
         if isinstance(infile,str):
             with open(infile,encoding) as inf:
                 return f(inf.readlines(),outfile,*args,**kwargs)
         return f(infile, outfile, *args, **kwargs)
-    return wrapper
+    return readiner
 
-@chdirin
+@infilecwd
 @intmpiflist
 def run_inkscape(
     infile #.svg, .eps, .pdf filename string or list with actual .eps or .svg data
@@ -619,7 +608,7 @@ def run_inkscape(
          infile,'--export-png='+outfile]
       ,outfile=outfile)
 
-@chdirin
+@infilecwd
 @intmpiflist
 def run_sphinx(
     infile #.txt, .rst, .rest filename (normally index.rest)
@@ -631,19 +620,14 @@ def run_sphinx(
     Run Sphinx on infile.
 
 
-    >>> from unittest.mock import MagicMock as MM
-    >>> sp.CompletedProcess, sp.Popen = MM(), MM()
+    >>> run_sphinx('index.rest','build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
+    run (['sphinx-build', '-b', 'html', '.', 'build/doc/sphinx_html', '-C', ... 'master_doc=index.rest'],) ...
 
-    process_mock = mock.Mock()
-    attrs = {'communicate.return_value': ('output', 'error')}
-    process_mock.configure_mock(**attrs)
-    mock_subproc_popen.return_value = process_mock 
-    am.account_manager("path") # this calls run_script somewhere, is that right?
-    self.assertTrue(mock_subproc_popen.called)
+    #cwd()
 
+    >>> os.path.exists('build/doc/sphinx_html/index.html')
+    True
 
-    >>> dry_run(True)
-    >>> run_sphinx('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
     >>> sp.Popen.assert_called()
 
     >>> run_sphinx('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
@@ -675,7 +659,6 @@ def run_sphinx(
     ['sphinx-build', '-b', 'latex', ..., '-D', 'project=rstdoc', ...] ...
 
     '''
-    outtype = outtype.strip('. ')
     dfn = lambda n,v:['-D',n+'='+v]
     indr,infn = op.split(infile)
     if not indr:
@@ -687,7 +670,7 @@ def run_sphinx(
     cfg.update({k:v for k,v in sphinx_enforced.items() if 'latex' not in k})
     cfg['master_doc'] = infn
     if not outtype:
-        if outne=='html':
+        if outne=='.html':
             if infn.startswith('index.'):
                 outtype = 'html'
             else:
@@ -695,7 +678,7 @@ def run_sphinx(
         elif outne=='tex':
             outtype = 'latex'
         else:
-            outtype = outne
+            outtype = outne.strip('.')
     latex_elements = []
     latex_documents = []
     if 'latex' in outtype:
@@ -735,7 +718,7 @@ def _copy_images_for(infile,outfile):
             if docpy:
                 shutil.cp(frm,twd)
 
-@chdirin
+@infilecwd
 @intmpiflist
 def run_pandoc(
     infile #.txt, .rst, .rest filename
@@ -747,7 +730,6 @@ def run_pandoc(
     Run Pandoc on infile.
 
     '''
-    outtype = outtype.strip('. ')
     pandoccmd = ['pandoc','--standalone','-f','rst']+config.get('pandoc_opts',{}).get(outtype,[]
         )+['-t','latex' if outtype=='pdf' else outtype,infile,'-o',outfile]
     opt_refdoc = config.get('pandoc_doc_optref',{}).get(outtype,'')
@@ -764,7 +746,7 @@ def run_pandoc(
     if outtype.endswith('html') or outtype.endswith('latex'):
         _copy_images_for(infile,outfile)
 
-@chdirin
+@infilecwd
 @intmpiflist
 def run_rst(
     infile #.txt, .rst, .rest filename
@@ -776,7 +758,6 @@ def run_rst(
     Run the rst2xxx docutils fontend tool on infile.
 
     '''
-    outtype = outtype.strip('. ')
     rstcmd = ['rst2'+outtype+'.py','-r3','--input-encoding=utf-8',infile,outfile]+ config.get(
         'rst2_opts',{}).get(outtype,[])
     cmd(rstcmd,outfile=outfile)
@@ -791,7 +772,7 @@ rest_tools = {
     }
 
 @normoutfile
-@chdirin
+@infilecwd
 @readin
 def svgpng(
     infile, #a .svg file name or list of lines
@@ -801,9 +782,9 @@ def svgpng(
     Converts a .svg file to a png file.
 
     '''
-    tools.svg2png(bytestring='\n'.join(infile),write_to=outfile,dpi=DPI)
+    tools.svg2png(bytestring=_joinlines(infile),write_to=outfile,dpi=DPI)
 
-@chdirin
+@infilecwd
 @intmpiflist
 def texpng(
     infile #a .tex file name or list of lines
@@ -831,12 +812,12 @@ def texpng(
 
 def _texwrap(f):
     @wraps(f)
-    def wrapper(*args, **kwargs):
+    def _texwraper(*args, **kwargs):
         (inlist,outfile,config),args = args[:3],args[3:]
         content = _joinlines(infile)
         latex = config['tex_wrap']%content
         return f(latex.splitlines(),*args, **kwargs)
-    return wrapper
+    return _texwraper
 
 '''
 Decorator that wraps the file or list of strings of first input parameter by ``tex_wrap`` as given by conf.py.
@@ -845,14 +826,14 @@ texwrap = lambda f: readin(intmpiflist(_texwrap(f)))
 
 def _tikzwrap(f):
     @wraps(f)
-    def wrapper(*args, **kwargs):
+    def _tikzwraper(*args, **kwargs):
         (tikzlns),args = args[:1],args[1:]
         content = _joinlines(tikzlns).strip()
         tikzenclose = [r'\begin{tikzpicture}','%s',r'\end{tikzpicture}']
         if not content.startswith(tikzenclose[0]):
-            content = '\n'.join(tikzenclose)%content
+            content = _joinlines(tikzenclose)%content
         return f(content.splitlines(),*args, **kwargs)
-    return wrapper
+    return _tikzwraper
 
 
 '''
@@ -865,7 +846,7 @@ Converts a .tikz file to a png file.
 '''
 tikzpng = tikzwrap(texpng)
 
-@chdirin
+@infilecwd
 @intmpiflist
 def dotpng(
     infile #a .dot file name or list of lines
@@ -881,7 +862,7 @@ def dotpng(
         ,outfile=outfile
         )
 
-@chdirin
+@infilecwd
 @intmpiflist
 def umlpng(
     infile #a .uml file name or list of lines
@@ -898,7 +879,7 @@ def umlpng(
         ,outfile=outfile
         )
 
-@chdirin
+@infilecwd
 @intmpiflist
 def epspng(
     infile #a .eps file name or list of lines
@@ -913,7 +894,7 @@ def epspng(
 
 _pyglock = Lock()
 @normoutfile
-@chdirin
+@infilecwd
 @readin
 def pygpng(
     infile #a .pyg file name or list of lines
@@ -934,7 +915,7 @@ def pygpng(
 
     '''
 
-    pygcode = '\n'.join(infile)
+    pygcode = _joinlines(infile)
     pygvars={}
     try:
         _pyglock.acquire()
@@ -988,7 +969,7 @@ def pygpng(
                 finally:
                     _pyglock.release()
 
-@chdirin
+@infilecwd
 def dostpl(
     infile #a .stpl file name or list of lines
     ,outfile=None #if not provided the expanded is returned
@@ -997,7 +978,6 @@ def dostpl(
     '''
     Expands an `.stpl <https://bottlepy.org/docs/dev/stpl.html>`__ file.
 
-    >>> os.chdir('../doc')
     >>> dostpl(['hi {{2+3}}!']) # doctest: +ELLIPSIS
     ['hi 5!']
 
@@ -1011,7 +991,7 @@ def dostpl(
             stpl_newer = outfile is not None and op.getmtime(outfile) > op.getmtime(infile)
         except: pass
     else:
-        infile = '\n'.join(infile)
+        infile = _joinlines(infile)
         filename = outfile
     if not filename:
         filename = '-'
@@ -1029,7 +1009,7 @@ def dostpl(
         else:
             return st.splitlines(keepends=True)
 
-@chdirin
+@infilecwd
 def dorest(
     infile #a .rest, .rst, .txt file name or list of lines
     ,outfile=None #None and '-' mean standard out
@@ -1045,7 +1025,7 @@ def dorest(
     Default interpreted text role is set to math.
     The link lines are added to a .rest file.
 
-    >>> os.chdir('../doc')
+    >>> cd('../doc')
 
     >>> dorest('dd.rest') # doctest: +ELLIPSIS
     .. default-role:: math...
@@ -1175,7 +1155,7 @@ def convert(
     The main job is to normalized the input params, because this is called from main() and via Python.
     The it forwards to the right converter.
 
-    >>> os.chdir('../doc')
+    >>> cd('../doc')
 
     >>> convert(['hi {{2+3}}!']) # doctest: +ELLIPSIS
     ['hi 5!']
@@ -1851,8 +1831,8 @@ def gen(
     else:#else eval all gen_ funtions
         gened = []
         for i in iblks[0::2]:
-            cd = re.split("#def |:",lns[i])[1]#gen(lns,**kw)
-            gened += list(eval(cd))
+            gencode = re.split("#def |:",lns[i])[1]#gen(lns,**kw)
+            gened += list(eval(gencode))
     if target:
         drn = op.dirname(target)
         if drn and not op.exists(drn):
@@ -1951,14 +1931,10 @@ def mktree(
                 ix = (p1>=0 and p1 or p2)-1
                 if ix >= 0 and ix <= len(ef):
                     mkdir(ef)
-                    old = os.getcwd()
-                    try:
-                        os.chdir(ef)
+                    with new_cwd(ef):
                         mktree(
                           t1[c+1:f]
                           )
-                    finally:
-                        os.chdir(old)
                 else:
                     t0 = t1[c+1:f]
                     try:
@@ -1976,7 +1952,8 @@ def mktree(
             elif ed and (('\\' in ed) or ('/' in ed)):
                 mkdir(ef)
             else:
-                Path(ef).touch()
+                with open(ef,'wb') as f:
+                    f.write('')
 
 def tree(
     path #path of which to create the tree string
@@ -2068,9 +2045,7 @@ def fldrs(
 
     '''
 
-    odir = os.getcwd()
-    try:
-        os.chdir(scanroot)
+    with new_cwd(scanroot):
         fldr_lnktgts = OrderedDict()
         fldr_allfiles = defaultdict(set) #fldr, files
         fldr_alltgts = defaultdict(set) #all link target ids
@@ -2104,8 +2079,6 @@ def fldrs(
             alltgts = fldr_alltgts[fldr]
             substitutions = fldr_substitutions[fldr]
             yield fldr, (lnktgts,allfiles,alltgts,substitutions)
-    finally:
-        os.chdir(odir)
 
 links_types = "sphinx latex html pdf docx odt".split()
 def create_link(linktype,filenoext,tgt,lnkname):
@@ -2202,16 +2175,16 @@ def links_and_tags(
     for linktype,linklines in linkfiles:
         with open(opnj(fldr,'_links_%s.rst'%linktype),'w',encoding='utf-8') as f:
             f.write('\n'.join(linklines));
+    ctags_python = ""
     try:
-        r = tools.ctags_python(fldr)
-        if r.returncode != 0:
-            print("Warning: ctags on python files failed")
-        with open(opnj(fldr,'.tags'),'ab') as f:
-            f.write('\n'.join(tagentries).encode('utf-8'));
-    except Exception as e: 
-        print('Warning: ctags failed with ', e, fldr)
-        with open(opnj(fldr,'.tags'),'wb') as f:
-            f.write('\n'.join(tagentries).encode('utf-8'));
+        ctags_python = cmd(
+            ['ctags','-R','--sort=0','--fields=+n','--languages=python','--python-kinds=-i','-f','-','*']
+            ,cwd=fldr
+            )
+    finally:
+        with open(opnj(fldr,'.tags'),'w') as f:
+            f.write(ctags_python)
+            f.write('\n'.join(tagentries))
 
 #==============> for building with WAF
 
@@ -2405,7 +2378,7 @@ try:
     class SphinxTask(Task.Task):
         always_run = True
         def run(self):
-            chdirin(run_sphinx)(self.inputs[0].abspath(),self.outputs[0].abspath(),self.doctype)
+            infilecwd(run_sphinx)(self.inputs[0].abspath(),self.outputs[0].abspath(),self.doctype)
     def options(opt):
         def docscb(option, opt, value, parser):
             setattr(parser.values, option.dest, value.split(','))
@@ -2450,12 +2423,18 @@ except:
 
 #==============< for building with WAF
 
+#pandoc --print-default-data-file reference.docx > reference.docx
+#pandoc --print-default-data-file reference.odt > reference.odt
+#pandoc --print-default-template=latex
+#then modified in format and not to use figure labels
 #this is for mktree(): first line of file content must not be empty!
 example_tree = r'''
        build/
        src
         ├ dcx.py << file:///__file__
         ├ reference.tex << file:///__tex_ref__
+        ├ reference.docx << file:///__docx_ref__
+        ├ reference.odt << file:///__odt_ref__
         ├ wafw.py << file:///__wafw__
         ├ waf
             #!/usr/bin/env sh
@@ -3573,31 +3552,37 @@ def initroot(
     Creates a sample tree in the file system 
     based on the ``example_tree`` and the ``example_stp_subtree`` in dcx.py.
 
+    >>> dry_run(True)
+    >>> initroot('tmp','stpl')
+    >>> cd('tmp/src')
+    >>> ls()
+    ['Makefile', 'code', 'conf.py', 'dcx.py', 'doc', 'docutils.conf', 'reference.docx', 'reference.odt', 'reference.tex', 'waf', 'waf.bat', 'wafw.py', 'wscript']
+    >>> cd('doc')
+    >>> ls()
+    ['_images', 'dd.rest.stpl', 'dd_diagrams.tpl', 'dd_included.rst.stpl', 'dd_math.tpl', 'dd_tables.rst', 'egcairo.pyg', 'egdot.dot.stpl', 'egeps.eps', 'egeps1.eps', 'egother.pyg', 'egplt.pyg', 'egpygal.pyg', 'egpyx.pyg', 'egsvg.svg.stpl', 'egtikz.tikz', 'egtikz1.tikz', 'eguml.uml', 'gen', 'index.rest', 'model.py', 'ra.rest.stpl', 'sr.rest.stpl', 'sy.rest.stpl', 'tp.rest.stpl', 'utility.rst.tpl', 'wscript_build']
+    >>> dry_run(False)
+
     '''
     stpltype = sampletype == 'stpl'
     resttype = sampletype == 'stpl'
-    thisfile = str(Path(__file__).resolve()).replace('\\','/')
+    thisfile = __file__.replace('\\','/')
     tex_ref = opnj(op.dirname(thisfile),'..','reference.tex')
+    docx_ref = opnj(op.dirname(thisfile),'..','reference.docx')
+    odt_ref = opnj(op.dirname(thisfile),'..','reference.odt')
     wafw = opnj(op.dirname(thisfile),'..','wafw.py')
     inittree=[l for l in example_tree.replace(
         '__file__',thisfile).replace(
         '__tex_ref__',tex_ref).replace(
+        '__docx_ref__',docx_ref).replace(
+        '__odt_ref__',odt_ref).replace(
         '__wafw__',wafw).splitlines()]
     if stpltype:
         _replace_lines = lambda origlns,start,stop,insertlns: origlns[
             :list(rindices(start,origlns))[0]]+insertlns+origlns[list(rindices(stop,origlns))[0]:]
         inittree = _replace_lines(inittree,'├ index.rest','├ egtikz.tikz',example_stp_subtree.splitlines())
     mkdir(rootfldr)
-    oldd = os.getcwd()
-    try:
-        os.chdir(rootfldr)
+    with new_cwd(rootfldr):
         mktree(inittree)
-        os.chdir('src')
-        r = tools.make_pandoc_doc_reference()
-        if r.returncode != 0:
-            print("Warning: Failed to create Pandoc reference.docx")
-    finally:
-        os.chdir(oldd)
 
 def index_folder(
     root #all sub directories of ``root`` are indexed
