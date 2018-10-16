@@ -999,7 +999,7 @@ def pygpng(
                 finally:
                     _pyglock.release()
 
-#@infilecwd
+@infilecwd
 def dostpl(
     infile #a .stpl file name or list of lines
     ,outfile=None #if not provided the expanded is returned
