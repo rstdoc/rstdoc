@@ -170,11 +170,13 @@ import subprocess as sp
 from tempfile import NamedTemporaryFile, mkdtemp
 from threading import Lock
 from urllib import request
-from functools import lru_cache, wraps
+from functools import lru_cache, wraps, partial
 from collections import OrderedDict,defaultdict
 from itertools import chain, tee
 from types import GeneratorType
 from argparse import Namespace
+
+import stpl
 
 import svgwrite.drawing
 import pyx
@@ -271,8 +273,8 @@ def dry_run(
     global tools, op
     if dry:
         if not fakefs.is_setup():
-            rstdir = dirname(dirname(__file__))
-            cdir = cwd()
+            rstdir = os.path.dirname(os.path.dirname(__file__))
+            cdir = os.getcwd()
             fakefs.setup()
             op = os.path
             try:
@@ -302,9 +304,9 @@ def dry_run(
             fakefs.teardown()
             op = posixpath
             if verbose:
-                tools = _Tools()
-            else:
                 tools = _Verbose(_Tools())
+            else:
+                tools = _Tools()
             if verbose:
                 print('We are now in %s'%cwd())
 
@@ -493,7 +495,8 @@ def cmd(
     ,**kwargs #arguments forwarded to subprocess.run()
     ):
     '''
-    Runs ``cmdlist`` via subprocess.run.
+    Runs ``cmdlist`` via subprocess.run and return stdout.
+    In case of problems RstDocError is raised.
 
     '''
 
@@ -512,7 +515,7 @@ def cmd(
                 +'\n[stdout]\n%s\n[stderr]\n%s'%(stdout,stderr))
         return stdout
     except OSError as err:
-        if err.errno != ENOENT:   # No such file or directory
+        if err.errno != os.errno.ENOENT:   # No such file or directory
             raise
         raise RstDocError('Error: Cannot run '
             +cmdstr+' in '+cwd() + str(err))
@@ -520,6 +523,7 @@ def cmd(
 #graphic files
 _svg = '.svg'
 _tikz = '.tikz'
+_tex = '.tex'
 _dot = '.dot'
 _uml = '.uml'
 _eps = '.eps'
@@ -554,8 +558,8 @@ def _unioe(args):
 _ext = lambda x: x[0]=='.' and x or '.'+x
 def normoutfile(f,suffix=None):
     """
-    Make outfile from infile by appending suffix,
-    or ``.png`` in ``./_images`` or ``../_images``  or ``./`` from infile dir.
+    Make outfile from infile by appending suffix, or, if None,
+    ``.png`` in ``./_images`` or ``../_images``  or ``./`` from infile dir.
     The outfile is returned.
     """
     @wraps(f)
@@ -601,7 +605,7 @@ def infilecwd(f):
     return infilecwder
 
 def intmpiflist(f
-    ,suffix=None
+    ,suffix=None #.dot, .uml, ... or rst.stpl,...
     ):
     """
     Wraps f(infile,outfile) returning None
@@ -622,7 +626,7 @@ def intmpiflist(f
     @wraps(f)
     def intmpiflister(*args, **kwargs):
         infile,outfile,e,args = _unioe(args)
-        suf0,suf1 = suffix and suffix.split('.') or ('','.txt')
+        suf0,suf1 = suffix.split('.')
         if isinstance(infile,list) and infile:
             if outfile:
                 outfile = abspath(outfile)
@@ -635,7 +639,7 @@ def intmpiflist(f
                     infn = stemname(basename(outfile))
                 else:
                     infn = sha(content).hexdigest()
-                infile = infn+suf1
+                infile = infn+'.'+suf1
                 with open(infile,'bw') as ff:
                     ff.write(content)
                 return normoutfile(f,suf0)(infile, outfile, e, *args, **kwargs)
@@ -643,21 +647,25 @@ def intmpiflist(f
     return intmpiflister
 
 def readin(f):
+    """
+    Decorator to read in file content and pass it on to the wrapped function.
+
+    The third parameter is replaced by the config.
+    """
+
     @wraps(f)
     def readiner(*args, **kwargs):
         infile,outfile,e,args = _unioe(args)
         if isinstance(infile,str):
+            config = conf_py(dirname(infile))
             with open(infile) as inf:
-                return f(inf.readlines(),outfile, e, *args,**kwargs)
+                return f(inf.readlines(),outfile, config, *args,**kwargs)
         return f(infile, outfile, e, *args, **kwargs)
     return readiner
 
-#@infilecwd
-#@intmpiflist
 def run_inkscape(
     infile #.svg, .eps, .pdf filename string or list with actual .eps or .svg data
     ,outfile #.png file name
-    ,suffix=None #if infile is a list of strings, then this specifies the type (``.eps``, ``.svg``)
     ):
     '''
     Uses ``inkscape`` commandline to convert to ``.png``
@@ -670,9 +678,7 @@ def run_inkscape(
       ,outfile=outfile
       )
 
-#@infilecwd
-#@intmpiflist
-def run_sphinx(
+def rst_sphinx(
     infile #.txt, .rst, .rest filename (normally index.rest)
     ,outfile #the path to the target file (not target dir)
     ,outtype=None #html,... or any other sphinx writer
@@ -681,44 +687,24 @@ def run_sphinx(
     '''
     Run Sphinx on infile.
 
+    >>> cd(dirname(__file__))
+    >>> cd('../doc')
 
-    >>> run_sphinx('index.rest','build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
+    >>> dry_run(True)
+    #>>> ls()
+    #>>> fakefs.is_setup()
+
+    >>> infile,outfile = ('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
+    >>> rst_sphinx(infile,outfile)
     run (['sphinx-build', '-b', 'html', '.', 'build/doc/sphinx_html', '-C', ... 'master_doc=index.rest'],) ...
 
-    #cwd()
+    >>> rst_sphinx('dd.rest','../../build/doc/sphinx_html/dd.html') # doctest: +ELLIPSIS
+    run (['sphinx-build', '-b', 'singlehtml', ..., '-D', 'master-doc=dd.rest'],) ...
 
-    >>> exists('build/doc/sphinx_html/index.html')
-    True
+    >>> rst_sphinx('dd.rest','../../build/doc/sphinx_latex/dd.tex') # doctest: +ELLIPSIS
+    run (['sphinx-build', '-b', 'latex', ..., '-D', 'project=rstdoc', ...],) ...
 
-    >>> sp.Popen.assert_called()
-
-    >>> run_sphinx('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
-    Traceback (most recent call last):
-      ...
-    rstdoc.RstDocError: Error code <MagicMock ...
-    sphinx-build -b .html . ../../build/doc/sphinx_html -C -D project=rstdoc ... -D master_doc=index.rest
-    ...
-
-    [stdout]
-    <MagicMock name='mock().stdout.replace().decode()' id='2222582256136'>
-    [stderr]
-    <MagicMock name='mock().stderr.replace().decode()' id='2222582334800'>
-    def getex():
-      try:
-        return run_sphinx('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
-      except Exception as e:
-        x= str(e)
-      return x
-    ex = getex()
-    ex
-
-    ['sphinx-build', '-b', 'html', ..., '-D', 'master-doc=index.rest'] ...
-
-    >>> run_sphinx('dd.rest','../../build/doc/sphinx_html/dd.html') # doctest: +ELLIPSIS
-    ['sphinx-build', '-b', 'singlehtml', ..., '-D', 'master-doc=dd.rest'] ...
-
-    >>> run_sphinx('dd.rest','../../build/doc/sphinx_latex/dd.tex') # doctest: +ELLIPSIS
-    ['sphinx-build', '-b', 'latex', ..., '-D', 'project=rstdoc', ...] ...
+    >>> dry_run(False)
 
     '''
     dfn = lambda n,v:['-D',n+'='+v]
@@ -780,9 +766,7 @@ def _copy_images_for(infile,outfile):
             if docpy:
                 shutil.cp(frm,twd)
 
-#@infilecwd
-#@intmpiflist
-def run_pandoc(
+def rst_pandoc(
     infile #.txt, .rst, .rest filename
     ,outfile #the path to the target document
     ,outtype #html,... 
@@ -804,13 +788,12 @@ def run_pandoc(
             if exists(refdoc):
                 pandoccmd.append(refoption)
                 pandoccmd.append(abspath(refdoc))
-    cmd(pandoccmd,outfile=outfile)
+    stdout = cmd(pandoccmd,outfile=outfile)
     if outtype.endswith('html') or outtype.endswith('latex'):
         _copy_images_for(infile,outfile)
+    return stdout
 
-#@infilecwd
-#@intmpiflist
-def run_rst(
+def rst_rst2(
     infile #.txt, .rst, .rest filename
     ,outfile #the path to the target document
     ,outtype #html,... 
@@ -820,17 +803,19 @@ def run_rst(
     Run the rst2xxx docutils fontend tool on infile.
 
     '''
+    #TODO: rstdcx tst.rest - rst_html
     rstcmd = ['rst2'+outtype+'.py','-r3','--input-encoding=utf-8',infile,outfile]+ config.get(
         'rst2_opts',{}).get(outtype,[])
-    cmd(rstcmd,outfile=outfile)
+    stdout = cmd(rstcmd,outfile=outfile)
     if outtype.endswith('html') or outtype.endswith('latex'):
         _copy_images_for(infile,outfile)
+    return stdout
 
 #sphinx_html,rst_html,[pandoc_]html
-rest_tools = {
-    'pandoc': run_pandoc
-    ,'sphinx': run_sphinx
-    ,'rst': run_rst
+rst_tools = {
+    'pandoc': rst_pandoc
+    ,'sphinx': rst_sphinx
+    ,'rst': rst_rst2
     }
 
 @normoutfile
@@ -848,9 +833,9 @@ def svgpng(
     tools.svg2png(bytestring=_joinlines(infile),write_to=outfile,dpi=DPI)
 
 @infilecwd
-@intmpiflist
+@partial(intmpiflist,suffix='.tex')
 def texpng(
-    infile #a .tex file name or list of lines
+    infile #a .tex file name or list of lines (provide outfile in the latter case)
     ,outfile=None #if not provided, the input file with .png either in ``./_images`` or ``../_images`` or ``.``
     ,*args #needed by decorators
     ):
@@ -868,30 +853,25 @@ def texpng(
 
     pdffile = stemname(infile)+'.pdf'
     try:
-        cmd([binary, '-interaction=nonstopmode', infile],outfile=pdffile)
+        cmd(['xelatex', '-interaction=nonstopmode', infile],outfile=pdffile)
     except RstDocError as e:
-        print('\n[latex]\n',latex)
-        raise
+        with open(infile) as latex:
+            raise RstDocError(str(e)+'\n[latex]\n'+latex.read())
     run_inkscape(pdffile,outfile)
 
 def _texwrap(f):
     @wraps(f)
     def _texwraper(*args, **kwargs):
-        infile,outfile,config,args = _unioe(args)
-        content = _joinlines(infile)
+        texlns,outfile,config,args = _unioe(args)
+        content = _joinlines(texlns)
         latex = config['tex_wrap']%content
         return f(latex.splitlines(),outfile,config,*args, **kwargs)
     return _texwraper
 
-'''
-Decorator that wraps the file or list of strings of first input parameter by ``tex_wrap`` as given by conf.py.
-'''
-texwrap = lambda f: readin(intmpiflist(_texwrap(f)))
-
 def _tikzwrap(f):
     @wraps(f)
     def _tikzwraper(*args, **kwargs):
-        infile,outfile,e,args = _unioe(args)
+        tikzlns,outfile,e,args = _unioe(args)
         content = _joinlines(tikzlns).strip()
         tikzenclose = [r'\begin{tikzpicture}','%s',r'\end{tikzpicture}']
         if not content.startswith(tikzenclose[0]):
@@ -903,7 +883,7 @@ def _tikzwrap(f):
 '''
 Decorator that wraps the file or list of strings of first input parameter by tikzpicture and ``tex_wrap`` as given by conf.py.
 '''
-tikzwrap = lambda f: readin(intmpiflist(_tikzwrap(_texwrap(f))))
+tikzwrap = lambda f: normoutfile(readin(_tikzwrap(_texwrap(intmpiflist(f,suffix='.tex')))))
 
 '''
 Converts a .tikz file to a png file.
@@ -911,9 +891,9 @@ Converts a .tikz file to a png file.
 tikzpng = tikzwrap(texpng)
 
 @infilecwd
-@intmpiflist
+@partial(intmpiflist,suffix='.dot')
 def dotpng(
-    infile #a .dot file name or list of lines
+    infile #a .dot file name or list of lines (provide outfile in the latter case)
     ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
     ,*args #needed by decorators
     ):
@@ -928,9 +908,9 @@ def dotpng(
         )
 
 @infilecwd
-@intmpiflist
+@partial(intmpiflist,suffix='.uml')
 def umlpng(
-    infile #a .uml file name or list of lines
+    infile #a .uml file name or list of lines (provide outfile in the latter case)
     ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
     ,*args #needed by decorators
     ):
@@ -946,9 +926,9 @@ def umlpng(
         )
 
 @infilecwd
-@intmpiflist
+@partial(intmpiflist,suffix='.eps')
 def epspng(
-    infile #a .eps file name or list of lines
+    infile #a .eps file name or list of lines (provide outfile in the latter case)
     ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
     ,*args #needed by decorators
     ):
@@ -957,14 +937,14 @@ def epspng(
 
     '''
 
-    run_inkscape(infile,outfile,suffix='.eps')
+    run_inkscape(infile,outfile)
 
 _pyglock = Lock()
 @normoutfile
 @infilecwd
 @readin
 def pygpng(
-    infile #a .pyg file name or list of lines
+    infile #a .pyg file name or list of lines (provide outfile in the latter case)
     ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
     ,*args #needed by decorators
     ):
@@ -1069,7 +1049,7 @@ def dostpl(
         filename = abspath(filename)
     if not stpl_newer:
         st=stpl.template(infile
-                ,template_settings={'esceape_func':lambda x:x}
+                ,template_settings={'escape_func':lambda x:x}
                 ,template_lookup = lookup
                 ,__file__ = filename
                 )
@@ -1079,8 +1059,7 @@ def dostpl(
         else:
             return st.splitlines(keepends=True)
 
-@infilecwd
-def dorest(
+def dorst(
     infile #a .rest, .rst, .txt file name or list of lines
     ,outfile=None #None and '-' mean standard out
                   #for .rest |xxx| substitutions for reST link targets in infile are appended if no ``_links_sphinx.rst`` there
@@ -1095,35 +1074,36 @@ def dorest(
     Default interpreted text role is set to math.
     The link lines are added to a .rest file.
 
+    >>> cd(dirname(__file__))
     >>> cd('../doc')
 
-    >>> dorest('dd.rest') # doctest: +ELLIPSIS
+    >>> dorst('dd.rest') # doctest: +ELLIPSIS
     .. default-role:: math...
 
-    >>> dorest('ra.rest.stpl') # doctest: +ELLIPSIS
+    >>> dorst('ra.rest.stpl') # doctest: +ELLIPSIS
     .. default-role:: math...
 
-    >>> dorest(['hi there']) # doctest: +ELLIPSIS
+    >>> dorst(['hi there']) # doctest: +ELLIPSIS
     .. default-role:: math...
     hi there
 
-    >>> dorest(['hi there'],None,'html') # doctest: +ELLIPSIS
-    ['pandoc', ..., '-o', '-'] ...
+    >>> dorst(['hi there'],None,'html') # doctest: +ELLIPSIS
+    run (['pandoc', ..., '-o', '-'],) ...
 
-    >>> dorest('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
-    ['pandoc', ..., '-o', 'ra.docx', ...
+    >>> dorst('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
+    run (['pandoc', ..., '-o', 'ra.docx'],) ...
 
-    >>> dorest(['hi there'],'test.html') # doctest: +ELLIPSIS
-    ['pandoc', ..., '-o', 'test.html'] ...
+    >>> dorst(['hi there'],'test.html') # doctest: +ELLIPSIS
+    run (['pandoc', ..., '-o', 'test.html'],) ...
 
-    >>> dorest(['hi there'],'test.html','sphinx_html') # doctest: +ELLIPSIS
-    ['sphinx-build',...
+    >>> dorst(['hi there'],'test.html','sphinx_html') # doctest: +ELLIPSIS
+    run (['sphinx-build',...
 
-    >>> dorest(['hi there'],'test.html','sphinx') # doctest: +ELLIPSIS
-    ['sphinx-build',...
+    >>> dorst(['hi there'],'test.html','sphinx') # doctest: +ELLIPSIS
+    run (['sphinx-build',...
 
-    >>> dorest(['hi there'],'test.odt','rst') # doctest: +ELLIPSIS
-    ['rst2odt.py', ...
+    >>> dorst(['hi there'],'test.odt','rst') # doctest: +ELLIPSIS
+    run (['rst2odt.py', ...
     
     '''
 
@@ -1132,34 +1112,41 @@ def dorest(
             filelines = f.readlines()
     else:
         filelines = infile
-    rsttool = rest_tools['pandoc']
+    rsttool = rst_tools['pandoc']
     try:
         rsttool,outtype = outtype.split('_')
-        rsttool = rest_tools[rsttool]
+        try:
+            rsttool = rst_tools[rsttool]
+        except:
+            rsttool = None
     except: pass
     outf = None
-    finalf = None
+    finalsysout = None
     try:
         if outfile is None or outfile=='-':
             try:
                 sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
             except: pass
             outf = sys.stdout
+            try:
+                tinfile,outtype = outtype.split('.')
+                if not outtype.strip():            #x.rest - docx.
+                    outtype = tinfile      #will output the rest code with links for docx
+                    rsttool = None
+            except:
+                tinfile = 'rest'
             if isinstance(infile,list):
-                try:
-                    infile,outtype = outtype.split('.')
-                except:
-                    infile = 'rest'
+                infile = tinfile
             if not outtype:
                 outtype = 'rest'
-            outfile = stemname(basename(infile))+'.'+outtype 
+            outfile = stemname(basename(infile))+'.'+outtype #- - filenoext.docx
         else:
             _,_outtype = stemext(outfile)
             _outtype = _outtype.strip('. ')
-            if not outtype:
+            if not outtype: #x.rst a/b/c.docx
                 outtype = _outtype
-            elif outtype in rest_tools:
-                rsttool = rest_tools[outtype]
+            elif outtype in rst_tools: #x.rst a/b/c.docx pandoc
+                rsttool = rst_tools[outtype]
                 outtype = _outtype
             if isinstance(infile,list):
                 infile = 'rest'
@@ -1167,15 +1154,15 @@ def dorest(
             rsttool = None #no further processing wanted, outf is final
             if not outf:
                 outf  = open(outfile,'w',encoding='utf-8')
-        else:
-            outf,finalf = NamedTemporaryFile('w+',suffix='.rest',delete=False,encoding='utf-8'),outf
+        if rsttool:
+            outf,finalsysout = NamedTemporaryFile('w',suffix='.rest',delete=False,encoding='utf-8'),outf
             if not fakefs.is_setup():
                 atexit.register(rmrf,outf.name)
         outf.write('.. default-role:: math\n')
         links_done = False
         for x in filelines:
             if x.startswith('.. include:: _links_sphinx.rst'):
-                linksfilename = '_links_'+outtype+'.rst'
+                linksfilename = opnj(dirname(infile),'_links_'+outtype+'.rst')
                 if exists(linksfilename):
                     with open(linksfilename) as f:
                         outf.write(f.read())
@@ -1186,32 +1173,37 @@ def dorest(
             outf.write('\n')
             filenoext=stemname(outfile)
             for tgt in RstFile.make_tgts(filelines,infile,fn_i_ln):
-                outf.write(tgt.create_link(outtype if rsttool!=run_sphinx else 'sphinx',filenoext))
+                outf.write(tgt.create_link(outtype if rsttool!=rst_sphinx else 'sphinx',filenoext))
+        if rsttool:
+            if finalsysout == sys.stdout:
+                outfile = '-'
+            config = conf_py(dirname(infile))
+            if outf:
+                infile = outf.name.replace('\\','/')
+            outf.close()
+            outf = None
+            stdout = rsttool(infile,outfile,outtype,config)
+            if finalsysout and rsttool!=rst_sphinx:
+                finalsysout.write(stdout)
     finally:
-        if finalf == sys.stdout:
-            outfile = '-'
-        for x in [outf,finalf]:
+        for x in [outf,finalsysout]:
             if x is not None and x != sys.stdout:
                 x.close()
-    if rsttool:
-        config = conf_py(dirname(infile))
-        if outf:
-            infile = outf.name.replace('\\','/')
-        rsttool(infile,outfile,outtype,config)
 
 converters = {
     _svg:   svgpng
     ,_tikz: tikzpng
+    ,_tex:  texpng
     ,_dot:  dotpng
     ,_uml:  umlpng
     ,_eps:  epspng
     ,_pyg:  pygpng
     ,_stpl:  dostpl
-    ,_rst:  dorest
-    ,_rest:  dorest
-    ,_txt:  dorest
+    ,_rst:  dorst
+    ,_rest:  dorst
+    ,_txt:  dorst
 }
-graphic_extensions = {_svg,_tikz,_dot,_uml,_eps,_pyg}
+graphic_extensions = {_svg,_tikz,_tex,_dot,_uml,_eps,_pyg}
 
 def convert(
     infile #any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else stpl is assumed
@@ -1276,19 +1268,20 @@ def convert(
         if isinstance(infile,str):
             nextinfile,fext = stemext(infile)
             try: #swap outfile with outtype
-                outd,outf = stembase(outfile)
-                outf.index('.')
+                outd,outfn = stembase(outfile)
+                outfn.index('.')
             except ValueError:
-                if not outtype or stembase(outtype)[1].find('.')>=0:
-                    outtype = outf
-                    inn = stemname(basename(infile))
-                    try:
-                        ott = outtype.split('_')[1]
-                    except:
-                        ott = outtype
-                    if ott.endswith('html'):
-                        ott='html'
-                    outfile = opnj(outd,inn)+'.'+ott
+                if not outtype or basename(outtype).find('.')>=0:
+                    if not outtype.strip().endswith('.'):
+                        outtype = outfn
+                        inn = stemname(basename(infile))
+                        try:
+                            ott = outtype.split('_')[1]
+                        except:
+                            ott = outtype
+                        if ott.endswith('html'):
+                            ott='html'
+                        outfile = opnj(outd,inn)+'.'+ott
             except: pass
         else:
             if intype in converters:
@@ -1310,7 +1303,7 @@ def convert(
             except:
                 fextnext = None
             thisconverter = converters[fext]
-            if  thisconverter == dorest:
+            if  thisconverter == dorst:
                 infile = thisconverter(infile, outfile if not fextnext else None, outtype, fn_i_ln)
             else:
                 if fext == _stpl:
@@ -1523,6 +1516,7 @@ def rstincluded(
     '''
     Yield the files recursively included from an RST file.
 
+    >>> cd(dirname(__file__))
     >>> list(rstincluded('ra.rest',paths=('../doc',)))
     ['ra.rest.stpl', '_links_sphinx.rst']
     >>> list(rstincluded('sr.rest',paths=('../doc',)))
@@ -2128,7 +2122,7 @@ class RstFile:
             tgt.lnkidx = i
             if i1:
                 if fn_i_ln:
-                    tgt.tagentry = (fn_i_ln[i1][:2],i1)
+                    tgt.tagentry = fn_i_ln[i1][:2]
                 else:
                     tgt.tagentry = (doc,ii)
             else:
@@ -2230,7 +2224,7 @@ class Fldr(OrderedDict):
                 continue
             pths.append(pth)
 
-        reststem = pth[0]
+        reststem = pths[0]
         reststem = reststem.replace(_stpl,'').replace(_rest,'')
         if reststem not in self.counters:
             self.counters[reststem] = {".. figure":1,".. math":1,".. table":1,".. code":1} #includes list-table and code-block
@@ -2386,7 +2380,6 @@ def links_and_tags(
 
 try:
     from waflib import TaskGen, Task
-    import stpl
 
     @lru_cache()
     def _ant_glob_stpl(bldpath,*stardotext):
@@ -2480,7 +2473,7 @@ try:
         env.update(tsk.generator.__dict__)
         #if the .stpl needs a parameter, then this fails, since it is intended to be used as include file only: name it .tpl then
         st=stpl.template(name
-                ,template_settings={'esceape_func':lambda x:x}
+                ,template_settings={'escape_func':lambda x:x}
                 ,template_lookup = [lookup,dirname(lookup)]
                 ,bldpath = bldpath.abspath()
                 ,options = bld.options
@@ -2565,7 +2558,7 @@ try:
                 self.create_task('SphinxTask',[node],out_node,cwd=node.parent.abspath(),scan=rstscan,doctype=doctype)
     class NonSphinxTask(Task.Task):
         def run(self):
-            dorest(
+            dorst(
                 self.inputs[0].abspath()
                 ,self.outputs[0].abspath()
                 ,self.doctgt
@@ -2573,7 +2566,7 @@ try:
     class SphinxTask(Task.Task):
         always_run = True
         def run(self):
-            infilecwd(run_sphinx)(self.inputs[0].abspath(),self.outputs[0].abspath(),self.doctype)
+            infilecwd(rst_sphinx)(self.inputs[0].abspath(),self.outputs[0].abspath(),self.doctype)
     def options(opt):
         def docscb(option, opt, value, parser):
             setattr(parser.values, option.dest, value.split(','))
@@ -2701,7 +2694,7 @@ example_tree = r'''
             tex_wrap = r"""
             \documentclass[12pt,tikz]{standalone}
             \usepackage{amsmath}
-            """+latex_elements['preamble']+"""
+            """+latex_elements['preamble']+r"""
             \pagestyle{empty}
             \begin{document}
             %s
@@ -2711,11 +2704,11 @@ example_tree = r'''
             target_id_group = lambda targetid: targetid[0]
             target_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
             html_extra_path=["doc/_images/_traceability_file.svg"] #IF YOU DID ``.. include:: _traceability_file.rst``
-            pandoc_doc_optref={'latex': '--template reference.tex',
+            pandoc_doc_optref={'latex': '--template ../reference.tex',
                              'html': {},#each can also be dict of file:template
-                             'pdf': '--template reference.tex',
-                             'docx': '--reference-doc reference.docx',
-                             'odt': '--reference-doc reference.odt'
+                             'pdf': '--template ../reference.tex',
+                             'docx': '--reference-doc ../reference.docx',
+                             'odt': '--reference-doc ../reference.odt'
                              }
             _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
             pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
@@ -2794,10 +2787,10 @@ example_tree = r'''
             	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
             docx:  docxdir index stpl imgs $(DOCXS)
             $(BLDDIR)/docx/%.docx:$(SRCDIR)/%.rest
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - docx | pandoc -f rst -t docx --reference-doc $(SRCBACK)/reference.docx -o "$(SRCBACK)/$@"
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - docx. | pandoc -f rst -t docx --reference-doc $(SRCBACK)/reference.docx -o "$(SRCBACK)/$@"
             pdf: pdfdir index stpl imgs $(PDFS)
             $(BLDDIR)/pdf/%.pdf:$(SRCDIR)/%.rest
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - pdf | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm --template $(SRCBACK)/reference.tex -o "$(SRCBACK)/$@"
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - pdf. | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm --template $(SRCBACK)/reference.tex -o "$(SRCBACK)/$@"
         ├ code
             └ some.h
                 /*
@@ -3831,7 +3824,7 @@ def index_folder(
         if exists(genpth):
             for f,t,d,kw in parsegenfile(genpth):
                 gen(opnj(directory,f),target=opnj(directory,t),fun=d,**kw)
-        fldr.create_links_and_tags()
+        fldr.create_links_and_tags(root)
 
 def main(**args):
     '''
@@ -3871,25 +3864,19 @@ def main(**args):
     if 'verbose' in args:
         verbose = args['verbose']
 
-    if 'dry_run' in args:
+    if 'dry_run' in args and dry_run(args['dry_run']):
         dry_run(args['dry_run'])
-    else:
-        dry_run(False)
-
-    if not args:
-        index_folder('.')
-        return
 
     if 'stplroot' in args and args['stplroot']:
         initroot(args['stplroot'],'stpl')
-  
-    if 'restroot' in args and args['restroot']:
+    elif 'restroot' in args and args['restroot']:
         initroot(args['restroot'],'rest')
-
-    if 'infile' in args and args['infile']:
+    elif 'infile' in args and args['infile']:
         for x in 'infile outfile'.split():
             if x not in args: args[x] = None
         convert(args['infile'],args['outfile'],args['outtype'])
+    else:
+        index_folder('.')
   
 
 if __name__=='__main__':
