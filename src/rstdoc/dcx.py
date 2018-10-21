@@ -23,11 +23,15 @@ rstdcx
 Support script to create documentation (PDF, HTML, DOCX)
 from restructuredText (RST, reST) using either
 
-- `Sphinx <http://www.sphinx-doc.org>`__
 - `Pandoc <https://pandoc.org>`__
-- Docutils front-end tools like `rst2html.py <http://docutils.sourceforge.net/docs/user/tools.html>`__
+- `Sphinx <http://www.sphinx-doc.org>`__
+- Docutils `configurable <http://docutils.sourceforge.net/docs/user/config.html>`__ via ``rst2_opts``
 
-``rstdcx``, or ``dcx.py`` 
+Usage
+-----
+
+``rstdoc`` installs the ``rstdcx`` command line tool that calls ``dcx.py``.
+It
 
 - processes ``gen`` files (see examples produced by --rest)
 
@@ -37,16 +41,16 @@ from restructuredText (RST, reST) using either
 
 - creates links files like ``_links_pdf.rst``, ``_links_docx.rst``, ``_links_sphinx.rst``
 
+- forwards known files to either Pandoc, Sphinx or Docutils
+
 See example at the end of ``dcx.py``.
 
-Usage
------
+It is supposed to be used with a build tool. ``make`` and ``waf`` examples are included.
 
-With ``rstdoc`` installed, ``./dcx.py`` in the following examples can be replaced by ``rstdcx``.
+- Initialize example tree.
+  This copies ``dcx.py`` into the example tree to be independent from possible future changes.
 
-- Initialize example tree with one of::
-
-  $ ./dcx.py --rest tmp #.rest files
+  $ ./dcx.py --rest tmp #.rest files OR
   $ ./dcx.py --stpl tmp #.rest.stpl files
 
 - Only create .tags and _links_xxx.rst::
@@ -56,14 +60,13 @@ With ``rstdoc`` installed, ``./dcx.py`` in the following examples can be replace
 
 - Create the docs (and .tags and _links_xxx.rst) with **make**::
 
-  $ make html
-  $ make epub
-  $ make latex
-  $ make docx
+  $ make html #OR
+  $ make epub #OR
+  $ make latex #OR
+  $ make docx #OR
   $ make pdf
 
   The latter two are done by Pandoc, the others by Sphinx.
-  With ``waf`` below you would use ``sphinx_xxx`` for Sphinx builds, else Pandoc is used.
 
 - Create the docs (and .tags and _links_xxx.rst) with **waf** (preferred):
 
@@ -72,46 +75,47 @@ With ``rstdoc`` installed, ``./dcx.py`` in the following examples can be replace
   such that a change in any of them results in a rebuild of the documentation. 
   All files can have an additional ``.stpl`` extension to use `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax>`__.
 
-    $ waf configure
+    $ waf configure #copies the latest version of waf in here
     $ waf --docs docx,sphinx_html,rst_odt
 
-  ``rst_xxx`` via `rst2xxx.py <http://docutils.sourceforge.net/docs/user/tools.html>`__
-  ``sphinx_xxx`` via `Sphinx <http://www.sphinx-doc.org>`__ and
-  just ``xxx`` via `Pandoc <https://pandoc.org>`__.
+  - ``rst_xxx`` via `rst2xxx.py <http://docutils.sourceforge.net/docs/user/tools.html>`__
+  - ``sphinx_xxx`` via `Sphinx <http://www.sphinx-doc.org>`__ and
+  - just ``xxx`` via `Pandoc <https://pandoc.org>`__.
 
-  Images are placed into ``./_images`` or ``../_images``.
-  The following image languages should be parallel to the ``.rest`` files and are automatically converted to ``.png`` and and placed into ``images``.
 
-  - ``.tikz`` or ``.tikz.stpl``. 
-    This needs LaTex.
+The following image language files should be parallel to the ``.rest`` files.
+They are automatically converted to ``.png`` and placed into ``./_images`` or ``../_images``.
 
-  - `.svg <http://svgpocketguide.com/book/>`__ or ``.svg.stpl``
+- ``.tikz`` or ``.tikz.stpl``. 
+  This needs LaTex.
 
-  - ``.dot`` or ``.dot.stpl``
-    
-    This needs `graphviz <https://graphviz.gitlab.io/gallery/>`__.
+- `.svg <http://svgpocketguide.com/book/>`__ or ``.svg.stpl``
 
-  - `.uml <http://plantuml.com/command-line>`__ or ``.uml.stpl``
+- ``.dot`` or ``.dot.stpl``
+  
+  This needs `graphviz <https://graphviz.gitlab.io/gallery/>`__.
 
-    This needs `plantuml <http://plantuml.com/command-line>`__ .
-    Provide either 
+- `.uml <http://plantuml.com/command-line>`__ or ``.uml.stpl``
 
-    - ``plantuml.bat`` with e.g. ``java -jar "%~dp0plantuml.jar" %*``  or
-    - ``plantuml`` sh script with ``java -jar `dirname $BASH_SOURCE`/plantuml.jar "$@"``
+  This needs `plantuml <http://plantuml.com/command-line>`__ .
+  Provide either 
 
-  - ``.eps`` or ``.eps.stpl`` embedded postscript files.
+  - ``plantuml.bat`` with e.g. ``java -jar "%~dp0plantuml.jar" %*``  or
+  - ``plantuml`` sh script with ``java -jar `dirname $BASH_SOURCE`/plantuml.jar "$@"``
 
-    This needs `inkscape <https://inkscape.org/en/>`__.
+- ``.eps`` or ``.eps.stpl`` embedded postscript files.
 
-  - ``.pyg`` contains python code that produces a graphic.
-    If the python code defines a ``save_to_png`` function,
-    then that is used.
-    Else the following is tried
+  This needs `inkscape <https://inkscape.org/en/>`__.
 
-    - ``pyx.canvas.canvas`` from the `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or 
-    - ``cairocffi.Surface`` from `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
-    - ``pygal.Graph`` from `pygal <https://pygal.org>`__
-    - `matplotlib <https://matplotlib.org>`__. If ``matplotlib.pyplot.get_fignums()>1`` the figures result ``<name><fignum>.png`` 
+- ``.pyg`` contains python code that produces a graphic.
+  If the python code defines a ``save_to_png`` function,
+  then that is used.
+  Else the following is tried
+
+  - ``pyx.canvas.canvas`` from the `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or 
+  - ``cairocffi.Surface`` from `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
+  - ``pygal.Graph`` from `pygal <https://pygal.org>`__
+  - `matplotlib <https://matplotlib.org>`__. If ``matplotlib.pyplot.get_fignums()>1`` the figures result ``<name><fignum>.png`` 
     
 Conventions
 -----------
@@ -121,26 +125,28 @@ Conventions
   - main docs end in ``.rest``
   - ``.rst`` are included and ignored by Sphinx (see conf.py).
   - ``.txt`` are literally included (use :literal: option).
-  - templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately before ``.. include: y.rst``.
+  - templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately.
   - ``some.rst.tpl`` are template included
     Template lookup is done in in ``.`` and ``..`` with respect to the current file.
 
     - with ``%include('some.rst.tpl',param="test")`` with optional parameters
     - with ``%globals().update(include('utility.rst.tpl'))`` if it contains only definitions
 
-- ``.. _`id`:`` are reST targets.
-  *reST targets* should not be template-generated. 
+- ``.. _`id`:`` are *reST targets*.
+  reST targets should not be template-generated. 
   The template files should have a higher or equal number of targets than the generated file,
   in order for tags to jump to the template original.
   If one wants to generate also reST targets, then this should happen in a previous step, 
   e.g. with ``gen`` files mentioned above. 
 
-- References use replacement `substitutions <http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text>`__: ``|id|``.
+- References use replacement `substitutions`_ : ``|id|``.
 
-- Add ``.. include:: _traceability_file.rst`` to ``index.rst`` or another ``.rest`` file to get traceability information generated
+- Add ``.. include:: _traceability_file.rst`` to ``index.rest`` or another ``.rest`` file to get traceability information generated
   
 See the example created with ``--rest`` of ``--stpl`` at the end of this file and the sources of the documentation of 
 `rstdoc <https://github.com/rpuntaie/rstdoc>`__.
+
+.. _`substitutions`: http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text
 
 """
 
@@ -164,17 +170,17 @@ import io
 import os
 import shutil
 import contextlib
-import posixpath
 import atexit
 import subprocess as sp
-from tempfile import NamedTemporaryFile, mkdtemp
-from threading import Lock
+from tempfile import mkdtemp
+from threading import RLock
 from urllib import request
-from functools import lru_cache, wraps, partial
+from functools import lru_cache, wraps, partial, reduce
 from collections import OrderedDict,defaultdict
 from itertools import chain, tee
 from types import GeneratorType
 from argparse import Namespace
+from docutils.core import publish_file, publish_string
 
 import stpl
 
@@ -204,6 +210,8 @@ Increase output if set to True.
 '''
 verbose = False
 
+_plus = '+'
+_indent = '    '
 
 class _Tools:
     def svg2png(self,*args,**kwargs):
@@ -213,29 +221,20 @@ class _Tools:
             del kwargs['outfile']
         return sp.run(*args,**kwargs)
 class _DryTools: #together with FakeFs
-    def _make_file(self,file,content=b''):
-        try:
-            os.makedirs(dirname(file))
-        except: pass
-        with open(file,'wb') as f:
-            f.write(content)
-            if verbose:
-                print('created fake ', file)
     def svg2png(self,*args,**kwargs):
-        self._make_file(kwargs['write_to'])
+        pass
     def run(self,*args,**kwargs):
-        if 'outfile' in kwargs:
-            outfile = kwargs['outfile']
-            self._make_file(outfile)
         return sp.CompletedProcess([],0,'')
 class _Verbose:
     def __init__(self, tools):
         self.tools = tools
     def svg2png(self,*args,**kwargs):
-        print('svg2png to',kwargs['write_to'])
+        print(_plus, relpath(kwargs['write_to']))
         return self.tools.svg2png(*args,**kwargs)
     def run(self,*args,**kwargs):
         print('run',args,kwargs)
+        if 'outfile' in kwargs:
+            print(_plus, kwargs['outfile'])
         return self.tools.run(*args,**kwargs)
 
 from pyfakefs.fake_filesystem_unittest import TestCaseMixin
@@ -270,13 +269,12 @@ def dry_run(
 
     '''
     
-    global tools, op
+    global tools
     if dry:
         if not fakefs.is_setup():
             rstdir = os.path.dirname(os.path.dirname(__file__))
             cdir = os.getcwd()
             fakefs.setup()
-            op = os.path
             try:
                 try:
                     fakefs.fs.add_real_directory(rstdir)
@@ -292,52 +290,66 @@ def dry_run(
                     print('Error %s '%cdir,e)
                 cd(cdir)
                 if verbose:
-                    print('We are now in fake %s'%cwd())
+                    print('Fake %s'%cwd())
                 tools = _Verbose(_DryTools())
             except Exception as e:
                 tools = _Tools()
                 fakefs.teardown()
-                op = posixpath
                 raise e
     else:
         if dry!=None or tools==None:
             fakefs.teardown()
-            op = posixpath
             if verbose:
                 tools = _Verbose(_Tools())
             else:
                 tools = _Tools()
-            if verbose:
-                print('We are now in %s'%cwd())
 
 dry_run(None)
 
-abspath = lambda x: op.abspath(x).replace('\\','/')
-relpath = lambda x,start=None: op.relpath(x,start=start).replace('\\','/')
-dirname = lambda x: op.dirname(x).replace('\\','/')
-stemname = lambda x: op.splitext(x)[0].replace('\\','/')
-basename = op.basename
-stembase = lambda x: [e.replace('\\','/') for e in op.split(x)]
-stemext = lambda x: [e.replace('\\','/') for e in op.splitext(x)]
-exists = op.exists
+def opnwrite(filename):
+    if verbose:
+        print(_plus,filename)
+    return open(filename,'w',encoding='utf-8',newline='\n')
+
+isfile = os.path.isfile
+abspath = lambda x: os.path.abspath(x).replace('\\','/')
+isabs = os.path.isabs
+def relpath(x,start=None):
+    try:
+        return os.path.relpath(x,start=start).replace('\\','/')
+    except ValueError:
+        return abspath(x)
+dir = lambda x: os.path.dirname(x).replace('\\','/')
+base = os.path.basename
+dir_base = lambda x: [e.replace('\\','/') for e in os.path.split(x)]
+stem = lambda x: os.path.splitext(x)[0].replace('\\','/')
+stem_ext = lambda x: [e.replace('\\','/') for e in os.path.splitext(x)]
+exists = os.path.exists
 cwd = lambda: os.getcwd().replace('\\','/')
-mkdir = os.makedirs
+mkdir = partial(os.makedirs,exist_ok=True)
 cd = os.chdir
+cp = shutil.copy
 ls = lambda x='.': [e for e in sorted(os.listdir(x))]
 def rmrf(x):
     try:
-        if op.isdir(x):
+        if os.path.isdir(x):
             shutil.rmtree(x)
         else:
             os.remove(x)
     except: pass
-opnj = lambda *x: op.normpath(op.join(*x)).replace("\\","/")
-updir = lambda fn: opnj(dirname(fn),'..',basename(fn))
+def filenewer(infile,outfile):
+    res = True
+    try:
+        res = os.path.getmtime(infile) > os.path.getmtime(outfile)
+    except: pass
+    return res
+normjoin = lambda *x: os.path.normpath(os.path.join(*x)).replace("\\","/")
+updir = lambda fn: normjoin(dir(fn),'..',base(fn))
 #fn='x/y/../y/a.b'
 #updir(fn)#x\a.b
 #updir('a.b')#..\a.b
 #updir('a.b/a.b')#a.b
-#opnj(fn)#x\y\a.b
+#normjoin(fn)#x\y\a.b
 
 '''
 Used for png creation.
@@ -367,10 +379,20 @@ restplinclude = re.compile(r'''%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*''')
 
 @lru_cache()
 def here_or_updir(fldr,file):
-    filepth = opnj(fldr,file)
+    """
+    return type:
+      - fldr/file or fldr/../file, depending on where file is
+      - 0 not there, 1 in fldr, 2 updir
+    """
+    filepth = normjoin(fldr,file)
+    there = 1
     if not exists(filepth):
         filepth = updir(filepth)
-    return filepth
+        if exists(filepth):
+            there = 2
+        else:
+            there = 0
+    return (filepth,there)
 
 #master_doc and latex_documents is determined automatically
 sphinx_config_keys = '''
@@ -418,7 +440,13 @@ pandoc_doc_optref = {'latex': '--template reference.tex',
                  }
 _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
 pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
-rst2_opts = {'odt':['--leave-comments'],'html':['--leave-comments']}#see ``rst2html.py --help`` or ``rst2odt.py --help``
+rst2_opts = { #http://docutils.sourceforge.net/docs/user/config.html
+            'strip_comments':True
+            ,'report_level':3
+            }
+#``list-table`` and ``code-block`` are converted to ``table`` and ``code``
+make_counters = lambda: {".. figure":1,".. math":1,".. table":1,".. code":1}
+name_from_directive = lambda directive,count: directive[0].upper()+directive[1:]+' '+str(count)
 
 config_defaults = {
     'project': 'rstdoc'
@@ -436,6 +464,7 @@ config_defaults = {
     ,'pandoc_doc_optref': pandoc_doc_optref
     ,'pandoc_opts': pandoc_opts
     ,'rst2_opts': rst2_opts
+    ,'name_from_directive': name_from_directive
     }
 
 sphinx_enforced = {
@@ -449,7 +478,6 @@ sphinx_enforced = {
     ,'latex_engine': 'xelatex'
     ,'pygments_style': 'sphinx'
     ,'exclude_patterns': ['_build', 'Thumbs.db', '.DS_Store']
-    ,'todo_include_todos': 0
     }
 
 @lru_cache()
@@ -458,7 +486,7 @@ def conf_py(fldr):
     ``conf.py`` or ``../conf.py`` is used for both sphinx and pandoc.
 
     """
-    confpy = here_or_updir(fldr,'conf.py')
+    confpy,_ = here_or_updir(fldr,'conf.py')
     config={}
     config.update(config_defaults)
     try:
@@ -531,16 +559,16 @@ _pyg = '.pyg'
 _png = '.png' #target of all others
 
 def _imgout(inf): 
-    inp,inname = stembase(inf)
-    infn,infe = stemext(inname)
+    inp,inname = dir_base(inf)
+    infn,infe = stem_ext(inname)
     if not infe in graphic_extensions:
         raise ValueError('%s is not an image source'%inf)
-    outp = here_or_updir(inp,_images)
-    if not exists(outp):
+    outp,there = here_or_updir(inp,_images)
+    if not there:
         outp = inp
     outname = infn+_png
-    outf = opnj(outp,outname)
-    return outf
+    nout = normjoin(outp,outname)
+    return nout
 
 def _unioe(args): 
     i,o,e = [None]*3
@@ -553,13 +581,28 @@ def _unioe(args):
             i,a = args[:1],args[1:]
     return i,o,e,a
 
-#_ext('x')#.x
-#_ext('.x')#.x
+def png_post_process_if_any(f):
+    @wraps(f)
+    def png_post_processor(*args,**kwargs):
+        infile,outfile,e,args = _unioe(args)
+        if isinstance(infile,str):
+            pngfile = f(infile,outfile,e,*args,**kwargs)
+            config = conf_py(dir(infile))
+            pp = config.get('png_post_processor',None)
+            if pp:
+                if verbose:
+                    print('png_post_processor','(',pngfile,')')
+                return pp(pngfile)
+            else:
+                return f(infile, outfile, e, *args, **kwargs)
+        return f(infile, outfile, e, *args, **kwargs)
+    return png_post_processor
+
 _ext = lambda x: x[0]=='.' and x or '.'+x
 def normoutfile(f,suffix=None):
     """
     Make outfile from infile by appending suffix, or, if None,
-    ``.png`` in ``./_images`` or ``../_images``  or ``./`` from infile dir.
+    ``.png`` in ``./_images`` or ``../_images``  or ``./`` from infile directory.
     The outfile is returned.
     """
     @wraps(f)
@@ -568,7 +611,7 @@ def normoutfile(f,suffix=None):
         if isinstance(infile,str):
             if not outfile:
                 if suffix:
-                    infn,infe = stemext(infile)
+                    infn,infe = stem_ext(infile)
                     outfile = infn + _ext(suffix)
                 else:
                     outfile = _imgout(infile)
@@ -576,24 +619,27 @@ def normoutfile(f,suffix=None):
         return outfile
     return normoutfiler
 
+_cdlock = RLock()
 @contextlib.contextmanager
 def new_cwd(apth):
     prev_cwd = cwd()
+    _cdlock.acquire()
     cd(apth)
     try:
         yield
     finally:
         cd(prev_cwd)
+        _cdlock.release()
 
 def infilecwd(f):
     """
-    Changes into the dir of the infile if infile is a file name string.
+    Changes into the directory of the infile if infile is a file name string.
     """
     @wraps(f)
     def infilecwder(*args, **kwargs):
         infile,outfile,e,args = _unioe(args)
         if isinstance(infile,str):
-            ndir,inf = stembase(infile)
+            ndir,inf = dir_base(infile)
         else:
             ndir,inf = '',infile
         if ndir:
@@ -609,13 +655,12 @@ def intmpiflist(f
     ):
     """
     Wraps f(infile,outfile) returning None
-    to produce a temporary dir/file for when infile is a list of strings.
-    The temporary dir/file is removed only via atexit. 
+    to produce a temporary directory/file for when infile is a list of strings.
+    The temporary directory/file is removed only via atexit. 
 
     To make this have an effect use after ``readin``
 
     - includes ``normoutfile``
-    - ``infilecwd`` only applies for actual file name while this for lists of strings
 
     If outfile is None, outfile is derived from suffix,
     which can be `rest.stpl`, `png.svg`;
@@ -633,16 +678,15 @@ def intmpiflist(f
             atmpdir = mkdtemp()
             if not fakefs.is_setup():
                 atexit.register(rmrf,atmpdir)
-            with new_cwd(atmpdir):
-                content = _joinlines(infile).encode('utf-8')
-                if outfile:
-                    infn = stemname(basename(outfile))
-                else:
-                    infn = sha(content).hexdigest()
-                infile = infn+'.'+suf1
-                with open(infile,'bw') as ff:
-                    ff.write(content)
-                return normoutfile(f,suf0)(infile, outfile, e, *args, **kwargs)
+            content = _joinlines(infile).encode('utf-8')
+            if outfile:
+                infn = stem(base(outfile))
+            else:
+                infn = sha(content).hexdigest()
+            infile = normjoin(atmpdir,infn+'.'+suf1)
+            with open(infile,'bw') as ff:
+                ff.write(content)
+            return normoutfile(f,suf0)(infile, outfile, e, *args, **kwargs)
         return normoutfile(f,suf0)(infile, outfile, e, *args, **kwargs)
     return intmpiflister
 
@@ -657,7 +701,7 @@ def readin(f):
     def readiner(*args, **kwargs):
         infile,outfile,e,args = _unioe(args)
         if isinstance(infile,str):
-            config = conf_py(dirname(infile))
+            config = conf_py(dir(infile))
             with open(infile) as inf:
                 return f(inf.readlines(),outfile, config, *args,**kwargs)
         return f(infile, outfile, e, *args, **kwargs)
@@ -680,14 +724,14 @@ def run_inkscape(
 
 def rst_sphinx(
     infile #.txt, .rst, .rest filename (normally index.rest)
-    ,outfile #the path to the target file (not target dir)
+    ,outfile #the path to the target file (not target directory)
     ,outtype=None #html,... or any other sphinx writer
-    ,config=config_defaults #uses this config and not conf.py
+    ,**config #keys from config_defaults
     ):
     '''
     Run Sphinx on infile.
 
-    >>> cd(dirname(__file__))
+    >>> cd(dir(__file__))
     >>> cd('../doc')
 
     >>> dry_run(True)
@@ -707,16 +751,19 @@ def rst_sphinx(
     >>> dry_run(False)
 
     '''
+    cfgt = {}
+    cfgt.update(config_defaults)
+    cfgt.update(config)
     dfn = lambda n,v:['-D',n+'='+v]
-    indr,infn = stembase(infile)
+    indr,infn = dir_base(infile)
     if not indr:
         indr = '.'
-    outdr,outn = stembase(outfile)
-    outnn,outne = stemext(outn)
+    outdr,outn = dir_base(outfile)
+    outnn,outne = stem_ext(outn)
     cfg = {}
-    cfg.update({k:v for k,v in config.items() if k in sphinx_config_keys and 'latex' not in k})
+    cfg.update({k:v for k,v in cfgt.items() if k in sphinx_config_keys and 'latex' not in k})
     cfg.update({k:v for k,v in sphinx_enforced.items() if 'latex' not in k})
-    cfg['master_doc'] = infn
+    cfg['master_doc'] = stem(infn)
     if not outtype:
         if outne=='.html':
             if infn.startswith('index.'):
@@ -730,13 +777,13 @@ def rst_sphinx(
     latex_elements = []
     latex_documents = []
     if 'latex' in outtype:
-        cfg.update({k:v for k,v in config.items() if k in sphinx_config_keys and 'latex' in k})
+        cfg.update({k:v for k,v in cfgt.items() if k in sphinx_config_keys and 'latex' in k})
         cfg.update({k:v for k,v in sphinx_enforced.items() if 'latex' in k})
         try:
             latex_elements = ([['-D',"latex_elements.%s=%s"%(k,v.replace('\n',''))] for k,v in cfg['latex_elements'].items()]+
                 [['-D','latex_engine=xelatex']])
         except: pass
-        project = cfg.get('project',stemname(infn))
+        project = cfg.get('project',stem(infn))
         author = cfg.get('author','')
         latex_documents = [['-D',"latex_documents=%s,%s,%s,%s,%s,%s"%(
                                 infn,project.replace(' ','')+'.tex',project,author,'manual',0
@@ -747,45 +794,46 @@ def rst_sphinx(
     sphinxcmd = ['sphinx-build','-b',outtype,indr,outdr]+extras
     cmd(sphinxcmd,outfile=outfile)
 
-def file_newer(infile,outfile):
-    res = True
-    try:
-        res = op.getmtime(infile) > op.getmtime(outfile)
-    except: pass
-    return res
-
 def _copy_images_for(infile,outfile):
-    imgdir = here_or_updir(dirname(infile),_images)
-    imgdir_tgt = here_or_updir(dirname(outfile),_images)
+    imgdir,there = here_or_updir(dir(infile),_images)
+    if there==1:
+        imgdir_tgt = normjoin(dir(outfile),_images)
+    elif there==2:
+        imgdir_tgt = normjoin(dir(dir(outfile)),_images)
+    else:
+        return
     if exists(imgdir) and imgdir!=imgdir_tgt:
         if not exists(imgdir_tgt):
-            shutil.makedirs(imgdir_tgt)
+            mkdir(imgdir_tgt)
         for x in os.listdir(imgdir):
-            frm,twd =  opnj(imgdir,x),opnj(imgdir_tgt,x)
-            docpy = file_newer(frm,twd)
+            frm,twd =  normjoin(imgdir,x),normjoin(imgdir_tgt,x)
+            docpy = filenewer(frm,twd)
             if docpy:
-                shutil.cp(frm,twd)
+                cp(frm,twd)
 
 def rst_pandoc(
     infile #.txt, .rst, .rest filename
     ,outfile #the path to the target document
     ,outtype #html,... 
-    ,config=config_defaults #use this config and not from conf.py
+    ,**config  #keys from config_defaults
     ):
     '''
     Run Pandoc on infile.
 
     '''
-    pandoccmd = ['pandoc','--standalone','-f','rst']+config.get('pandoc_opts',{}).get(outtype,[]
+    cfg = {}
+    cfg.update(config_defaults)
+    cfg.update(config)
+    pandoccmd = ['pandoc','--standalone','-f','rst']+cfg.get('pandoc_opts',{}).get(outtype,[]
         )+['-t','latex' if outtype=='pdf' else outtype,infile,'-o',outfile]
-    opt_refdoc = config.get('pandoc_doc_optref',{}).get(outtype,'')
+    opt_refdoc = cfg.get('pandoc_doc_optref',{}).get(outtype,'')
     if opt_refdoc:
         if isinstance(opt_refdoc,dict):
-            opt_refdoc = opt_refdoc.get(basename(infile),'')
+            opt_refdoc = opt_refdoc.get(base(infile),'')
         if opt_refdoc:
             refoption,refdoc = opt_refdoc.split()
-            refdoc = here_or_updir('.',refdoc)
-            if exists(refdoc):
+            refdoc,there = here_or_updir('.',refdoc)
+            if there:
                 pandoccmd.append(refoption)
                 pandoccmd.append(abspath(refdoc))
     stdout = cmd(pandoccmd,outfile=outfile)
@@ -797,18 +845,37 @@ def rst_rst2(
     infile #.txt, .rst, .rest filename
     ,outfile #the path to the target document
     ,outtype #html,... 
-    ,config=config_defaults #use this config and not from conf.py
+    ,**config  #keys from config_defaults
     ):
     '''
     Run the rst2xxx docutils fontend tool on infile.
 
     '''
-    #TODO: rstdcx tst.rest - rst_html
-    rstcmd = ['rst2'+outtype+'.py','-r3','--input-encoding=utf-8',infile,outfile]+ config.get(
-        'rst2_opts',{}).get(outtype,[])
-    stdout = cmd(rstcmd,outfile=outfile)
-    if outtype.endswith('html') or outtype.endswith('latex'):
-        _copy_images_for(infile,outfile)
+    cfg = {}
+    cfg.update(config_defaults)
+    cfg.update(config)
+    destination_path=outfile if outfile!='-' else None
+    if outtype=='odt':
+        outtype='odf_odt'
+    stdout = None
+    if isinstance(infile,list):
+        source = '.. default-role:: math\n'+_joinlines(infile)
+        stdout = publish_string(
+            source
+            ,destination_path=destination_path
+            ,writer_name=outtype
+            ,settings_overrides = cfg['rst2_opts']
+            )
+    else:
+        publish_file(
+            source_path=infile
+            ,destination_path=destination_path
+            ,writer_name=outtype
+            ,settings_overrides = cfg['rst2_opts']
+            )
+    if destination_path:
+        if outtype.endswith('html') or outtype.endswith('latex'):
+            _copy_images_for(infile,outfile)
     return stdout
 
 #sphinx_html,rst_html,[pandoc_]html
@@ -818,8 +885,8 @@ rst_tools = {
     ,'rst': rst_rst2
     }
 
+@png_post_process_if_any
 @normoutfile
-@infilecwd
 @readin
 def svgpng(
     infile #a .svg file name or list of lines
@@ -832,8 +899,9 @@ def svgpng(
     '''
     tools.svg2png(bytestring=_joinlines(infile),write_to=outfile,dpi=DPI)
 
-@infilecwd
+@png_post_process_if_any
 @partial(intmpiflist,suffix='.tex')
+@infilecwd
 def texpng(
     infile #a .tex file name or list of lines (provide outfile in the latter case)
     ,outfile=None #if not provided, the input file with .png either in ``./_images`` or ``../_images`` or ``.``
@@ -851,7 +919,7 @@ def texpng(
 
     '''
 
-    pdffile = stemname(infile)+'.pdf'
+    pdffile = stem(infile)+'.pdf'
     try:
         cmd(['xelatex', '-interaction=nonstopmode', infile],outfile=pdffile)
     except RstDocError as e:
@@ -879,19 +947,14 @@ def _tikzwrap(f):
         return f(content.splitlines(),outfile,e,*args, **kwargs)
     return _tikzwraper
 
-
-'''
-Decorator that wraps the file or list of strings of first input parameter by tikzpicture and ``tex_wrap`` as given by conf.py.
-'''
-tikzwrap = lambda f: normoutfile(readin(_tikzwrap(_texwrap(intmpiflist(f,suffix='.tex')))))
-
 '''
 Converts a .tikz file to a png file.
 '''
-tikzpng = tikzwrap(texpng)
+tikzpng = normoutfile(readin(_tikzwrap(_texwrap(texpng))))
 
-@infilecwd
+@png_post_process_if_any
 @partial(intmpiflist,suffix='.dot')
+@infilecwd
 def dotpng(
     infile #a .dot file name or list of lines (provide outfile in the latter case)
     ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
@@ -907,8 +970,9 @@ def dotpng(
         ,outfile=outfile
         )
 
-@infilecwd
+@png_post_process_if_any
 @partial(intmpiflist,suffix='.uml')
+@infilecwd
 def umlpng(
     infile #a .uml file name or list of lines (provide outfile in the latter case)
     ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
@@ -920,13 +984,14 @@ def umlpng(
     '''
 
     cmd(
-        ['plantuml','-tpng',infile,'-o'+dirname(outfile)]
+        ['plantuml','-tpng',infile,'-o'+dir(outfile)]
         ,shell=True
         ,outfile=outfile
         )
 
-@infilecwd
+@png_post_process_if_any
 @partial(intmpiflist,suffix='.eps')
+@infilecwd
 def epspng(
     infile #a .eps file name or list of lines (provide outfile in the latter case)
     ,outfile=None #if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
@@ -939,7 +1004,7 @@ def epspng(
 
     run_inkscape(infile,outfile)
 
-_pyglock = Lock()
+@png_post_process_if_any
 @normoutfile
 @infilecwd
 @readin
@@ -965,28 +1030,16 @@ def pygpng(
 
     pygcode = _joinlines(infile)
     pygvars={}
-    try:
-        _pyglock.acquire()
-        eval(compile(pygcode,outfile,'exec'),pygvars)
-    finally:
-        _pyglock.release()
+    eval(compile(pygcode,outfile,'exec'),pygvars)
     if 'save_to_png' in pygvars:
         pygvars['save_to_png'](outfile)
     else:
         for k,v in pygvars.items():
             if isinstance(v,pyx.canvas.canvas):
-                try:
-                    _pyglock.acquire()
-                    tools.svg2png(bytestring=v._repr_svg_(),write_to=outfile, dpi=DPI)
-                finally:
-                    _pyglock.release()
+                tools.svg2png(bytestring=v._repr_svg_(),write_to=outfile, dpi=DPI)
                 break
             elif isinstance(v,pygal.Graph):
-                try:
-                    _pyglock.acquire()
-                    tools.svg2png(bytestring=v.render(),write_to=outfile, dpi=DPI)
-                finally:
-                    _pyglock.release()
+                tools.svg2png(bytestring=v.render(),write_to=outfile, dpi=DPI)
                 break
             elif isinstance(v,cairocffi.Surface):
                 v.write_to_png(target=outfile)
@@ -1000,13 +1053,12 @@ def pygpng(
                 break
             else: #try matplotlib.pyplot
                 try:
-                    _pyglock.acquire()
                     fignums = plt.get_fignums()
                     if len(fignums) == 0: 
                         continue
                     if len(fignums) > 1: 
                         #makename('a.b',1)#a1.b
-                        makename=lambda x,i: ('{0}%s{1}'%i).format(*stemext(x))
+                        makename=lambda x,i: ('{0}%s{1}'%i).format(*stem_ext(x))
                     else:
                         makename=lambda x,i: x
                     for i in fignums:
@@ -1015,14 +1067,13 @@ def pygpng(
                     break
                 except: 
                     continue
-                finally:
-                    _pyglock.release()
 
 @infilecwd
 def dostpl(
     infile #a .stpl file name or list of lines
     ,outfile=None #if not provided the expanded is returned
-    ,lookup=['.','..']
+    ,lookup=None #lookup paths must be relative to infile
+    ,**kwargs
     ):
     '''
     Expands an `.stpl <https://bottlepy.org/docs/dev/stpl.html>`__ file.
@@ -1033,32 +1084,29 @@ def dostpl(
 
 
     '''
-
-    stpl_newer = False
-    if isinstance(infile,str):
-        filename = infile
-        try:
-            stpl_newer = outfile is not None and op.getmtime(outfile) > op.getmtime(infile)
-        except: pass
-    else:
+    if not lookup:
+        lookup = ['.','..']
+    if isinstance(infile,list):
+        lookup = [abspath(x) for x in lookup]
+        filename = abspath(outfile)
         infile = _joinlines(infile)
-        filename = outfile
-    if not filename:
-        filename = '-'
     else:
-        filename = abspath(filename)
-    if not stpl_newer:
+        lookup = [abspath(normjoin(dir(infile),x)) for x in lookup]
+        filename = abspath(infile)
+    if filenewer(infile,outfile):
         st=stpl.template(infile
                 ,template_settings={'escape_func':lambda x:x}
                 ,template_lookup = lookup
                 ,__file__ = filename
+                ,**kwargs
                 )
         if outfile:
-            with open(outfile,mode='w',encoding="utf-8",newline="\n") as outf:
-                outf.write(st)
+            with opnwrite(outfile) as f:
+                f.write(st)
         else:
-            return st.splitlines(keepends=True)
+            return st.replace('\r\n','\n').splitlines(keepends=True)
 
+_is_rest = lambda t: any(x.endswith(t) for x in [_rest,_rst,_txt])
 def dorst(
     infile #a .rest, .rst, .txt file name or list of lines
     ,outfile=None #None and '-' mean standard out
@@ -1074,7 +1122,7 @@ def dorst(
     Default interpreted text role is set to math.
     The link lines are added to a .rest file.
 
-    >>> cd(dirname(__file__))
+    >>> cd(dir(__file__))
     >>> cd('../doc')
 
     >>> dorst('dd.rest') # doctest: +ELLIPSIS
@@ -1107,11 +1155,6 @@ def dorst(
     
     '''
 
-    if isinstance(infile,str):
-        with open(infile) as f:
-            filelines = f.readlines()
-    else:
-        filelines = infile
     rsttool = rst_tools['pandoc']
     try:
         rsttool,outtype = outtype.split('_')
@@ -1120,73 +1163,93 @@ def dorst(
         except:
             rsttool = None
     except: pass
-    outf = None
+    if isinstance(infile,str):
+        infile = abspath(infile)
+        if rsttool!=rst_sphinx:
+            with open(infile) as f:
+                filelines = f.readlines()
+    else:
+        filelines = infile
+    sysout = None
     finalsysout = None
     try:
         if outfile is None or outfile=='-':
             try:
                 sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
             except: pass
-            outf = sys.stdout
-            try:
-                tinfile,outtype = outtype.split('.')
-                if not outtype.strip():            #x.rest - docx.
-                    outtype = tinfile      #will output the rest code with links for docx
-                    rsttool = None
-            except:
-                tinfile = 'rest'
+            sysout = sys.stdout
             if isinstance(infile,list):
-                infile = tinfile
+                try:
+                    infile,outtype = outtype.split('.',1)
+                except:
+                    infile = 'rest'
             if not outtype:
                 outtype = 'rest'
-            outfile = stemname(basename(infile))+'.'+outtype #- - filenoext.docx
+            outfile = stem(base(infile))+'.'+outtype.strip('.') #- - filenoext.docx
         else:
-            _,_outtype = stemext(outfile)
-            _outtype = _outtype.strip('. ')
+            _,_outtype = stem_ext(outfile)
+            _outtype = _outtype.strip('.')
             if not outtype: #x.rst a/b/c.docx
                 outtype = _outtype
             elif outtype in rst_tools: #x.rst a/b/c.docx pandoc
                 rsttool = rst_tools[outtype]
                 outtype = _outtype
             if isinstance(infile,list):
-                infile = 'rest'
-        if any(x.endswith(outtype) for x in [_rest,_rst,_txt]):
-            rsttool = None #no further processing wanted, outf is final
-            if not outf:
-                outf  = open(outfile,'w',encoding='utf-8')
+                fdot = outtype.find('.')
+                if fdot>0 and fdot<len(outtype)-1:
+                    infile = abspath(outtype.strip('.'))
+                    outtype = outtype.split('.',1)[1]
+                else:
+                    infile = abspath('rest')
+        if outtype.endswith('.'):              #x.rest - docx.
+            outtype = outtype.strip('.')       #will output the rest code with links for docx
+            rsttool = None
+        if _is_rest(outtype):
+            rsttool = None #no further processing wanted, sysout is final
+        if not rsttool and not sysout:
+            sysout  = opnwrite(outfile)
+        tmprestindir = None
+
+        if rsttool!=rst_sphinx: #sphinx can read substitutions from included files
+            if rsttool:
+                finalsysout = sysout
+                tmprestindir = normjoin(dir(infile),base(outfile)+'.rest')
+                sysout = opnwrite(tmprestindir)
+                infile = tmprestindir
+                if not fakefs.is_setup():
+                    atexit.register(rmrf,tmprestindir)
+            if sysout:
+                sysout.write('.. default-role:: math\n')
+                links_done = False
+                for x in filelines:
+                    if x.startswith('.. include:: _links_sphinx.rst'):
+                        linksfilename = normjoin(dir(infile),'_links_'+outtype+'.rst')
+                        if exists(linksfilename):
+                            with open(linksfilename) as f:
+                                sysout.write(f.read())
+                                links_done = True
+                    else:
+                        sysout.write(x)
+                if not links_done:
+                    sysout.write('\n')
+                    filenoext=stem(outfile)
+                    for tgt in RstFile.make_tgts(filelines,infile
+                        ,make_counters()
+                        ,fn_i_ln):
+                        sysout.write(tgt.create_link(outtype.replace('rest','html'),filenoext))
+
         if rsttool:
-            outf,finalsysout = NamedTemporaryFile('w',suffix='.rest',delete=False,encoding='utf-8'),outf
-            if not fakefs.is_setup():
-                atexit.register(rmrf,outf.name)
-        outf.write('.. default-role:: math\n')
-        links_done = False
-        for x in filelines:
-            if x.startswith('.. include:: _links_sphinx.rst'):
-                linksfilename = opnj(dirname(infile),'_links_'+outtype+'.rst')
-                if exists(linksfilename):
-                    with open(linksfilename) as f:
-                        outf.write(f.read())
-                        links_done = True
-            else:
-                outf.write(x)
-        if not links_done:
-            outf.write('\n')
-            filenoext=stemname(outfile)
-            for tgt in RstFile.make_tgts(filelines,infile,fn_i_ln):
-                outf.write(tgt.create_link(outtype if rsttool!=rst_sphinx else 'sphinx',filenoext))
-        if rsttool:
-            if finalsysout == sys.stdout:
-                outfile = '-'
-            config = conf_py(dirname(infile))
-            if outf:
-                infile = outf.name.replace('\\','/')
-            outf.close()
-            outf = None
-            stdout = rsttool(infile,outfile,outtype,config)
             if finalsysout and rsttool!=rst_sphinx:
+                outfile = '-'
+            config = conf_py(dir(infile))
+            if sysout:
+                sysout.close()
+                sysout = None
+            stdout = rsttool(infile,outfile,outtype,**config)
+            if stdout!=None and finalsysout and rsttool!=rst_sphinx:
                 finalsysout.write(stdout)
     finally:
-        for x in [outf,finalsysout]:
+        for x in [sysout,finalsysout]:
             if x is not None and x != sys.stdout:
                 x.close()
 
@@ -1205,6 +1268,62 @@ converters = {
 }
 graphic_extensions = {_svg,_tikz,_tex,_dot,_uml,_eps,_pyg}
 
+def _normalize_convert_args(
+    infile
+    ,outfile
+    ,outtype
+    ):
+    """
+    Returns a tuple of infile,outfile,outtype for convert(),
+    to makes the command line interface more flexible.
+
+
+    dd.rest.stpl - rest           # expand to stdout, appending dd.html substitutions, to pipe to Pandoc
+    dd.rest.stpl - html.          # as before
+    dd.rest.stpl                  # as before
+    dd.rest.stpl - docx.          # expand to stdout, appending dd.docx substitutions, to pipe to Pandoc
+    dd.rest.stpl - newname.docx.  # expand template, appending substitutions for target newname.docx
+    dd.rest.stpl - html           # expand to stdout, already process through Pandoc to produce html on stdout
+    dd.rest.stpl - rst_html       # expand template, already process through Docutils to produce html on stdout
+    dd.rest.stpl dd.rest          # expand into dd.rest, appending substitutions for target dd.html
+    dd.rest.stpl dd.html html     # expand template, process through Pandoc to produce dd.html
+    dd.rest.stpl dd.html          # as before
+    dd.rest.stpl dd.html rst_html # expand template, already process through Docutils to produce dd.html
+    dd.rest.stpl dd.docx          # expand template, process through Pandoc to produce dd.docx
+    dd.rest.stpl dd.odt pandoc    # expand template, process through Pandoc to produce dd.odt
+    dd.rest.stpl dd.odt           # as before
+    dd.rest.stpl dd.odt rst_odt   # expand template, process through Docutils to produce dd.odt
+    dd.rest.stpl dd.odt rst       # as before
+
+    #Sphinx is not file-oriented
+    #but with rstdcx you need to provide the files to give Sphinx ``master_doc`` (normally: index.rest)
+    #Directly from ``.stpl`` does not work with Sphinx
+    index.rest ../../build/index.html sphinx_html   # via Sphinx the output directory must be different
+    index.rest ../../build/sphinx_html   # as before
+
+    #convert the graphics and place the into _images or ../_images
+    #if no _images directory exists they will placed into the same folder
+    egcairo.pyg
+    egdot.dot.stpl
+    egeps.eps
+    egeps1.eps
+    egother.pyg
+    egplt.pyg
+    egpygal.pyg
+    egpyx.pyg
+    egsvg.svg.stpl
+    egtikz.tikz
+    egtikz1.tikz
+    eguml.uml
+
+    #convert graphics to a png here (even if _images directory exists)
+    eguml.uml eguml.png
+
+    
+    """
+    return (infile,outfile,outtype)
+
+
 def convert(
     infile #any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else stpl is assumed
     ,outfile = None  #'-' means standard out, else a file name, or like outtype, if infile is a file name
@@ -1219,7 +1338,7 @@ def convert(
     The main job is to normalized the input params, because this is called from main() and via Python.
     The it forwards to the right converter.
 
-    >>> cd(dirname(__file__))
+    >>> cd(dir(__file__))
     >>> cd('../doc')
 
     >>> convert(['hi {{2+3}}!'])
@@ -1254,36 +1373,38 @@ def convert(
 
     '''
 
-    isfile = False
+    afile = False
     try:
-        isfile = infile and op.isfile(infile) or False
+        afile = infile and isfile(infile) or False
     except:
         pass
-    if not isfile and infile == '-':
+    if not afile and infile == '-':
         try:
             sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach()) 
         except: pass
         infile = sys.stdin.readlines()
     if infile:
         if isinstance(infile,str):
-            nextinfile,fext = stemext(infile)
-            try: #swap outfile with outtype
-                outd,outfn = stembase(outfile)
-                outfn.index('.')
-            except ValueError:
-                if not outtype or basename(outtype).find('.')>=0:
-                    if not outtype.strip().endswith('.'):
+            nextinfile,fext = stem_ext(infile)
+            if outfile != '-':
+                try: #swap outfile with outtype
+                    outd,outfn = dir_base(outfile)
+                    outfn.index('.')
+                except ValueError:
+                    if not outtype or base(outtype).find('.')>=0 and not outtype.endswith('.'):
                         outtype = outfn
-                        inn = stemname(basename(infile))
+                        inn = stem(base(infile))
                         try:
                             ott = outtype.split('_')[1]
                         except:
                             ott = outtype
                         if ott.endswith('html'):
                             ott='html'
-                        outfile = opnj(outd,inn)+'.'+ott
-            except: pass
+                        outfile = normjoin(outd,inn)+'.'+ott
+                except: pass
         else:
+            if intype:
+                intype = '.'+intype.strip('.')
             if intype in converters:
                 fext = intype
             else:
@@ -1299,19 +1420,24 @@ def convert(
         fn_i_ln = None
         while fext in converters:
             try:
-                nextinfile,fextnext = stemext(nextinfile)
+                nextinfile,fextnext = stem_ext(nextinfile)
             except:
                 fextnext = None
             thisconverter = converters[fext]
             if  thisconverter == dorst:
                 infile = thisconverter(infile, outfile if not fextnext else None, outtype, fn_i_ln)
             else:
-                if fext == _stpl:
+                if thisconverter == dostpl:
                     if isinstance(infile,list):
                         fn_i_ln = list(_flatten_stpl_includes_it(infile))
                     else:
                         fn_i_ln = _flatten_stpl_includes(infile)
-                infile = thisconverter(infile, outfile if not fextnext else None,['.','..'])
+                    if (not outfile or outfile=='-') and fextnext and converters[fextnext]==dorst:
+                        if not outtype or _is_rest(outtype):
+                            outtype = nextinfile+'.html.' #the final . tells dorst() not to process further
+                        elif outtype.endswith('.') and outtype.find('.')==len(outtype)-1:
+                            outtype = nextinfile+'.'+outtype.strip('.')+'.'
+                infile = thisconverter(infile, outfile if not fextnext else None)
             if not infile:
                 break
             if not fextnext:
@@ -1516,7 +1642,7 @@ def rstincluded(
     '''
     Yield the files recursively included from an RST file.
 
-    >>> cd(dirname(__file__))
+    >>> cd(dir(__file__))
     >>> list(rstincluded('ra.rest',paths=('../doc',)))
     ['ra.rest.stpl', '_links_sphinx.rst']
     >>> list(rstincluded('sr.rest',paths=('../doc',)))
@@ -1530,7 +1656,7 @@ def rstincluded(
 
     p = ''
     for p in paths:
-        nfn = opnj(p,fn)
+        nfn = normjoin(p,fn)
         if exists(nfn+_stpl): #first, because original
             nfn = nfn+_stpl
             yield fn+_stpl
@@ -1549,7 +1675,7 @@ def rstincluded(
                 toctreedone = False
                 if e.startswith(' '):
                     fl=e.strip()
-                    if fl.endswith(_rest) and exists(opnj(p,fl)):
+                    if fl.endswith(_rest) and exists(normjoin(p,fl)):
                         toctreedone = True
                         yield from rstincluded(fl,paths)
                     continue
@@ -1585,9 +1711,9 @@ def rstincluded(
                 f,t,_=restplinclude.split(e)
                 nf = not f.strip() and t
                 if nf:
-                    thisnf = opnj(p,nf)
+                    thisnf = normjoin(p,nf)
                     if not exists(thisnf):
-                        parntnf = opnj(p,'..',nf)
+                        parntnf = normjoin(p,'..',nf)
                         if exists(parntnf): 
                             nf = parntnf
                         else:
@@ -1630,24 +1756,26 @@ class Traceability:
                 n.index, reflist(n.intent,''), reflist(n.up), reflist(n.down))
                 for n in fca.nodes]
         tlines = ''.join(trace).splitlines(keepends=True)
-        tlines.extend(['.. _`trace`:\n','\n','.. figure:: '+_images+'/'+_traceability_file+'.png\n','   :name:\n','\n',
+        imgpath,there = here_or_updir(directory,_images)
+        if not there:
+            mkdir(normjoin(directory,_images))
+        tlines.extend(['.. _`trace`:\n','\n','.. figure:: '+'../'*there+_images+'/'+_traceability_file+'.png\n','   :name:\n','\n',
           '   |trace|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies'])
         if target_id_color is not None:
             legend=', '.join([fnm+" "+clr for fnm,(_,clr) in target_id_color.items()])
             tlines.extend([': '+legend,'\n'])
         tlines.append('\n')
-        with open(opnj(directory,_traceability_file+_rst),'w',encoding='utf-8') as f:
+        with opnwrite(normjoin(directory,_traceability_file+_rst)) as f:
             f.write('.. raw:: html\n\n')
             f.write('    <object data="'+_traceability_file+'.svg" type="image/svg+xml"></object>\n')
             if target_id_color is not None:
                 f.write('    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '+legend+'</p>\n\n')
             f.writelines(tlines)
         ld = pyfca.LatticeDiagram(fca,4*297,4*210)
-        mkdir(opnj(directory,_images))
-        tracesvg = abspath(opnj(directory,_images,_traceability_file+'.svg'))
-        ttgt = lambda : self.tracehtmltarget.endswith(_rest) and stemname(self.tracehtmltarget) or self.tracehtmltarget
+        tracesvg = abspath(normjoin(imgpath,_traceability_file+'.svg'))
+        ttgt = lambda : self.tracehtmltarget.endswith(_rest) and stem(self.tracehtmltarget) or self.tracehtmltarget
         ld.svg(target=ttgt()+'.html#'+tr,drawnode=_drawnode).saveas(tracesvg)
-        tracepng = tracesvg[:-len(_svg)]+_png
+        tracepng = stem(tracesvg)+_png
         svgpng(tracesvg,tracepng)
         return tlines
 
@@ -1747,10 +1875,10 @@ def gen(
             gencode = re.split("#def |:",lns[i])[1]#gen(lns,**kw)
             gened += list(eval(gencode))
     if target:
-        drn = dirname(target)
+        drn = dir(target)
         if drn and not exists(drn):
-            os.makedirs(drn)
-        with open(target,'w',encoding='utf-8') as o:
+            mkdir(drn)
+        with opnwrite(target) as o:
             o.write(''.join(((x or '\n') for x in gened)))
     else:
         return gened
@@ -1782,135 +1910,6 @@ def parsegenfile(
               yield f,t,d,kw
             except: pass
 
-def mkdir(ef):
-    try:
-        os.mkdir(ef)
-    except:
-        pass
-
-def mktree(
-    tree #tree string as list of lines
-    ):
-    ''' 
-
-    Build a directory tree from a string as returned by the tree tool.
-
-    The level is determined by the identation.
-
-    Leafs:
-
-    - ``/`` or ``\\`` to make a directory leaf
-
-    - ``<<`` to copy file from internet using ``http://`` or locally using ``file:://``
-
-    - use indented lines as file content
-
-    Example::
-
-        >>> tree="""
-        ...          a
-        ...          ├aa.txt
-        ...            this is aa
-        ...          └u.txt<<http://docutils.sourceforge.net/docs/user/rst/quickstart.txt
-        ...          b
-        ...          ├c
-        ...          │└d/
-        ...          ├e  
-        ...          │└f.txt
-        ...          └g.txt
-        ...            this is g
-        ...       """.splitlines()
-        >>> #mktree(tree) 
-
-    '''
-
-    for treestart,t in enumerate(tree):
-        try:
-            ct = re.search(r'[^\s├│└]',t).span()[0]
-            break
-        except:
-            continue
-    t1 = [t[ct:] for t in tree[treestart:]]
-    entry_re = re.compile(r'^(\w[^ </\\]*)(\s*<<\s*|\s*[\\/]\s*)*(\w.*)*')
-    it1 = list(rindices(entry_re,t1))
-    lt1 = len(t1)
-    it1.append(lt1)
-    for c,f in intervals(it1):
-        ef,ed,eg = entry_re.match(t1[c]).groups()
-        if ef:
-            if c<f-1:
-                p1 = t1[c+1].find('└')+1
-                p2 = t1[c+1].find('├')+1
-                ix = (p1>=0 and p1 or p2)-1
-                if ix >= 0 and ix <= len(ef):
-                    mkdir(ef)
-                    with new_cwd(ef):
-                        mktree(
-                          t1[c+1:f]
-                          )
-                else:
-                    t0 = t1[c+1:f]
-                    try:
-                        ct = re.search(r'[^\s│]',t0[0]).span()[0]
-                    except:
-                        print(c,f,'\n'.join(t0[:10]))
-                        print("FIRST LINE OF FILE CONTENT MUST NOT BE EMPTY!")
-                    tt = [t[ct:]+'\n' for t in t0]
-                    with open(ef,'w',encoding='utf-8') as fh:
-                        fh.writelines(tt)
-            elif eg:
-                try:
-                    request.urlretrieve(eg,ef)
-                except Exception as e:
-                    print("Error ", e)
-            elif ed and (('\\' in ed) or ('/' in ed)):
-                mkdir(ef)
-            else:
-                with open(ef,'wb') as f:
-                    f.write('')
-
-def tree(
-    path #path of which to create the tree string
-    ,with_content=False #use this only if all the files are text
-    ,with_files=True #else only directories are listed
-    ,with_dot_files=True #also include files starting with .
-    ,max_depth=100 #max folder depth to list
-    ):
-    '''
-    Inverse of mktree.
-    Like the linux tree tool, but optionally with content of files
-
-    ::
-
-      >>> path='.'
-      >>> tree(path,False)
-      >>> tree(path,True)
-
-    '''
-
-    subprefix = ['│  ', '   '] 
-    entryprefix = ['├─', '└─']
-    def _tree(path, prefix):
-        for p,ds,fs in os.walk(path):
-            #p,ds,fs = path,[],os.listdir()
-            lends = len(ds)
-            lenfs = len(fs)
-            if len(prefix)/3 >= max_depth:
-                return
-            for i,d in enumerate(sorted(ds)):
-                yield prefix + entryprefix[i==lends+lenfs-1] + d
-                yield from _tree(opnj(p,d),prefix+subprefix[i==lends+lenfs-1])
-            del ds[:]
-            if with_files:
-                for i,f in enumerate(sorted(fs)):
-                    if with_dot_files or not f.startswith('.'):
-                        yield prefix + entryprefix[i==lenfs-1] + f
-                        if with_content:
-                            for ln in _read_lines(opnj(p,f)):
-                                yield prefix + subprefix[1] + ln
-    return '\n'.join(_tree(path, ''))
-
-
 def _flatten_stpl_includes_it(fn):
     """
     This flattens the .stpl includes to have all targets align to those in the .rest file.
@@ -1933,7 +1932,7 @@ def _flatten_stpl_includes_it(fn):
         m = restplinclude.match(ln)
         if m: 
             includedtpl = m.group(1)
-            yield from _flatten_stpl_includes(opnj(dirname(fn),includedtpl))
+            yield from _flatten_stpl_includes(normjoin(dir(fn),includedtpl))
         else:
             yield fn,i,ln
 
@@ -1947,11 +1946,11 @@ class Tgt:
 
     def __init__(self
         ,lnidx #line index 
-        ,tgt #target name
+        ,target #target name
         ):
         self.lnidx = lnidx
-        self.tgt = tgt
-        self.tagentry = None #string for .tags entry
+        self.target = target
+        self.tagentry = None #(path,line index)
         self.lnkname = None #link name
 
     def is_inside_literal(self,lns):
@@ -1973,7 +1972,7 @@ class Tgt:
 
     def find_lnkname(self,lns,counters):
         lenlns = len(lns)
-        lnkname = self.tgt
+        lnkname = self.target
         for j in range(self.lnidx+2,self.lnidx+self.line_search_range):
             #j=i+2
             if j > lenlns-1:
@@ -1992,7 +1991,7 @@ class Tgt:
                 lnkname, = itm.groups()
                 lnj1 = lns[j-1].split('::')[0].replace('list-table','table').replace('code-block','code').strip()
                 if counters and not lnkname and lnj1 in counters:
-                    lnkname = lnj1[3].upper()+lnj1[4:]+str(counters[lnj1])
+                    lnkname = name_from_directive(lnj1.strip('. '),counters[lnj1])
                     counters[lnj1]+=1
                     break
                 elif lnkname:
@@ -2007,24 +2006,24 @@ class Tgt:
             if itm:
                 lnkname, = itm.groups()
                 break
-            lnkname = self.tgt
+            lnkname = self.target
         self.lnkname = lnkname
 
     def create_link(self,linktype,reststem):
         if linktype == 'latex':
             linktype = 'pdf'
         if linktype=='sphinx':
-            tgte = ".. |{0}| replace:: :ref:`{1}<{0}>`\n".format(self.tgt,self.lnkname)
+            tgte = ".. |{0}| replace:: :ref:`{1}<{0}>`\n".format(self.target,self.lnkname)
         elif linktype=='odt':
             #https://github.com/jgm/pandoc/issues/3524
-            tgte = ".. |{0}| replace:: `{1} <../{2}#{0}>`__\n".format(self.tgt,self.lnkname,reststem+'.'+linktype)
+            tgte = ".. |{0}| replace:: `{1} <../{2}#{0}>`__\n".format(self.target,self.lnkname,reststem+'.'+linktype)
         else:
-            tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`__\n".format(self.tgt,self.lnkname,reststem+'.'+linktype)
+            tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`__\n".format(self.target,self.lnkname,reststem+'.'+linktype)
         return tgte
 
-    def create_tag(self,upcnt):
+    def create_tag(self):
         return r'{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(
-            self.tgt,"../"*upcnt+self.tagentry[0],self.tagentry[1])
+            self.target,self.tagentry[0],self.tagentry[1])
 
 class RstFile:
     '''
@@ -2068,9 +2067,9 @@ class RstFile:
             add_linksto(prevtgt,tgt.lnidx,iterlnks)#,unknowntgts)
         if verbose:
             if '/'+self.reststem+'.' in self.doc:
-                print('    '+self.doc)
+                print(_indent+self.doc)
             else:
-                print('        '+self.doc)
+                print(2*_indent+self.doc)
 
     @staticmethod
     def make_lnks(
@@ -2087,7 +2086,7 @@ class RstFile:
     def make_tgts(
         lns  #lines of the document
         ,doc #the rst document
-        ,counters # a dict like this {".. figure":1,".. math":1,".. table":1,".. code":1}. list-table and code-block get included.
+        ,counters=None # if None, the starts with {".. figure":1,".. math":1,".. table":1,".. code":1}
         ,fn_i_ln=None #(fn,i,ln) of the .stpl with all stpl includes sequenced
         ):
         '''
@@ -2096,6 +2095,8 @@ class RstFile:
 
         '''
 
+        if counters == None:
+            counters = make_counters()
         itgts = list(rindices(rextgt,lns))
         if fn_i_ln:
             lns1 = [x[2] for x in fn_i_ln]
@@ -2152,11 +2153,11 @@ class RstFile:
 
 class Fldr(OrderedDict):
     '''
-    Represents a folder.
+    Represents a directory.
 
     It is an ordered list of {rst file: RstFile object}.
 
-    :directory: is the folder path
+    :folder: is the directory path
     :allfiles: set of all files in the directory
     :alltgts: set of all targets in the directory
     :allsubsts: set of all substitutions in the directory
@@ -2164,10 +2165,10 @@ class Fldr(OrderedDict):
     '''
 
     def __init__(self
-        ,directory #as returned by ``os.walk()``
+        ,folder #as returned by ``os.walk()``
         ):
 
-        self.directory = directory
+        self.folder = folder
         self.allfiles = set()
         self.alltgts = set()
         self.allsubsts = set()
@@ -2180,7 +2181,7 @@ class Fldr(OrderedDict):
         ,fs #all files in the directory as returned by ``os.walk()``
         ):
         '''
-        Scans the folder for rest files.
+        Scans the directory for rest files.
         All files (.rest and included .rst) are added.
 
         Sphinx index.rest is processed last.
@@ -2191,17 +2192,17 @@ class Fldr(OrderedDict):
 
         sofar=set([])
         sphinx_index = None
-        for restfile in reversed(sorted(fs)):#reversed puts the rest.stpl before the .rest
-            fullpth=opnj(self.directory,restfile).replace("\\","/")
-            if is_rest(restfile):
-                if restfile.startswith('index.rest'):
-                    sphinx_index = (restfile,fullpth)
+        for afs in reversed(sorted(fs)):#reversed puts the rest.stpl before the .rest
+            fullpth=normjoin(self.folder,afs).replace("\\","/")
+            if is_rest(afs):
+                if afs.startswith('index.rest'):
+                    sphinx_index = (afs,fullpth)
                     continue
                 fullpth_nostpl = fullpth.replace(_stpl,'')
                 if fullpth_nostpl in sofar:
                     continue
                 sofar.add(fullpth_nostpl)
-                self.add_rest(restfile,fullpth)
+                self.add_rest(afs,fullpth)
         if sphinx_index:
             self.add_rest(*sphinx_index)
 
@@ -2213,21 +2214,21 @@ class Fldr(OrderedDict):
 
         pths = []
         has_traceability = False
-        for restinc in rstincluded(restfile,(self.directory,)):
+        for restinc in rstincluded(restfile,(self.folder,)):
             if _traceability_file+_rst in restinc:
                 if _traceability_instance is None:#THERE CAN BE ONLY ONE
-                    Traceability(stemname(restfile)) 
+                    Traceability(stem(restfile)) 
                     has_traceability = True
                     continue
-            pth=opnj(self.directory,restinc).replace("\\","/")
+            pth=normjoin(self.folder,restinc).replace("\\","/")
             if any(x in pth for x in exclude_paths_substrings):
                 continue
             pths.append(pth)
 
         reststem = pths[0]
-        reststem = reststem.replace(_stpl,'').replace(_rest,'')
+        reststem = stem(stem(reststem))
         if reststem not in self.counters:
-            self.counters[reststem] = {".. figure":1,".. math":1,".. table":1,".. code":1} #includes list-table and code-block
+            self.counters[reststem] = make_counters()
         counters = self.counters[reststem]
         if has_traceability:
               _traceability_instance.counters = counters
@@ -2246,14 +2247,14 @@ class Fldr(OrderedDict):
             else:
                 continue
             lnks = list(RstFile.make_lnks(lns))
-            rstfile = RstFile(reststem,doc,tgts,lnks,len(lns))
+            rstfile = RstFile(base(reststem),doc,tgts,lnks,len(lns))
             self[doc]= rstfile
-            self.alltgts |= set([t.tgt for t in rstfile.tgts])
+            self.alltgts |= set([t.target for t in rstfile.tgts])
             self.allsubsts |= set(RstFile.substs(lns)) 
 
     def create_links_and_tags(self,scanroot):
         '''
-        Creates links_xxx.rst and .tags files for a folder at scanroot/directory
+        Creates links_xxx.rst and .tags files for a directory at scanroot/directory
 
         The target IDs are grouped. To every group a color is associated. See ``conf.py``.
         This is used to color an FCA lattice diagram in "_traceability_file.rst".
@@ -2263,14 +2264,18 @@ class Fldr(OrderedDict):
 
         tagentries = []
         upcnt = 0
-        if (self.directory.strip()):
-           upcnt = len(self.directory.split(os.sep)) #TODO test
+        if self.folder.strip():
+           relfolder = relpath(self.folder,start=scanroot)
+           upcnt = len(relfolder.split('/'))
         links_types = "sphinx latex html pdf docx odt".split()
         linkfiles = [(linktype,[]) for linktype in links_types]
         def add_tgt(tgt,reststem):
             for linktype,linklines in linkfiles:
                 linklines.append(tgt.create_link(linktype,reststem))
-            tagentries.append(tgt.create_tag(upcnt))
+            if isabs(tgt.tagentry[0]):
+                tgt.tagentry = (relpath(tgt.tagentry[0],start=scanroot),tgt.tagentry[1])
+            tgt.tagentry = ("../"*upcnt+tgt.tagentry[0],tgt.tagentry[1])
+            tagentries.append(tgt.create_tag())
         def add_links_comments(comment):
             for _,linklines in linkfiles:
                 linklines.append(comment)
@@ -2278,7 +2283,7 @@ class Fldr(OrderedDict):
             #all the links from the block following prevtgt up to this tgt
             linksto = []
             def chkappend(x):
-                if x!=prevtgt.tgt: 
+                if x!=prevtgt.target: 
                     linksto.append(x)
             if ojlnk[1] and ojlnk[0] < lnidx:#for the first link in the new prevtgt
                 if ojlnk[1] in self.alltgts:
@@ -2300,37 +2305,36 @@ class Fldr(OrderedDict):
                             #unknowntgts.append(lnk)
             if _traceability_instance:
                 if prevtgt and linksto:
-                    _traceability_instance.append(set([x for x in linksto if not x.startswith('-') and not x.startswith('_')]+[prevtgt.tgt]))
+                    _traceability_instance.append(set([x for x in linksto if not x.startswith('-') and not x.startswith('_')]+[prevtgt.target]))
             if linksto:
                 linksto = '.. .. ' + ','.join(linksto) + '\n\n'
                 add_links_comments(linksto)
         for rstfile in self.values():
             add_links_comments('\n.. .. {0}\n\n'.format(rstfile.doc))
             rstfile.add_links_and_tags(add_tgt,add_linksto)
-        with new_cwd(scanroot):
-            if _traceability_instance:
-                tlns = _traceability_instance.create_traceability_file(self.directory)
-                trcrst = _traceability_file+_rst
-                if tlns:
-                    for tgt in RstFile.make_tgts(tlns,trcrst,_traceability_instance.counters) :
-                        add_tgt(tgt,_traceability_instance.tracehtmltarget)
-            for linktype,linklines in linkfiles:
-                with open(opnj(self.directory,'_links_%s.rst'%linktype),'w',encoding='utf-8') as f:
-                    f.write('\n'.join(linklines));
-            ctags_python = ""
-            try:
-                ctags_python = cmd(
-                    ['ctags','-R','--sort=0','--fields=+n','--languages=python','--python-kinds=-i','-f','-','*']
-                    ,cwd=self.directory
-                    )
-            finally:
-                with open(opnj(self.directory,'.tags'),'w',encoding='utf-8') as f:
-                    f.write(ctags_python)
-                    f.write('\n'.join(tagentries))
+        if _traceability_instance:
+            tlns = _traceability_instance.create_traceability_file(self.folder)
+            trcrst = normjoin(self.folder,_traceability_file+_rst)
+            if tlns:
+                for tgt in RstFile.make_tgts(tlns,trcrst,_traceability_instance.counters) :
+                    add_tgt(tgt,_traceability_instance.tracehtmltarget)
+        for linktype,linklines in linkfiles:
+            with opnwrite(normjoin(self.folder,'_links_%s.rst'%linktype)) as f:
+                f.write('\n'.join(linklines));
+        ctags_python = ""
+        try:
+            ctags_python = cmd(
+                ['ctags','-R','--sort=0','--fields=+n','--languages=python','--python-kinds=-i','-f','-','*']
+                ,cwd=self.folder
+                )
+        finally:
+            with opnwrite(normjoin(self.folder,'.tags')) as f:
+                f.write(ctags_python)
+                f.write('\n'.join(tagentries))
 
 class Fldrs(OrderedDict):
     '''
-    Represents a folder hierarchy below ``scanroot``.
+    Represents a directory hierarchy below ``scanroot``.
     The paths are relative to ``scanroot``.
 
     It is a dict ordere by insertion of {directory: Fldr objects}
@@ -2338,7 +2342,7 @@ class Fldrs(OrderedDict):
     '''
 
     def __init__(self
-        ,scanroot = '.' #root path to start scanning for independent doc folders
+        ,scanroot = '.' #root path to start scanning for independent doc directories
         ):
         self.scanroot = scanroot
 
@@ -2346,21 +2350,21 @@ class Fldrs(OrderedDict):
         return super().__str__()
 
     def scan(self):
-        with new_cwd(self.scanroot):
-            for p,ds,fs in os.walk('.'):
-                if not p.endswith(_images):
-                    fldr = Fldr(p)
-                    fldr.scan(fs)
-                    if len(fldr):
-                        self[p] = fldr
+        for p,ds,fs in os.walk(self.scanroot):
+            if not p.endswith(_images):
+                directory = normjoin(p)
+                fldr = Fldr(directory)
+                fldr.scan(fs)
+                if len(fldr):
+                    self[directory] = fldr
 
 def links_and_tags(
-    afolder #folder name
+    adir #directory name
     ):
     '''
     Creates _links_xxx.rst`` files and a ``.tags``.
 
-    >>> cd(dirname(__file__))
+    >>> cd(dir(__file__))
     >>> rmrf('../doc/_links_sphinx.rst')
     >>> '_links_sphinx.rst' in ls('../doc')
     False
@@ -2371,7 +2375,7 @@ def links_and_tags(
 
     '''
     
-    fldrs = Fldrs(afolder)
+    fldrs = Fldrs(adir)
     fldrs.scan()
     for fldr in fldrs.values():
         fldr.create_links_and_tags(fldrs.scanroot)
@@ -2388,7 +2392,7 @@ try:
         for an_ext in stardotext:
           stplsfirst = bldpath.ant_glob(an_ext+_stpl)
           for anode in stplsfirst:
-              already.add(anode.name[:-len(_stpl)])
+              already.add(stem(anode.name))
               res.append(anode)
           nonstpls = bldpath.ant_glob(an_ext)
           for anode in nonstpls:
@@ -2465,39 +2469,29 @@ try:
             pt = tsk.outputs[0].abspath()
         except:
             if ps.endswith(_stpl):
-                pt = ps[:-len(_stpl)]
+                pt = stem(ps)
             else:
                 raise RstDocError('No target for %s'%ps)
-        lookup,name=stembase(ps)
         env = dict(tsk.env)
         env.update(tsk.generator.__dict__)
-        #if the .stpl needs a parameter, then this fails, since it is intended to be used as include file only: name it .tpl then
-        st=stpl.template(name
-                ,template_settings={'escape_func':lambda x:x}
-                ,template_lookup = [lookup,dirname(lookup)]
-                ,bldpath = bldpath.abspath()
-                ,options = bld.options
-                ,__file__ = ps.replace('\\','/')
-                ,**env
-                )
-        with open(pt,mode='w',encoding="utf-8",newline="\n") as f:
-            f.write(st)
-    class Stpl(Task.Task):
+        dostpl(ps,pt,**env)
+    class STPL(Task.Task):
         always_run = True
         def run(self):
             render_stpl(self,self.generator.bld)
     @TaskGen.extension(_stpl)
-    def stpl_taskgen(self,node):#expand into same folder
-        nn = node.parent.make_node(node.name[:-len(_stpl)])
-        self.create_task('Stpl',node,nn)
+    def stpl_taskgen(self,node):#expand into same directory
+        nn = node.parent.make_node(stem(node.name))
+        self.create_task('STPL',node,nn)
         try:
             self.get_hook(nn)(self, nn)
         except:
             pass
     def gen_ext_tsk(self,node,ext):#into _images or ../_images in source path
         srcfldr = node.parent.get_src()
-        imgpath = relpath(here_or_updir(srcfldr.abspath(),_images),start=srcfldr.abspath())
-        outnode = srcfldr.make_node(opnj(imgpath,node.name[:-len(ext)]+'.png'))
+        _imgpath,_ = here_or_updir(srcfldr.abspath(),_images)
+        imgpath = relpath(_imgpath,start=srcfldr.abspath())
+        outnode = srcfldr.make_node(normjoin(imgpath,stem(node.name)+'.png'))
         self.create_task(ext[1:].upper(),node,outnode)
     @TaskGen.extension(_tikz)
     def tikz_to_png_taskgen(self,node):
@@ -2525,8 +2519,7 @@ try:
     def eps_to_png_taskgen(self,node):
         gen_ext_tsk(self,node,'.eps')
     class EPS(Task.Task):
-        def run(self):
-            epspng(self.inputs[0].abspath(),self.outputs[0].abspath())
+        run_str = "${inkscape} -z --export-dpi=%s --export-area-drawing --export-background-opacity=0 ${SRC} --export-png=${TGT}"%DPI
     @TaskGen.extension('.pyg')
     def pyg_to_png_taskgen(self,node):
         gen_ext_tsk(self,node,'.pyg')
@@ -2547,15 +2540,15 @@ try:
                     _,doctype = doctgt.split('_')
                 except:
                     doctype = doctgt
-                out_node = node.parent.find_or_declare("{0}/{1}.{2}".format(doctgt,node.name[:-len(_rest)],doctype))
+                out_node = node.parent.find_or_declare("{0}/{1}.{2}".format(doctgt,stem(node.name),doctype))
                 self.create_task('NonSphinxTask', [node], out_node, scan=rstscan, doctgt=doctgt)
         else:
             for doctgt in docs:
                 if not doctgt.startswith('sphinx_'):
                     continue
-                out_node = node.parent.get_bld()
                 doctype = doctgt.split('_')[1]
-                self.create_task('SphinxTask',[node],out_node,cwd=node.parent.abspath(),scan=rstscan,doctype=doctype)
+                out_node = node.parent.find_or_declare("{0}/{1}.{2}".format(doctgt,stem(node.name),doctype))
+                self.create_task('SphinxTask',[node],out_node,scan=rstscan,doctype=doctype)
     class NonSphinxTask(Task.Task):
         def run(self):
             dorst(
@@ -2566,7 +2559,7 @@ try:
     class SphinxTask(Task.Task):
         always_run = True
         def run(self):
-            infilecwd(rst_sphinx)(self.inputs[0].abspath(),self.outputs[0].abspath(),self.doctype)
+            rst_sphinx(self.inputs[0].abspath(),self.outputs[0].abspath(),self.doctype)
     def options(opt):
         def docscb(option, opt, value, parser):
             setattr(parser.values, option.dest, value.split(','))
@@ -2575,14 +2568,11 @@ try:
 
     def configure(cfg):
         cfg.env['docs'] = cfg.options.docs
-        try:
-            cfg.env['plantuml'] = cfg.find_program('plantuml')
-        except cfg.errors.ConfigurationError:
-            cfg.to_log('plantuml was not found (ignoring)')
-        try:
-            cfg.env['dot'] = cfg.find_program('dot')
-        except cfg.errors.ConfigurationError:
-            cfg.to_log('dot was not found (ignoring)')
+        for x in 'plantuml dot inkscape'.split():
+            try:
+                cfg.env[x] = cfg.find_program(x)
+            except cfg.errors.ConfigurationError:
+                cfg.to_log(x+' was not found (ignoring)')
 
     def build(bld):
         bld.src2bld = lambda f: bld(features='subst',source=f,target=f,is_copy=True)
@@ -2666,20 +2656,22 @@ example_tree = r'''
             import sphinx_bootstrap_theme
             html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
             
-            #determined automatically or enforced if compiled via rstdcx/dcx.py
-            master_doc = 'index'
-            default_role = 'math'
-            numfig = False
-            source_suffix = '.rest'
-            smartquotes = False
-            templates_path = []
-            language = None
-            highlight_language = "none"
-            todo_include_todos = False
-            latex_engine = 'xelatex'
-            pygments_style = 'sphinx'
-            exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+            #You can postprocess pngs. Here an example. default: png_post_processor = None
+            def png_post_processor(filename):
+                from PIL import Image, ImageChops
+                def trim(im):
+                    bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
+                    diff = ImageChops.difference(im, bg)
+                    diff = ImageChops.add(diff, diff, 2.0, -100)
+                    bbox = diff.getbbox()
+                    if bbox:
+                        return im.crop(bbox)
+                im = Image.open(filename)
+                im = trim(im)
+                im.save(filename)
+                return filename
             
+            #remove the following, if you don't change them, because they are default anyway
             latex_elements = {'preamble':r"""
             \usepackage{pgfplots}
             \usepackage{unicode-math}
@@ -2712,7 +2704,11 @@ example_tree = r'''
                              }
             _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
             pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
-            rst2_opts = {'odt':['--leave-comments'],'html':['--leave-comments']}#see ``rst2html.py --help`` or ``rst2odt.py --help``
+            rst2_opts = { #http://docutils.sourceforge.net/docs/user/config.html
+                        'strip_comments':True
+                        ,'report_level':3
+                        }
+            name_from_directive = lambda directive,count: directive[0].upper()+directive[1:]+' '+str(count)
         ├ Makefile
             SPHINXOPTS  = -c .
             SPHINXBLD   = sphinx-build
@@ -2900,7 +2896,7 @@ example_tree = r'''
                
                The disadvantage is that the id will differ between rst and final doc.
                When this is needed in an included file use template include: ``%include('x.rst.tpl`)``
-               See the the ``test/stpl`` folder.
+               See the the ``test/stpl`` directory.
                
                Every ``.rest`` has this line at the end::
                
@@ -3732,8 +3728,133 @@ example_stp_subtree = r'''
                .. include:: _links_sphinx.rst
                '''
 
+def mktree(
+    tree #tree string as list of lines
+    ):
+    ''' 
+
+    Build a directory tree from a string as returned by the tree tool.
+
+    The level is determined by the identation.
+
+    This is not thread-safe.
+
+    Leafs:
+
+    - ``/`` or ``\\`` to make a directory leaf
+
+    - ``<<`` to copy file from internet using ``http://`` or locally using ``file:://``
+
+    - use indented lines as file content
+
+    Example::
+
+        >>> tree="""
+        ...          a
+        ...          ├aa.txt
+        ...            this is aa
+        ...          └u.txt<<http://docutils.sourceforge.net/docs/user/rst/quickstart.txt
+        ...          b
+        ...          ├c
+        ...          │└d/
+        ...          ├e  
+        ...          │└f.txt
+        ...          └g.txt
+        ...            this is g
+        ...       """.splitlines()
+        >>> #mktree(tree) 
+
+    '''
+
+    for treestart,t in enumerate(tree):
+        try:
+            ct = re.search(r'[^\s├│└]',t).span()[0]
+            break
+        except:
+            continue
+    t1 = [t[ct:] for t in tree[treestart:]]
+    entry_re = re.compile(r'^(\w[^ </\\]*)(\s*<<\s*|\s*[\\/]\s*)*(\w.*)*')
+    it1 = list(rindices(entry_re,t1))
+    lt1 = len(t1)
+    it1.append(lt1)
+    for c,f in intervals(it1):
+        ef,ed,eg = entry_re.match(t1[c]).groups()
+        if ef:
+            if c<f-1:
+                p1 = t1[c+1].find('└')+1
+                p2 = t1[c+1].find('├')+1
+                ix = (p1>=0 and p1 or p2)-1
+                if ix >= 0 and ix <= len(ef):
+                    mkdir(ef)
+                    with new_cwd(ef):
+                        mktree(
+                          t1[c+1:f]
+                          )
+                else:
+                    t0 = t1[c+1:f]
+                    try:
+                        ct = re.search(r'[^\s│]',t0[0]).span()[0]
+                    except:
+                        print(c,f,'\n'.join(t0[:10]))
+                        print("FIRST LINE OF FILE CONTENT MUST NOT BE EMPTY!")
+                    tt = [t[ct:]+'\n' for t in t0]
+                    with opnwrite(ef) as fh:
+                        fh.writelines(tt)
+            elif eg:
+                try:
+                    request.urlretrieve(eg,ef)
+                except Exception as e:
+                    print("Error ", e)
+            elif ed and (('\\' in ed) or ('/' in ed)):
+                mkdir(ef)
+            else:
+                with opnwrite(ef) as f:
+                    f.write('')
+
+def tree(
+    path #path of which to create the tree string
+    ,with_content=False #use this only if all the files are text
+    ,with_files=True #else only directories are listed
+    ,with_dot_files=True #also include files starting with .
+    ,max_depth=100 #max directory depth to list
+    ):
+    '''
+    Inverse of mktree.
+    Like the linux tree tool, but optionally with content of files
+
+    ::
+
+      >>> path='.'
+      >>> tree(path,False)
+      >>> tree(path,True)
+
+    '''
+
+    subprefix = ['│  ', '   '] 
+    entryprefix = ['├─', '└─']
+    def _tree(path, prefix):
+        for p,ds,fs in os.walk(path):
+            #p,ds,fs = path,[],os.listdir()
+            lends = len(ds)
+            lenfs = len(fs)
+            if len(prefix)/3 >= max_depth:
+                return
+            for i,d in enumerate(sorted(ds)):
+                yield prefix + entryprefix[i==lends+lenfs-1] + d
+                yield from _tree(normjoin(p,d),prefix+subprefix[i==lends+lenfs-1])
+            del ds[:]
+            if with_files:
+                for i,f in enumerate(sorted(fs)):
+                    if with_dot_files or not f.startswith('.'):
+                        yield prefix + entryprefix[i==lenfs-1] + f
+                        if with_content:
+                            for ln in _read_lines(normjoin(p,f)):
+                                yield prefix + subprefix[1] + ln
+    return '\n'.join(_tree(path, ''))
+
+
 def initroot(
-    rootfldr #folder name that becomes root of the sample tree
+    rootfldr #directory name that becomes root of the sample tree
     ,sampletype #either 'stpl' for the templated sample tree, or 'rest'
     ):
     '''
@@ -3754,10 +3875,10 @@ def initroot(
     #rootfldr ,sampletype = 'tmp','rest'
     stpltype = sampletype == 'stpl'
     thisfile = __file__.replace('\\','/')
-    tex_ref = opnj(dirname(thisfile),'..','reference.tex')
-    docx_ref = opnj(dirname(thisfile),'..','reference.docx')
-    odt_ref = opnj(dirname(thisfile),'..','reference.odt')
-    wafw = opnj(dirname(thisfile),'..','wafw.py')
+    tex_ref = normjoin(dir(thisfile),'..','reference.tex')
+    docx_ref = normjoin(dir(thisfile),'..','reference.docx')
+    odt_ref = normjoin(dir(thisfile),'..','reference.odt')
+    wafw = normjoin(dir(thisfile),'..','wafw.py')
     inittree=[l for l in example_tree.replace(
         '__file__',thisfile).replace(
         '__tex_ref__',tex_ref).replace(
@@ -3772,7 +3893,7 @@ def initroot(
     with new_cwd(rootfldr):
         mktree(inittree)
 
-def index_folder(
+def index_dir(
     root #all sub directories of ``root`` are indexed
     ):
     ''' 
@@ -3796,7 +3917,7 @@ def index_folder(
     >>> ls()
     ['_images', 'dd.rest', 'egcairo.pyg', 'egdot.dot.stpl', 'egeps.eps', 'egeps1.eps', 'egother.pyg', 'egplt.pyg', 'egpygal.pyg', 'egpyx.pyg', 'egsvg.svg.stpl', 'egtikz.tikz', 'egtikz1.tikz', 'eguml.uml', 'gen', 'index.rest', 'ra.rest', 'sr.rest', 'tp.rest', 'wscript_build']
 
-    >>> index_folder('.')
+    >>> index_dir('.')
     svg2png ...
     >>> [x for x in ls() if x.startswith('_links_') or x=='.tags']
     ['.tags', '_links_docx.rst', '_links_html.rst', '_links_latex.rst', '_links_odt.rst', '_links_pdf.rst', '_links_sphinx.rst']
@@ -3811,20 +3932,86 @@ def index_folder(
     for p,ds,fs in os.walk(root):
         for f in fs:
             if f.endswith(_stpl):
-                fullpth = opnj(p,f).replace("\\","/")
-                outpth = stemname(fullpth)
-                dostpl(fullpth,outpth,[p,dirname(p)])
-    #link, gen and tags per folder
+                fullpth = normjoin(p,f)
+                outpth = stem(fullpth)
+                dostpl(fullpth,outpth)
+    #link, gen and tags per directory
     fldrs = Fldrs(root)
     fldrs.scan()
     for directory,fldr in fldrs.items():
         if verbose:
             print(directory)
-        genpth = opnj(directory,'gen')
+        genpth = normjoin(directory,'gen')
         if exists(genpth):
             for f,t,d,kw in parsegenfile(genpth):
-                gen(opnj(directory,f),target=opnj(directory,t),fun=d,**kw)
+                gen(normjoin(directory,f),target=normjoin(directory,t),fun=d,**kw)
         fldr.create_links_and_tags(root)
+
+
+description='''\
+``rstdcx`` CLI
+--------------
+
+Without parameters: creates |substitution| links and .tags ctags for reST targets.
+
+With two or three parameters: process files through Pandoc, Sphinx, Docutils  (.rest);
+Inkscape (.eps, .svg), Dot (.dot), Planuml (.uml), latex (.tex,.tikz) 
+are converted to .png into ``./_images`` or ``../_images``.
+Any of the files can be a SimpleTemplate templates (xxx.yyy.stpl).
+
+Configuration is in ``conf.py`` or ``../conf.py``.
+
+Examples with the files generated with the ``--stpl tmp``:
+
+.. code-block:: sh
+
+    cd tmp/src/doc
+    rstdcx   #expand .stpl and produce _links_xxx.rst and .tags
+
+    #expand stpl and append substitutions (for simple expansion use ``stpl <file> .``)
+    rstdcx dd.rest.stpl - rest           # expand to stdout, appending dd.html substitutions, to pipe to Pandoc
+    rstdcx dd.rest.stpl - html.          # as before
+    rstdcx dd.rest.stpl                  # as before
+    rstdcx dd.rest.stpl - docx.          # expand to stdout, appending dd.docx substitutions, to pipe to Pandoc
+    rstdcx dd.rest.stpl - newname.docx.  # expand template, appending substitutions for target newname.docx
+    rstdcx dd.rest.stpl - html           # expand to stdout, already process through Pandoc to produce html on stdout
+    rstdcx dd.rest.stpl - rst_html       # expand template, already process through Docutils to produce html on stdout
+    rstdcx dd.rest.stpl dd.rest          # expand into dd.rest, appending substitutions for target dd.html
+    rstdcx dd.rest.stpl dd.html html     # expand template, process through Pandoc to produce dd.html
+    rstdcx dd.rest.stpl dd.html          # as before
+    rstdcx dd.rest.stpl dd.html rst_html # expand template, already process through Docutils to produce dd.html
+    rstdcx dd.rest.stpl dd.docx          # expand template, process through Pandoc to produce dd.docx
+    rstdcx dd.rest.stpl dd.odt pandoc    # expand template, process through Pandoc to produce dd.odt
+    rstdcx dd.rest.stpl dd.odt           # as before
+    rstdcx dd.rest.stpl dd.odt rst_odt   # expand template, process through Docutils to produce dd.odt
+    rstdcx dd.rest.stpl dd.odt rst       # as before
+
+    #Sphinx is not file-oriented
+    #but with rstdcx you need to provide the files to give Sphinx ``master_doc`` (normally: index.rest)
+    #Directly from ``.stpl`` does not work with Sphinx
+    rstdcx index.rest ../../build/index.html sphinx_html   # via Sphinx the output directory must be different
+    rstdcx index.rest ../../build/sphinx_html   # as before
+
+    #convert the graphics and place the into _images or ../_images
+    #if no _images directory exists they will placed into the same folder
+    rstdcx egcairo.pyg
+    rstdcx egdot.dot.stpl
+    rstdcx egeps.eps
+    rstdcx egeps1.eps
+    rstdcx egother.pyg
+    rstdcx egplt.pyg
+    rstdcx egpygal.pyg
+    rstdcx egpyx.pyg
+    rstdcx egsvg.svg.stpl
+    rstdcx egtikz.tikz
+    rstdcx egtikz1.tikz
+    rstdcx eguml.uml
+
+    #convert graphics to a png here (even if _images directory exists)
+    rstdcx eguml.uml eguml.png
+
+'''
+
 
 def main(**args):
     '''
@@ -3836,27 +4023,24 @@ def main(**args):
     import argparse
   
     if not args:
-        parser = argparse.ArgumentParser(description='''This
-          - creates |substitution| links and .tags ctags for reST targets (without arguments)
-          - creates a sample folders (--rest/--stpl xx)
-          - processes known files through pandoc, sphinx, inkscape, dot, planuml, latex
-
-          Configuration is in ``conf.py`` or ``conf.py`` (see a generated example folder)
-          ''')
+        parser = argparse.ArgumentParser(description=description)
         parser.add_argument('--rest', dest='restroot', action='store',
-                            help='Create a sample folder structure.')
+                            help='Create a sample directory structure with .rest files.')
         parser.add_argument('--stpl', dest='stplroot', action='store',
-                            help='Create a stpl templated sample folder structure.')
+                            help='Create a sample directory structure with .rest.stpl files.')
         parser.add_argument('-v','--verbose', action='store_true',
                             help='''Show files recursively included by each rest''')
         parser.add_argument('-n','--dry-run', action='store_true',
                             help='''Don't actually run, just print.''')
         parser.add_argument('infile', nargs='?',
-                help='Input file or - for stdin. If not given all directories below are scanned.')
+                help='''\
+Integrates Sphinx, Pandoc and Docutils to produce output supported by any of them.
+To use all three, document must not use Sphinx extensions.
+Input file or - for stdin.''')
         parser.add_argument('outfile', nargs='?',
                 help='Output file or - or nothing to print to std out.')
-        parser.add_argument('outtype', nargs='?',default='html',
-                help='Extension with starting dot (default: html). The target file name will be the in-file with this extension.')
+        parser.add_argument('outtype', nargs='?',default=None,
+                help='The target file name will be the in-file with this extension.')
         args = parser.parse_args().__dict__
 
     global verbose
@@ -3874,9 +4058,9 @@ def main(**args):
     elif 'infile' in args and args['infile']:
         for x in 'infile outfile'.split():
             if x not in args: args[x] = None
-        convert(args['infile'],args['outfile'],args['outtype'])
+        convert(*_normalize_convert_args(args['infile'],args['outfile'],args['outtype']))
     else:
-        index_folder('.')
+        index_dir('.')
   
 
 if __name__=='__main__':

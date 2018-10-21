@@ -22,6 +22,7 @@ import os
 sys.path = ['..','test/mocks','mocks'] + sys.path
 import pytest
 import glob
+import re
 from rstdoc.dcx import *
 
 '''
@@ -114,9 +115,10 @@ def test_lnkname(lnsres):
         header, figure, list-table, table, code-block, code, math, definition (:id:) 
     '''
     lns,res = lnsres
-    g_counters.clear()
-    got = list(make_tgts(lns,0))[0][1:]
-    assert got==res
+    tgts = list(RstFile.make_tgts(lns,0,
+        {".. figure":1,".. math":1,".. table":1,".. code":1}
+        ))
+    assert next((x.target,x.lnkname) for x in tgts)==res
 
 def test_dcx_regex():
     assert list(rexlnks.findall('|xx| A `|lnk|` here |gos11|\n')) == ['xx', 'gos11']
@@ -208,23 +210,24 @@ def test_init(rstinit):
 ├─code
 │  └─some.h
 ├─doc
+│  ├─_images
 │  ├─dd.rest.stpl
 │  ├─dd_diagrams.tpl
 │  ├─dd_included.rst.stpl
 │  ├─dd_math.tpl
 │  ├─dd_tables.rst
-│  ├─examplecairo.pyg
-│  ├─exampledot.dot.stpl
-│  ├─exampleeps.eps
-│  ├─exampleeps1.eps
-│  ├─exampleother.pyg
-│  ├─exampleplt.pyg
-│  ├─examplepygal.pyg
-│  ├─examplepyx.pyg
-│  ├─examplesvg.svg.stpl
-│  ├─exampletikz.tikz
-│  ├─exampletikz1.tikz
-│  ├─exampleuml.uml
+│  ├─egcairo.pyg
+│  ├─egdot.dot.stpl
+│  ├─egeps.eps
+│  ├─egeps1.eps
+│  ├─egother.pyg
+│  ├─egplt.pyg
+│  ├─egpygal.pyg
+│  ├─egpyx.pyg
+│  ├─egsvg.svg.stpl
+│  ├─egtikz.tikz
+│  ├─egtikz1.tikz
+│  ├─eguml.uml
 │  ├─gen
 │  ├─index.rest
 │  ├─model.py
@@ -239,6 +242,7 @@ def test_init(rstinit):
 ├─dcx.py
 ├─docutils.conf
 ├─reference.docx
+├─reference.odt
 ├─reference.tex
 ├─waf
 ├─waf.bat
@@ -249,19 +253,20 @@ def test_init(rstinit):
 ├─code
 │  └─some.h
 ├─doc
+│  ├─_images
 │  ├─dd.rest
-│  ├─examplecairo.pyg
-│  ├─exampledot.dot.stpl
-│  ├─exampleeps.eps
-│  ├─exampleeps1.eps
-│  ├─exampleother.pyg
-│  ├─exampleplt.pyg
-│  ├─examplepygal.pyg
-│  ├─examplepyx.pyg
-│  ├─examplesvg.svg.stpl
-│  ├─exampletikz.tikz
-│  ├─exampletikz1.tikz
-│  ├─exampleuml.uml
+│  ├─egcairo.pyg
+│  ├─egdot.dot.stpl
+│  ├─egeps.eps
+│  ├─egeps1.eps
+│  ├─egother.pyg
+│  ├─egplt.pyg
+│  ├─egpygal.pyg
+│  ├─egpyx.pyg
+│  ├─egsvg.svg.stpl
+│  ├─egtikz.tikz
+│  ├─egtikz1.tikz
+│  ├─eguml.uml
 │  ├─gen
 │  ├─index.rest
 │  ├─ra.rest
@@ -273,6 +278,7 @@ def test_init(rstinit):
 ├─dcx.py
 ├─docutils.conf
 ├─reference.docx
+├─reference.odt
 ├─reference.tex
 ├─waf
 ├─waf.bat
@@ -285,15 +291,39 @@ def test_dcx_alone_samples(rstinit,capfd):
     out, err = capfd.readouterr()
     if 'tmp_rest' in rstinit:
         assert '\n'.join(out.splitlines()) == """\
++ egdot.dot
++ egsvg.svg
 doc
++ doc/_sometst.rst
++ ../build/code/some_tst.c
     doc/tp.rest
     doc/sr.rest
     doc/ra.rest
     doc/dd.rest
-    doc/index.rest"""
+    doc/index.rest
++ doc/_traceability_file.rst
++ doc/_images/_traceability_file.png
++ doc/_links_sphinx.rst
++ doc/_links_latex.rst
++ doc/_links_html.rst
++ doc/_links_pdf.rst
++ doc/_links_docx.rst
++ doc/_links_odt.rst
+run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-kinds=-i', '-f', '-', '*'],) {'cwd': 'doc', 'stdout': -1, 'stderr': -1}
++ doc/.tags"""
     elif 'tmp_stpl' in rstinit:
         assert '\n'.join(out.splitlines()) == """\
++ dd.rest
++ dd_included.rst
++ egdot.dot
++ egsvg.svg
++ ra.rest
++ sr.rest
++ sy.rest
++ tp.rest
 doc
++ doc/_sometst.rst
++ ../build/code/some_tst.c
     doc/tp.rest.stpl
     doc/sy.rest.stpl
     doc/sr.rest.stpl
@@ -301,14 +331,76 @@ doc
     doc/dd.rest.stpl
         doc/dd_included.rst.stpl
         doc/dd_tables.rst
-    doc/index.rest"""
+    doc/index.rest
++ doc/_traceability_file.rst
++ doc/_images/_traceability_file.png
++ doc/_links_sphinx.rst
++ doc/_links_latex.rst
++ doc/_links_html.rst
++ doc/_links_pdf.rst
++ doc/_links_docx.rst
++ doc/_links_odt.rst
+run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-kinds=-i', '-f', '-', '*'],) {'cwd': 'doc', 'stdout': -1, 'stderr': -1}
++ doc/.tags"""
 
-def test_dcx_in_out(capfd):
-    r=run([Python,'rstdoc/dcx.py','./doc/dd.rest','-','html'])
+@pytest.mark.parametrize('cmd_result',[
+(['dd.rest.stpl','-','rest'],['default-role:: math',r'.. \|(\w*)\| replace:: `\1 <dd.html#\1>`__'])
+,(['dd.rest.stpl','-','html.'],['default-role:: math',r'.. \|(\w*)\| replace:: `\1 <dd.html#\1>`__'])
+,(['dd.rest.stpl'],['default-role:: math',r'.. \|(\w*)\| replace:: `\1 <dd.html#\1>`__'])
+,(['dd.rest.stpl','-','docx.'],['default-role:: math',r'.. \|(\w*)\| replace:: `\1 <dd.docx#\1>`__'])
+,(['dd.rest.stpl','-','newname.docx.'],['default-role:: math',r'.. \|(\w*)\| replace:: `\1 <newname.docx#\1>`__'])
+,(['dd.rest.stpl','-','html'],["<\!DOCTYPE html>",'<a ref="dd.html#'])
+,(['dd.rest.stpl','-','rst_html'],["<\!DOCTYPE html>",'<a ref="dd.html#'])])
+def test_dcx_in_out(rstinit,cmd_result,capfd):
+    cmd,result = cmd_result
+    os.chdir('doc')
+    if not os.path.exists(cmd[0]):
+        cmd[0] = os.path.splitext(cmd[0])[0]
+    r=run([r'rstdcx']+cmd)
     assert r.returncode == 0
     out, err = capfd.readouterr()
-    assert out.startswith('.. default-role:: math')
-    assert '.. |d1w| replace:: `d1w <dd.html#d1w>`__' in out
+    for res in result:
+        assert re.search(res,out)
+
+@pytest.mark.parametrize('cmd_result',[
+(['dd.rest.stpl','dd.rest'],['dd.rest'],[])
+,(['dd.rest.stpl','dd.html','html'],['dd.html'],['dd.rest'])
+,(['dd.rest.stpl','dd.html'],['dd.html'],['dd.rest'])
+,(['dd.rest.stpl','dd.html','rst_html'],['dd.html'],['dd.rest'])
+,(['dd.rest.stpl','dd.docx'],['dd.docx'],['dd.rest'])
+,(['dd.rest.stpl','dd.odt','pandoc'],['dd.odt'],['dd.rest'])
+,(['dd.rest.stpl','dd.odt'],['dd.odt'],['dd.rest'])
+,(['dd.rest.stpl','dd.odt','rst_odt'],['dd.odt'],['dd.rest'])
+,(['dd.rest.stpl','dd.odt','rst'],['dd.odt'],['dd.rest'])
+,(['index.rest','../../build/index.html','sphinx_html'],['../../build/index.html'],[])
+,(['index.rest','../../build/index_html'],['../../build/index.html'],[])
+,(['egcairo.pyg'],['_images/egcairo.png'],[])
+,(['egdot.dot.stpl'],['_images/egdot.png'],['egdot.dot'])
+,(['egeps.eps'],['_images/egeps.png'],[])
+,(['egeps1.eps'],['_images/egeps1.png'],[])
+,(['egother.pyg'],['_images/egother.png'],[])
+,(['egplt.pyg'],['_images/egplt.png'],[])
+,(['egpygal.pyg'],['_images/egpygal.png'],[])
+,(['egpyx.pyg'],['_images/egpyx.png'],[])
+,(['egsvg.svg.stpl'],['_images/egsvg.png'],['egsvg.svg'])
+,(['egtikz.tikz'],['_images/egtikz.png'],[])
+,(['egtikz1.tikz'],['_images/egtikz1.png'],[])
+,(['eguml.uml'],['_images/eguml.png'],[])
+,(['eguml.uml','eguml.png'],['eguml.png'],['_images/eguml.png'])
+])
+def test_dcx_out_file(rstinit,cmd_result):
+    cmd,result,notexists = cmd_result
+    os.chdir('doc')
+    notrest = os.path.splitext(cmd[0])[0]
+    if not os.path.exists(cmd[0]):
+        cmd[0] = notrest
+        notrest = None
+    r=run([r'rstdcx']+cmd)
+    assert r.returncode == 0
+    assert os.path.exists(result[0])
+    if notrest:
+        for ne in notexists:
+            assert not os.path.exists(ne)
 
 @pytest.yield_fixture(params=['docx','pdf','html'])
 def makebuild(request,rstinit):
@@ -467,18 +559,18 @@ def test_waf_samples(wafbuild):
 │     ├─Makefile
 │     ├─_static
 │     ├─_traceability_file.png
-│     ├─examplecairo.png
-│     ├─exampledot.png
-│     ├─exampleeps.png
-│     ├─exampleeps1.png
-│     ├─exampleother.png
-│     ├─exampleplt.png
-│     ├─examplepygal.png
-│     ├─examplepyx.png
-│     ├─examplesvg.png
-│     ├─exampletikz.png
-│     ├─exampletikz1.png
-│     ├─exampleuml.png
+│     ├─egcairo.png
+│     ├─egdot.png
+│     ├─egeps.png
+│     ├─egeps1.png
+│     ├─egother.png
+│     ├─egplt.png
+│     ├─egpygal.png
+│     ├─egpyx.png
+│     ├─egsvg.png
+│     ├─egtikz.png
+│     ├─egtikz1.png
+│     ├─eguml.png
 │     ├─footnotehyper-sphinx.sty
 │     ├─latexmkjarc
 │     ├─latexmkrc

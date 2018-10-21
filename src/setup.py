@@ -12,13 +12,14 @@ import os, os.path
 
 __version__ = '1.6.00'
 
-def read(fname):
+def read(fname,separator='\n"""'):
     with open(os.path.join(os.path.dirname(__file__), fname),encoding='utf-8') as f:
-        return f.read().split('\n"""')[1]
+        return f.read().split(separator)[1]
 
 long_description = '\n'.join(["rstdoc\n======\n\n"
 ,open('readme.rst').read()
 ,read('rstdoc/dcx.py')
+,read('rstdoc/dcx.py',separator="'''\\").split("'''")[0]
 ,read('rstdoc/fromdocx.py')
 ,read('rstdoc/listtable.py')
 ,read('rstdoc/untable.py')
