@@ -344,36 +344,42 @@ run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-
 + doc/.tags"""
 
 @pytest.mark.parametrize('cmd_result',[
-(['dd.rest.stpl','-','rest'],['default-role:: math',r'.. \|(\w*)\| replace:: `\1 <dd.html#\1>`__'])
-,(['dd.rest.stpl','-','html.'],['default-role:: math',r'.. \|(\w*)\| replace:: `\1 <dd.html#\1>`__'])
-,(['dd.rest.stpl'],['default-role:: math',r'.. \|(\w*)\| replace:: `\1 <dd.html#\1>`__'])
-,(['dd.rest.stpl','-','docx.'],['default-role:: math',r'.. \|(\w*)\| replace:: `\1 <dd.docx#\1>`__'])
-,(['dd.rest.stpl','-','newname.docx.'],['default-role:: math',r'.. \|(\w*)\| replace:: `\1 <newname.docx#\1>`__'])
-,(['dd.rest.stpl','-','html'],["<\!DOCTYPE html>",'<a ref="dd.html#'])
-,(['dd.rest.stpl','-','rst_html'],["<\!DOCTYPE html>",'<a ref="dd.html#'])])
-def test_dcx_in_out(rstinit,cmd_result,capfd):
+ ('rstdcx dd.rest.stpl - rest',['default-role:: math',r'<dd.html#'])
+,('rstdcx dd.rest.stpl - html.',['default-role:: math',r'<dd.html#'])
+,('rstdcx dd.rest.stpl - docx.',['default-role:: math',r'<dd.docx#'])
+,('rstdcx dd.rest.stpl - newname.docx.',['default-role:: math',r'<newname.docx#'])
+,('rstdcx dd.rest.stpl - html',["DOCTYPE html",'ref="dd.html#'])
+,('rstdcx dd.rest.stpl',["DOCTYPE html",'ref="dd.html#'])
+,('rstdcx sr.rest.stpl - rst_html',["DOCTYPE html",'ref="sr.html#'])
+,('rstdcx dd.rest.stpl - newname.docx.',['default-role:: math',r'<newname.docx#'])
+,('stpl dd.rest.stpl | rstdcx - - dd.html.',['default-role:: math',r'<dd.html#'])
+,('stpl dd.rest.stpl | rstdcx - - dd.html',["DOCTYPE html",'ref="dd.html#'])
+])
+def test_dcx_in_out(rstinit,cmd_result):
     cmd,result = cmd_result
     os.chdir('doc')
-    if not os.path.exists(cmd[0]):
-        cmd[0] = os.path.splitext(cmd[0])[0]
-    r=run([r'rstdcx']+cmd)
+    if not os.path.exists(cmd.split()[1]):
+        if cmd.startswith('stpl'):
+            return
+        else:
+            cmd = cmd.replace('.stpl','')
+    r = subprocess.run(cmd,shell=True,stdout=subprocess.PIPE)
     assert r.returncode == 0
-    out, err = capfd.readouterr()
+    out = r.stdout.decode('utf-8')
     for res in result:
         assert re.search(res,out)
 
-@pytest.mark.parametrize('cmd_result',[
+@pytest.mark.parametrize('cmd_exists_not_exists',[
 (['dd.rest.stpl','dd.rest'],['dd.rest'],[])
 ,(['dd.rest.stpl','dd.html','html'],['dd.html'],['dd.rest'])
 ,(['dd.rest.stpl','dd.html'],['dd.html'],['dd.rest'])
-,(['dd.rest.stpl','dd.html','rst_html'],['dd.html'],['dd.rest'])
+,(['sr.rest.stpl','sr.html','rst_html'],['sr.html'],['sr.rest'])
 ,(['dd.rest.stpl','dd.docx'],['dd.docx'],['dd.rest'])
 ,(['dd.rest.stpl','dd.odt','pandoc'],['dd.odt'],['dd.rest'])
 ,(['dd.rest.stpl','dd.odt'],['dd.odt'],['dd.rest'])
-,(['dd.rest.stpl','dd.odt','rst_odt'],['dd.odt'],['dd.rest'])
-,(['dd.rest.stpl','dd.odt','rst'],['dd.odt'],['dd.rest'])
+,(['sr.rest.stpl','sr.odt','rst_odt'],['sr.odt'],['sr.rest'])
+,(['sr.rest.stpl','sr.odt','rst'],['sr.odt'],['sr.rest'])
 ,(['index.rest','../../build/index.html','sphinx_html'],['../../build/index.html'],[])
-,(['index.rest','../../build/index_html'],['../../build/index.html'],[])
 ,(['egcairo.pyg'],['_images/egcairo.png'],[])
 ,(['egdot.dot.stpl'],['_images/egdot.png'],['egdot.dot'])
 ,(['egeps.eps'],['_images/egeps.png'],[])
@@ -388,12 +394,14 @@ def test_dcx_in_out(rstinit,cmd_result,capfd):
 ,(['eguml.uml'],['_images/eguml.png'],[])
 ,(['eguml.uml','eguml.png'],['eguml.png'],['_images/eguml.png'])
 ])
-def test_dcx_out_file(rstinit,cmd_result):
-    cmd,result,notexists = cmd_result
+def test_dcx_out_file(rstinit,cmd_exists_not_exists):
+    cmd,result,notexists = cmd_exists_not_exists
     os.chdir('doc')
     notrest = os.path.splitext(cmd[0])[0]
     if not os.path.exists(cmd[0]):
         cmd[0] = notrest
+        if len(cmd)>1 and cmd[1]==notrest:
+            return
         notrest = None
     r=run([r'rstdcx']+cmd)
     assert r.returncode == 0

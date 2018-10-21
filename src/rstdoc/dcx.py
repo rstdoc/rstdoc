@@ -14,6 +14,36 @@
 #def gen_api
 ##### THIS GETS EXECUTED VIA GEN FILE #######
 
+
+#TODO:
+#
+#test/test_dcx.py::test_dcx_alone_samples[rest] FAILED
+#test/test_dcx.py::test_dcx_alone_samples[stpl] FAILED
+#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists0] FAILED
+#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists1] FAILED
+#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists2] FAILED
+#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists3] FAILED
+#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists4] FAILED
+#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists5] FAILED
+#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists6] FAILED
+#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists7] FAILED
+#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists8] FAILED
+#test/test_dcx.py::test_make_samples[html-rest] ERROR
+#test/test_dcx.py::test_make_samples[html-stpl] ERROR
+#test/test_dcx.py::test_waf_samples[docx-stpl] FAILED
+#test/test_dcx.py::test_waf_samples[odt-stpl] FAILED
+#test/test_dcx.py::test_waf_samples[pdf-stpl] FAILED
+#test/test_dcx.py::test_waf_samples[html-stpl] FAILED
+#test/test_dcx.py::test_waf_samples[latex-stpl] FAILED
+#test/test_dcx.py::test_waf_samples[sphinx_html-rest] FAILED
+#test/test_dcx.py::test_waf_samples[sphinx_html-stpl] FAILED
+#test/test_dcx.py::test_waf_samples[sphinx_latex-rest] FAILED
+#test/test_dcx.py::test_waf_samples[sphinx_latex-stpl] FAILED
+#test/test_dcx.py::test_waf_samples[rst_html-stpl] FAILED
+#test/test_dcx.py::test_waf_samples[rst_latex-stpl] FAILED
+#test/test_dcx.py::test_waf_samples[rst_odt-stpl] FAILED
+
+
 """
 .. _`rstdcx`:
 
@@ -356,7 +386,7 @@ Used for png creation.
 '''
 DPI = 600
 
-#other
+#text files
 _stpl = '.stpl'
 _tpl = '.tpl'
 _rest = '.rest'
@@ -365,6 +395,19 @@ _txt = '.txt'
 
 is_rest = lambda x: x.endswith(_rest) or x.endswith(_rest+_stpl)
 is_rst = lambda x: x.endswith(_rst) or x.endswith(_rst+_stpl) or x.endswith(_rst+_tpl)
+
+#graphic files
+_svg = '.svg'
+_tikz = '.tikz'
+_tex = '.tex'
+_dot = '.dot'
+_uml = '.uml'
+_eps = '.eps'
+_pyg = '.pyg'
+_png = '.png' #target of all others
+
+_is_rest_type = lambda t: any(x.endswith(t) for x in [_rest,_rst,_txt])
+_is_graphic_type = lambda t: any(x.endswith(t) for x in graphic_extensions)
 
 rextgt = re.compile(r'(?:^|^[^\.\%\w]*\s|^\s*\(?\w+[\)\.]\s)\.\. _`?(\w[^:`]*)`?:\s*$')
 rexsubtgt = re.compile(r'(?:^|^[^\.\%\w]*\s|^\s*\(?\w+[\)\.]\s)\.\. \|(\w[^\|]*)\|\s\w+::')#no need to consider those not starting with \w, because rexlinksto starts with \w
@@ -548,20 +591,10 @@ def cmd(
         raise RstDocError('Error: Cannot run '
             +cmdstr+' in '+cwd() + str(err))
 
-#graphic files
-_svg = '.svg'
-_tikz = '.tikz'
-_tex = '.tex'
-_dot = '.dot'
-_uml = '.uml'
-_eps = '.eps'
-_pyg = '.pyg'
-_png = '.png' #target of all others
-
 def _imgout(inf): 
     inp,inname = dir_base(inf)
     infn,infe = stem_ext(inname)
-    if not infe in graphic_extensions:
+    if not _is_graphic_type(infe):
         raise ValueError('%s is not an image source'%inf)
     outp,there = here_or_updir(inp,_images)
     if not there:
@@ -1106,16 +1139,16 @@ def dostpl(
         else:
             return st.replace('\r\n','\n').splitlines(keepends=True)
 
-_is_rest = lambda t: any(x.endswith(t) for x in [_rest,_rst,_txt])
 def dorst(
     infile #a .rest, .rst, .txt file name or list of lines
     ,outfile=None #None and '-' mean standard out
                   #for .rest |xxx| substitutions for reST link targets in infile are appended if no ``_links_sphinx.rst`` there
-    ,outtype=None #specifies the tool to use 
+    ,outinfo=None #specifies the tool to use 
                   #'html', 'docx', 'odt',... via pandoc if output 
                   #'sphinx_html',... via sphinx
                   #'rst_html',... via rst2xxx frontend tools
-                  #'file.docx',... is also possible: it will be used in the substitutions, if no ``_links_sphinx.rst``
+                  #'[infile/][substitution.]docx[.]' substitutions stands for the file used in substitutions if no ``_links_sphinx.rst``
+                  #The infile is used, if the actual infile are lines. The final dot tells to stop after substitutions.
     ,fn_i_ln=None #(fn,i,ln) of the .stpl with all stpl includes sequenced (used by convert())
     ):
     '''
@@ -1156,8 +1189,12 @@ def dorst(
     '''
 
     rsttool = rst_tools['pandoc']
+    dinfo,binfo = None,None
+    if outinfo:
+        dinfo,binfo = dir_base(outinfo)
+        outinfo = binfo
     try:
-        rsttool,outtype = outtype.split('_')
+        rsttool,outinfo = outinfo.split('_')
         try:
             rsttool = rst_tools[rsttool]
         except:
@@ -1170,6 +1207,10 @@ def dorst(
                 filelines = f.readlines()
     else:
         filelines = infile
+        infile = dinfo
+        if not infile:
+            infile = 'rest'
+        infile = abspath(infile+_rest)
     sysout = None
     finalsysout = None
     try:
@@ -1178,33 +1219,29 @@ def dorst(
                 sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
             except: pass
             sysout = sys.stdout
-            if isinstance(infile,list):
-                try:
-                    infile,outtype = outtype.split('.',1)
-                except:
-                    infile = 'rest'
-            if not outtype:
-                outtype = 'rest'
-            outfile = stem(base(infile))+'.'+outtype.strip('.') #- - filenoext.docx
+            if not outinfo:
+                outinfo = 'rest'
+            if outinfo.strip('.').find('.')<0:
+                outfile = stem(base(infile))+'.'+outinfo.strip('.') #- - infile.docx
+            else:
+                outfile = outinfo.strip('.') #- - otherfile.docx
         else:
-            _,_outtype = stem_ext(outfile)
-            _outtype = _outtype.strip('.')
-            if not outtype: #x.rst a/b/c.docx
-                outtype = _outtype
-            elif outtype in rst_tools: #x.rst a/b/c.docx pandoc
-                rsttool = rst_tools[outtype]
-                outtype = _outtype
-            if isinstance(infile,list):
-                fdot = outtype.find('.')
-                if fdot>0 and fdot<len(outtype)-1:
-                    infile = abspath(outtype.strip('.'))
-                    outtype = outtype.split('.',1)[1]
-                else:
-                    infile = abspath('rest')
-        if outtype.endswith('.'):              #x.rest - docx.
-            outtype = outtype.strip('.')       #will output the rest code with links for docx
-            rsttool = None
-        if _is_rest(outtype):
+            _,ofext = stem_ext(outfile)
+            ofext = ofext.strip('.')
+            if not outinfo: #x.rst a/b/c.docx
+                outinfo = ofext
+            elif outinfo in rst_tools: #x.rst a/b/c.docx pandoc
+                rsttool = rst_tools[outinfo]
+                outinfo = ofext
+        if outinfo.endswith('.'):   #x.rest - docx.
+            rsttool = None          #... will output the rest code with links for docx
+        #drop file info from outinfo
+        outinfo = outinfo.strip('.')
+        t,outinfo = stem_ext(outinfo)
+        if not outinfo:
+            outinfo = t
+        outinfo = outinfo.strip('.')
+        if _is_rest_type(outinfo):
             rsttool = None #no further processing wanted, sysout is final
         if not rsttool and not sysout:
             sysout  = opnwrite(outfile)
@@ -1223,7 +1260,7 @@ def dorst(
                 links_done = False
                 for x in filelines:
                     if x.startswith('.. include:: _links_sphinx.rst'):
-                        linksfilename = normjoin(dir(infile),'_links_'+outtype+'.rst')
+                        linksfilename = normjoin(dir(infile),'_links_'+outinfo+'.rst')
                         if exists(linksfilename):
                             with open(linksfilename) as f:
                                 sysout.write(f.read())
@@ -1236,7 +1273,7 @@ def dorst(
                     for tgt in RstFile.make_tgts(filelines,infile
                         ,make_counters()
                         ,fn_i_ln):
-                        sysout.write(tgt.create_link(outtype.replace('rest','html'),filenoext))
+                        sysout.write(tgt.create_link(outinfo.replace('rest','html'),filenoext))
 
         if rsttool:
             if finalsysout and rsttool!=rst_sphinx:
@@ -1245,7 +1282,7 @@ def dorst(
             if sysout:
                 sysout.close()
                 sysout = None
-            stdout = rsttool(infile,outfile,outtype,**config)
+            stdout = rsttool(infile,outfile,outinfo,**config)
             if stdout!=None and finalsysout and rsttool!=rst_sphinx:
                 finalsysout.write(stdout)
     finally:
@@ -1268,67 +1305,10 @@ converters = {
 }
 graphic_extensions = {_svg,_tikz,_tex,_dot,_uml,_eps,_pyg}
 
-def _normalize_convert_args(
-    infile
-    ,outfile
-    ,outtype
-    ):
-    """
-    Returns a tuple of infile,outfile,outtype for convert(),
-    to makes the command line interface more flexible.
-
-
-    dd.rest.stpl - rest           # expand to stdout, appending dd.html substitutions, to pipe to Pandoc
-    dd.rest.stpl - html.          # as before
-    dd.rest.stpl                  # as before
-    dd.rest.stpl - docx.          # expand to stdout, appending dd.docx substitutions, to pipe to Pandoc
-    dd.rest.stpl - newname.docx.  # expand template, appending substitutions for target newname.docx
-    dd.rest.stpl - html           # expand to stdout, already process through Pandoc to produce html on stdout
-    dd.rest.stpl - rst_html       # expand template, already process through Docutils to produce html on stdout
-    dd.rest.stpl dd.rest          # expand into dd.rest, appending substitutions for target dd.html
-    dd.rest.stpl dd.html html     # expand template, process through Pandoc to produce dd.html
-    dd.rest.stpl dd.html          # as before
-    dd.rest.stpl dd.html rst_html # expand template, already process through Docutils to produce dd.html
-    dd.rest.stpl dd.docx          # expand template, process through Pandoc to produce dd.docx
-    dd.rest.stpl dd.odt pandoc    # expand template, process through Pandoc to produce dd.odt
-    dd.rest.stpl dd.odt           # as before
-    dd.rest.stpl dd.odt rst_odt   # expand template, process through Docutils to produce dd.odt
-    dd.rest.stpl dd.odt rst       # as before
-
-    #Sphinx is not file-oriented
-    #but with rstdcx you need to provide the files to give Sphinx ``master_doc`` (normally: index.rest)
-    #Directly from ``.stpl`` does not work with Sphinx
-    index.rest ../../build/index.html sphinx_html   # via Sphinx the output directory must be different
-    index.rest ../../build/sphinx_html   # as before
-
-    #convert the graphics and place the into _images or ../_images
-    #if no _images directory exists they will placed into the same folder
-    egcairo.pyg
-    egdot.dot.stpl
-    egeps.eps
-    egeps1.eps
-    egother.pyg
-    egplt.pyg
-    egpygal.pyg
-    egpyx.pyg
-    egsvg.svg.stpl
-    egtikz.tikz
-    egtikz1.tikz
-    eguml.uml
-
-    #convert graphics to a png here (even if _images directory exists)
-    eguml.uml eguml.png
-
-    
-    """
-    return (infile,outfile,outtype)
-
-
 def convert(
     infile #any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else stpl is assumed
-    ,outfile = None  #'-' means standard out, else a file name, or like outtype, if infile is a file name
-    ,outtype = None  #or 'html', 'sphinx_html', 'docx', 'odt', 'file.docx',... interpet input as rest, else specifies graph type
-    ,intype = None   #if ``infile`` is a list of strings, ``intype`` specifies the type (default: stpl)
+    ,outfile = None  #'-' means standard out, else a file name, or like outinfo, if infile is a file name
+    ,outinfo = None  #or 'html', 'sphinx_html', 'docx', 'odt', 'file.docx',... interpet input as rest, else specifies graph type
     ):
     '''
     Converts the known files.
@@ -1346,8 +1326,8 @@ def convert(
 
     >>> dry_run(True)
 
-    >>> infile,outfile,outtype = (["newpath {{' '.join(str(i)for i in range(4))}} rectstroke showpage"],'tst.png','eps')
-    >>> convert(infile,outfile,outtype) # doctest: +ELLIPSIS
+    >>> infile,outfile,outinfo = (["newpath {{' '.join(str(i)for i in range(4))}} rectstroke showpage"],'tst.png','eps')
+    >>> convert(infile,outfile,outinfo) # doctest: +ELLIPSIS
     run (['inkscape', ...tst.png'],) ...
 
     >>> convert('ra.rest.stpl') # doctest: +ELLIPSIS
@@ -1384,39 +1364,21 @@ def convert(
         except: pass
         infile = sys.stdin.readlines()
     if infile:
+        if outinfo==None:
+            if outfile=='-':
+                outinfo = 'rest'
+            elif outfile==None:
+                outinfo = 'html'
         if isinstance(infile,str):
             nextinfile,fext = stem_ext(infile)
-            if outfile != '-':
-                try: #swap outfile with outtype
-                    outd,outfn = dir_base(outfile)
-                    outfn.index('.')
-                except ValueError:
-                    if not outtype or base(outtype).find('.')>=0 and not outtype.endswith('.'):
-                        outtype = outfn
-                        inn = stem(base(infile))
-                        try:
-                            ott = outtype.split('_')[1]
-                        except:
-                            ott = outtype
-                        if ott.endswith('html'):
-                            ott='html'
-                        outfile = normjoin(outd,inn)+'.'+ott
-                except: pass
         else:
-            if intype:
-                intype = '.'+intype.strip('.')
-            if intype in converters:
-                fext = intype
+            fext = _stpl
+            if outinfo and _is_graphic_type(outinfo):
+                nextinfile = outinfo.strip('.')+'.'+outinfo.strip('.')
             else:
-                fext = _stpl
-            try:
-                if not any(x.endswith(outtype) for x in graphic_extensions):
-                    nextinfile = 'rest'+_rest
-                else:
-                    nextinfile = outtype+'.'+outtype
-            except:
-                nextinfile = ''
-
+                nextinfile = 'rest'+_rest
+                if not outinfo:
+                    outinfo = 'rest'
         fn_i_ln = None
         while fext in converters:
             try:
@@ -1425,24 +1387,21 @@ def convert(
                 fextnext = None
             thisconverter = converters[fext]
             if  thisconverter == dorst:
-                infile = thisconverter(infile, outfile if not fextnext else None, outtype, fn_i_ln)
+                infile = thisconverter(infile, outfile if not fextnext else None, outinfo, fn_i_ln)
             else:
                 if thisconverter == dostpl:
                     if isinstance(infile,list):
                         fn_i_ln = list(_flatten_stpl_includes_it(infile))
                     else:
                         fn_i_ln = _flatten_stpl_includes(infile)
-                    if (not outfile or outfile=='-') and fextnext and converters[fextnext]==dorst:
-                        if not outtype or _is_rest(outtype):
-                            outtype = nextinfile+'.html.' #the final . tells dorst() not to process further
-                        elif outtype.endswith('.') and outtype.find('.')==len(outtype)-1:
-                            outtype = nextinfile+'.'+outtype.strip('.')+'.'
+                    if fextnext and converters[fextnext]==dorst: #save infile for dorst() in outinfo as "infile/outinfo"
+                        outinfo = nextinfile+'/'+(outinfo or '')
                 infile = thisconverter(infile, outfile if not fextnext else None)
             if not infile:
                 break
             if not fextnext:
                 break
-            if fextnext in graphic_extensions:
+            if _is_graphic_type(fextnext):
                 if not outfile:
                     outfile = _imgout(nextinfile+fextnext)
             fext = fextnext
@@ -2885,6 +2844,8 @@ example_tree = r'''
                Don't count the ID, since the order will change.
                The IDs have the first letter of the file and 2 or more random letters of ``[0-9a-z]``.
                Use an editor macro to generate IDs.
+
+               A link: |s3a|
                
                If one prefers ordered IDs, one can use templates::
                
@@ -3415,6 +3376,8 @@ example_stp_subtree = r'''
                    - with sub items, if needed
                
                  - or simply make more sentences out of it
+
+                 A link: |sr_style|.
                
                .. _`sr_a_requirement_group`:
                
@@ -3971,11 +3934,13 @@ Examples with the files generated with the ``--stpl tmp``:
     #expand stpl and append substitutions (for simple expansion use ``stpl <file> .``)
     rstdcx dd.rest.stpl - rest           # expand to stdout, appending dd.html substitutions, to pipe to Pandoc
     rstdcx dd.rest.stpl - html.          # as before
-    rstdcx dd.rest.stpl                  # as before
     rstdcx dd.rest.stpl - docx.          # expand to stdout, appending dd.docx substitutions, to pipe to Pandoc
     rstdcx dd.rest.stpl - newname.docx.  # expand template, appending substitutions for target newname.docx
     rstdcx dd.rest.stpl - html           # expand to stdout, already process through Pandoc to produce html on stdout
-    rstdcx dd.rest.stpl - rst_html       # expand template, already process through Docutils to produce html on stdout
+    rstdcx dd.rest.stpl                  # as before
+    rstdcx sy.rest.stpl - rst_html       # expand template, already process through Docutils to produce html on stdout
+    stpl sy.rest.stpl | rstdcx - - sy.html. # appending sy.html substitutions, e.g. to pipe to Pandoc
+    stpl dd.rest.stpl | rstdcx - - dd.html  # appending tp.html substitutions and produce html on stdout via Pandoc
     rstdcx dd.rest.stpl dd.rest          # expand into dd.rest, appending substitutions for target dd.html
     rstdcx dd.rest.stpl dd.html html     # expand template, process through Pandoc to produce dd.html
     rstdcx dd.rest.stpl dd.html          # as before
@@ -3990,7 +3955,6 @@ Examples with the files generated with the ``--stpl tmp``:
     #but with rstdcx you need to provide the files to give Sphinx ``master_doc`` (normally: index.rest)
     #Directly from ``.stpl`` does not work with Sphinx
     rstdcx index.rest ../../build/index.html sphinx_html   # via Sphinx the output directory must be different
-    rstdcx index.rest ../../build/sphinx_html   # as before
 
     #convert the graphics and place the into _images or ../_images
     #if no _images directory exists they will placed into the same folder
@@ -4058,7 +4022,7 @@ Input file or - for stdin.''')
     elif 'infile' in args and args['infile']:
         for x in 'infile outfile'.split():
             if x not in args: args[x] = None
-        convert(*_normalize_convert_args(args['infile'],args['outfile'],args['outtype']))
+        convert(args['infile'],args['outfile'],args['outtype'])
     else:
         index_dir('.')
   
