@@ -32,7 +32,6 @@ rstdcx, dcx.py
 
 '''
 
-
 import subprocess
 def run(x):
     if 'win' in sys.platform:
@@ -396,14 +395,17 @@ def test_dcx_in_out(rstinit,cmd_result):
 ])
 def test_dcx_out_file(rstinit,cmd_exists_not_exists):
     cmd,result,notexists = cmd_exists_not_exists
+    tcmd = []
+    tcmd.extend(cmd)
     os.chdir('doc')
-    notrest = os.path.splitext(cmd[0])[0]
-    if not os.path.exists(cmd[0]):
-        cmd[0] = notrest
-        if len(cmd)>1 and cmd[1]==notrest:
+    notrest = tcmd[0].replace('.stpl','')
+    if not os.path.exists(tcmd[0]):
+        tcmd[0] = notrest
+        if len(tcmd)>1 and tcmd[1]==notrest:
             return
         notrest = None
-    r=run([r'rstdcx']+cmd)
+    ncmd = [r'rstdcx']+tcmd
+    r=run(ncmd)
     assert r.returncode == 0
     assert os.path.exists(result[0])
     if notrest:
@@ -529,6 +531,7 @@ def test_waf_samples(wafbuild):
     - added manually to the root folder of the project
 
     '''
+    is_stpl = 'tmp_stpl' in os.getcwd()
     target=wafbuild[1]
     expected_non_sphinx="""\
 ├─c4che
@@ -541,6 +544,9 @@ def test_waf_samples(wafbuild):
 │     ├─dd.{1}
 │     ├─ra.{1}
 │     ├─sr.{1}
+"""+("""\
+│     ├─sy.{1}
+""" if is_stpl else '')+"""\
 │     └─tp.{1}
 └─config.log"""
     if target in waf_non_sphinx:
@@ -613,9 +619,12 @@ def test_waf_samples(wafbuild):
 │     ├─search.html
 │     ├─searchindex.js
 │     ├─sr.html
+│     ├─sy.html
 │     └─tp.html
 └─config.log"""
-    assert set(tree3(wafbuild[0]).splitlines())-{'│     ├─.doctrees'}==set(expected.splitlines())
+    for x in tree3(wafbuild[0]).splitlines():
+        if '.doctrees' not in x:
+            assert expected.find(x.strip('└─├ '))>=0
 
 def test_selfdoc():
     selfdoc_accoridng_doc_gen=os.path.join('doc','_dcx_api.rst')

@@ -14,36 +14,6 @@
 #def gen_api
 ##### THIS GETS EXECUTED VIA GEN FILE #######
 
-
-#TODO:
-#
-#test/test_dcx.py::test_dcx_alone_samples[rest] FAILED
-#test/test_dcx.py::test_dcx_alone_samples[stpl] FAILED
-#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists0] FAILED
-#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists1] FAILED
-#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists2] FAILED
-#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists3] FAILED
-#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists4] FAILED
-#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists5] FAILED
-#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists6] FAILED
-#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists7] FAILED
-#test/test_dcx.py::test_dcx_out_file[stpl-cmd_exists_not_exists8] FAILED
-#test/test_dcx.py::test_make_samples[html-rest] ERROR
-#test/test_dcx.py::test_make_samples[html-stpl] ERROR
-#test/test_dcx.py::test_waf_samples[docx-stpl] FAILED
-#test/test_dcx.py::test_waf_samples[odt-stpl] FAILED
-#test/test_dcx.py::test_waf_samples[pdf-stpl] FAILED
-#test/test_dcx.py::test_waf_samples[html-stpl] FAILED
-#test/test_dcx.py::test_waf_samples[latex-stpl] FAILED
-#test/test_dcx.py::test_waf_samples[sphinx_html-rest] FAILED
-#test/test_dcx.py::test_waf_samples[sphinx_html-stpl] FAILED
-#test/test_dcx.py::test_waf_samples[sphinx_latex-rest] FAILED
-#test/test_dcx.py::test_waf_samples[sphinx_latex-stpl] FAILED
-#test/test_dcx.py::test_waf_samples[rst_html-stpl] FAILED
-#test/test_dcx.py::test_waf_samples[rst_latex-stpl] FAILED
-#test/test_dcx.py::test_waf_samples[rst_odt-stpl] FAILED
-
-
 """
 .. _`rstdcx`:
 
@@ -55,7 +25,7 @@ from restructuredText (RST, reST) using either
 
 - `Pandoc <https://pandoc.org>`__
 - `Sphinx <http://www.sphinx-doc.org>`__
-- Docutils `configurable <http://docutils.sourceforge.net/docs/user/config.html>`__ via ``rst2_opts``
+- Docutils `configurable <http://docutils.sourceforge.net/docs/user/config.html>`__
 
 Usage
 -----
@@ -139,7 +109,9 @@ They are automatically converted to ``.png`` and placed into ``./_images`` or ``
 
 - ``.pyg`` contains python code that produces a graphic.
   If the python code defines a ``save_to_png`` function,
-  then that is used.
+  then that is used, which allows to use whatever python library you want 
+  (`graph_tool <https://graph-tool.skewed.de/static/doc/quickstart.html>`__,
+  `igraph <http://igraph.org/python/doc/tutorial/tutorial.html>`__,...)
   Else the following is tried
 
   - ``pyx.canvas.canvas`` from the `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or 
@@ -202,7 +174,7 @@ import shutil
 import contextlib
 import atexit
 import subprocess as sp
-from tempfile import mkdtemp
+import tempfile
 from threading import RLock
 from urllib import request
 from functools import lru_cache, wraps, partial, reduce
@@ -214,7 +186,18 @@ from docutils.core import publish_file, publish_string
 
 import stpl
 
-import svgwrite.drawing
+try:
+    import svgwrite.drawing
+except:
+    print('Warning: no svgwrite')
+    svgwrite = None
+
+try:
+    import pyfca
+except:
+    print('Warning: no pyfca for traceability diagram')
+    pyfca = None
+
 import pyx
 import pygal
 import matplotlib
@@ -223,8 +206,6 @@ import matplotlib.pyplot as plt
 
 import cairocffi
 import cairosvg
-
-import pyfca
 
 from hashlib import sha1 as sha
 
@@ -447,6 +428,7 @@ sphinx_config_keys = '''
     html_theme
     html_theme_path
     latex_elements
+    html_extra_path
     '''.split()
 
 latex_elements = {'preamble':r"""
@@ -474,7 +456,7 @@ target_id_color = {"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow")
 
 _images = '_images'
 _traceability_file = '_traceability_file' #used for _traceability_file.rst and _traceability_file.svg
-html_extra_path = [_images+'/'+_traceability_file+'.svg'] #IF YOU DID ``.. include:: _traceability_file.rst``
+html_extra_path = ['doc'+'/'+_images+'/'+_traceability_file+'.svg'] #IF YOU DID ``.. include:: _traceability_file.rst``
 pandoc_doc_optref = {'latex': '--template reference.tex',
                  'html': {},#each can also be dict of file:template
                  'pdf': '--template reference.tex',
@@ -483,9 +465,10 @@ pandoc_doc_optref = {'latex': '--template reference.tex',
                  }
 _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
 pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
-rst2_opts = { #http://docutils.sourceforge.net/docs/user/config.html
+rst_opts = { #http://docutils.sourceforge.net/docs/user/config.html
             'strip_comments':True
             ,'report_level':3
+            ,'raw_enabled':True
             }
 #``list-table`` and ``code-block`` are converted to ``table`` and ``code``
 make_counters = lambda: {".. figure":1,".. math":1,".. table":1,".. code":1}
@@ -500,13 +483,13 @@ config_defaults = {
     ,'html_theme': 'bootstrap'
     ,'html_theme_path': html_theme_path
     ,'latex_elements': latex_elements
+    ,'html_extra_path': html_extra_path
     ,'tex_wrap': tex_wrap
     ,'target_id_group': target_id_group
     ,'target_id_color': target_id_color
-    ,'html_extra_path': html_extra_path
     ,'pandoc_doc_optref': pandoc_doc_optref
     ,'pandoc_opts': pandoc_opts
-    ,'rst2_opts': rst2_opts
+    ,'rst_opts': rst_opts
     ,'name_from_directive': name_from_directive
     }
 
@@ -541,6 +524,7 @@ def conf_py(fldr):
     except: 
         pass
     config.update(sphinx_enforced)
+    config['confpy'] = confpy #for SphinxTask
     try:
         config['html_theme_path'] = _commajoinslash(config['html_theme_path'])
     except: pass
@@ -619,10 +603,10 @@ def png_post_process_if_any(f):
     def png_post_processor(*args,**kwargs):
         infile,outfile,e,args = _unioe(args)
         if isinstance(infile,str):
-            pngfile = f(infile,outfile,e,*args,**kwargs)
             config = conf_py(dir(infile))
             pp = config.get('png_post_processor',None)
             if pp:
+                pngfile = f(infile,outfile,e,*args,**kwargs)
                 if verbose:
                     print('png_post_processor','(',pngfile,')')
                 return pp(pngfile)
@@ -683,6 +667,16 @@ def infilecwd(f):
         return f(infile, outfile, e, *args, **kwargs)
     return infilecwder
 
+def mkdtemp():
+    '''
+    Make temporary directory and register it to be removed with ``atexit``.
+    '''
+
+    atmpdir = tempfile.mkdtemp()
+    if not fakefs.is_setup():
+        atexit.register(rmrf,atmpdir)
+    return atmpdir
+
 def intmpiflist(f
     ,suffix=None #.dot, .uml, ... or rst.stpl,...
     ):
@@ -709,8 +703,6 @@ def intmpiflist(f
             if outfile:
                 outfile = abspath(outfile)
             atmpdir = mkdtemp()
-            if not fakefs.is_setup():
-                atexit.register(rmrf,atmpdir)
             content = _joinlines(infile).encode('utf-8')
             if outfile:
                 infn = stem(base(outfile))
@@ -794,7 +786,8 @@ def rst_sphinx(
     outdr,outn = dir_base(outfile)
     outnn,outne = stem_ext(outn)
     cfg = {}
-    cfg.update({k:v for k,v in cfgt.items() if k in sphinx_config_keys and 'latex' not in k})
+    cfg.update({k:v for k,v in cfgt.items() if k in sphinx_config_keys and 'latex' not in k and k!='html_extra_path'})
+    #html_extra_path is done here below
     cfg.update({k:v for k,v in sphinx_enforced.items() if 'latex' not in k})
     cfg['master_doc'] = stem(infn)
     if not outtype:
@@ -826,6 +819,12 @@ def rst_sphinx(
           ] for k,v in cfg.items()]+ latex_elements + latex_documents)
     sphinxcmd = ['sphinx-build','-b',outtype,indr,outdr]+extras
     cmd(sphinxcmd,outfile=outfile)
+    if 'html' in outtype and 'html_extra_path' in cfgt:
+        for epth in cfgt['html_extra_path']:
+            try:
+                cp(epth,outdr)
+            except FileNotFoundError:
+                pass
 
 def _copy_images_for(infile,outfile):
     imgdir,there = here_or_updir(dir(infile),_images)
@@ -843,6 +842,64 @@ def _copy_images_for(infile,outfile):
             docpy = filenewer(frm,twd)
             if docpy:
                 cp(frm,twd)
+
+def PageBreakHack(destination_path):
+    '''
+    This introduces a ``PageBreak`` style into ``content.xml``
+    to allow the following raw page break of opendocument odt::
+
+      .. raw:: odt
+
+          <text:p text:style-name="PageBreak"/>
+
+    This is no good solution, as it introduces an empty line at the top of the new page.
+
+    Unfortunately the following does not work
+    with or without ``text:use-soft-page-breaks="true"``
+
+        .. for docutils
+        .. raw:: odt
+
+            <text:p text:style-name="PageBreak"/>
+
+        .. for pandoc
+        .. raw:: opendocument
+
+            <text:p text:style-name="PageBreak"/>
+
+    According to C066363e.pdf it should work.
+
+    See ``utility.rst.tpl`` in the ``--stpl`` samples.
+    '''
+
+    from zipfile import ZipFile
+    odtzip = OrderedDict()
+    with ZipFile(destination_path) as z:
+        for n in z.namelist():
+          with z.open(n) as f:
+              content = f.read()
+              if n =='content.xml':
+                  #break-after produces two page breaks
+                  content = content.replace(
+                      b'</office:automatic-styles>',
+                      b' '.join(x.strip() for x in b'''<style:style
+                      style:name="PageBreak"
+                      style:family="paragraph"
+                      style:master-page-name="rststyle-pagedefault"
+                      style:parent-style-name="Standard">
+                      <style:paragraph-properties fo:break-before="page"/>
+                      </style:style>
+                      </office:automatic-styles>'''.splitlines())
+                      )
+                  content = content.replace(
+                      b'<office:text>',
+                      b'<office:text text:use-soft-page-breaks="true">'
+                      )
+          odtzip[n]=content
+    with ZipFile(destination_path,'w') as z:
+        for n,content in odtzip.items():
+            with z.open(n,mode='w',force_zip64=True) as f:
+                f.write(content)
 
 def rst_pandoc(
     infile #.txt, .rst, .rest filename
@@ -872,6 +929,8 @@ def rst_pandoc(
     stdout = cmd(pandoccmd,outfile=outfile)
     if outtype.endswith('html') or outtype.endswith('latex'):
         _copy_images_for(infile,outfile)
+    elif outtype.endswith('odt'):
+        PageBreakHack(outfile)
     return stdout
 
 def rst_rst2(
@@ -897,18 +956,20 @@ def rst_rst2(
             source
             ,destination_path=destination_path
             ,writer_name=outtype
-            ,settings_overrides = cfg['rst2_opts']
+            ,settings_overrides = cfg['rst_opts']
             )
     else:
         publish_file(
             source_path=infile
             ,destination_path=destination_path
             ,writer_name=outtype
-            ,settings_overrides = cfg['rst2_opts']
+            ,settings_overrides = cfg['rst_opts']
             )
     if destination_path:
         if outtype.endswith('html') or outtype.endswith('latex'):
             _copy_images_for(infile,outfile)
+        elif outtype.endswith('odt'):
+            PageBreakHack(destination_path)
     return stdout
 
 #sphinx_html,rst_html,[pandoc_]html
@@ -1077,7 +1138,7 @@ def pygpng(
             elif isinstance(v,cairocffi.Surface):
                 v.write_to_png(target=outfile)
                 break
-            elif isinstance(v,svgwrite.drawing.Drawing):
+            elif svgwrite and isinstance(v,svgwrite.drawing.Drawing):
                 svgio = io.StringIO()
                 d.write(svgio)
                 svgio.seek(0)
@@ -1115,6 +1176,8 @@ def dostpl(
     >>> dostpl(infile)
     ['hi 5!']
 
+    The whole ``rstdoc.dcx`` namespace is forwarded to the template code.
+
 
     '''
     if not lookup:
@@ -1126,12 +1189,17 @@ def dostpl(
     else:
         lookup = [abspath(normjoin(dir(infile),x)) for x in lookup]
         filename = abspath(infile)
+    variables = {}
+    variables.update(globals())
+    variables.update(kwargs)
+    variables.update({'__file__':filename})
     if filenewer(infile,outfile):
         st=stpl.template(infile
                 ,template_settings={'escape_func':lambda x:x}
                 ,template_lookup = lookup
-                ,__file__ = filename
-                ,**kwargs
+                ,**variables
+                #,__file__ = filename
+                #,**kwargs
                 )
         if outfile:
             with opnwrite(outfile) as f:
@@ -1307,8 +1375,8 @@ graphic_extensions = {_svg,_tikz,_tex,_dot,_uml,_eps,_pyg}
 
 def convert(
     infile #any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else stpl is assumed
-    ,outfile = None  #'-' means standard out, else a file name, or like outinfo, if infile is a file name
-    ,outinfo = None  #or 'html', 'sphinx_html', 'docx', 'odt', 'file.docx',... interpet input as rest, else specifies graph type
+    ,outfile = None  #'-' means standard out, else a file name, or None for automatic
+    ,outinfo = None  #'html', 'sphinx_html', 'docx', 'odt', 'file.docx',... interpet input as rest, else specifies graph type
     ):
     '''
     Converts the known files.
@@ -1390,19 +1458,19 @@ def convert(
                 infile = thisconverter(infile, outfile if not fextnext else None, outinfo, fn_i_ln)
             else:
                 if thisconverter == dostpl:
-                    if isinstance(infile,list):
-                        fn_i_ln = list(_flatten_stpl_includes_it(infile))
-                    else:
-                        fn_i_ln = _flatten_stpl_includes(infile)
                     if fextnext and converters[fextnext]==dorst: #save infile for dorst() in outinfo as "infile/outinfo"
+                        if isinstance(infile,list):
+                            fn_i_ln = list(_flatten_stpl_includes_it(infile))
+                        else:
+                            fn_i_ln = _flatten_stpl_includes(infile)
                         outinfo = nextinfile+'/'+(outinfo or '')
                 infile = thisconverter(infile, outfile if not fextnext else None)
             if not infile:
                 break
             if not fextnext:
                 break
-            if _is_graphic_type(fextnext):
-                if not outfile:
+            if not outfile:
+                if _is_graphic_type(fextnext):
                     outfile = _imgout(nextinfile+fextnext)
             fext = fextnext
         return infile
@@ -1692,6 +1760,8 @@ class Traceability:
     def isempty(self):
         return len(self.fcaobjsets)==0
     def create_traceability_file(self,directory): #returns the rst lines of _traceability_file
+        if not pyfca:
+            return
         if not self.fcaobjsets:
             return []
         config = conf_py(directory)
@@ -1717,8 +1787,10 @@ class Traceability:
         tlines = ''.join(trace).splitlines(keepends=True)
         imgpath,there = here_or_updir(directory,_images)
         if not there:
-            mkdir(normjoin(directory,_images))
-        tlines.extend(['.. _`trace`:\n','\n','.. figure:: '+'../'*there+_images+'/'+_traceability_file+'.png\n','   :name:\n','\n',
+            imgpath = normjoin(directory,_images)
+            mkdir(imgpath)
+        trcpath = normjoin(relpath(imgpath,start=directory),_traceability_file)
+        tlines.extend(['.. _`trace`:\n','\n','.. figure:: '+trcpath+'.png\n','   :name:\n','\n',
           '   |trace|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies'])
         if target_id_color is not None:
             legend=', '.join([fnm+" "+clr for fnm,(_,clr) in target_id_color.items()])
@@ -2066,7 +2138,6 @@ class RstFile:
         if len(itgts)<len(itgts1):
             paired_itgts_itgts1 = pair(itgts,itgts1,lambda x,y:lns[x]==lns1[y])
         elif len(itgts)>len(itgts1):
-            print("Warning: rest has more targets (.. _`xx`:) than stpl. Either not up-to-date (run 'stpl {0}' first) or targets generated: tags will not link to stpl.".format(doc))
             paired_itgts_itgts1 = ((i,j) for (j,i) in pair(itgts1,itgts,lambda x,y:lns1[x]==lns[y]))
         else:
             paired_itgts_itgts1 = zip(itgts,itgts1)
@@ -2175,7 +2246,7 @@ class Fldr(OrderedDict):
         has_traceability = False
         for restinc in rstincluded(restfile,(self.folder,)):
             if _traceability_file+_rst in restinc:
-                if _traceability_instance is None:#THERE CAN BE ONLY ONE
+                if pyfca and _traceability_instance is None:#THERE CAN BE ONLY ONE
                     Traceability(stem(restfile)) 
                     has_traceability = True
                     continue
@@ -2507,7 +2578,7 @@ try:
                     continue
                 doctype = doctgt.split('_')[1]
                 out_node = node.parent.find_or_declare("{0}/{1}.{2}".format(doctgt,stem(node.name),doctype))
-                self.create_task('SphinxTask',[node],out_node,scan=rstscan,doctype=doctype)
+                self.create_task('SphinxTask',[node],out_node,scan=rstscan,doctype=doctype,config_path=self.bld.path.get_src().abspath())
     class NonSphinxTask(Task.Task):
         def run(self):
             dorst(
@@ -2518,7 +2589,9 @@ try:
     class SphinxTask(Task.Task):
         always_run = True
         def run(self):
-            rst_sphinx(self.inputs[0].abspath(),self.outputs[0].abspath(),self.doctype)
+            config = conf_py(self.config_path)
+            config['html_extra_path'] = [normjoin(self.config_path,x) for x in config['html_extra_path']]
+            rst_sphinx(self.inputs[0].abspath(),self.outputs[0].abspath(),self.doctype,**config)
     def options(opt):
         def docscb(option, opt, value, parser):
             setattr(parser.values, option.dest, value.split(','))
@@ -2614,6 +2687,19 @@ example_tree = r'''
             html_theme = 'bootstrap'
             import sphinx_bootstrap_theme
             html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+
+            #these are enforced by rstdoc, but you need to keep them here if you call sphinx-build directly
+            numfig = 0
+            smartquotes = 0
+            source_suffix = '.rest'
+            templates_path = []
+            language = None
+            highlight_language = "none"
+            default_role = 'math'
+            latex_engine = 'xelatex'
+            pygments_style = 'sphinx'
+            exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+            master_doc = 'index'
             
             #You can postprocess pngs. Here an example. default: png_post_processor = None
             def png_post_processor(filename):
@@ -2663,9 +2749,10 @@ example_tree = r'''
                              }
             _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
             pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
-            rst2_opts = { #http://docutils.sourceforge.net/docs/user/config.html
+            rst_opts = { #http://docutils.sourceforge.net/docs/user/config.html
                         'strip_comments':True
                         ,'report_level':3
+                        ,'raw_enabled':True
                         }
             name_from_directive = lambda directive,count: directive[0].upper()+directive[1:]+' '+str(count)
         ├ Makefile
@@ -2742,10 +2829,10 @@ example_tree = r'''
             	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
             docx:  docxdir index stpl imgs $(DOCXS)
             $(BLDDIR)/docx/%.docx:$(SRCDIR)/%.rest
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - docx. | pandoc -f rst -t docx --reference-doc $(SRCBACK)/reference.docx -o "$(SRCBACK)/$@"
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" "$(SRCBACK)/$@"
             pdf: pdfdir index stpl imgs $(PDFS)
             $(BLDDIR)/pdf/%.pdf:$(SRCDIR)/%.rest
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" - pdf. | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm --template $(SRCBACK)/reference.tex -o "$(SRCBACK)/$@"
+            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" "$(SRCBACK)/$@"
         ├ code
             └ some.h
                 /*
@@ -3213,17 +3300,7 @@ example_stp_subtree = r'''
                % cntr = lambda alist0,prefix='',width=2: alist0.append(alist0[-1]+1) or ("{}{:0>%s}"%width).format(prefix,alist0[-1])
                % II=lambda prefix,alist0,short:':{}: **{}**'.format(cntr(alist0,prefix),short)
                % #define in file e.g. ``SR=lambda short,alist0=[0]:II('SR',alist0,short)`` and use like ``{{SR('Item Title')}}``
-               % from rstdoc.retable import title_some as title_order
-               % def HH(title,newlevel=None,markers=title_order,level=[0]):#works only at beginning of line
-               %    if newlevel is not None:
-               %      level[0] = newlevel
-               %    end
-               %    m = markers[level[0]]
-               {{title}}
-               {{m*len(title)}}
-               % end
-               % #use like ``{{HH('title here')}}`` or ``{{HH('subtitle',level+1)}}`` or ``{{HH('title',0)}}``, or better write manually
-               % def pagebreak():
+               %def pagebreak():
                .. raw:: openxml
                
                    <w:p>
@@ -3232,7 +3309,6 @@ example_stp_subtree = r'''
                      </w:r>
                    </w:p> 
                
-               
                .. raw:: html
                
                    <p style="page-break-before: always;">&nbsp;</p>
@@ -3240,7 +3316,18 @@ example_stp_subtree = r'''
                .. raw:: latex
                
                    \pagebreak
-               % end
+               
+               .. for docutils
+               .. raw:: odt
+               
+                   <text:p text:style-name="PageBreak"/>
+               
+               .. for pandoc
+               .. raw:: opendocument
+               
+                   <text:p text:style-name="PageBreak"/>
+               
+               %end
            ├ index.rest
                .. encoding: utf-8
                .. vim: syntax=rst
@@ -4004,8 +4091,14 @@ Input file or - for stdin.''')
         parser.add_argument('outfile', nargs='?',
                 help='Output file or - or nothing to print to std out.')
         parser.add_argument('outtype', nargs='?',default=None,
-                help='The target file name will be the in-file with this extension.')
+                help='One of {pandoc,sphinx,}x{html,docx,...} or omitted for default (pandoc) (- if further code paramters are given).')
+        parser.add_argument('code', nargs='*',
+                help='Further parameters are python code, to define variables that can be used in templates.')
         args = parser.parse_args().__dict__
+
+    if 'code' in args and args['code'] is not None:
+        code = '\n'.join(args['code'])
+        eval(compile(code,'<string>','exec'),globals())
 
     global verbose
     verbose = False
@@ -4022,7 +4115,7 @@ Input file or - for stdin.''')
     elif 'infile' in args and args['infile']:
         for x in 'infile outfile'.split():
             if x not in args: args[x] = None
-        convert(args['infile'],args['outfile'],args['outtype'])
+        convert(args['infile'],args['outfile'],args['outtype'] if args['outtype']!='-' else None)
     else:
         index_dir('.')
   
