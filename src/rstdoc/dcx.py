@@ -789,7 +789,7 @@ def rst_sphinx(
     cfg.update({k:v for k,v in cfgt.items() if k in sphinx_config_keys and 'latex' not in k and k!='html_extra_path'})
     #html_extra_path is done here below
     cfg.update({k:v for k,v in sphinx_enforced.items() if 'latex' not in k})
-    cfg['master_doc'] = stem(infn)
+    cfg['master_doc'] = steminfn = stem(infn)
     if not outtype:
         if outne=='.html':
             if infn.startswith('index.'):
@@ -809,16 +809,22 @@ def rst_sphinx(
             latex_elements = ([['-D',"latex_elements.%s=%s"%(k,v.replace('\n',''))] for k,v in cfg['latex_elements'].items()]+
                 [['-D','latex_engine=xelatex']])
         except: pass
+        del cfg['latex_elements']
+        del cfg['latex_engine']
         project = cfg.get('project',stem(infn))
         author = cfg.get('author','')
-        latex_documents = [['-D',"latex_documents=%s,%s,%s,%s,%s,%s"%(
-                                infn,project.replace(' ','')+'.tex',project,author,'manual',0
-                                )]]
+        #there seems to be a sphinx bug when this is in command line
+        latex_documents = []#[['-D',"latex_documents=[(%s,%s,%s,%s,%s,%s)]"%(
+                            #    infn,steminfn+'.latex',project,author,'manual',0
+                            #    )]]
     extras = ['-C']+reduce(lambda x,y:x+y,
         [['-D',"%s=%s"%(k,(','.join(v)if isinstance(v,list) else v))
           ] for k,v in cfg.items()]+ latex_elements + latex_documents)
     sphinxcmd = ['sphinx-build','-b',outtype,indr,outdr]+extras
     cmd(sphinxcmd,outfile=outfile)
+    if 'latex' in outtype:
+        texfile = next(x  for x in os.listdir(outdr) if x.endswith('.tex'))
+        os.rename(normjoin(outdr,texfile),outfile)
     if 'html' in outtype and 'html_extra_path' in cfgt:
         for epth in cfgt['html_extra_path']:
             try:
@@ -1079,7 +1085,7 @@ def umlpng(
 
     cmd(
         ['plantuml','-tpng',infile,'-o'+dir(outfile)]
-        ,shell=True
+        ,shell=sys.platform=='win32'
         ,outfile=outfile
         )
 
@@ -1184,7 +1190,10 @@ def dostpl(
         lookup = ['.','..']
     if isinstance(infile,list):
         lookup = [abspath(x) for x in lookup]
-        filename = abspath(outfile)
+        try:
+            filename = abspath(outfile)
+        except: 
+            filename = None
         infile = _joinlines(infile)
     else:
         lookup = [abspath(normjoin(dir(infile),x)) for x in lookup]
@@ -2577,7 +2586,7 @@ try:
                 if not doctgt.startswith('sphinx_'):
                     continue
                 doctype = doctgt.split('_')[1]
-                out_node = node.parent.find_or_declare("{0}/{1}.{2}".format(doctgt,stem(node.name),doctype))
+                out_node = node.parent.find_or_declare("{0}/{1}.{2}".format(doctgt,stem(node.name),doctype.replace('latex','tex')))
                 self.create_task('SphinxTask',[node],out_node,scan=rstscan,doctype=doctype,config_path=self.bld.path.get_src().abspath())
     class NonSphinxTask(Task.Task):
         def run(self):

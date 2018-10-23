@@ -135,7 +135,7 @@ def test_dcx_regex():
     assert rexitem.match(':t11:').group(1) == 't11'
     assert rexitem.match('**t11**:').group(1) == 't11'
     assert rexitem.match('*t11*:').group(1) == 't11'
-    assert reximg.search('.. image:: ..\img.png').group(1) == '..\img.png' 
+    assert reximg.search(r'.. image:: ..\img.png').group(1) == r'..\img.png' 
     assert reximg.search(r'.. |c:\x y\im.jpg| image:: /tmp/img.png').group(1) == '/tmp/img.png'
     assert reximg.search(r'.. image:: c:\tmp\img.png').group(1) == r'c:\tmp\img.png'
     assert reximg.search(r'.. figure:: \\public\img.png').group(1) == r'\\public\img.png'
@@ -289,7 +289,7 @@ def test_dcx_alone_samples(rstinit,capfd):
     assert r.returncode == 0
     out, err = capfd.readouterr()
     if 'tmp_rest' in rstinit:
-        assert '\n'.join(out.splitlines()) == """\
+        assert set(out.splitlines()) == set("""\
 + egdot.dot
 + egsvg.svg
 doc
@@ -309,9 +309,9 @@ doc
 + doc/_links_docx.rst
 + doc/_links_odt.rst
 run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-kinds=-i', '-f', '-', '*'],) {'cwd': 'doc', 'stdout': -1, 'stderr': -1}
-+ doc/.tags"""
++ doc/.tags""".splitlines())
     elif 'tmp_stpl' in rstinit:
-        assert '\n'.join(out.splitlines()) == """\
+        assert set(out.splitlines()) == set("""\
 + dd.rest
 + dd_included.rst
 + egdot.dot
@@ -340,7 +340,7 @@ doc
 + doc/_links_docx.rst
 + doc/_links_odt.rst
 run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-kinds=-i', '-f', '-', '*'],) {'cwd': 'doc', 'stdout': -1, 'stderr': -1}
-+ doc/.tags"""
++ doc/.tags""".splitlines())
 
 @pytest.mark.parametrize('cmd_result',[
  ('rstdcx dd.rest.stpl - rest',['default-role:: math',r'<dd.html#'])
@@ -567,9 +567,6 @@ def test_waf_samples(wafbuild):
 │  └─some_tst.c
 ├─doc
 │  └─sphinx_latex
-│     ├─LICRcyr2utf8.xdy
-│     ├─LICRlatin2utf8.xdy
-│     ├─LatinRules.xdy
 │     ├─Makefile
 │     ├─_static
 │     ├─_traceability_file.png
@@ -586,13 +583,9 @@ def test_waf_samples(wafbuild):
 │     ├─egtikz1.png
 │     ├─eguml.png
 │     ├─footnotehyper-sphinx.sty
-│     ├─latexmkjarc
-│     ├─latexmkrc
 │     ├─make.bat
 │     ├─python.ist
-│     ├─sample.tex
-│     ├─sphinx.sty
-│     ├─sphinx.xdy
+│     ├─index.tex
 │     ├─sphinxhighlight.sty
 │     ├─sphinxhowto.cls
 │     ├─sphinxmanual.cls
@@ -614,7 +607,6 @@ def test_waf_samples(wafbuild):
 │     ├─dd.html
 │     ├─genindex.html
 │     ├─index.html
-│     ├─objects.inv
 │     ├─ra.html
 │     ├─search.html
 │     ├─searchindex.js
@@ -623,7 +615,8 @@ def test_waf_samples(wafbuild):
 │     └─tp.html
 └─config.log"""
     for x in tree3(wafbuild[0]).splitlines():
-        if '.doctrees' not in x:
+        if not any(e in x for e in 
+        '.doctrees .sty .js .inv .xdy .cls latexmk .ist'.split()):
             assert expected.find(x.strip('└─├ '))>=0
 
 def test_selfdoc():
