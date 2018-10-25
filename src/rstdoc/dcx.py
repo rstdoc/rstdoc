@@ -198,14 +198,19 @@ except:
     print('Warning: no pyfca for traceability diagram')
     pyfca = None
 
+try:
+    import cairocffi
+    import cairosvg
+except:
+    print('Warning: no cairocffi')
+    cairocffi = None
+    cairosvg = None
+
 import pyx
 import pygal
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
-import cairocffi
-import cairosvg
 
 from hashlib import sha1 as sha
 
@@ -226,7 +231,10 @@ _indent = '    '
 
 class _Tools:
     def svg2png(self,*args,**kwargs):
-        cairosvg.svg2png(*args,**kwargs)
+        if cairosvg:
+            cairosvg.svg2png(*args,**kwargs)
+        else:
+            print('Warning: You need cairocffi and cairosvg to convert svg to png')
     def run(self,*args,**kwargs):
         if 'outfile' in kwargs:
             del kwargs['outfile']
@@ -1141,7 +1149,7 @@ def pygpng(
             elif isinstance(v,pygal.Graph):
                 tools.svg2png(bytestring=v.render(),write_to=outfile, dpi=DPI)
                 break
-            elif isinstance(v,cairocffi.Surface):
+            elif cairocffi and isinstance(v,cairocffi.Surface):
                 v.write_to_png(target=outfile)
                 break
             elif svgwrite and isinstance(v,svgwrite.drawing.Drawing):
