@@ -289,7 +289,7 @@ def test_dcx_alone_samples(rstinit,capfd):
     assert r.returncode == 0
     out, err = capfd.readouterr()
     if 'tmp_rest' in rstinit:
-        assert set(out.splitlines()) == set("""\
+        assert set(x for x in out.splitlines() if 'png_post_processor' not in x) == set("""\
 + egdot.dot
 + egsvg.svg
 doc
@@ -311,7 +311,7 @@ doc
 run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-kinds=-i', '-f', '-', '*'],) {'cwd': 'doc', 'stdout': -1, 'stderr': -1}
 + doc/.tags""".splitlines())
     elif 'tmp_stpl' in rstinit:
-        assert set(out.splitlines()) == set("""\
+        assert set(x for x in out.splitlines() if 'png_post_processor' not in x) == set("""\
 + dd.rest
 + dd_included.rst
 + egdot.dot
@@ -555,6 +555,8 @@ def test_waf_samples(wafbuild):
         except: ext = target
         if ext.endswith('latex') or ext.endswith('html'):
             extra = '\n│     ├─_images'
+            if ext.endswith('html'):
+                extra += '\n│     ├─_traceability_file.svg'
         else:
             extra = ''
         expected=expected_non_sphinx.format(target,ext,extra)
@@ -633,4 +635,5 @@ def test_docparts_after():
         signature='cpp',relim=r'\\brief|//$',reid=r'\s(\w\+)\('))
     assert res == ['.. code-block:: cpp\n', '', '   void afun(\n',
         '   int x //int variable\n', '   )\n', '', "afun's description\n"]
+
 

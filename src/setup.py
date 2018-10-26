@@ -10,7 +10,7 @@ from setuptools import setup
 import platform
 import os, os.path
 
-__version__ = '1.6.00'
+__version__ = '1.6.1'
 
 def read(fname,separator='\n"""'):
     with open(os.path.join(os.path.dirname(__file__), fname),encoding='utf-8') as f:
