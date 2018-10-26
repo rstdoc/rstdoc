@@ -82,7 +82,7 @@ It is supposed to be used with a build tool. ``make`` and ``waf`` examples are i
   All files can have an additional ``.stpl`` extension to use `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax>`__.
 
     $ waf configure #copies the latest version of waf in here
-    $ waf --docs docx,sphinx_html,rst_odt
+    $ waf --docs docx,sphinx_html,rst_odt #or you provide during config to always compile the docs
 
   - ``rst_xxx`` via `rst2xxx.py <http://docutils.sourceforge.net/docs/user/tools.html>`__
   - ``sphinx_xxx`` via `Sphinx <http://www.sphinx-doc.org>`__ and
@@ -2671,7 +2671,7 @@ try:
             except cfg.errors.ConfigurationError:
                 cfg.to_log(x+' was not found (ignoring)')
         config = conf_py(cfg.path.abspath())
-        cfg.env['DPI'] = config.get('DPI',DPI)
+        cfg.env['DPI'] = str(config.get('DPI',DPI))
     def build(bld):
         bld.src2bld = lambda f: bld(features='subst',source=f,target=f,is_copy=True)
         def gen_files():
