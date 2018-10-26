@@ -1,12 +1,27 @@
 #!/usr/bin/env python
-# encoding: utf-8 
-#def gen_head(lns,**kw):
+# encoding: utf-8
+
+# def gen_head(lns,**kw):
 #    b,e = list(rindices('^"""',lns))[:2]
 #    return lns[b+1:e]
-#def gen_head(lns,**kw)
-#def gen_api(lns,**kw):
+# def gen_head(lns,**kw)
+# def gen_api(lns,**kw):
 #    yield from doc_parts(lns,signature='py',prefix='fromdocx.')
-#def gen_api
+# def gen_api
+
+from .reimg import main as reimg
+from .reflow import main as reflow
+from .untable import main as untable
+from .listtable import main as listtable
+from .dcx import example_tree, rindices
+from pathlib import Path
+import time
+import re
+from glob import glob
+import shutil
+import os
+import pypandoc
+from zipfile import ZipFile
 
 """
 .. _`rstfromdocx`:
@@ -47,8 +62,7 @@ RST documentation folder, proceed like this:
 See |rstreflow| for an alternative proceeding.
 """
 
-
-#''' starts api doc parts (see doc_parts())
+# ''' starts api doc parts (see doc_parts())
 '''
 API
 ---
@@ -61,46 +75,39 @@ API
 '''
 
 
-from zipfile import ZipFile
-import pypandoc
-import os
-import shutil
-from glob import glob
-import re
-import time
-from pathlib import Path
-from .dcx import example_tree, rindices
-from .listtable import main as listtable
-from .untable import main as untable
-from .reflow import main as reflow
-from .reimg import main as reimg
-
 def _mkdir(fn):
     try:
         os.mkdir(fn)
     except:
         pass
 
-_rstname = lambda fn: os.path.splitext(os.path.split(fn)[1])[0]
+
+def _rstname(fn):
+    return os.path.splitext(os.path.split(fn)[1])[0]
+
 
 def _prj_name(fn):
-    m=re.match(r'[\s\d\W]*([^\s\W]*).*',_rstname(fn))
-    return m.group(1).strip('_').replace(' ','')
+    m = re.match(r'[\s\d\W]*([^\s\W]*).*', _rstname(fn))
+    return m.group(1).strip('_').replace(' ', '')
 
-_fldrhere = lambda n: os.path.abspath(os.path.split(os.path.splitext(n)[0])[1])
 
-def extract_media(
-        fn #docx file name
-        ):
+def _fldrhere(n):
+    return os.path.abspath(os.path.split(os.path.splitext(n)[0])[1])
+
+
+def extract_media(fn  # docx file name
+                  ):
     '''
     extract media files from a docx file to a subfolder named after the docx
+
     '''
+
     zf = ZipFile(fn)
-    pwd=os.getcwd()
+    pwd = os.getcwd()
     try:
         fnn = _fldrhere(fn)
         _mkdir(fnn)
-        media=[x for x in zf.infolist() if 'media/' in x.filename]
+        media = [x for x in zf.infolist() if 'media/' in x.filename]
         os.chdir(fnn)
         _mkdir('media')
         os.chdir('media')
@@ -108,153 +115,201 @@ def extract_media(
             #m = media[0]
             zf.extract(m)
             try:
-                shutil.move(m.filename,os.getcwd())
-            except:pass
+                shutil.move(m.filename, os.getcwd())
+            except:
+                pass
         try:
             for f in glob('word/media/*'):
                 os.remove(f)
             os.rmdir('word/media')
             os.rmdir('word')
-        except: pass
+        except:
+            pass
     finally:
         os.chdir(pwd)
 
-def _docxrest(
-        fn #docx file name
-        ):
-    #returns file name of ``.rest`` file.
-    _,frm = os.path.split(fn)
+
+def _docxrest(fn  # docx file name
+              ):
+    # returns file name of ``.rest`` file.
+    _, frm = os.path.split(fn)
     fnrst = os.path.splitext(frm)[0]
-    fnrst = os.path.join(_fldrhere(fn),fnrst+'.rest')
+    fnrst = os.path.join(_fldrhere(fn), fnrst + '.rest')
     return fnrst
 
-def _write_confpy(
-        fn #docx file name
-        ):
-    #Takes the conf.py from the ``example_tree`` in ``rstdoc.dcx``.
-    confpy = re.split(r'\s*.\s*Makefile',example_tree.split('conf.py')[1])[0]
+
+def _write_confpy(fn  # docx file name
+                  ):
+    # Takes the conf.py from the ``example_tree`` in ``rstdoc.dcx``.
+    confpy = re.split(r'\s*.\s*Makefile', example_tree.split('conf.py')[1])[0]
     pn = _prj_name(fn)
-    confpy = confpy.replace('docxsample',pn).replace('2017',time.strftime('%Y'))
-    lns=confpy.splitlines(True)
-    s=re.search(r'\w',lns[1]).span(0)[0]
-    confpy=''.join([l[s:] for l in lns])
+    confpy = confpy.replace('docxsample', pn).replace('2017',
+                                                      time.strftime('%Y'))
+    lns = confpy.splitlines(True)
+    s = re.search(r'\w', lns[1]).span(0)[0]
+    confpy = ''.join([l[s:] for l in lns])
     fnn = _fldrhere(fn)
-    cpfn = os.path.normpath(os.path.join(fnn,'conf.py'))
+    cpfn = os.path.normpath(os.path.join(fnn, 'conf.py'))
     if os.path.exists(cpfn):
         return
-    with open(cpfn,'w',encoding='utf-8') as f:
+    with open(cpfn, 'w', encoding='utf-8') as f:
         f.write(confpy)
 
-def _write_index(
-        fn #docx file name
-        ):
-    #Adds a the generated .rest to ``toctree`` in index.rest or generates new index.rest.
+
+def _write_index(fn  # docx file name
+                 ):
+    # Adds a the generated .rest to ``toctree`` in index.rest or generates new index.rest.
     fnn = _fldrhere(fn)
-    ifn = os.path.normpath(os.path.join(fnn,'index.rest'))
-    rst = _rstname(fn)+'.rest'
+    ifn = os.path.normpath(os.path.join(fnn, 'index.rest'))
+    rst = _rstname(fn) + '.rest'
     prjname = _prj_name(fn)
-    hp = '='*len(prjname)
+    hp = '=' * len(prjname)
     if os.path.exists(ifn):
-        with open(ifn,'r') as f:
+        with open(ifn, 'r') as f:
             lns = f.readlines()
     else:
-        lns = [x+'\n' for x in ['.. vim: syntax=rst','',hp,prjname,hp,'','.. toctree::']]
-    itoc = list(rindices('toctree',lns))[0]
-    lns = lns[:itoc+1]+['    '+rst+'\n']+lns[itoc+1:]
-    with open(ifn,'w') as f:
+        lns = [
+            x + '\n' for x in
+            ['.. vim: syntax=rst', '', hp, prjname, hp, '', '.. toctree::']
+        ]
+    itoc = list(rindices('toctree', lns))[0]
+    lns = lns[:itoc + 1] + ['    ' + rst + '\n'] + lns[itoc + 1:]
+    with open(ifn, 'w') as f:
         f.writelines(lns)
 
-def _write_makefile(
-        fn #docx file name
-        ):
-    #Takes the Makefile from the ``example_tree`` in ``rstdoc.dcx``.
-    mf = re.split(r'\s+├ code\s+',re.split('├ Makefile',example_tree)[1])[0]
-    lns=mf.splitlines(True)
-    s=re.search(r'\w',lns[1]).span(0)[0]
+
+def _write_makefile(fn  # docx file name
+                    ):
+    # Takes the Makefile from the ``example_tree`` in ``rstdoc.dcx``.
+    mf = re.split(r'\s+├ code\s+', re.split('├ Makefile', example_tree)[1])[0]
+    lns = mf.splitlines(True)
+    s = re.search(r'\w', lns[1]).span(0)[0]
     lns = [l[s:] for l in lns]
     rst = _rstname(fn)
-    idoc = list(rindices('^docx:',lns))[0]
-    ipdf = list(rindices('^pdf:',lns))[0]
-    doce = lns[idoc+1].replace('sr',rst)
-    pdfe = lns[ipdf+1].replace('sr',rst)
-    lns=lns[:idoc+1]+[lns[ipdf]]
+    idoc = list(rindices('^docx:', lns))[0]
+    ipdf = list(rindices('^pdf:', lns))[0]
+    doce = lns[idoc + 1].replace('sr', rst)
+    pdfe = lns[ipdf + 1].replace('sr', rst)
+    lns = lns[:idoc + 1] + [lns[ipdf]]
     fnn = _fldrhere(fn)
-    mffn = os.path.normpath(os.path.join(fnn,'Makefile'))
+    mffn = os.path.normpath(os.path.join(fnn, 'Makefile'))
     if os.path.exists(mffn):
-        with open(mffn,'r') as f:
+        with open(mffn, 'r') as f:
             lns = f.readlines()
-    idoc = list(rindices('^docx:',lns))[0]
-    ipdf = list(rindices('^pdf:',lns))[0]
-    lns=lns[:idoc+1]+[doce]+lns[idoc+1:ipdf+1]+[pdfe]+lns[ipdf+1:]
-    with open(mffn,'w',encoding='utf-8') as f:
+    idoc = list(rindices('^docx:', lns))[0]
+    ipdf = list(rindices('^pdf:', lns))[0]
+    lns = lns[:idoc + 1] + [doce] + lns[idoc + 1:ipdf + 1] + [
+        pdfe
+    ] + lns[ipdf + 1:]
+    with open(mffn, 'w', encoding='utf-8') as f:
         f.writelines(lns)
 
-def _write_dcx(
-        fn #docx file name
-        ):
-    #Writes the dcx.py into the folder generated for the docx.
-    dcxfile = os.path.join(os.path.split(str(Path(__file__).resolve()))[0],'dcx.py')
-    shutil.copy2(dcxfile,_fldrhere(fn))
+
+def _write_dcx(fn  # docx file name
+               ):
+    # Writes the dcx.py into the folder generated for the docx.
+    dcxfile = os.path.join(
+        os.path.split(str(Path(__file__).resolve()))[0], 'dcx.py')
+    shutil.copy2(dcxfile, _fldrhere(fn))
+
 
 def main(
-        **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
-        ):
+        # keyword arguments. If empty the arguments are taken from ``sys.argv``.
+        **args):
     '''
     This corresponds to the |rstfromdocx| shell command.
 
     listtable, untable, reflow, reimg default to False.
 
     returns: The file name of the generated file.
+
     '''
+
     import argparse
 
     if not args:
-        parser = argparse.ArgumentParser(description='''Convert DOCX to RST using Pandoc and additionally copy the images and helper files.''')
-        parser.add_argument('docx', action='store',help='DOCX file')
-        parser.add_argument('-l', '--listtable', action='store_true', default=False, help='''postprocess through rstlisttable''')
-        parser.add_argument('-u', '--untable', action='store_true', default=False, help='''postprocess through rstuntable''')
-        parser.add_argument('-r', '--reflow', action='store_true', default=False, help='''postprocess through rstreflow''')
-        parser.add_argument('-g', '--reimg', action='store_true', default=False, help='''postprocess through rstreimg''')
-        parser.add_argument('-j', '--join', action='store', default='012',
-                help='''e.g.002. Join method per column: 0="".join; 1=" ".join; 2="\\n".join''')
+        parser = argparse.ArgumentParser(
+            description=
+            '''Convert DOCX to RST using Pandoc and additionally copy the images and helper files.'''
+        )
+        parser.add_argument('docx', action='store', help='DOCX file')
+        parser.add_argument(
+            '-l',
+            '--listtable',
+            action='store_true',
+            default=False,
+            help='''postprocess through rstlisttable''')
+        parser.add_argument(
+            '-u',
+            '--untable',
+            action='store_true',
+            default=False,
+            help='''postprocess through rstuntable''')
+        parser.add_argument(
+            '-r',
+            '--reflow',
+            action='store_true',
+            default=False,
+            help='''postprocess through rstreflow''')
+        parser.add_argument(
+            '-g',
+            '--reimg',
+            action='store_true',
+            default=False,
+            help='''postprocess through rstreimg''')
+        parser.add_argument(
+            '-j',
+            '--join',
+            action='store',
+            default='012',
+            help=
+            '''e.g.002. Join method per column: 0="".join; 1=" ".join; 2="\\n".join'''
+        )
         args = parser.parse_args().__dict__
-    
+
     fn = args['docx']
     extract_media(fn)
     fnrst = _docxrest(fn)
-    rst = pypandoc.convert_file(fn,'rst','docx')
-    with open(fnrst,'w',encoding='utf-8',newline='\n') as f:
+    rst = pypandoc.convert_file(fn, 'rst', 'docx')
+    with open(fnrst, 'w', encoding='utf-8', newline='\n') as f:
         f.write('.. vim: syntax=rst\n\n')
-        f.writelines([x+'\n' for x in rst.splitlines()])
+        f.writelines([x + '\n' for x in rst.splitlines()])
     _write_confpy(fn)
     _write_index(fn)
     _write_makefile(fn)
     _write_dcx(fn)
 
-    if 'listtable' not in args: args['listtable'] = False
-    if 'untable' not in args: args['untable'] = False
-    if 'reflow' not in args: args['reflow'] = False
-    if 'reimg' not in args: args['reimg'] = False
+    if 'listtable' not in args:
+        args['listtable'] = False
+    if 'untable' not in args:
+        args['untable'] = False
+    if 'reflow' not in args:
+        args['reflow'] = False
+    if 'reimg' not in args:
+        args['reimg'] = False
 
-    if 'join' not in args: args['join'] = '012'
+    if 'join' not in args:
+        args['join'] = '012'
 
     for a in 'listtable untable reflow reimg'.split():
         if args[a]:
             args['in_place'] = True
             args['sentence'] = True
-            if a=='reflow':
+            if a == 'reflow':
                 args['join'] = '0'
-            args['rstfile'] = [argparse.FileType('r',encoding='utf-8')(fnrst)]
+            args['rstfile'] = [argparse.FileType('r', encoding='utf-8')(fnrst)]
             eval(a)(**args)
 
     return fnrst
 
 
 def docx_rst_5(
-        docx #the docx file name
-        ,rename #the new name to give to the converted files (no extension)
-        ,sentence=True #split sentences into new lines (reflow)
-        ):
+    docx  # the docx file name
+        ,
+        rename  # the new name to give to the converted files (no extension)
+        ,
+        sentence=True  # split sentences into new lines (reflow)
+):
     '''
     Creates 5 rst files:
 
@@ -265,18 +320,19 @@ def docx_rst_5(
     - with reimg postprocessing: rename/rename_g.rest
 
     '''
-    shutil.copy2(docx,rename+".docx")
-    rstfn = main(docx=rename+".docx")
-    r,_ = os.path.splitext(rstfn)
-    shutil.copy2(rstfn,r+'_l.rest')
-    listtable(rstfile=r+'_l.rest',in_place=True)
-    shutil.copy2(r+'_l.rest',r+'_u.rest')
-    untable(rstfile=r+'_u.rest',in_place=True)
-    shutil.copy2(r+'_u.rest',r+'_r.rest')
-    reflow(rstfile=r+'_r.rest',in_place=True, sentence=sentence)
-    shutil.copy2(r+'_r.rest',r+'_g.rest')
-    reimg(rstfile=r+'_g.rest',in_place=True)
+    
+    shutil.copy2(docx, rename + ".docx")
+    rstfn = main(docx=rename + ".docx")
+    r, _ = os.path.splitext(rstfn)
+    shutil.copy2(rstfn, r + '_l.rest')
+    listtable(rstfile=r + '_l.rest', in_place=True)
+    shutil.copy2(r + '_l.rest', r + '_u.rest')
+    untable(rstfile=r + '_u.rest', in_place=True)
+    shutil.copy2(r + '_u.rest', r + '_r.rest')
+    reflow(rstfile=r + '_r.rest', in_place=True, sentence=sentence)
+    shutil.copy2(r + '_r.rest', r + '_g.rest')
+    reimg(rstfile=r + '_g.rest', in_place=True)
+
 
 if __name__ == '__main__':
     main()
-

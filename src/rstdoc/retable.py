@@ -1,13 +1,17 @@
 #!/usr/bin/env python
-# encoding: utf-8 
+# encoding: utf-8
 
-#def gen_head(lns,**kw):
+# def gen_head(lns,**kw):
 #    b,e = list(rindices('^"""',lns))[:2]
 #    return lns[b+1:e]
-#def gen_head(lns,**kw)
-#def gen_api(lns,**kw):
+# def gen_head(lns,**kw)
+# def gen_api(lns,**kw):
 #    yield from doc_parts(lns,signature='py',prefix='retable.')
-#def gen_api
+# def gen_api
+
+from .untable import untable
+import textwrap
+import re
 
 """
 .. _`rstretable`:
@@ -30,8 +34,7 @@ the Vim plugin `vim-rst-tables-py3`_, plus some little fixes.
 
 """
 
-
-#''' starts api doc parts (see doc_parts())
+# ''' starts api doc parts (see doc_parts())
 '''
 API
 ---
@@ -43,30 +46,25 @@ API
 
 
 '''
-
-
-import re
-import textwrap
-from .untable import untable
-
-
 '''
 The rst title order was partly taken from https://github.com/jimklo/atom-rst-snippets
 then converted to http://documentation-style-guide-sphinx.readthedocs.io/en/latest/style-guide.html
 '''
 title_some = """=-^"'`._~+:;,"""
 
+title_all = list(r'''#*=-^~+_.,"'!$%&\\()/:;<>?@[\]`{|}''')
+titlerex = re.compile(
+    '''^(\s*)(([#*=\-^~+_.,"'!$%&\\\(\)/:;<>?@\[\]`{|}])\\3+)\s*$''')
 
-title_all=list(r'''#*=-^~+_.,"'!$%&\\()/:;<>?@[\]`{|}''')
-titlerex = re.compile('''^(\s*)(([#*=\-^~+_.,"'!$%&\\\(\)/:;<>?@\[\]`{|}])\\3+)\s*$''')
-#titlerex.match('  ====  ').group(2)+'!'
-#titlerex.match('  ====  ').group(1)+'!'
-#titlerex.match('\\\\\\').group(2)+'!'
-#titlerex.match('------').group(2)+'!'
-#titlerex.match(' [[[[[[[').group(2)+'!'
-#titlerex.match('@@@@@@@').group(2)+'!'
-#titlerex.match('*******').group(2)+'!'
-#titlerex.match(' [[[[[[[==')==None
+# titlerex.match('  ====  ').group(2)+'!'
+# titlerex.match('  ====  ').group(1)+'!'
+# titlerex.match('\\\\\\').group(2)+'!'
+# titlerex.match('------').group(2)+'!'
+# titlerex.match(' [[[[[[[').group(2)+'!'
+# titlerex.match('@@@@@@@').group(2)+'!'
+# titlerex.match('*******').group(2)+'!'
+# titlerex.match(' [[[[[[[==')==None
+
 
 def join_rows(rows, sep='\n'):
     """Given a list of rows (a list of lists) this function returns a
@@ -283,7 +281,7 @@ def draw_table(indent, table, manual_widths=None, withheader=1):
     header_line = table_line(sep_col_widths, header=withheader)
     normal_line = table_line(sep_col_widths, header=False)
 
-    output = [indent+normal_line]
+    output = [indent + normal_line]
     first = True
     for row in table:
 
@@ -295,21 +293,22 @@ def draw_table(indent, table, manual_widths=None, withheader=1):
         # draw the lines (num_lines) for this row
         for row_line in row_lines:
             row_line = pad_fields(row_line, col_widths)
-            output.append(indent+"|".join([''] + row_line + ['']))
+            output.append(indent + "|".join([''] + row_line + ['']))
 
         # then, draw the separator
         if first:
-            output.append(indent+header_line)
+            output.append(indent + header_line)
             first = False
         else:
-            output.append(indent+normal_line)
+            output.append(indent + normal_line)
 
     return output
 
-def get_bounds(lines,row,col):
+
+def get_bounds(lines, row, col):
     upper = lower = row
     try:
-        while upper>-1 and lines[upper].strip():
+        while upper > -1 and lines[upper].strip():
             upper -= 1
     except IndexError:
         pass
@@ -325,25 +324,33 @@ def get_bounds(lines,row,col):
     match = re.match('^(\s*).*$', lines[upper])
     return (upper, lower, match.group(1))
 
+
 def reformat_table(
-        lines #list of strings
-        ,row=0  #of cursor position,
-        ,col=0  #... as only the lines delimited by an empty line are used
-        ,withheader=0 #user the first line as table header
-        ):
+        lines  # list of strings
+        ,
+        row=0  # of cursor position,
+        ,
+        col=0  # ... as only the lines delimited by an empty line are used
+        ,
+        withheader=0  # user the first line as table header
+):
     ''' 
     Create or reformat a grid table in lines.
     The table is delimited by emtpy lines starting from (row,col).
+
     '''
-    upper, lower, indent = get_bounds(lines,row,col)
-    slice_ = lines[upper:lower+1]
+
+    upper, lower, indent = get_bounds(lines, row, col)
+    slice_ = lines[upper:lower + 1]
     table = parse_table(slice_)
     slice_ = draw_table(indent, table, None, withheader)
-    lines[upper:lower+1] = slice_
+    lines[upper:lower + 1] = slice_
+
 
 def create_rst_table(
-        data #list of list of data
-        ,withheader=0):
+        data  # list of list of data
+        ,
+        withheader=0):
     '''
     Create a rst table from data
 
@@ -353,21 +360,27 @@ def create_rst_table(
     >>> create_rst_table(lns)
 
     '''
+
     lines = ['  '.join([str(xx) for xx in x]) for x in data]
-    reformat_table(lines,0,0,withheader)
+    reformat_table(lines, 0, 0, withheader)
     return '\n'.join(lines)
 
+
 def reflow_table(
-        lines  #list of strings
-        ,row=0 #of cursor position,
-        ,col=0 #... as only the lines delimited by an empty line are considered
-        ):
+        lines  # list of strings
+        ,
+        row=0  # of cursor position,
+        ,
+        col=0  # ... as only the lines delimited by an empty line are considered
+):
     '''
     Adapt an existing table to the widths of the first line.
     The table is delimited by emtpy lines starting from (row,col).
+    
     '''
-    upper, lower, indent = get_bounds(lines,row,col)
-    slice_ = lines[upper:lower+1]
+    
+    upper, lower, indent = get_bounds(lines, row, col)
+    slice_ = lines[upper:lower + 1]
     withheader = 0
     for t in slice_:
         if '+==' in t:
@@ -376,14 +389,18 @@ def reflow_table(
     widths = get_column_widths_from_border_spec(slice_)
     table = parse_table(slice_)
     slice_ = draw_table(indent, table, widths, withheader)
-    lines[upper:lower+1] = slice_
+    lines[upper:lower + 1] = slice_
+
 
 def re_title(
-        lines  #list of lines
-        ,row=0 #of cursor position,
-        ,col=0 #... as only the lines delimited by an empty line are considered
-        ,down=0 #>0down, <0up
-        ):
+        lines  # list of lines
+        ,
+        row=0  # of cursor position,
+        ,
+        col=0  # ... as only the lines delimited by an empty line are considered
+        ,
+        down=0  # >0down, <0up
+):
     '''
     Adjust the under- or overline of a title.
 
@@ -398,9 +415,10 @@ def re_title(
 
 
     '''
-    upper, lower, indent = get_bounds(lines,row,col)
+    
+    upper, lower, indent = get_bounds(lines, row, col)
     t = None
-    for i in range(upper,lower+1):
+    for i in range(upper, lower + 1):
         if not titlerex.match(lines[i]):
             t = lines[i]
             break
@@ -409,28 +427,30 @@ def re_title(
     trstrip = t.rstrip()
     tstrip = trstrip.strip()
     leni = len(tstrip)
-    lenspace = len(trstrip)-leni
-    for j in range(upper,lower+1):
-        if i==j: 
+    lenspace = len(trstrip) - leni
+    for j in range(upper, lower + 1):
+        if i == j:
             lines[i] = trstrip
             continue
         mobj = titlerex.match(lines[j])
         if mobj:
             hl = mobj.group(2)[0]
             try:
-                nhl = title_some[title_some.index(hl[0])+down]
+                nhl = title_some[title_some.index(hl[0]) + down]
             except:
                 nhl = hl[0]
-            lines[j] = ' '*lenspace+nhl*leni
+            lines[j] = ' ' * lenspace + nhl * leni
+
 
 class doretable:
     def __init__(self):
         self.tbl = []
-    def __call__(self,row,nColumns,org,islast,withheader):
+
+    def __call__(self, row, nColumns, org, islast, withheader):
         clls = [' '.join([ax.strip() for ax in x]) for x in row]
         self.tbl.append(' | '.join(clls))
         if islast:
-            reformat_table(self.tbl,0,0,withheader)
+            reformat_table(self.tbl, 0, 0, withheader)
             yield from self.tbl
             del self.tbl[:]
             while org and not org[-1].strip():
@@ -438,19 +458,22 @@ class doretable:
                 del org[-1]
         del org[:]
 
-def retable(
-        lns #list of strings
-        ):
+
+def retable(lns  # list of strings
+            ):
     '''
     Transform listtable to grid table.
     Yield the resulting lines.
+
     '''
+
     drt = doretable()
-    yield from untable(lns,drt)
+    yield from untable(lns, drt)
+
 
 def main(
-        **args #keyword arguments. If empty the arguments are taken from ``sys.argv``.
-        ):
+        # keyword arguments. If empty the arguments are taken from ``sys.argv``.
+        **args):
     '''
     This corresponds to the |rstretable| shell command.
 
@@ -459,27 +482,41 @@ def main(
     ``in_place`` defaults to False
 
     '''
+
     import codecs
     import sys
     import argparse
 
     if not args:
-        parser = argparse.ArgumentParser(description='''Transforms list tables to grid tables.''')
-        parser.add_argument('rstfile', type=argparse.FileType('r',encoding='utf-8'), nargs='+', help='RST file(s)')
-        parser.add_argument('-i', '--in-place', action='store_true', default=False,
-                help='''change the file itself''')
+        parser = argparse.ArgumentParser(
+            description='''Transforms list tables to grid tables.''')
+        parser.add_argument(
+            'rstfile',
+            type=argparse.FileType('r', encoding='utf-8'),
+            nargs='+',
+            help='RST file(s)')
+        parser.add_argument(
+            '-i',
+            '--in-place',
+            action='store_true',
+            default=False,
+            help='''change the file itself''')
         args = parser.parse_args().__dict__
 
-    if not 'in_place' in args: args['in_place'] = False
-    if isinstance(args['rstfile'],str): args['rstfile'] = [argparse.FileType('r',encoding='utf-8')(args['rstfile'])]
+    if not 'in_place' in args:
+        args['in_place'] = False
+    if isinstance(args['rstfile'], str):
+        args['rstfile'] = [
+            argparse.FileType('r', encoding='utf-8')(args['rstfile'])
+        ]
 
     for infile in args['rstfile']:
         lns = infile.readlines()
         infile.close()
         if args['in_place']:
-            f = open(infile.name,'w',encoding='utf-8',newline='\n')
+            f = open(infile.name, 'w', encoding='utf-8', newline='\n')
         else:
-            #'≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...  makes problems with pdb, though
+            # '≥'.encode('cp1252') # UnicodeEncodeError on Windows, therefore...  makes problems with pdb, though
             sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
             sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
             f = sys.stdout
@@ -489,7 +526,6 @@ def main(
             if args['in_place']:
                 f.close()
 
+
 if __name__ == '__main__':
     main()
-
-
