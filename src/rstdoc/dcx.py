@@ -2684,7 +2684,7 @@ try:
         def build_docs():
             global g_config
             if exists(normjoin(bld.srcnode.abspath(),'conf.py')):
-                g_config = conf_py(bld.srcnode)
+                g_config = conf_py(bld.srcnode.abspath())
             docs=get_docs(bld)
             if docs:
                 bld.gen_files()
@@ -4065,13 +4065,14 @@ def index_dir(
                 print('Generating files in %s seems not meant to be done: %s'%(genpth,str(err)))
         #we need to do the templates here, because ``create_links_and_tags()`` needs them
         for f in os.listdir(directory):
-            if isfile(f) and f.endswith(_stpl):
+            if f.endswith(_stpl):
                 dpth = normjoin(directory,f)
-                outpth = stem(dpth)
-                try:
-                    dostpl(dpth,outpth)
-                except Exception as err:
-                    print('Error expanding %s: %s'%(dpth,str(err)))
+                if isfile(dpth):
+                    outpth = stem(dpth)
+                    try:
+                        dostpl(dpth,outpth)
+                    except Exception as err:
+                        print('Error expanding %s: %s'%(dpth,str(err)))
         fldr.create_links_and_tags(root)
 
 

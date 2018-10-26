@@ -39,12 +39,6 @@ def run(x):
     else:
         return subprocess.run(x,shell=False)
 
-try:
-    subprocess.run(['python3','--version'])
-    Python = 'python3'
-except FileNotFoundError:
-    Python = 'python' #must also be python 3
-
 _lnkname=[
 ("""
 .. _`id`:
@@ -285,11 +279,11 @@ def test_init(rstinit):
 └─wscript"""
 
 def test_dcx_alone_samples(rstinit,capfd):
-    r=run([Python,'dcx.py','--verbose'])
+    r=run(['python','dcx.py','--verbose'])
     assert r.returncode == 0
     out, err = capfd.readouterr()
     if 'tmp_rest' in rstinit:
-        assert set(x for x in out.splitlines() if 'png_post_processor' not in x) == set("""\
+        assert list(sorted(x for x in out.splitlines() if 'png_post_processor' not in x)) == list(sorted("""\
 + egdot.dot
 + egsvg.svg
 doc
@@ -309,9 +303,9 @@ doc
 + doc/_links_docx.rst
 + doc/_links_odt.rst
 run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-kinds=-i', '-f', '-', '*'],) {'cwd': 'doc', 'stdout': -1, 'stderr': -1}
-+ doc/.tags""".splitlines())
++ doc/.tags""".splitlines()))
     elif 'tmp_stpl' in rstinit:
-        assert set(x for x in out.splitlines() if 'png_post_processor' not in x) == set("""\
+        assert list(sorted(x for x in out.splitlines() if 'png_post_processor' not in x)) == list(sorted("""\
 + dd.rest
 + dd_included.rst
 + egdot.dot
@@ -340,7 +334,7 @@ doc
 + doc/_links_docx.rst
 + doc/_links_odt.rst
 run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-kinds=-i', '-f', '-', '*'],) {'cwd': 'doc', 'stdout': -1, 'stderr': -1}
-+ doc/.tags""".splitlines())
++ doc/.tags""".splitlines()))
 
 @pytest.mark.parametrize('cmd_result',[
  ('rstdcx dd.rest.stpl - rest',['default-role:: math',r'<dd.html#'])
