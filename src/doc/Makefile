@@ -1,37 +1,77 @@
-SPHINXOPTS    = 
-SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = docxsmpl
-SOURCEDIR     = .
-BUILDDIR      = ../../build/doc
-.PHONY: pdf docx help Makefile docxdir pdfdir index
-docxdir: ${BUILDDIR}/docx
-pdfdir: ${BUILDDIR}/pdf
+SPHINXOPTS  = -c .
+SPHINXBLD   = sphinx-build
+SPHINXPROJ  = sample
+SRCDIR      = ./
+DCXPATH     = ../rstdoc
+BLDDIR      = ../../build/doc
+STPLS       = $(wildcard $(SRCDIR)/*.stpl)
+STPLTGTS    = $(STPLS:%.stpl=%)
+SRCS        = $(filter-out $(SRCDIR)/index.rest,$(wildcard $(SRCDIR)/*.rest))
+SRCSTPL     = $(wildcard $(SRCDIR)/*.rest.stpl)
+IMGS        = \
+	$(wildcard $(SRCDIR)/*.pyg)\
+	$(wildcard $(SRCDIR)/*.eps)\
+	$(wildcard $(SRCDIR)/*.tikz)\
+	$(wildcard $(SRCDIR)/*.svg)\
+	$(wildcard $(SRCDIR)/*.uml)\
+	$(wildcard $(SRCDIR)/*.dot)\
+	$(wildcard $(SRCDIR)/*.eps.stpl)\
+	$(wildcard $(SRCDIR)/*.tikz.stpl)\
+	$(wildcard $(SRCDIR)/*.svg.stpl)\
+	$(wildcard $(SRCDIR)/*.uml.stpl)\
+	$(wildcard $(SRCDIR)/*.dot.stpl)
+PNGS=$(subst $(SRCDIR),$(SRCDIR)/_images,\
+	$(patsubst %.eps,%.png,\
+	$(patsubst %.pyg,%.png,\
+	$(patsubst %.tikz,%.png,\
+	$(patsubst %.svg,%.png,\
+	$(patsubst %.uml,%.png,\
+	$(patsubst %.dot,%.png,\
+	$(patsubst %.eps.stpl,%.png,\
+	$(patsubst %.dot.stpl,%.png,\
+	$(patsubst %.tikz.stpl,%.png,\
+	$(patsubst %.svg.stpl,%.png,\
+	$(patsubst %.uml.stpl,%.png,$(IMGS)))))))))))))
+DOCXS = $(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCS:%.rest=%.docx))\
+	$(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCSTPL:%.rest.stpl=%.docx))
+PDFS  = $(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCS:%.rest=%.pdf))\
+	$(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCSTPL:%.rest.stpl=%.pdf))
+.PHONY: docx help Makefile docxdir pdfdir stpl index imgs
+stpl: $(STPLTGTS)
+%:%.stpl
+	@cd $(SRCDIR) && stpl "$(<F)" "$(@F)"
+imgs: $(PNGS)
+$(SRCDIR)/_images/%.png:$(SRCDIR)/%.pyg
+	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
+$(SRCDIR)/_images/%.png:$(SRCDIR)/%.eps
+	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
+$(SRCDIR)/_images/%.png:$(SRCDIR)/%.tikz
+	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
+$(SRCDIR)/_images/%.png:$(SRCDIR)/%.svg
+	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
+$(SRCDIR)/_images/%.png:$(SRCDIR)/%.uml
+	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
+$(SRCDIR)/_images/%.png:$(SRCDIR)/%.dot
+	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
+docxdir: ${BLDDIR}/docx
+pdfdir: ${BLDDIR}/pdf
 MKDIR_P = mkdir -p
-${BUILDDIR}/docx:
-	${MKDIR_P} ${BUILDDIR}/docx
-${BUILDDIR}/pdf:
-	${MKDIR_P} ${BUILDDIR}/pdf
+${BLDDIR}/docx:
+	@${MKDIR_P} ${BLDDIR}/docx
+${BLDDIR}/pdf:
+	@${MKDIR_P} ${BLDDIR}/pdf
 index:
-	python ../rstdoc/dcx.py
+	@python ./dcx.py
 help:
-	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@$(SPHINXBLD) -M help "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
 	@echo "  docx        to docx"
 	@echo "  pdf         to pdf"
-%: Makefile index
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
-docx: docxdir index
-	cat index.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/traceability.docx"
-	cat sr.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/sr.docx"
-	cat dd.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/dd.docx"
-	cat tp.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/tp.docx"
-	cat rstdoc.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/rstdoc.docx"
-	stpl ra.rest.stpl ra.rest
-	cat ra.rest _links_docx.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst -t docx -o "$(BUILDDIR)/docx/ra.docx"
-pdf: pdfdir index
-	cat index.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/traceability.pdf"
-	cat sr.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/sr.pdf"
-	cat dd.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/dd.pdf"
-	cat tp.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g'  | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/tp.pdf"
-	cat rstdoc.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g'  | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/rstdoc.pdf"
-	stpl ra.rest.stpl ra.rest
-	cat ra.rest _links_pdf.rst | sed -e's/^.. include:: _links_sphinx.rst//g' | pandoc -f rst --pdf-engine xelatex --number-sections -V papersize=a4 -V toc -V toc-depth=3 -V geometry:margin=2.5cm -o "$(BUILDDIR)/pdf/ra.pdf"
+#http://www.sphinx-doc.org/en/stable/usage/builders/
+html dirhtml singlehtml htmlhelp qthelp applehelp devhelp epub latex text man texinfo pickle json xml pseudoxml: Makefile index stpl imgs
+	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
+docx:  docxdir index stpl imgs $(DOCXS)
+$(BLDDIR)/docx/%.docx:$(SRCDIR)/%.rest
+	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py "$(<F)" "../../$@"
+pdf: pdfdir index stpl imgs $(PDFS)
+$(BLDDIR)/pdf/%.pdf:$(SRCDIR)/%.rest
+	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py "$(<F)" "../../$@"

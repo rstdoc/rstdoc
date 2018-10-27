@@ -327,13 +327,10 @@ def get_bounds(lines, row, col):
 
 def reformat_table(
         lines  # list of strings
-        ,
-        row=0  # of cursor position,
-        ,
-        col=0  # ... as only the lines delimited by an empty line are used
-        ,
-        withheader=0  # user the first line as table header
-):
+        ,row=0  # of cursor position,
+        ,col=0  # ... as only the lines delimited by an empty line are used
+        ,withheader=0  # user the first line as table header
+    ):
     ''' 
     Create or reformat a grid table in lines.
     The table is delimited by emtpy lines starting from (row,col).
@@ -349,8 +346,7 @@ def reformat_table(
 
 def create_rst_table(
         data  # list of list of data
-        ,
-        withheader=0):
+        ,withheader=0):
     '''
     Create a rst table from data
 
@@ -368,11 +364,9 @@ def create_rst_table(
 
 def reflow_table(
         lines  # list of strings
-        ,
-        row=0  # of cursor position,
-        ,
-        col=0  # ... as only the lines delimited by an empty line are considered
-):
+        ,row=0  # of cursor position,
+        ,col=0  # ... as only the lines delimited by an empty line are considered
+    ):
     '''
     Adapt an existing table to the widths of the first line.
     The table is delimited by emtpy lines starting from (row,col).
@@ -394,13 +388,10 @@ def reflow_table(
 
 def re_title(
         lines  # list of lines
-        ,
-        row=0  # of cursor position,
-        ,
-        col=0  # ... as only the lines delimited by an empty line are considered
-        ,
-        down=0  # >0down, <0up
-):
+        ,row=0  # of cursor position,
+        ,col=0  # ... as only the lines delimited by an empty line are considered
+        ,down=0  # >0down, <0up
+    ):
     '''
     Adjust the under- or overline of a title.
 

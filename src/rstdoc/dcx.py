@@ -689,10 +689,9 @@ def _nstr(x):
 
 
 def cmd(
-        cmdlist  # command as list
-        ,
-        **kwargs  # arguments forwarded to subprocess.run()
-):
+        cmdlist    # command as list
+        ,**kwargs  # arguments forwarded to ``subprocess.run()``
+    ):
     '''
     Runs ``cmdlist`` via subprocess.run and return stdout.
     In case of problems RstDocError is raised.
@@ -830,6 +829,9 @@ def mkdtemp():
     '''
     Make temporary directory and register it to be removed with ``atexit``.
 
+    This can be used inside a ``.stpl`` file to create images from inlined images source,
+    place them in temporary file, and include them in the final ``.docx`` or ``.odt``.
+
     '''
 
     atmpdir = tempfile.mkdtemp()
@@ -899,10 +901,8 @@ def readin(f):
 
 
 def run_inkscape(
-        infile  # .svg, .eps, .pdf filename string or list with actual .eps or .svg data
-        ,
-        outfile  # .png file name
-        ,
+        infile,  # .svg, .eps, .pdf filename string (for list with actual .eps or .svg data use |svgpng| or |epspng|)
+        outfile,  # .png file name
         dpi=DPI):
     '''
     Uses ``inkscape`` commandline to convert to ``.png``
@@ -919,12 +919,9 @@ def run_inkscape(
 
 @infilecwd
 def rst_sphinx(
-        infile  # .txt, .rst, .rest filename (normally index.rest)
-        ,
-        outfile  # the path to the target file (not target directory)
-        ,
-        outtype=None  # html,... or any other sphinx writer
-        ,
+        infile,  # .txt, .rst, .rest filename (normally index.rest)
+        outfile,  # the path to the target file (not target directory)
+        outtype=None,  # html,... or any other sphinx writer
         **config  # keys from config_defaults
 ):
     '''
@@ -1082,6 +1079,7 @@ def PageBreakHack(destination_path):
     According to C066363e.pdf it should work.
 
     See ``utility.rst.tpl`` in the ``--stpl`` samples.
+
     '''
 
     from zipfile import ZipFile
@@ -1114,12 +1112,9 @@ def PageBreakHack(destination_path):
 
 @infilecwd
 def rst_pandoc(
-        infile  # .txt, .rst, .rest filename
-        ,
-        outfile  # the path to the target document
-        ,
-        outtype  # html,...
-        ,
+        infile,  # .txt, .rst, .rest filename
+        outfile,  # the path to the target document
+        outtype,  # html,...
         **config  # keys from config_defaults
 ):
     '''
@@ -1155,12 +1150,9 @@ def rst_pandoc(
 
 @infilecwd
 def rst_rst2(
-        infile  # .txt, .rst, .rest filename
-        ,
-        outfile  # the path to the target document
-        ,
-        outtype  # html,...
-        ,
+        infile,  # .txt, .rst, .rest filename
+        outfile,  # the path to the target document
+        outtype,  # html,...
         **config  # keys from config_defaults
 ):
     '''
@@ -1204,12 +1196,9 @@ rst_tools = {'pandoc': rst_pandoc, 'sphinx': rst_sphinx, 'rst': rst_rst2}
 @normoutfile
 @readin
 def svgpng(
-        infile  # a .svg file name or list of lines
-        ,
-        outfile=None  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``.``
-        ,
-        *args  # needed by decorators
-        ,
+        infile,  # a .svg file name or list of lines
+        outfile=None,  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``.``
+        *args,  # needed by decorators
         **kwargs):
     '''
     Converts a .svg file to a png file.
@@ -1226,12 +1215,9 @@ def svgpng(
 @partial(intmpiflist, suffix='.tex')
 @infilecwd
 def texpng(
-        # a .tex file name or list of lines (provide outfile in the latter case)
-        # if not provided, the input file with .png either in ``./_images`` or ``../_images`` or ``.``
-        infile,
-        outfile=None,
-        *args  # needed by decorators
-        ,
+        infile,# a .tex file name or list of lines (provide outfile in the latter case)
+        outfile=None, # if not provided, the input file with .png either in ``./_images`` or ``../_images`` or ``.``
+        *args,  # needed by decorators
         **kwargs):
     '''
     Latex has several graphic packages, like
@@ -1280,6 +1266,8 @@ def _tikzwrap(f):
 
 '''
 Converts a .tikz file to a png file.
+
+See |texpng|.
 '''
 tikzpng = normoutfile(readin(_tikzwrap(_texwrap(texpng))))
 
@@ -1288,12 +1276,9 @@ tikzpng = normoutfile(readin(_tikzwrap(_texwrap(texpng))))
 @partial(intmpiflist, suffix='.dot')
 @infilecwd
 def dotpng(
-        # a .dot file name or list of lines (provide outfile in the latter case)
-        infile,
-        outfile=None  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
-        ,
-        *args  # needed by decorators
-        ,
+        infile, # a .dot file name or list of lines (provide outfile in the latter case)
+        outfile=None,  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+        *args,  # internal usage
         **kwargs):
     '''
     Converts a .dot file to a png file.
@@ -1307,12 +1292,9 @@ def dotpng(
 @partial(intmpiflist, suffix='.uml')
 @infilecwd
 def umlpng(
-        # a .uml file name or list of lines (provide outfile in the latter case)
-        infile,
-        outfile=None  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
-        ,
-        *args  # needed by decorators
-        ,
+        infile, # a .uml file name or list of lines (provide outfile in the latter case)
+        outfile=None,  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+        *args,  # internal usage
         **kwargs):
     '''
     Converts a .uml file to a png file.
@@ -1328,12 +1310,9 @@ def umlpng(
 @partial(intmpiflist, suffix='.eps')
 @infilecwd
 def epspng(
-        # a .eps file name or list of lines (provide outfile in the latter case)
-        infile,
-        outfile=None  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
-        ,
-        *args  # needed by decorators
-        ,
+        infile, # a .eps file name or list of lines (provide outfile in the latter case)
+        outfile=None,  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+        *args,  # internal usage
         **kwargs):
     '''
     Converts an .eps file to a png file using inkscape.
@@ -1348,12 +1327,9 @@ def epspng(
 @infilecwd
 @readin
 def pygpng(
-        # a .pyg file name or list of lines (provide outfile in the latter case)
-        infile,
-        outfile=None  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
-        ,
-        *args  # needed by decorators
-        ,
+        infile, # a .pyg file name or list of lines (provide outfile in the latter case)
+        outfile=None,  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+        *args,  # internal usage
         **kwargs):
     '''
     Converts a .pyg file to a png file.
@@ -1420,12 +1396,9 @@ def pygpng(
 
 @infilecwd
 def dostpl(
-        infile  # a .stpl file name or list of lines
-        ,
-        outfile=None  # if not provided the expanded is returned
-        ,
-        lookup=None  # lookup paths must be relative to infile
-        ,
+        infile,  # a .stpl file name or list of lines
+        outfile=None,  # if not provided the expanded is returned
+        lookup=None,  # lookup paths must be relative to infile
         **kwargs):
     '''
     Expands an `.stpl <https://bottlepy.org/docs/dev/stpl.html>`__ file.
@@ -1436,6 +1409,10 @@ def dostpl(
 
     The whole ``rstdoc.dcx`` namespace is forwarded to the template code.
 
+    ``.stpl`` provides full python power:
+
+    - e.g. one can create temporary images which are then included in the final .docx of .odt
+      See |mkdtemp|.
 
     '''
     
@@ -1470,22 +1447,31 @@ def dostpl(
         else:
             return st.replace('\r\n', '\n').splitlines(keepends=True)
 
+def dorstlines(
+    infile  # a .rest, .rst, .txt file name or list of lines
+    ):
+    '''
+    This calls |dorst|, but gives the lines back, instead of writing them to stdout or a file.
+
+    '''
+
+    tmpio = io.StringIO()
+    dorst(infile,tmpio)
+    tmpio.seek(0)
+    return tmpio.readlines()
 
 def dorst(
         infile  # a .rest, .rst, .txt file name or list of lines
-        ,
-        outfile=None  # None and '-' mean standard out
+        ,outfile=None  # None and '-' mean standard out. Can be io.StringIO().
         # for .rest |xxx| substitutions for reST link targets in infile are appended if no ``_links_sphinx.rst`` there
-        ,
-        outinfo=None  # specifies the tool to use
+        ,outinfo=None  # specifies the tool to use
         # 'html', 'docx', 'odt',... via pandoc if output
         # 'sphinx_html',... via sphinx
         # 'rst_html',... via rst2xxx frontend tools
         # '[infile/][substitution.]docx[.]' substitutions stands for the file used in substitutions if no ``_links_sphinx.rst``
         # The infile is used, if the actual infile are lines. The final dot tells to stop after substitutions.
-        # (fn,i,ln) of the .stpl with all stpl includes sequenced (used by convert())
-        ,
-        fn_i_ln=None):
+        ,fn_i_ln=None # (fn,i,ln) of the .stpl with all stpl includes sequenced (used by convert())
+        ):
     '''
     Default interpreted text role is set to math.
     The link lines are added to a .rest file.
@@ -1567,25 +1553,34 @@ def dorst(
                     pass
                 sysout = sys.stdout
         else:
-            _, ofext = stem_ext(outfile)
-            ofext = ofext.strip('.')
-            if not outinfo:  # x.rst a/b/c.docx
-                outinfo = ofext
-            elif outinfo in rst_tools:  # x.rst a/b/c.docx pandoc
-                rsttool = rst_tools[outinfo]
-                outinfo = ofext
-        if outinfo.endswith('.'):  # x.rest - docx.
-            rsttool = None  # ... will output the rest code with links for docx
-        # drop file info from outinfo
-        outinfo = outinfo.strip('.')
-        t, outinfo = stem_ext(outinfo)
-        if not outinfo:
-            outinfo = t
-        outinfo = outinfo.strip('.')
+            try:
+                _, ofext = stem_ext(outfile)
+                ofext = ofext.strip('.')
+                if not outinfo:  # x.rst a/b/c.docx
+                    outinfo = ofext
+                elif outinfo in rst_tools:  # x.rst a/b/c.docx pandoc
+                    rsttool = rst_tools[outinfo]
+                    outinfo = ofext
+            except:
+                rsttool = None
+        try:
+            if outinfo.endswith('.'):  # x.rest - docx.
+                rsttool = None  # ... will output the rest code with links for docx
+            # drop file info from outinfo
+            outinfo = outinfo.strip('.')
+            t, outinfo = stem_ext(outinfo)
+            if not outinfo:
+                outinfo = t
+            outinfo = outinfo.strip('.')
+        except:
+            outinfo = 'rest'
         if _is_rest_type(outinfo):
             rsttool = None  # no further processing wanted, sysout is final
         if not rsttool and not sysout:
-            sysout = opnwrite(outfile)
+            try:
+                sysout = opnwrite(outfile)
+            except:
+                sysout = outfile #outfile can be a file object like io.StringIO
         tmprestindir = None
 
         if rsttool != rst_sphinx:  # sphinx can read substitutions from included files
@@ -1613,7 +1608,10 @@ def dorst(
                         sysout.write(x)
                 if not links_done:
                     sysout.write('\n')
-                    filenoext = stem(outfile)
+                    try:
+                        filenoext = stem(outfile)
+                    except:
+                        filenoext = None
                     for tgt in RstFile.make_tgts(filelines, infile,
                                                  make_counters(), fn_i_ln):
                         sysout.write(
@@ -1632,7 +1630,7 @@ def dorst(
                 finalsysout.write(stdout)
     finally:
         for x in [sysout, finalsysout]:
-            if x is not None and x != sys.stdout:
+            if x is not None and x != sys.stdout and not isinstance(tmpio,io.StringIO):
                 x.close()
 
 
@@ -1653,12 +1651,10 @@ graphic_extensions = {_svg, _tikz, _tex, _dot, _uml, _eps, _pyg}
 
 
 def convert(
-        infile  # any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else stpl is assumed
-        # '-' means standard out, else a file name, or None for automatic (using outinfo)
-        # 'html', 'sphinx_html', 'docx', 'odt', 'file.docx',... interpet input as rest, else specifies graph type
-        ,
-        outfile=None,
-        outinfo=None):
+        infile        # any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else stpl is assumed 
+        ,outfile=None # '-' means standard out, else a file name, or None for automatic (using outinfo)
+        ,outinfo=None # 'html', 'sphinx_html', 'docx', 'odt', 'file.docx',... interpet input as rest, else specifies graph type
+        ):
     '''
     Converts the known files.
 
@@ -1762,9 +1758,8 @@ def convert(
 
 
 def rindices(
-        r  # regular expression string or compiled
-        ,
-        lns  # lines
+        r    # regular expression string or compiled
+        ,lns # lines
 ):
     r'''
     Return the indices matching the regular expression ``r``.
@@ -1785,9 +1780,8 @@ def rindices(
 
 
 def rlines(
-        r  # regular expression string or compiled
-        ,
-        lns  # lines
+        r    # regular expression string or compiled
+        ,lns # lines
 ):
     '''
     Return the lines matched by ``r``.
@@ -1835,17 +1829,12 @@ def in2s(nms  # list of indices
 
 def doc_parts(
         lns  # list of lines
-        ,
-        relim=r"^\s*'''([\w.:]*)\s*\n*$"  # regular expression marking lines enclosing the documentation. The group is a prefix.
-        ,
-        reid=r"\s(\w+)[(:]|(\w+)\s\="  # extract id from preceding or succeeding non-empty lines
-        ,
-        reindent=r'[^#/\s]'  # determines start of text
-        # if signature language is given the preceding or succeeding lines will be included
-        # prefix to make id unique, e.g. module name. Include the dot.
-        ,
-        signature=None,
-        prefix=''):
+        ,relim=r"^\s*'''([\w.:]*)\s*\n*$"  # regular expression marking lines enclosing the documentation. The group is a prefix.
+        ,reid=r"\s(\w+)[(:]|(\w+)\s\="  # extract id from preceding or succeeding non-empty lines
+        ,reindent=r'[^#/\s]'  # determines start of text
+        ,signature=None # if signature language is given the preceding or succeeding lines will be included
+        ,prefix=''      # prefix to make id unique, e.g. module name. Include the dot.
+    ):
     '''
     ``doc_parts()`` yields doc parts delimeted by ``relim`` regular expression
     possibly with id, if ``reid`` matches 
@@ -1969,13 +1958,10 @@ def _read_lines(fn):
 @_memoized
 def rstincluded(
         fn  # file name without path
-        ,
-        paths=()  # paths where to look for fn
-        ,
-        withimg=False  # also yield image files, not just other rst files
-        ,
-        withrest=False  # rest files are not supposed to be included
-):
+        ,paths=()  # paths where to look for fn
+        ,withimg=False  # also yield image files, not just other rst files
+        ,withrest=False  # rest files are not supposed to be included
+    ):
     '''
     Yield the files recursively included from an RST file.
 
@@ -2158,11 +2144,9 @@ class Traceability:
 
 def pair(
         alist  # first list
-        ,
-        blist  # second list longer or equal to alist
-        ,
-        cmp  # compare function
-):
+        ,blist  # second list longer or equal to alist
+        ,cmp  # compare function
+    ):
     ''' 
     pair two sorted lists where the second must be at least as long as the first
 
@@ -2204,12 +2188,9 @@ def pair(
 
 def gen(
         source  # either a list of lines of a path to the source code
-        ,
-        target=None  # either save to this file or return the generated documentation
-        ,
-        fun=None  # use ``#gen_<fun>(lns,**kw):`` to extract the documtenation
-        ,
-        **kw  # kw arguments to the gen_<fun>() function
+        ,target=None  # either save to this file or return the generated documentation
+        ,fun=None  # use ``#gen_<fun>(lns,**kw):`` to extract the documtenation
+        ,**kw  # kw arguments to the gen_<fun>() function
 ):
     r''' 
     Take the ``gen_[fun]`` functions enclosed by ``#def gen_[fun](lns,**kw)`` to create a new file.
@@ -2277,6 +2258,7 @@ def parsegenfile(genpth  # path to gen file
     ``suffix`` refers to ``gen_<suffix>``.
 
     The yields are used for the |dcx.gen| function.
+
     '''
 
     try:
@@ -2333,10 +2315,9 @@ class Tgt:
     line_search_range = 8
 
     def __init__(
-            self,
-            lnidx  # line index
-            ,
-            target  # target name
+            self
+            ,lnidx  # line index
+            ,target  # target name
     ):
         self.lnidx = lnidx
         self.target = target
@@ -2363,7 +2344,21 @@ class Tgt:
         except:
             pass
 
-    def find_lnkname(self, lns, counters):
+    def find_lnkname(self, 
+        lns, #the rest linese
+        counters #the counters for the directives (see make_counters())
+        ):
+        """Tgt.
+
+        Determines the link name for this target.
+        It searches the following lines for either
+
+        - a title
+        - ``:name:`` immediately below a directive (a counter is used if no name is given)
+        - a ``:xxx:`` or ``xxx:`` or
+        - a single word ``xxx``
+
+        """
         lenlns = len(lns)
         lnkname = self.target
         for j in range(self.lnidx + 2, self.lnidx + self.line_search_range):
@@ -2405,7 +2400,20 @@ class Tgt:
             lnkname = self.target
         self.lnkname = lnkname
 
-    def create_link(self, linktype, reststem):
+    def create_link(self, 
+        linktype, # file extension: one of rest, html, docx, odt, latex, pdf
+        reststem  # the file name without extension (not used for linktype='sphinx' or 'rest')
+        ):
+        """Tgt.
+
+        Creates a link. 
+        If bouth linktype and reststem are empty, then this is an internal link.
+
+        """
+        if reststem and linktype:
+            targetfile = reststem + '.' + linktype
+        else:
+            targetfile = ''
         if linktype == 'latex':
             linktype = 'pdf'
         if linktype == 'sphinx':
@@ -2414,10 +2422,10 @@ class Tgt:
         elif linktype == 'odt':
             # https://github.com/jgm/pandoc/issues/3524
             tgte = ".. |{0}| replace:: `{1} <../{2}#{0}>`__\n".format(
-                self.target, self.lnkname, reststem + '.' + linktype)
+                self.target, self.lnkname, targetfile)
         else:
             tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`__\n".format(
-                self.target, self.lnkname, reststem + '.' + linktype)
+                self.target, self.lnkname, targetfile)
         return tgte
 
     def create_tag(self):
@@ -2426,25 +2434,19 @@ class Tgt:
 
 
 class RstFile:
-    '''
-    Represents an .rst or .rest file.
-
-    :reststem: ``.rest`` file this ``.rst`` belongs to (without extension)
-    :doc:  doc of this doc included by that rest file
-    :nlns: number of lines of the doc
-    :lnks: list of (line index, target name (``|target|``)) tuples
-    :tgts: list of Tgt objects yielded by |make_tgts|.
-
-    '''
-
     def __init__(
             self,
-            reststem  # .rest file this .rst belongs to (without extension)
-            ,
-            doc,
-            tgts,
-            lnks,
-            nlns):
+            reststem,  # .rest file this doc belongs to (without extension)
+            doc, # doc belonging to reststem, either included or itself (.rest, .rst, .stpl)
+            tgts, # list of Tgt objects yielded by |make_tgts|.
+            lnks, # list of (line index, target name (``|target|``)) tuples
+            nlns # number of lines of the doc
+            ):
+        '''
+        Contains the targets for a ``.rst`` or ``.rest`` file.
+
+        '''
+
         self.reststem = reststem
         self.doc = doc
         self.tgts = tgts
@@ -2475,10 +2477,11 @@ class RstFile:
     @staticmethod
     def make_lnks(lns  # lines of the document
                   ):
-        '''
-        Yields (index, link name) for ``lns``
+        """RestFile.
 
-        '''
+        Yields (index, link name) for ``lns``.
+
+        """
 
         for i, ln in enumerate(lns):
             mo = rexlnks.findall(ln)
@@ -2488,18 +2491,16 @@ class RstFile:
     @staticmethod
     def make_tgts(
             lns  # lines of the document
-            ,
-            doc  # the rst document
-            # if None, the starts with {".. figure":1,".. math":1,".. table":1,".. code":1}
-            # (fn,i,ln) of the .stpl with all stpl includes sequenced
-            ,
-            counters=None,
-            fn_i_ln=None):
-        '''
+            ,doc  # the rst document
+            ,counters=None # if None, the starts with {".. figure":1,".. math":1,".. table":1,".. code":1}
+            ,fn_i_ln=None  # (fn,i,ln) of the .stpl with all stpl includes sequenced
+        ):
+        """RstFile.
+
         Yields ``((line index, tag address), target, link name)`` of ``lns`` of a restructureText file.
         For a .stpl file the linkname comes from the generated .rest file.
 
-        '''
+        """
 
         if counters == None:
             counters = make_counters()
@@ -2540,16 +2541,17 @@ class RstFile:
     @staticmethod
     def substs(lns  # lines of the rst document
                ):
-        '''
+        """RestFile.
+
         Return all substitution targets in the rst lns
 
-        >>> list(substs("""
+        >>> list(substs('''
         ...   .. |sub| image:: xx
         ...   .. |s-b| date::
-        ...   """.splitlines()))
+        ...   '''.splitlines()))
         ['sub', 's-b']
 
-        '''
+        """
 
         for i, ln in enumerate(lns):
             asub = rexsubtgt.search(ln)
@@ -2558,28 +2560,28 @@ class RstFile:
 
 
 class Fldr(OrderedDict):
-    '''
-    Represents a directory.
-
-    It is an ordered list of {rst file: RstFile object}.
-
-    :folder: is the directory path
-    :allfiles: set of all files in the directory
-    :alltgts: set of all targets in the directory
-    :allsubsts: set of all substitutions in the directory
-
-    '''
-
     def __init__(
             self,
             folder  # as returned by ``os.walk()``
-    ):
+        ):
+        """
+        Represents a directory.
+
+        It is an ordered list of {rst file: RstFile object}.
+
+        :self.folder: is the directory path
+        :self.allfiles: set of all files in the directory
+        :self.alltgts: set of all targets in the directory
+        :self.allsubsts: set of all substitutions in the directory
+        :self.counters: the counters for each rest file
+
+        """
 
         self.folder = folder
         self.allfiles = set()
         self.alltgts = set()
         self.allsubsts = set()
-        self.counters = defaultdict(dict)
+        self.rest_counters = defaultdict(dict)
 
     def __str__(self):
         return str(list(sorted(self.keys())))
@@ -2587,8 +2589,9 @@ class Fldr(OrderedDict):
     def scan(
             self,
             fs  # all files in the directory as returned by ``os.walk()``
-    ):
-        '''
+        ):
+        """Fldr.
+
         Scans the directory for rest files.
         All files (.rest and included .rst) are added.
 
@@ -2596,7 +2599,7 @@ class Fldr(OrderedDict):
 
         ``allfiles``, ``alltgts`` and ``allsubsts`` get filled.
 
-        '''
+        """
 
         sofar = set([])
         sphinx_index = None
@@ -2619,6 +2622,11 @@ class Fldr(OrderedDict):
                  restfile,
                  fullpth,
                  exclude_paths_substrings=['_links_', _traceability_file]):
+        """Fldr. 
+
+        Scans a rest file for included files and constructs all the targets.
+
+        """
 
         pths = []
         has_traceability = False
@@ -2635,9 +2643,9 @@ class Fldr(OrderedDict):
 
         reststem = pths[0]
         reststem = stem(stem(reststem))
-        if reststem not in self.counters:
-            self.counters[reststem] = make_counters()
-        counters = self.counters[reststem]
+        if reststem not in self.rest_counters:
+            self.rest_counters[reststem] = make_counters()
+        counters = self.rest_counters[reststem]
         if has_traceability:
             _traceability_instance.counters = counters
 
@@ -2662,14 +2670,15 @@ class Fldr(OrderedDict):
             self.allsubsts |= set(RstFile.substs(lns))
 
     def create_links_and_tags(self, scanroot):
-        '''
+        """Fldrs.
+
         Creates links_xxx.rst and .tags files for a directory at scanroot/directory
 
         The target IDs are grouped. To every group a color is associated. See ``conf.py``.
         This is used to color an FCA lattice diagram in "_traceability_file.rst".
         The diagram nodes are clickable in HTML.
 
-        '''
+        """
 
         tagentries = []
         upcnt = 0
@@ -2758,18 +2767,18 @@ class Fldr(OrderedDict):
 
 
 class Fldrs(OrderedDict):
-    '''
-    Represents a directory hierarchy below ``scanroot``.
-    The paths are relative to ``scanroot``.
-
-    It is a dict ordere by insertion of {directory: Fldr objects}
-
-    '''
-
     def __init__(
             self,
             scanroot='.'  # root path to start scanning for independent doc directories
-    ):
+        ):
+        """
+        Represents a directory hierarchy below ``scanroot``.
+        The paths are relative to ``scanroot``.
+
+        It is a dict ordere by insertion of {directory: Fldr objects}
+
+        """
+
         self.scanroot = scanroot
 
     def __str__(self):
@@ -3248,6 +3257,7 @@ example_tree = r'''
             SPHINXPROJ  = sample
             SRCDIR      = ./doc
             SRCBACK     = ../
+            DCXPATH     = ../
             BLDDIR      = ../build/doc
             STPLS       = $(wildcard $(SRCDIR)/*.stpl)
             STPLTGTS    = $(STPLS:%.stpl=%)
@@ -3287,17 +3297,17 @@ example_tree = r'''
             	@cd $(SRCDIR) && stpl "$(<F)" "$(@F)"
             imgs: $(PNGS)
             $(SRCDIR)/_images/%.png:$(SRCDIR)/%.pyg
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
+            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
             $(SRCDIR)/_images/%.png:$(SRCDIR)/%.eps
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
+            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
             $(SRCDIR)/_images/%.png:$(SRCDIR)/%.tikz
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
+            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
             $(SRCDIR)/_images/%.png:$(SRCDIR)/%.svg
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
+            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
             $(SRCDIR)/_images/%.png:$(SRCDIR)/%.uml
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
+            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
             $(SRCDIR)/_images/%.png:$(SRCDIR)/%.dot
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py $(<F)
+            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
             docxdir: ${BLDDIR}/docx
             pdfdir: ${BLDDIR}/pdf
             MKDIR_P = mkdir -p
@@ -3316,10 +3326,10 @@ example_tree = r'''
             	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
             docx:  docxdir index stpl imgs $(DOCXS)
             $(BLDDIR)/docx/%.docx:$(SRCDIR)/%.rest
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" "$(SRCBACK)/$@"
+            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py "$(<F)" "$(SRCBACK)/$@"
             pdf: pdfdir index stpl imgs $(PDFS)
             $(BLDDIR)/pdf/%.pdf:$(SRCDIR)/%.rest
-            	@cd $(SRCDIR) && python $(SRCBACK)/dcx.py "$(<F)" "$(SRCBACK)/$@"
+            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py "$(<F)" "$(SRCBACK)/$@"
         ├ code
             └ some.h
                 /*
@@ -4351,15 +4361,11 @@ def mktree(tree  # tree string as list of lines
 
 def tree(
         path  # path of which to create the tree string
-        ,
-        with_content=False  # use this only if all the files are text
-        ,
-        with_files=True  # else only directories are listed
-        ,
-        with_dot_files=True  # also include files starting with .
-        ,
-        max_depth=100  # max directory depth to list
-):
+        ,with_content=False  # use this only if all the files are text
+        ,with_files=True  # else only directories are listed
+        ,with_dot_files=True  # also include files starting with .
+        ,max_depth=100  # max directory depth to list
+    ):
     '''
     Inverse of mktree.
     Like the linux tree tool, but optionally with content of files
@@ -4400,9 +4406,8 @@ def tree(
 
 def initroot(
         rootfldr  # directory name that becomes root of the sample tree
-        ,
-        sampletype  # either 'stpl' for the templated sample tree, or 'rest'
-):
+        ,sampletype  # either 'stpl' for the templated sample tree, or 'rest'
+    ):
     '''
     Creates a sample tree in the file system 
     based on the ``example_tree`` and the ``example_stp_subtree`` in dcx.py.

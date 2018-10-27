@@ -70,9 +70,8 @@ imgdecl = re.compile(r'\|(\w[^|\\ ]*(?: \\\|)?[^|]*\w)\| image:: (\w.*)')
 
 def reimg(
         data  # rst file read by f.read()
-        ,
-        prefix  # string prefix for images, should be derived from docx file name
-):
+        ,prefix  # string prefix for images, should be derived from docx file name
+    ):
     '''
     This renames all the images in the rst file converted from docx, to avoid
 

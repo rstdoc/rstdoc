@@ -1,7 +1,5 @@
 .. vi: syntax=rst
 
-%globals().update(include('utility.rst.tpl'))
-
 .. _`rwx`:
 
 =============
@@ -25,8 +23,6 @@ Specifically this file's original is a template file
 that integrates automatic generation of some of its parts.
 
 Only a part of |or1| documentation deals with the provided python code.
-
-%pagebreak()
 
 Qualitative Analysis
 ====================
@@ -368,8 +364,6 @@ Such *templates* allow
 - to generate text from data. 
 
 Text files can easily be generated from templates files.
-
-%pagebreak()
 
 Quantitative Analysis
 =====================

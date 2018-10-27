@@ -61,15 +61,11 @@ _no = None
 
 def paragraph23(
         row  # list of strings representing the row
-        ,
-        nColumns  # number of columns in the table
-        ,
-        org  # orginal text
-        ,
-        islast  # this call is with the last table entry
-        ,
-        withheader  # the table has a header line
-):
+        ,nColumns  # number of columns in the table
+        ,org  # orginal text
+        ,islast  # this call is with the last table entry
+        ,withheader  # the table has a header line
+    ):
     '''
     For process_row parameter of ``untable``. 
 
@@ -147,9 +143,8 @@ def refindE(res, ln):
 
 def untable(
         lns  # list of strings
-        ,
-        process_row=paragraph23  # called for each row to transform to paragraph
-):
+        ,process_row=paragraph23  # called for each row to transform to paragraph
+    ):
     '''
     Transform a RST list-table to normal paragraphs.
     The table is supposed to have this format:

@@ -19,7 +19,7 @@
 
 import sys
 import os
-sys.path = ['..','test/mocks','mocks'] + sys.path
+sys.path = ['..','src','src/test/mocks','test/mocks','mocks'] + sys.path
 import pytest
 import glob
 import re
@@ -114,6 +114,11 @@ def test_lnkname(lnsres):
     assert next((x.target,x.lnkname) for x in tgts)==res
 
 def test_dcx_regex():
+    '''
+    Test the regular expressions used in dcx.py.
+
+    '''
+
     assert list(rexlnks.findall('|xx| A `|lnk|` here |gos11|\n')) == ['xx', 'gos11']
     assert list(rexlnks.findall('  | |xeps1| | |xeps|  |')) == ['xeps1', 'xeps']
     assert list(rexlnks.findall('     |dd_figure|: Caption here.')) == ['dd_figure']
@@ -176,6 +181,11 @@ def rstinit(request,tmpworkdir):
     os.chdir(oldd)
 
 def test_rstincluded(rstinit):
+    '''
+    Tests |dcx.rstincluded|.
+
+    '''
+
     if 'tmp_stpl' in rstinit:
         assert list(rstincluded('ra.rest.stpl',(r'./doc',))) == [
                 'ra.rest.stpl', '_links_sphinx.rst']
@@ -198,6 +208,11 @@ def test_rstincluded(rstinit):
                 'tp.rest', '_sometst.rst', '_links_sphinx.rst']
 
 def test_init(rstinit):
+    '''
+    Tests the initialization of a sample directory tree with the ``--stpl tmp`` or ``--rest tmp`` options.
+
+    '''
+
     if 'tmp_stpl' in rstinit:
         assert tree('.')=="""\
 ├─code
@@ -279,6 +294,11 @@ def test_init(rstinit):
 └─wscript"""
 
 def test_dcx_alone_samples(rstinit,capfd):
+    '''
+    Tests calling ``rstdcx``/``dcx.py`` without parameters.
+
+    '''
+
     r=run(['python','dcx.py','--verbose'])
     assert r.returncode == 0
     out, err = capfd.readouterr()
@@ -348,7 +368,13 @@ run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-
 ,('stpl dd.rest.stpl | rstdcx - - dd.html.',['default-role:: math',r'<dd.html#'])
 ,('stpl dd.rest.stpl | rstdcx - - dd.html',["DOCTYPE html",'ref="dd.html#'])
 ])
+
 def test_dcx_in_out(rstinit,cmd_result):
+    '''
+    Tests calling ``rstdcx``/``dcx.py`` with in-file or standard in to standard out.
+
+    '''
+
     cmd,result = cmd_result
     os.chdir('doc')
     if not os.path.exists(cmd.split()[1]):
@@ -388,6 +414,10 @@ def test_dcx_in_out(rstinit,cmd_result):
 ,(['eguml.uml','eguml.png'],['eguml.png'],['_images/eguml.png'])
 ])
 def test_dcx_out_file(rstinit,cmd_exists_not_exists):
+    '''
+    Tests calling ``rstdcx``/``dcx.py`` with in-file and out-file and out type parameter.
+
+    '''
     cmd,result,notexists = cmd_exists_not_exists
     tcmd = []
     tcmd.extend(cmd)
@@ -418,6 +448,11 @@ def makebuild(request,rstinit):
 tree3 = lambda x: tree(x,with_dot_files=False,max_depth=3)
 
 def test_make_samples(makebuild):
+    '''
+    Tests building the samples with Makefile
+
+    '''
+
     dir,target = makebuild
     if 'tmp_rest' in dir:
         expected_no_html="""\
@@ -518,13 +553,10 @@ def wafbuild(request,rstinit):
 
 def test_waf_samples(wafbuild):
     '''
-    Run Waf on the sample project.
-    Waf needs to be installed 
+    Tests running Waf on the sample projects.
     
-    - either in the system or 
-    - added manually to the root folder of the project
-
     '''
+
     is_stpl = 'tmp_stpl' in os.getcwd()
     target=wafbuild[1]
     expected_non_sphinx="""\
@@ -616,14 +648,30 @@ def test_waf_samples(wafbuild):
             assert expected.find(x.strip('└─├ '))>=0
 
 def test_selfdoc():
-    selfdoc_accoridng_doc_gen=os.path.join('doc','_dcx_api.rst')
+    '''
+    Tests creation of documentation from the source file using |dcx.docparts| and the |dcx.gen| file.
+
+    '''
+
+    selfdoc_accoridng_doc_gen=os.path.join('rstdoc','doc','_dcx_api.rst')
     try:
         os.remove(selfdoc_accoridng_doc_gen)
     except: pass
     main(verbose=True)
     assert os.path.exists(selfdoc_accoridng_doc_gen)
+    assert os.path.exists(os.path.join('rstdoc','doc','ra.rest'))
+    with new_cwd('rstdoc/doc'):
+        run('make','html')
+    assert os.path.exists(os.path.join('build','doc','html'))
+    assert os.path.exists(os.path.join('build','doc','html','index.html'))
+    assert os.path.exists(os.path.join('build','doc','html','ra.html'))
 
 def test_docparts_after():
+    '''
+    Tests |dcx.docparts| with different parameters for documentation extraction.
+
+    '''
+
     res = list(doc_parts(['/// \\brief\n',"/// afun's description\n","//\n"
         ,'void afun(\n','int x //int variable\n',')\n','\n'],
         signature='cpp',relim=r'\\brief|//$',reid=r'\s(\w\+)\('))

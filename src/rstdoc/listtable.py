@@ -85,17 +85,12 @@ def _isgridline(line):
 
 def row_to_listtable(
         row  # list of cells for the row
-        ,
-        colwidths  # The widths of the columns
-        ,
-        withheader  # produce :header-rows: 1
-        ,
-        join  # 0,1,2 telling how to combine the lines of a cell
-        ,
-        indent  # indentation of the table
-        ,
-        tableend  # True, if end of table
-):
+        ,colwidths  # The widths of the columns
+        ,withheader  # produce :header-rows: 1
+        ,join  # 0,1,2 telling how to combine the lines of a cell
+        ,indent  # indentation of the table
+        ,tableend  # True, if end of table
+    ):
     '''
     This is the default ``process_row`` parameter of |listtable.gridtable|.
 
@@ -143,11 +138,9 @@ def row_to_listtable(
 
 def gridtable(
         data  # from file.readlines() or str.splitlines(True)
-        ,
-        join='012'  # join column 0 without space, column 1 with space and leave the rest as-is
-        ,
-        process_row=row_to_listtable  # creates a list-table entry for the row
-):
+        ,join='012'  # join column 0 without space, column 1 with space and leave the rest as-is
+        ,process_row=row_to_listtable  # creates a list-table entry for the row
+    ):
     '''
     Convert grid table to list table with same column number throughout.
     See |listtable.row_to_listtable|.

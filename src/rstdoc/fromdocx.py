@@ -57,7 +57,7 @@ RST documentation folder, proceed like this:
 - create a new folder, e.g. ``doc``
 - merge all other folders into that new folder
 
-|fromdocx.docx_rst_5| creates 5 different rst files with different postprocessing.
+``fromdocx.docx_rst_5`` creates 5 different rst files with different postprocessing.
 
 See |rstreflow| for an alternative proceeding.
 """
@@ -305,11 +305,9 @@ def main(
 
 def docx_rst_5(
     docx  # the docx file name
-        ,
-        rename  # the new name to give to the converted files (no extension)
-        ,
-        sentence=True  # split sentences into new lines (reflow)
-):
+    ,rename  # the new name to give to the converted files (no extension)
+    ,sentence=True  # split sentences into new lines (reflow)
+    ):
     '''
     Creates 5 rst files:
 
