@@ -1,5 +1,5 @@
 import sys
-sys.path = ['..','test/mocks','mocks'] + sys.path
+sys.path = ['src/test/mocks'] + sys.path
 import pytest
 from rstdoc.untable import untable
 from rstdoc.retable import retable

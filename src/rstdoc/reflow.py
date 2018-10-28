@@ -191,9 +191,9 @@ def nostrikeout(lns):
 
     '''
     
-    nso = re.compile(r'\[:param STRIKEOUT:[^\]]*\]', re.M | re.I)
-    # lns='''hello [:param STRIKEOUT:Firmware may deactivate the high-voltage circuits in
-    #   ***STOP*** state.] there [:param STRIKEOUT:guy]'''.splitlines(True)
+    nso = re.compile(r'\[STRIKEOUT:[^\]]*\]', re.M | re.I)
+    # lns='''hello [STRIKEOUT:Firmware may deactivate the high-voltage circuits in
+    #   ***STOP*** state.] there [STRIKEOUT:guy]'''.splitlines(True)
     all = ''.join([x + '\n' if not x.endswith('\n') else x for x in lns])
     res = nso.sub('', all)
     yield from res.splitlines()
@@ -208,12 +208,12 @@ def rmextrablankline(lns):
     '''
     
     bc = 0
-    for d in :param lns:
+    for d in lns:
         if not d.strip():
             bc = bc + 1
-        :param else:
+        else:
             bc = 0
-        if bc < :param 3:
+        if bc < 3:
             yield d
 
 
@@ -225,7 +225,7 @@ def no3star(lns):
 
     '''
     
-    for d in :param lns:
+    for d in lns:
         # d='****'
         res = re.sub('\*\*\*\*+', '', d)
         # res='***Hello***'

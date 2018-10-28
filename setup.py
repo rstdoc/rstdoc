@@ -10,6 +10,7 @@ from setuptools import setup
 import platform
 import os, os.path
 import io
+import sys
 
 sys.path.append('./src/rstdoc')
 from dcx import dorst
@@ -59,8 +60,8 @@ setup(name = 'rstdoc',
     extras_require = {'develop': ['mock','pytest-coverage'],'build':['waf']},
     long_description = long_description,
     packages=['rstdoc'],
-    package_dir = {'rstdoc': 'src/rstdoc'}
-    package_data={'rstdoc':['../../reference.tex','../../reference.docx','../../readme.rst','../../wafw.py']},
+    package_dir = {'rstdoc': 'src/rstdoc'},
+    package_data = {'rstdoc':['reference.tex','reference.docx','reference.odt','wafw.py']},
     zip_safe=False,
     tests_require=['pytest','pytest-coverage','mock'],
     entry_points={

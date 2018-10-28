@@ -19,7 +19,7 @@
 
 import sys
 import os
-sys.path = ['..','src','src/test/mocks','test/mocks','mocks'] + sys.path
+sys.path = ['src/test/mocks'] + sys.path
 import pytest
 import glob
 import re

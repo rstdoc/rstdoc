@@ -960,15 +960,15 @@ def rst_sphinx(
         #>>> ls()
         #>>> fakefs.is_setup()
 
-        >>> infile,outfile = ('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
-        >>> rst_sphinx(infile,outfile)
-        run (['sphinx-build', '-b', 'html', '.', 'build/doc/sphinx_html', '-C', ... 'master_doc=index.rest'],) ...
+        >>> infile,outfile = ('index.rest','../../build/doc/sphinx_html/index.html')
+        >>> rst_sphinx(infile,outfile) # doctest: +ELLIPSIS
+        run (['sphinx-build', '-b', 'html', '.', '../../build/doc/sphinx_html', '-C', ... 'master_doc=index'],) ...
 
         >>> rst_sphinx('dd.rest','../../build/doc/sphinx_html/dd.html') # doctest: +ELLIPSIS
-        run (['sphinx-build', '-b', 'singlehtml', ..., '-D', 'master-doc=dd.rest'],) ...
+        run (['sphinx-build', '-b', 'singlehtml', '.', '../../build/doc/sphinx_html', '-C', ..., '-D', 'master_doc=dd'],) ...
 
         >>> rst_sphinx('dd.rest','../../build/doc/sphinx_latex/dd.tex') # doctest: +ELLIPSIS
-        run (['sphinx-build', '-b', 'latex', ..., '-D', 'project=rstdoc', ...],) ...
+        run (['sphinx-build', '-b', 'tex', '.', '../../build/doc/sphinx_latex', '-C', ..., '-D', 'master_doc=dd'],) ...
 
         >>> dry_run(False)
 
@@ -1546,17 +1546,17 @@ def dorst(
         >>> cd('../doc')
 
         >>> dorst('dd.rest') # doctest: +ELLIPSIS
-        .. default-role:: math...
+        ['.. default-role:: math\n', ...
 
         >>> dorst('ra.rest.stpl') # doctest: +ELLIPSIS
-        .. default-role:: math...
+        ['.. default-role:: math\n', ...
 
         >>> dorst(['hi there']) # doctest: +ELLIPSIS
-        .. default-role:: math...
-        hi there
+        ['.. default-role:: math\n', 'hi there\n', ...
 
         >>> dorst(['hi there'],None,'html') # doctest: +ELLIPSIS
-        run (['pandoc', ..., '-o', '-'],) ...
+        <!DOCTYPE html>
+        ...
 
         >>> dorst('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
         run (['pandoc', ..., '-o', 'ra.docx'],) ...
@@ -4571,10 +4571,10 @@ def initroot(
     #rootfldr ,sampletype = 'tmp','rest'
     stpltype = sampletype == 'stpl'
     thisfile = __file__.replace('\\', '/')
-    tex_ref = normjoin(dirname(thisfile), '..', 'reference.tex')
-    docx_ref = normjoin(dirname(thisfile), '..', 'reference.docx')
-    odt_ref = normjoin(dirname(thisfile), '..', 'reference.odt')
-    wafw = normjoin(dirname(thisfile), '..', 'wafw.py')
+    tex_ref = normjoin(dirname(thisfile), 'reference.tex')
+    docx_ref = normjoin(dirname(thisfile), 'reference.docx')
+    odt_ref = normjoin(dirname(thisfile), 'reference.odt')
+    wafw = normjoin(dirname(thisfile), 'wafw.py')
     inittree = [
         l for l in example_tree.replace('__file__', thisfile).replace(
             '__tex_ref__', tex_ref).replace('__docx_ref__', docx_ref).replace(
