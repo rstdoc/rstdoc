@@ -894,7 +894,10 @@ def in_temp_if_list(
                 infn = stem(base(outfile))
             else:
                 infn = sha(content).hexdigest()
-            infile = normjoin(atmpdir, '.'.join([infn,suf0,suf1]))
+            if suf0:
+                infile = normjoin(atmpdir, '.'.join([infn,suf0,suf1]))
+            else:
+                infile = normjoin(atmpdir, '.'.join([infn,suf1]))
             with open(infile, 'bw') as ff:
                 ff.write(content)
             return normoutfile(f, suf0)(infile, outfile, *args, **kwargs)
@@ -957,8 +960,8 @@ def rst_sphinx(
         >>> cd('../doc')
 
         >>> dry_run(True)
-        #>>> ls()
-        #>>> fakefs.is_setup()
+        >>> #ls()
+        >>> #fakefs.is_setup()
 
         >>> infile,outfile = ('index.rest','../../build/doc/sphinx_html/index.html')
         >>> rst_sphinx(infile,outfile) # doctest: +ELLIPSIS
@@ -1558,20 +1561,43 @@ def dorst(
         <!DOCTYPE html>
         ...
 
+        >>> verbose = True
+        >>> dry_run(False)
         >>> dorst('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
         run (['pandoc', ..., '-o', 'ra.docx'],) ...
+        >>> exists('ra.docx')
+        True
+        >>> rmrf('ra.docx')
+        >>> exists('ra.docx')
+        False
+        >>> rmrf('ra.rest.stpl.rest')
+        >>> exists('ra.rest.stpl.rest')
+        False
 
         >>> dorst(['hi there'],'test.html') # doctest: +ELLIPSIS
+        + .../rest.rest.rest
         run (['pandoc', ..., '-o', 'test.html'],) ...
-
-        >>> dorst(['hi there'],'test.html','sphinx_html') # doctest: +ELLIPSIS
-        run (['sphinx-build',...
-
-        >>> dorst(['hi there'],'test.html','sphinx') # doctest: +ELLIPSIS
-        run (['sphinx-build',...
+        >>> exists('test.html')
+        True
+        >>> rmrf('test.html')
+        >>> exists('test.html')
+        False
+        >>> rmrf('rest.rest.rest')
+        >>> exists('rest.rest.rest')
+        False
 
         >>> dorst(['hi there'],'test.odt','rst') # doctest: +ELLIPSIS
-        run (['rst2odt.py', ...
+        >>> exists('rest.rest.rest')
+        True
+        >>> rmrf('rest.rest.rest')
+        >>> exists('rest.rest.rest')
+        False
+        >>> exists('test.odt')
+        True
+        >>> rmrf('test.odt')
+        >>> exists('test.odt')
+        False
+
 
     '''
 
@@ -1738,38 +1764,58 @@ def convert(
         >>> cd(dirname(__file__))
         >>> cd('../doc')
 
+        >>> verbose = True
+        >>> dry_run(False)
+
         >>> convert([' ','   hi {{2+3}}!'],outinfo='rest')
-        ['hi 5!']
+        ['   .. default-role:: math\n', ' \n', '   hi 5!\n', '\n']
 
         >>> convert([' ','   hi {{2+3}}!'])  # doctest: +ELLIPSIS
+        + .../rest.rest.rest
+        run (['pandoc', ...
         ['<!DOCTYPE html>\n', ...]
-
-        >>> dry_run(True)
+        >>> rmrf('rest.rest.rest')
 
         >>> infile,outfile,outinfo = (["newpath {{' '.join(str(i)for i in range(4))}} rectstroke showpage"],'tst.png','eps')
         >>> convert(infile,outfile,outinfo) # doctest: +ELLIPSIS
         run (['inkscape', ...tst.png'],) ...
+        ...
+        >>> exists('tst.png')
+        True
+        >>> rmrf('tst.png')
+        >>> exists('tst.png')
+        False
 
         >>> convert('ra.rest.stpl') # doctest: +ELLIPSIS
-        .. default-role:: math
-        ...
-
+        + .../ra.rest.rest
+        run (['pandoc', ..., '-o', '-'],) ...
+        ['<!DOCTYPE html>\n', ...
         >>> convert('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
+        + .../ra.rest.rest
         run (['pandoc', ..., '-o', 'ra.docx'],) ...
-
-        >>> convert('ra.rest.stpl','ra.docx','sphinx') # doctest: +ELLIPSIS
-        run (['sphinx-build', ...
+        + .../ra.docx
+        >>> exists('ra.rest.rest')
+        True
+        >>> rmrf('ra.rest.rest')
+        >>> exists('ra.rest.rest')
+        False
+        >>> exists('ra.docx')
+        True
+        >>> rmrf('ra.docx')
+        >>> exists('ra.docx')
+        False
 
         >>> convert('dd.rest',None,'html') # doctest: +ELLIPSIS
+        + .../dd.rest.rest
         run (['pandoc', ..., '-o', '-'],) ...
+        <!DOCTYPE html>
+        ...
+        >>> exists('dd.rest.rest')
+        True
+        >>> rmrf('dd.rest.rest')
+        >>> exists('dd.rest.rest')
+        False
 
-        >>> convert('dd.rest','html') # doctest: +ELLIPSIS
-        run (['pandoc', ..., '-o', 'dd.html'],) ...
-
-        >>> convert('index.rest','../../build/doc/sphinx_singlehtml') # doctest: +ELLIPSIS
-        run (['sphinx-build', '-b', 'singlehtml', ..., '../../build/doc', ...],) ...
-
-        >>> dry_run(False)
 
     :param infile: any of ``.tikz`` ``.svg`` ``.dot`` ``.uml`` ``.eps`` ``.pyg`` or else stpl is assumed. Can be list of lines, too.
 
@@ -2089,13 +2135,13 @@ def rstincluded(
     ::
 
         >>> cd(dirname(__file__))
-        >>> list(rstincluded('ra.rest',paths=('../doc',)))
+        >>> list(rstincluded('ra.rest',('../doc',)))
         ['ra.rest.stpl', '_links_sphinx.rst']
-        >>> list(rstincluded('sr.rest',paths=('../doc',)))
+        >>> list(rstincluded('sr.rest',('../doc',)))
         ['sr.rest', '_links_sphinx.rst']
-        >>> list(rstincluded('meta.rest',paths=('../doc',)))
+        >>> list(rstincluded('meta.rest',('../doc',)))
         ['meta.rest', 'files.rst', '_traceability_file.rst', '_links_sphinx.rst']
-        >>> 'dd.rest'in list(rstincluded('index.rest',paths=('../doc',)))
+        >>> 'dd.rest' in list(rstincluded('index.rest',('../doc',),False,True))
         True
 
     '''
@@ -3393,7 +3439,7 @@ example_tree = r'''
             SPHINXOPTS  = -c .
             SPHINXBLD   = sphinx-build
             SPHINXPROJ  = sample
-            SRCDIR      = ./doc/
+            SRCDIR      = doc/
             SRCBACK     = ../
             DCXPATH     = ../
             BLDDIR      = ../build/doc/
@@ -3463,10 +3509,10 @@ example_tree = r'''
             html dirhtml singlehtml htmlhelp qthelp applehelp devhelp epub latex text man texinfo pickle json xml pseudoxml: Makefile index stpl imgs
             	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
             docx:  docxdir index stpl imgs $(DOCXS)
-            $(BLDDIR)/docx/%.docx:$(SRCDIR)%.rest
+            $(BLDDIR)docx/%.docx:$(SRCDIR)%.rest
             	@cd $(SRCDIR) && python $(DCXPATH)dcx.py "$(<F)" "$(SRCBACK)$@"
             pdf: pdfdir index stpl imgs $(PDFS)
-            $(BLDDIR)/pdf/%.pdf:$(SRCDIR)%.rest
+            $(BLDDIR)pdf/%.pdf:$(SRCDIR)%.rest
             	@cd $(SRCDIR) && python $(DCXPATH)dcx.py "$(<F)" "$(SRCBACK)$@"
         ├ code
             └ some.h
