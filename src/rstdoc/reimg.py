@@ -32,7 +32,7 @@ the names of the images have no meaning (image13,...).
 
 """
 
-# ''' starts api doc parts (see doc_parts())
+
 '''
 API
 ---
@@ -68,16 +68,16 @@ imgdecl = re.compile(r'\|(\w[^|\\ ]*(?: \\\|)?[^|]*\w)\| image:: (\w.*)')
 #    f.write(reimg(data,prefix))
 
 
-def reimg(
-        data  # rst file read by f.read()
-        ,prefix  # string prefix for images, should be derived from docx file name
-    ):
+def reimg(data, prefix):
     '''
     This renames all the images in the rst file converted from docx, to avoid
 
     - images having strange names
 
     - collision of image names from different docx
+
+    :param data: rst file read by f.read()
+    :param prefix: string prefix for images, should be derived from docx file name
 
     '''
     
@@ -122,11 +122,11 @@ def reimg(
     return data
 
 
-def main(
-        # keyword arguments. If empty the arguments are taken from ``sys.argv``.
-        **args):
+def main(**args):
     '''
     This corresponds to the |rstreimg| shell command.
+
+    :param args: Keyword arguments. If empty the arguments are taken from ``sys.argv``.
 
     ``rstfile`` is the file name
 

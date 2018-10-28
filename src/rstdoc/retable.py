@@ -34,7 +34,7 @@ the Vim plugin `vim-rst-tables-py3`_, plus some little fixes.
 
 """
 
-# ''' starts api doc parts (see doc_parts())
+
 '''
 API
 ---
@@ -46,6 +46,9 @@ API
 
 
 '''
+
+
+
 '''
 The rst title order was partly taken from https://github.com/jimklo/atom-rst-snippets
 then converted to http://documentation-style-guide-sphinx.readthedocs.io/en/latest/style-guide.html
@@ -325,15 +328,15 @@ def get_bounds(lines, row, col):
     return (upper, lower, match.group(1))
 
 
-def reformat_table(
-        lines  # list of strings
-        ,row=0  # of cursor position,
-        ,col=0  # ... as only the lines delimited by an empty line are used
-        ,withheader=0  # user the first line as table header
-    ):
+def reformat_table(lines, row=0, col=0, withheader=0):
     ''' 
     Create or reformat a grid table in lines.
     The table is delimited by emtpy lines starting from (row,col).
+
+    :param lines: list of strings
+    :param row: of cursor position,
+    :param col: ... as only the lines delimited by an empty line are used
+    :param withheader: user the first line as table header
 
     '''
 
@@ -344,9 +347,7 @@ def reformat_table(
     lines[upper:lower + 1] = slice_
 
 
-def create_rst_table(
-        data  # list of list of data
-        ,withheader=0):
+def create_rst_table(data, withheader=0):
     '''
     Create a rst table from data
 
@@ -355,6 +356,8 @@ def create_rst_table(
     >>> lns=[['one','two','three'],[1,2,3]]
     >>> create_rst_table(lns)
 
+    :param data: list of list of data
+
     '''
 
     lines = ['  '.join([str(xx) for xx in x]) for x in data]
@@ -362,15 +365,15 @@ def create_rst_table(
     return '\n'.join(lines)
 
 
-def reflow_table(
-        lines  # list of strings
-        ,row=0  # of cursor position,
-        ,col=0  # ... as only the lines delimited by an empty line are considered
-    ):
+def reflow_table(lines, row=0, col=0):
     '''
     Adapt an existing table to the widths of the first line.
     The table is delimited by emtpy lines starting from (row,col).
     
+    lines: list of strings
+    row: of cursor position,
+    col: ... as only the lines delimited by an empty line are considered
+
     '''
     
     upper, lower, indent = get_bounds(lines, row, col)
@@ -386,23 +389,25 @@ def reflow_table(
     lines[upper:lower + 1] = slice_
 
 
-def re_title(
-        lines  # list of lines
-        ,row=0  # of cursor position,
-        ,col=0  # ... as only the lines delimited by an empty line are considered
-        ,down=0  # >0down, <0up
-    ):
+def re_title(lines, row=0, col=0, down=0):
     '''
     Adjust the under- or overline of a title.
 
-    >>> lines="""\
-    ...   ###########
-    ...       title
-    ...   ###########
-    ...   """.splitlines()
-    >>> re_title(lines)
-    >>> lines
-    ['      #####', 'title', '      #####', '  ']
+    :param lines: list of lines
+    :param row: of cursor position,
+    :param col: ... as only the lines delimited by an empty line are considered
+    :param down: >0down, <0up
+
+    ::
+
+        >>> lines="""\
+        ...   ###########
+        ...       title
+        ...   ###########
+        ...   """.splitlines()
+        >>> re_title(lines)
+        >>> lines
+        ['      #####', 'title', '      #####', '  ']
 
 
     '''
@@ -450,11 +455,12 @@ class doretable:
         del org[:]
 
 
-def retable(lns  # list of strings
-            ):
+def retable(lns):
     '''
     Transform listtable to grid table.
     Yield the resulting lines.
+
+    :param lns: list of strings
 
     '''
 
@@ -462,11 +468,11 @@ def retable(lns  # list of strings
     yield from untable(lns, drt)
 
 
-def main(
-        # keyword arguments. If empty the arguments are taken from ``sys.argv``.
-        **args):
+def main(**args):
     '''
     This corresponds to the |rstretable| shell command.
+
+    :param args: Keyword arguments. If empty the arguments are taken from ``sys.argv``.
 
     ``rstfile`` is the file name
 

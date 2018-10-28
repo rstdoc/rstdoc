@@ -62,7 +62,6 @@ RST documentation folder, proceed like this:
 See |rstreflow| for an alternative proceeding.
 """
 
-# ''' starts api doc parts (see doc_parts())
 '''
 API
 ---
@@ -95,17 +94,18 @@ def _fldrhere(n):
     return os.path.abspath(os.path.split(os.path.splitext(n)[0])[1])
 
 
-def extract_media(fn  # docx file name
-                  ):
+def extract_media(adocx):
     '''
     extract media files from a docx file to a subfolder named after the docx
 
+    :param adocx: docx file name
+
     '''
 
-    zf = ZipFile(fn)
+    zf = ZipFile(adocx)
     pwd = os.getcwd()
     try:
-        fnn = _fldrhere(fn)
+        fnn = _fldrhere(adocx)
         _mkdir(fnn)
         media = [x for x in zf.infolist() if 'media/' in x.filename]
         os.chdir(fnn)
@@ -129,26 +129,24 @@ def extract_media(fn  # docx file name
         os.chdir(pwd)
 
 
-def _docxrest(fn  # docx file name
-              ):
+def _docxrest(adocx):
     # returns file name of ``.rest`` file.
-    _, frm = os.path.split(fn)
+    _, frm = os.path.split(adocx)
     fnrst = os.path.splitext(frm)[0]
-    fnrst = os.path.join(_fldrhere(fn), fnrst + '.rest')
+    fnrst = os.path.join(_fldrhere(adocx), fnrst + '.rest')
     return fnrst
 
 
-def _write_confpy(fn  # docx file name
-                  ):
+def _write_confpy(adocx):
     # Takes the conf.py from the ``example_tree`` in ``rstdoc.dcx``.
     confpy = re.split(r'\s*.\s*Makefile', example_tree.split('conf.py')[1])[0]
-    pn = _prj_name(fn)
+    pn = _prj_name(adocx)
     confpy = confpy.replace('docxsample', pn).replace('2017',
                                                       time.strftime('%Y'))
     lns = confpy.splitlines(True)
     s = re.search(r'\w', lns[1]).span(0)[0]
     confpy = ''.join([l[s:] for l in lns])
-    fnn = _fldrhere(fn)
+    fnn = _fldrhere(adocx)
     cpfn = os.path.normpath(os.path.join(fnn, 'conf.py'))
     if os.path.exists(cpfn):
         return
@@ -156,13 +154,12 @@ def _write_confpy(fn  # docx file name
         f.write(confpy)
 
 
-def _write_index(fn  # docx file name
-                 ):
+def _write_index(adocx):
     # Adds a the generated .rest to ``toctree`` in index.rest or generates new index.rest.
-    fnn = _fldrhere(fn)
+    fnn = _fldrhere(adocx)
     ifn = os.path.normpath(os.path.join(fnn, 'index.rest'))
-    rst = _rstname(fn) + '.rest'
-    prjname = _prj_name(fn)
+    rst = _rstname(adocx) + '.rest'
+    prjname = _prj_name(adocx)
     hp = '=' * len(prjname)
     if os.path.exists(ifn):
         with open(ifn, 'r') as f:
@@ -178,20 +175,19 @@ def _write_index(fn  # docx file name
         f.writelines(lns)
 
 
-def _write_makefile(fn  # docx file name
-                    ):
+def _write_makefile(adocx):
     # Takes the Makefile from the ``example_tree`` in ``rstdoc.dcx``.
     mf = re.split(r'\s+├ code\s+', re.split('├ Makefile', example_tree)[1])[0]
     lns = mf.splitlines(True)
     s = re.search(r'\w', lns[1]).span(0)[0]
     lns = [l[s:] for l in lns]
-    rst = _rstname(fn)
+    rst = _rstname(adocx)
     idoc = list(rindices('^docx:', lns))[0]
     ipdf = list(rindices('^pdf:', lns))[0]
     doce = lns[idoc + 1].replace('sr', rst)
     pdfe = lns[ipdf + 1].replace('sr', rst)
     lns = lns[:idoc + 1] + [lns[ipdf]]
-    fnn = _fldrhere(fn)
+    fnn = _fldrhere(adocx)
     mffn = os.path.normpath(os.path.join(fnn, 'Makefile'))
     if os.path.exists(mffn):
         with open(mffn, 'r') as f:
@@ -205,19 +201,18 @@ def _write_makefile(fn  # docx file name
         f.writelines(lns)
 
 
-def _write_dcx(fn  # docx file name
-               ):
+def _write_dcx(adocx):
     # Writes the dcx.py into the folder generated for the docx.
     dcxfile = os.path.join(
         os.path.split(str(Path(__file__).resolve()))[0], 'dcx.py')
-    shutil.copy2(dcxfile, _fldrhere(fn))
+    shutil.copy2(dcxfile, _fldrhere(adocx))
 
 
-def main(
-        # keyword arguments. If empty the arguments are taken from ``sys.argv``.
-        **args):
+def main(**args):
     '''
     This corresponds to the |rstfromdocx| shell command.
+
+    :param args: Keyword arguments. If empty the arguments are taken from ``sys.argv``.
 
     listtable, untable, reflow, reimg default to False.
 
@@ -267,17 +262,17 @@ def main(
         )
         args = parser.parse_args().__dict__
 
-    fn = args['docx']
-    extract_media(fn)
-    fnrst = _docxrest(fn)
-    rst = pypandoc.convert_file(fn, 'rst', 'docx')
+    adocx = args['docx']
+    extract_media(adocx)
+    fnrst = _docxrest(adocx)
+    rst = pypandoc.convert_file(adocx, 'rst', 'docx')
     with open(fnrst, 'w', encoding='utf-8', newline='\n') as f:
         f.write('.. vim: syntax=rst\n\n')
         f.writelines([x + '\n' for x in rst.splitlines()])
-    _write_confpy(fn)
-    _write_index(fn)
-    _write_makefile(fn)
-    _write_dcx(fn)
+    _write_confpy(adocx)
+    _write_index(adocx)
+    _write_makefile(adocx)
+    _write_dcx(adocx)
 
     if 'listtable' not in args:
         args['listtable'] = False
@@ -303,11 +298,7 @@ def main(
     return fnrst
 
 
-def docx_rst_5(
-    docx  # the docx file name
-    ,rename  # the new name to give to the converted files (no extension)
-    ,sentence=True  # split sentences into new lines (reflow)
-    ):
+def docx_rst_5(docx ,rename ,sentence=True):
     '''
     Creates 5 rst files:
 
@@ -316,6 +307,10 @@ def docx_rst_5(
     - with untable postprocessing: rename/rename_u.rest
     - with reflow postprocessing: rename/rename_r.rest
     - with reimg postprocessing: rename/rename_g.rest
+
+    :param docx: the docx file name
+    :param rename: the new name to give to the converted files (no extension)
+    :param sentence: split sentences into new lines (reflow)
 
     '''
     

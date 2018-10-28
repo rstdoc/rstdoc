@@ -45,7 +45,7 @@ This is done in one step with ``rstfromdocx -lu doc.rst``.
 
 """
 
-# ''' starts api doc parts (see doc_parts())
+
 '''
 API
 ---
@@ -59,13 +59,7 @@ API
 _no = None
 
 
-def paragraph23(
-        row  # list of strings representing the row
-        ,nColumns  # number of columns in the table
-        ,org  # orginal text
-        ,islast  # this call is with the last table entry
-        ,withheader  # the table has a header line
-    ):
+def paragraph23(row, nColumns, org, islast, withheader):
     '''
     For process_row parameter of ``untable``. 
 
@@ -73,6 +67,12 @@ def paragraph23(
     The first column must hold only one line for an ID.
 
     If not transformed to paragraph, then the orginal text (org) is yielded.
+
+    :param row: list of strings representing the row
+    :param nColumns: number of columns in the table
+    :param org: orginal text
+    :param islast: this call is with the last table entry
+    :param withheader: the table has a header line
 
     '''
 
@@ -141,10 +141,7 @@ def refindE(res, ln):
             yield -1
 
 
-def untable(
-        lns  # list of strings
-        ,process_row=paragraph23  # called for each row to transform to paragraph
-    ):
+def untable(lns, process_row=paragraph23):
     '''
     Transform a RST list-table to normal paragraphs.
     The table is supposed to have this format:
@@ -152,6 +149,9 @@ def untable(
     - The first column holds an ID.
     - Optionally the second column holds keywords.
     - The last column holds the details.
+
+    :param lns: list of strings
+    :param process_row: called for each row to transform to paragraph
 
     '''
 
@@ -220,11 +220,11 @@ def untable(
         yield from process_row(row, nColumns, org, True, withheader)
 
 
-def main(
-        # keyword arguments. If empty the arguments are taken from ``sys.argv``.
-        **args):
+def main(**args):
     '''
     This corresponds to the |rstuntable| shell command.
+
+    :param args: Keyword arguments. If empty the arguments are taken from ``sys.argv``.
 
     ``rstfile`` is the file name
 

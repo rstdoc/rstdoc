@@ -108,8 +108,8 @@ It is supposed to be used with a build tool. ``make`` and ``waf`` examples are i
   such that a change in any of them results in a rebuild of the documentation. 
   All files can have an additional ``.stpl`` extension to use `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax>`__.
 
-    $ waf configure #copies the latest version of waf in here
-    $ waf --docs docx,sphinx_html,rst_odt #or you provide during config to always compile the docs
+  $ waf configure #copies the latest version of waf in here
+  $ waf --docs docx,sphinx_html,rst_odt #or you provide during config to always compile the docs
 
   - ``rst_xxx`` via `rst2xxx.py <http://docutils.sourceforge.net/docs/user/tools.html>`__
   - ``sphinx_xxx`` via `Sphinx <http://www.sphinx-doc.org>`__ and
@@ -185,6 +185,7 @@ See the example created with ``--rest`` of ``--stpl`` at the end of this file an
 .. _`substitutions`: http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text
 
 """
+
 '''
 API
 ---
@@ -306,7 +307,7 @@ def dry_run(
         dry=None  # None: initialize with False if not yet, else keep as is.
         # True: fake fs and dry-run
         # False: use real tools
-):
+    ):
     """
     Adjusts ``dcx`` classes to produce a dry run.
 
@@ -631,7 +632,7 @@ sphinx_enforced = {
 
 
 '''
-``g_config`` be used to inject a global config.
+``g_config`` can be used to inject a global config.
 This overrides the defaults
 and is overriden by a ``./conf.py`` or ``../conf.py`` relative to the in file.
 '''
@@ -682,13 +683,13 @@ def _nstr(x):
     return x and x.replace('\r\n', '\n') or ''
 
 
-def cmd(
-        cmdlist    # command as list
-        ,**kwargs  # arguments forwarded to ``subprocess.run()``
-    ):
+def cmd(cmdlist , **kwargs):
     '''
     Runs ``cmdlist`` via subprocess.run and return stdout.
     In case of problems RstDocError is raised.
+
+    :param cmdlist: command as list
+    :param kwargs: arguments forwarded to ``subprocess.run()``
 
     '''
 
@@ -853,7 +854,7 @@ def normoutfile(f, suffix=None):
 def in_temp_if_list(
         f,
         suffix='stpl'  # .dot, .uml, ... or rest.stpl,... default it will assume stpl and use outinfo
-):
+    ):
     """
     Wraps f(infile,outfile) returning None
     to produce a temporary directory/file for when infile is a list of strings.
@@ -921,12 +922,12 @@ def readin(f):
     return readiner
 
 
-def run_inkscape(
-        infile,  # .svg, .eps, .pdf filename string (for list with actual .eps or .svg data use |svgpng| or |epspng|)
-        outfile,  # .png file name
-        dpi=DPI):
+def run_inkscape(infile,  outfile, dpi=DPI):
     '''
     Uses ``inkscape`` commandline to convert to ``.png``
+
+    :param infile: .svg, .eps, .pdf filename string (for list with actual .eps or .svg data use |dcx.svgpng| or |dcx.epspng|)
+    :param outfile: .png file name
 
     '''
 
@@ -940,32 +941,36 @@ def run_inkscape(
 
 @infilecwd
 def rst_sphinx(
-        infile,  # .txt, .rst, .rest filename (normally index.rest)
-        outfile,  # the path to the target file (not target directory)
-        outtype=None,  # html,... or any other sphinx writer
-        **config  # keys from config_defaults
-):
+        infile, outfile, outtype=None, **config
+    ):
     '''
     Run Sphinx on infile.
 
-    >>> cd(dirname(__file__))
-    >>> cd('../doc')
+    :param infile: .txt, .rst, .rest filename (normally index.rest)
+    :param outfile: the path to the target file (not target directory)
+    :param outtype: html,... or any other sphinx writer
+    :param config: keys from config_defaults
 
-    >>> dry_run(True)
-    #>>> ls()
-    #>>> fakefs.is_setup()
+    ::
 
-    >>> infile,outfile = ('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
-    >>> rst_sphinx(infile,outfile)
-    run (['sphinx-build', '-b', 'html', '.', 'build/doc/sphinx_html', '-C', ... 'master_doc=index.rest'],) ...
+        >>> cd(dirname(__file__))
+        >>> cd('../doc')
 
-    >>> rst_sphinx('dd.rest','../../build/doc/sphinx_html/dd.html') # doctest: +ELLIPSIS
-    run (['sphinx-build', '-b', 'singlehtml', ..., '-D', 'master-doc=dd.rest'],) ...
+        >>> dry_run(True)
+        #>>> ls()
+        #>>> fakefs.is_setup()
 
-    >>> rst_sphinx('dd.rest','../../build/doc/sphinx_latex/dd.tex') # doctest: +ELLIPSIS
-    run (['sphinx-build', '-b', 'latex', ..., '-D', 'project=rstdoc', ...],) ...
+        >>> infile,outfile = ('index.rest','../../build/doc/sphinx_html/index.html') # doctest: +ELLIPSIS
+        >>> rst_sphinx(infile,outfile)
+        run (['sphinx-build', '-b', 'html', '.', 'build/doc/sphinx_html', '-C', ... 'master_doc=index.rest'],) ...
 
-    >>> dry_run(False)
+        >>> rst_sphinx('dd.rest','../../build/doc/sphinx_html/dd.html') # doctest: +ELLIPSIS
+        run (['sphinx-build', '-b', 'singlehtml', ..., '-D', 'master-doc=dd.rest'],) ...
+
+        >>> rst_sphinx('dd.rest','../../build/doc/sphinx_latex/dd.tex') # doctest: +ELLIPSIS
+        run (['sphinx-build', '-b', 'latex', ..., '-D', 'project=rstdoc', ...],) ...
+
+        >>> dry_run(False)
 
     '''
     
@@ -1073,73 +1078,17 @@ def _copy_images_for(infile, outfile, with_trace):
                     pass
 
 
-def PageBreakHack(destination_path):
-    '''
-    This introduces a ``PageBreak`` style into ``content.xml``
-    to allow the following raw page break of opendocument odt::
-
-      .. raw:: odt
-
-          <text:p text:style-name="PageBreak"/>
-
-    This is no good solution, as it introduces an empty line at the top of the new page.
-
-    Unfortunately the following does not work
-    with or without ``text:use-soft-page-breaks="true"``
-
-        .. for docutils
-        .. raw:: odt
-
-            <text:p text:style-name="PageBreak"/>
-
-        .. for pandoc
-        .. raw:: opendocument
-
-            <text:p text:style-name="PageBreak"/>
-
-    According to C066363e.pdf it should work.
-
-    See ``utility.rst.tpl`` in the ``--stpl`` samples.
-
-    '''
-
-    from zipfile import ZipFile
-    odtzip = OrderedDict()
-    with ZipFile(destination_path) as z:
-        for n in z.namelist():
-            with z.open(n) as f:
-                content = f.read()
-                if n == 'content.xml':
-                    # break-after produces two page breaks
-                    content = content.replace(
-                        b'</office:automatic-styles>', b' '.join(
-                            x.strip() for x in b"""<style:style
-                      style:name="PageBreak"
-                      style:family="paragraph"
-                      style:master-page-name="rststyle-pagedefault"
-                      style:parent-style-name="Standard">
-                      <style:paragraph-properties fo:break-before="page"/>
-                      </style:style>
-                      </office:automatic-styles>""".splitlines()))
-                    content = content.replace(
-                        b'<office:text>',
-                        b'<office:text text:use-soft-page-breaks="true">')
-            odtzip[n] = content
-    with ZipFile(destination_path, 'w') as z:
-        for n, content in odtzip.items():
-            with z.open(n, mode='w', force_zip64=True) as f:
-                f.write(content)
-
-
 @infilecwd
 def rst_pandoc(
-        infile,  # .txt, .rst, .rest filename
-        outfile,  # the path to the target document
-        outtype,  # html,...
-        **config  # keys from config_defaults
-):
+        infile, outfile, outtype, **config
+    ):
     '''
     Run Pandoc on infile.
+
+    :param infile: .txt, .rst, .rest filename
+    :param outfile: the path to the target document
+    :param outtype: html,...
+    :param config: keys from config_defaults
 
     '''
 
@@ -1188,15 +1137,18 @@ def _indented_default_role_math(filelines):
         pass
     return indent + '.. default-role:: math\n'
 
+
 @infilecwd
 def rst_rst2(
-        infile,  # .txt, .rst, .rest filename
-        outfile,  # the path to the target document
-        outtype,  # html,...
-        **config  # keys from config_defaults
-):
+        infile, outfile, outtype, **config
+    ):
     '''
     Run the rst2xxx docutils fontend tool on infile.
+
+    :param infile: .txt, .rst, .rest filename
+    :param outfile: the path to the target document
+    :param outtype: html,...
+    :param config: keys from config_defaults
 
     '''
     
@@ -1228,6 +1180,66 @@ def rst_rst2(
     return stdout
 
 
+def PageBreakHack(destination_path):
+    '''
+    This introduces a ``PageBreak`` style into ``content.xml``
+    to allow the following raw page break of opendocument odt::
+
+      .. raw:: odt
+
+          <text:p text:style-name="PageBreak"/>
+
+    This is no good solution, as it introduces an empty line at the top of the new page.
+
+    Unfortunately the following does not work
+    with or without ``text:use-soft-page-breaks="true"``
+
+    ::
+
+        .. for docutils
+        .. raw:: odt
+
+            <text:p text:style-name="PageBreak"/>
+
+        .. for pandoc
+        .. raw:: opendocument
+
+            <text:p text:style-name="PageBreak"/>
+
+    According to C066363e.pdf it should work.
+
+    See ``utility.rst.tpl`` in the ``--stpl`` samples.
+
+    '''
+
+    from zipfile import ZipFile
+    odtzip = OrderedDict()
+    with ZipFile(destination_path) as z:
+        for n in z.namelist():
+            with z.open(n) as f:
+                content = f.read()
+                if n == 'content.xml':
+                    # break-after produces two page breaks
+                    content = content.replace(
+                        b'</office:automatic-styles>', b' '.join(
+                            x.strip() for x in b"""<style:style
+                      style:name="PageBreak"
+                      style:family="paragraph"
+                      style:master-page-name="rststyle-pagedefault"
+                      style:parent-style-name="Standard">
+                      <style:paragraph-properties fo:break-before="page"/>
+                      </style:style>
+                      </office:automatic-styles>""".splitlines()))
+                    content = content.replace(
+                        b'<office:text>',
+                        b'<office:text text:use-soft-page-breaks="true">')
+            odtzip[n] = content
+    with ZipFile(destination_path, 'w') as z:
+        for n, content in odtzip.items():
+            with z.open(n, mode='w', force_zip64=True) as f:
+                f.write(content)
+
+
 # sphinx_html,rst_html,[pandoc_]html
 rst_tools = {'pandoc': rst_pandoc, 'sphinx': rst_sphinx, 'rst': rst_rst2}
 
@@ -1235,13 +1247,12 @@ rst_tools = {'pandoc': rst_pandoc, 'sphinx': rst_sphinx, 'rst': rst_rst2}
 @png_post_process_if_any
 @normoutfile
 @readin
-def svgpng(
-        infile,  # a .svg file name or list of lines
-        outfile=None,  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``.``
-        *args,  # needed by decorators
-        **kwargs):
+def svgpng(infile, outfile=None, *args, **kwargs):
     '''
     Converts a .svg file to a png file.
+
+    :param infile: a .svg file name or list of lines
+    :param outfile: if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``.``
 
     '''
 
@@ -1254,11 +1265,7 @@ def svgpng(
 @png_post_process_if_any
 @partial(in_temp_if_list, suffix='.tex')
 @infilecwd
-def texpng(
-        infile,# a .tex file name or list of lines (provide outfile in the latter case)
-        outfile=None, # if not provided, the input file with .png either in ``./_images`` or ``../_images`` or ``.``
-        *args,  # needed by decorators
-        **kwargs):
+def texpng(infile, outfile=None, *args, **kwargs):
     '''
     Latex has several graphic packages, like
 
@@ -1267,7 +1274,10 @@ def texpng(
 
     that can be converted to .png with this function.
 
-    For ``.tikz`` file use |tikzpng|.
+    For ``.tikz`` file use |dcx.tikzpng|.
+
+    :param infile: a .tex file name or list of lines (provide outfile in the latter case)
+    :param outfile: if not provided, the input file with .png either in ``./_images`` or ``../_images`` or ``.``
 
     '''
 
@@ -1307,7 +1317,7 @@ def _tikzwrap(f):
 '''
 Converts a .tikz file to a png file.
 
-See |texpng|.
+See |dcx.texpng|.
 '''
 tikzpng = normoutfile(readin(_tikzwrap(_texwrap(texpng))))
 
@@ -1316,12 +1326,16 @@ tikzpng = normoutfile(readin(_tikzwrap(_texwrap(texpng))))
 @partial(in_temp_if_list, suffix='.dot')
 @infilecwd
 def dotpng(
-        infile, # a .dot file name or list of lines (provide outfile in the latter case)
-        outfile=None,  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
-        *args,  # internal usage
-        **kwargs):
+    infile
+    ,outfile=None
+    ,*args
+    ,**kwargs
+    ):
     '''
     Converts a .dot file to a png file.
+
+    :param infile: a .dot file name or list of lines (provide outfile in the latter case)
+    :param outfile: if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
 
     '''
 
@@ -1332,12 +1346,16 @@ def dotpng(
 @partial(in_temp_if_list, suffix='.uml')
 @infilecwd
 def umlpng(
-        infile, # a .uml file name or list of lines (provide outfile in the latter case)
-        outfile=None,  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
-        *args,  # internal usage
-        **kwargs):
+        infile
+        ,outfile=None
+        ,*args
+        ,**kwargs
+    ):
     '''
     Converts a .uml file to a png file.
+
+    :param infile: a .uml file name or list of lines (provide outfile in the latter case)
+    :param outfile: if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
 
     '''
 
@@ -1350,12 +1368,15 @@ def umlpng(
 @partial(in_temp_if_list, suffix='.eps')
 @infilecwd
 def epspng(
-        infile, # a .eps file name or list of lines (provide outfile in the latter case)
-        outfile=None,  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
-        *args,  # internal usage
-        **kwargs):
+        infile
+        ,outfile=None
+        ,*args
+        ,**kwargs):
     '''
     Converts an .eps file to a png file using inkscape.
+
+    :param infile: a .eps file name or list of lines (provide outfile in the latter case)
+    :param outfile: if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
 
     '''
 
@@ -1367,10 +1388,9 @@ def epspng(
 @infilecwd
 @readin
 def pygpng(
-        infile, # a .pyg file name or list of lines (provide outfile in the latter case)
-        outfile=None,  # if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
-        *args,  # internal usage
-        **kwargs):
+        infile, outfile=None, *args,
+        **kwargs
+    ):
     '''
     Converts a .pyg file to a png file.
 
@@ -1383,6 +1403,9 @@ def pygpng(
     - ``cairocffi.Surface`` from `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
     - ``pygal.Graph`` from `pygal <https://pygal.org>`__
     - `matplotlib <https://matplotlib.org>`__. If ``matplotlib.pyplot.get_fignums()>1`` the figures result ``<name><fignum>.png`` 
+
+    :param infile: a .pyg file name or list of lines (provide outfile in the latter case)
+    :param outfile: if not provided the input file with new extension ``.png`` either in ``./_images`` or ``../_images`` or ``./``
 
     '''
 
@@ -1436,23 +1459,30 @@ def pygpng(
 
 @infilecwd
 def dostpl(
-        infile,  # a .stpl file name or list of lines
-        outfile=None,  # if not provided the expanded is returned
-        lookup=None,  # lookup paths must be relative to infile
-        **kwargs):
+        infile
+        ,outfile=None
+        ,lookup=None
+        ,**kwargs
+    ):
     '''
     Expands an `.stpl <https://bottlepy.org/docs/dev/stpl.html>`__ file.
-
-    >>> infile = ['hi {{2+3}}!']
-    >>> dostpl(infile)
-    ['hi 5!']
 
     The whole ``rstdoc.dcx`` namespace is forwarded to the template code.
 
     ``.stpl`` provides full python power:
 
     - e.g. one can create temporary images which are then included in the final .docx of .odt
-      See |tempdir|.
+      See |dcx.tempdir|.
+
+    :param infile: a .stpl file name or list of lines
+    :param outfile: if not provided the expanded is returned
+    :param lookup: lookup paths must be relative to infile
+
+    ::
+
+        >>> infile = ['hi {{2+3}}!']
+        >>> dostpl(infile)
+        ['hi 5!']
 
     '''
     
@@ -1487,22 +1517,30 @@ def dostpl(
             return st.replace('\r\n', '\n').splitlines(keepends=True)
 
 def dorst(
-        infile  # a .rest, .rst, .txt file name or list of lines
-        ,outfile=io.StringIO  # None and '-' mean standard out. If io.StringIO, then the lines are returned.
-        # for .rest |xxx| substitutions for reST link targets in infile are appended if no ``_links_sphinx.rst`` there
-        ,outinfo=None  # specifies the tool to use
-        # 'html', 'docx', 'odt',... via pandoc if output
-        # 'sphinx_html',... via sphinx
-        # 'rst_html',... via rst2xxx frontend tools
-        # '[infile/][substitution.]docx[.]' substitutions stands for the file used in substitutions if no ``_links_sphinx.rst``
-        # The infile is used, if the actual infile are lines. The final dot tells to stop after substitutions.
-        ,fn_i_ln=None # (fn,i,ln) of the .stpl with all stpl includes sequenced (used by |dcx.convert|)
+        infile
+        ,outfile=io.StringIO
+        ,outinfo=None
+        ,fn_i_ln=None
         ):
     '''
     Default interpreted text role is set to math.
-    The link lines are added to a .rest file.
+    The link lines are added to the .rest file or .rest lines
 
-    Examples::
+    :param infile: a .rest, .rst, .txt file name or list of lines
+
+    :param outfile: None and '-' mean standard out. If io.StringIO, then the lines are returned.
+        For .rest ``|xxx|`` substitutions for reST link targets in infile are appended if no ``_links_sphinx.rst`` there
+
+    :param outinfo: specifies the tool to use
+        ``html``, ``docx``, ``odt``,... via pandoc if output
+        ``sphinx_html``,... via sphinx
+        ``rst_html``,... via rst2xxx frontend tools
+        ``[infile/][substitution.]docx[.]`` substitutions stands for the file used in substitutions if no ``_links_sphinx.rst``
+        The infile is used, if the actual infile are lines. The final dot tells to stop after substitutions.
+
+    :param fn_i_ln: ``(fn,i,ln)`` of the ``.stpl`` with all stpl includes sequenced (used by |dcx.convert|)
+
+    ::
 
         >>> cd(dirname(__file__))
         >>> cd('../doc')
@@ -1683,16 +1721,16 @@ graphic_extensions = {_svg, _tikz, _tex, _dot, _uml, _eps, _pyg}
 
 
 def convert(
-        infile        # any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else stpl is assumed. Can be list of lines, too.
-        ,outfile=io.StringIO # '-' means standard out, else a file name, or None for automatic (using outinfo), or io.StringIO to return lines instead of stdout
-        ,outinfo=None # 'html', 'sphinx_html', 'docx', 'odt', 'file.docx',... interpet input as rest, else specifies graph type
+        infile
+        ,outfile=io.StringIO
+        ,outinfo=None
         ):
     '''
     Converts any of the known files.
 
     Stpl files are forwarded to the next converter.
 
-    The main job is to normalized the input params, because this is called from main() and via Python.
+    The main job is to normalized the input params, because this is called from |dcx.main| and via Python.
     It forwards to the right converter.
 
     Examples::
@@ -1732,6 +1770,13 @@ def convert(
         run (['sphinx-build', '-b', 'singlehtml', ..., '../../build/doc', ...],) ...
 
         >>> dry_run(False)
+
+    :param infile: any of ``.tikz`` ``.svg`` ``.dot`` ``.uml`` ``.eps`` ``.pyg`` or else stpl is assumed. Can be list of lines, too.
+
+    :param outfile: ``-`` means standard out, else a file name, or None for automatic (using outinfo),
+        or io.StringIO to return lines instead of stdout
+
+    :param outinfo: ``html``, ``sphinx_html``, ``docx``, ``odt``, ``file.docx``,... interpet input as rest, else specifies graph type
 
     '''
 
@@ -1797,42 +1842,42 @@ def convert(
 '''
 Same as |dcx.convert|, but creates temporary folder for a list of lines infile argument.
 
-Example::
+::
 
-  >>> tmpfile = convert_in_tempdir("""digraph {
-  ... %for i in range(3):    
-  ...    "From {{i}}" -> "To {{i}}";
-  ... %end
-  ...    }""".splitlines(),outinfo='dot')
-  >>> stem_ext(tmpfile)[1]
-  '.png'
-  >>> tmpfile = convert_in_tempdir("""
-  ... This is re{{'st'.upper()}}
-  ... 
-  ... .. `xx`:
-  ... 
-  ... xx:
-  ...     text
-  ... 
-  ... """.splitlines(),outinfo='rst_html')
-  >>> stem_ext(tmpfile)[1]
-  '.html'
+    >>> tmpfile = convert_in_tempdir("""digraph {
+    ... %for i in range(3):    
+    ...    "From {{i}}" -> "To {{i}}";
+    ... %end
+    ...    }""".splitlines(),outinfo='dot')
+    >>> stem_ext(tmpfile)[1]
+    '.png'
+    >>> tmpfile = convert_in_tempdir("""
+    ... This is re{{'st'.upper()}}
+    ... 
+    ... .. `xx`:
+    ... 
+    ... xx:
+    ...     text
+    ... 
+    ... """.splitlines(),outinfo='rst_html')
+    >>> stem_ext(tmpfile)[1]
+    '.html'
 
 '''
 convert_in_tempdir = in_temp_if_list(convert)
 
-def rindices(
-        r    # regular expression string or compiled
-        ,lns # lines
-):
+def rindices(r, lns):
     r'''
     Return the indices matching the regular expression ``r``.
 
+    :param r: regular expression string or compiled
+    :param lns: lines
+
     ::
 
-      >>> lns=['a','ab','b','aa']
-      >>> [lns[i] for i in rindices(r'^a\w*',lns)]==['a', 'ab', 'aa']
-      True
+        >>> lns=['a','ab','b','aa']
+        >>> [lns[i] for i in rindices(r'^a\w*',lns)]==['a', 'ab', 'aa']
+        True
 
     '''
 
@@ -1843,12 +1888,12 @@ def rindices(
             yield i
 
 
-def rlines(
-        r    # regular expression string or compiled
-        ,lns # lines
-):
+def rlines(r, lns):
     '''
     Return the lines matched by ``r``.
+
+    :param r: regular expression string or compiled
+    :param lns: lines
 
     '''
 
@@ -1862,8 +1907,8 @@ def intervals(nms  # list of indices
 
     ::
 
-      >>> intervals([1,2,3])==[(1, 2), (2, 3)]
-      True
+        >>> intervals([1,2,3])==[(1, 2), (2, 3)]
+        True
 
     """
     return list(zip(nms[:], nms[1:]))
@@ -1876,8 +1921,8 @@ def in2s(nms  # list of indices
 
     ::
 
-      >>> in2s([1,2,3,4])==[(1, 2), (3, 4)]
-      True
+        >>> in2s([1,2,3,4])==[(1, 2), (3, 4)]
+        True
 
     """
     return list(zip(nms[::2], nms[1::2]))
@@ -1892,27 +1937,18 @@ def in2s(nms  # list of indices
 
 
 def doc_parts(
-        lns  # list of lines
-        ,relim=r"^\s*'''([\w.:]*)\s*\n*$"  # regular expression marking lines enclosing the documentation. The group is a prefix.
-        ,reid=r"\s(\w+)[(:]|(\w+)\s\="  # extract id from preceding or succeeding non-empty lines
-        ,reindent=r'[^#/\s]'  # determines start of text
-        ,signature=None # if signature language is given the preceding or succeeding lines will be included
-        ,prefix=''      # prefix to make id unique, e.g. module name. Include the dot.
+        lns 
+        ,relim=r"^\s*r?'''([\w.:]*)\s*\n*$" 
+        ,reid=r"\s(\w+)[(:]|(\w+)\s\=" 
+        ,reindent=r'[^#/\s]'
+        ,signature=None 
+        ,prefix=''
     ):
-    '''
+    r'''
     ``doc_parts()`` yields doc parts delimeted by ``relim`` regular expression
     possibly with id, if ``reid`` matches 
 
     If start and stop differ use regulare expression ``|`` in ``relim``.
-
-    ::
-
-      >>> with open(__file__) as f:
-      ...     lns = f.readlines()
-      ...     docparts = list(doc_parts(lns,signature='py'))
-      ...     doc_parts_line = rlines('doc_parts',docparts)
-      >>> doc_parts_line[1]
-      'doc_parts(\n'
 
     - There is no empty line between doc string and preceding code lines that should be included.
     - There is no empty line between doc string and succeeding code lines that should be included.
@@ -1925,6 +1961,22 @@ def doc_parts(
     If the included code comes only from one side of the doc string, have an empty line at the other side.
 
     Immediately after the initial doc string marker there can be a prefix, e.g. ``classname.``.
+
+    :param lns: list of lines
+    :param relim: regular expression marking lines enclosing the documentation. The group is a prefix.
+    :param reid: extract id from preceding or succeeding non-empty lines
+    :param reindent: determines start of text
+    :param signature: if signature language is given the preceding or succeeding lines will be included
+    :param prefix: prefix to make id unique, e.g. module name. Include the dot.
+
+    ::
+
+        >>> with open(__file__) as f:
+        ...     lns = f.readlines()
+        ...     docparts = list(doc_parts(lns,signature='py'))
+        ...     doc_parts_line = rlines('doc_parts',docparts)
+        >>> doc_parts_line[1]
+        'doc_parts(\n'
 
     '''
 
@@ -2021,23 +2073,30 @@ def _read_lines(fn):
 
 @_memoized
 def rstincluded(
-        fn  # file name without path
-        ,paths=()  # paths where to look for fn
-        ,withimg=False  # also yield image files, not just other rst files
-        ,withrest=False  # rest files are not supposed to be included
+        fn 
+        ,paths=() 
+        ,withimg=False 
+        ,withrest=False
     ):
     '''
     Yield the files recursively included from an RST file.
 
-    >>> cd(dirname(__file__))
-    >>> list(rstincluded('ra.rest',paths=('../doc',)))
-    ['ra.rest.stpl', '_links_sphinx.rst']
-    >>> list(rstincluded('sr.rest',paths=('../doc',)))
-    ['sr.rest', '_links_sphinx.rst']
-    >>> list(rstincluded('meta.rest',paths=('../doc',)))
-    ['meta.rest', 'files.rst', '_traceability_file.rst', '_links_sphinx.rst']
-    >>> 'dd.rest'in list(rstincluded('index.rest',paths=('../doc',)))
-    True
+    :param fn: file name without path
+    :param paths: paths where to look for fn
+    :param withimg: also yield image files, not just other rst files
+    :param withrest: rest files are not supposed to be included
+
+    ::
+
+        >>> cd(dirname(__file__))
+        >>> list(rstincluded('ra.rest',paths=('../doc',)))
+        ['ra.rest.stpl', '_links_sphinx.rst']
+        >>> list(rstincluded('sr.rest',paths=('../doc',)))
+        ['sr.rest', '_links_sphinx.rst']
+        >>> list(rstincluded('meta.rest',paths=('../doc',)))
+        ['meta.rest', 'files.rst', '_traceability_file.rst', '_links_sphinx.rst']
+        >>> 'dd.rest'in list(rstincluded('index.rest',paths=('../doc',)))
+        True
 
     '''
 
@@ -2206,25 +2265,27 @@ class Traceability:
         return tlines
 
 
-def pair(
-        alist  # first list
-        ,blist  # second list longer or equal to alist
-        ,cmp  # compare function
-    ):
+def pair(alist ,blist ,cmp):
     ''' 
     pair two sorted lists where the second must be at least as long as the first
 
-    >>> alist=[1,2,4,7]
-    >>> blist=[1,2,3,4,5,6,7]
-    >>> cmp = lambda x,y: x==y
-    >>> list(pair(alist,blist,cmp))
-    [(1, 1), (2, 2), (None, 3), (4, 4), (None, 5), (None, 6), (7, 7)]
+    :param alist: first list
+    :param blist: second list longer or equal to alist
+    :param cmp: compare function
 
-    >>> alist=[1,2,3,4,5,6,7]
-    ... blist=[1,2,3,4,5,6,7]
-    ... cmp = lambda x,y: x==y
-    ... list(pair(alist,blist,cmp))
-    [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)]
+    ::
+
+        >>> alist=[1,2,4,7]
+        >>> blist=[1,2,3,4,5,6,7]
+        >>> cmp = lambda x,y: x==y
+        >>> list(pair(alist,blist,cmp))
+        [(1, 1), (2, 2), (None, 3), (4, 4), (None, 5), (None, 6), (7, 7)]
+
+        >>> alist=[1,2,3,4,5,6,7]
+        ... blist=[1,2,3,4,5,6,7]
+        ... cmp = lambda x,y: x==y
+        ... list(pair(alist,blist,cmp))
+        [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)]
 
     '''
 
@@ -2251,15 +2312,20 @@ def pair(
 
 
 def gen(
-        source  # either a list of lines of a path to the source code
-        ,target=None  # either save to this file or return the generated documentation
-        ,fun=None  # use ``#gen_<fun>(lns,**kw):`` to extract the documtenation
-        ,**kw  # kw arguments to the gen_<fun>() function
-):
+        source 
+        ,target=None 
+        ,fun=None 
+        ,**kw
+    ):
     r''' 
     Take the ``gen_[fun]`` functions enclosed by ``#def gen_[fun](lns,**kw)`` to create a new file.
 
-    Example::
+    :param source: either a list of lines of a path to the source code
+    :param target: either save to this file or return the generated documentation
+    :param fun: use ``#gen_<fun>(lns,**kw):`` to extract the documtenation
+    :param kw: kw arguments to the gen_<fun>() function
+
+    ::
 
         >>> source=[i+'\\n' for i in """
         ...        #def gen(lns,**kw):
@@ -2314,8 +2380,7 @@ def gen(
         return gened
 
 
-def parsegenfile(genpth  # path to gen file
-                 ):
+def parsegenfile(genpth):
     '''
     Parse the file ``genpth`` which has format ::
 
@@ -2324,6 +2389,8 @@ def parsegenfile(genpth  # path to gen file
     ``suffix`` refers to ``gen_<suffix>``.
 
     The yields are used for the |dcx.gen| function.
+
+    :param genpth: path to gen file
 
     '''
 
@@ -2500,16 +2567,16 @@ class Tgt:
 
 
 class RstFile:
-    def __init__(
-            self,
-            reststem,  # .rest file this doc belongs to (without extension)
-            doc, # doc belonging to reststem, either included or itself (.rest, .rst, .stpl)
-            tgts, # list of Tgt objects yielded by |make_tgts|.
-            lnks, # list of (line index, target name (``|target|``)) tuples
-            nlns # number of lines of the doc
-            ):
-        '''
+    def __init__(self, reststem, doc, tgts, lnks, nlns):
+        '''RstFile.
+
         Contains the targets for a ``.rst`` or ``.rest`` file.
+
+        :param reststem: .rest file this doc belongs to (without extension)
+        :param doc: doc belonging to reststem, either included or itself (.rest, .rst, .stpl)
+        :param tgts: list of Tgt objects yielded by |dcx.RstFile.make_tgts|.
+        :param lnks: list of (line index, target name (``|target|``)) tuples
+        :param nlns: number of lines of the doc
 
         '''
 
@@ -2561,12 +2628,12 @@ class RstFile:
             ,counters=None # if None, the starts with {".. figure":1,".. math":1,".. table":1,".. code":1}
             ,fn_i_ln=None  # (fn,i,ln) of the .stpl with all stpl includes sequenced
         ):
-        """RstFile.
+        '''RstFile.
 
         Yields ``((line index, tag address), target, link name)`` of ``lns`` of a restructureText file.
         For a .stpl file the linkname comes from the generated .rest file.
 
-        """
+        '''
 
         if counters == None:
             counters = make_counters()
@@ -2611,11 +2678,13 @@ class RstFile:
 
         Return all substitution targets in the rst lns
 
-        >>> list(substs('''
-        ...   .. |sub| image:: xx
-        ...   .. |s-b| date::
-        ...   '''.splitlines()))
-        ['sub', 's-b']
+        ::
+
+            >>> list(substs('''
+            ...   .. |sub| image:: xx
+            ...   .. |s-b| date::
+            ...   '''.splitlines()))
+            ['sub', 's-b']
 
         """
 
@@ -2860,19 +2929,22 @@ class Fldrs(OrderedDict):
                     self[directory] = fldr
 
 
-def links_and_tags(adir  # directory name
-                   ):
+def links_and_tags(adir):
     '''
     Creates _links_xxx.rst`` files and a ``.tags``.
 
-    >>> cd(dirname(__file__))
-    >>> rmrf('../doc/_links_sphinx.rst')
-    >>> '_links_sphinx.rst' in ls('../doc')
-    False
+    :param adir: directory for which to create links and tags
 
-    >>> links_and_tags('../doc')
-    >>> '_links_sphinx.rst' in ls('../doc')
-    True
+    ::
+
+        >>> cd(dirname(__file__))
+        >>> rmrf('../doc/_links_sphinx.rst')
+        >>> '_links_sphinx.rst' in ls('../doc')
+        False
+
+        >>> links_and_tags('../doc')
+        >>> '_links_sphinx.rst' in ls('../doc')
+        True
 
     '''
 
@@ -4340,15 +4412,15 @@ example_stp_subtree = r'''
                  Use ``.rst`` for included files and start the file with ``_`` if generated.
                  How test documentation files are generated from test source code can be specified in the ``gen`` file.
                
-               .. include:: _links_sphinx.rst
-               '''
+               .. include:: _links_sphinx.rst'''
 
 
-def mktree(tree  # tree string as list of lines
-           ):
+def mktree(tree):
     ''' 
 
     Build a directory tree from a string as returned by the tree tool.
+
+    :param tree: tree string as list of lines
 
     The level is determined by the identation.
 
@@ -4426,21 +4498,23 @@ def mktree(tree  # tree string as list of lines
 
 
 def tree(
-        path  # path of which to create the tree string
-        ,with_content=False  # use this only if all the files are text
-        ,with_files=True  # else only directories are listed
-        ,with_dot_files=True  # also include files starting with .
-        ,max_depth=100  # max directory depth to list
+        path ,with_content=False ,with_files=True ,with_dot_files=True ,max_depth=100
     ):
     '''
     Inverse of mktree.
     Like the linux tree tool, but optionally with content of files
 
+    :param path: path of which to create the tree string
+    :param with_content: use this only if all the files are text
+    :param with_files: else only directories are listed
+    :param with_dot_files: also include files starting with .
+    :param max_depth: max directory depth to list
+
     ::
 
-      >>> path='.'
-      >>> tree(path,False)
-      >>> tree(path,True)
+        >>> path='.'
+        >>> tree(path,False)
+        >>> tree(path,True)
 
     '''
 
@@ -4471,22 +4545,26 @@ def tree(
 
 
 def initroot(
-        rootfldr  # directory name that becomes root of the sample tree
-        ,sampletype  # either 'stpl' for the templated sample tree, or 'rest'
+        rootfldr ,sampletype
     ):
     '''
     Creates a sample tree in the file system 
     based on the ``example_tree`` and the ``example_stp_subtree`` in dcx.py.
 
-    >>> dry_run(True)
-    >>> initroot('tmp','stpl')
-    >>> cd('tmp/src')
-    >>> ls()
-    ['Makefile', 'code', 'conf.py', 'dcx.py', 'doc', 'docutils.conf', 'reference.docx', 'reference.odt', 'reference.tex', 'waf', 'waf.bat', 'wafw.py', 'wscript']
-    >>> cd('doc')
-    >>> ls()
-    ['_images', 'dd.rest.stpl', 'dd_diagrams.tpl', 'dd_included.rst.stpl', 'dd_math.tpl', 'dd_tables.rst', 'egcairo.pyg', 'egdot.dot.stpl', 'egeps.eps', 'egeps1.eps', 'egother.pyg', 'egplt.pyg', 'egpygal.pyg', 'egpyx.pyg', 'egsvg.svg.stpl', 'egtikz.tikz', 'egtikz1.tikz', 'eguml.uml', 'gen', 'index.rest', 'model.py', 'ra.rest.stpl', 'sr.rest.stpl', 'sy.rest.stpl', 'tp.rest.stpl', 'utility.rst.tpl', 'wscript_build']
-    >>> dry_run(False)
+    rootfldr: directory name that becomes root of the sample tree
+    sampletype: either 'stpl' for the templated sample tree, or 'rest'
+
+    ::
+
+        >>> dry_run(True)
+        >>> initroot('tmp','stpl')
+        >>> cd('tmp/src')
+        >>> ls()
+        ['Makefile', 'code', 'conf.py', 'dcx.py', 'doc', 'docutils.conf', 'reference.docx', 'reference.odt', 'reference.tex', 'waf', 'waf.bat', 'wafw.py', 'wscript']
+        >>> cd('doc')
+        >>> ls()
+        ['_images', 'dd.rest.stpl', 'dd_diagrams.tpl', 'dd_included.rst.stpl', 'dd_math.tpl', 'dd_tables.rst', 'egcairo.pyg', 'egdot.dot.stpl', 'egeps.eps', 'egeps1.eps', 'egother.pyg', 'egplt.pyg', 'egpygal.pyg', 'egpyx.pyg', 'egsvg.svg.stpl', 'egtikz.tikz', 'egtikz1.tikz', 'eguml.uml', 'gen', 'index.rest', 'model.py', 'ra.rest.stpl', 'sr.rest.stpl', 'sy.rest.stpl', 'tp.rest.stpl', 'utility.rst.tpl', 'wscript_build']
+        >>> dry_run(False)
 
     '''
 
@@ -4518,7 +4596,9 @@ def initroot(
 
 def index_dir(root):
     ''' 
-    All subdirectories of ``root`` that contain a ``.rest`` or ``.rest.stpl`` file are indexed.
+    Index a directory.
+
+    :param root: All subdirectories of ``root`` that contain a ``.rest`` or ``.rest.stpl`` file are indexed.
 
     - expands the .stpl files
     - generates the files as defined in the ``gen`` file (see example in dcx.py) 
@@ -4527,27 +4607,29 @@ def index_dir(root):
 
     If dcx.verbose is set to True the indexed files are printed.
 
-    >>> dry_run(True)
-    >>> fakefs.is_setup()
-    True
+    ::
 
-    >>> initroot('tmp','rest')
-    >>> cd('tmp/src')
-    >>> ls()
-    ['Makefile', 'code', 'conf.py', 'dcx.py', 'doc', 'docutils.conf', 'reference.docx', 'reference.odt', 'reference.tex', 'waf', 'waf.bat', 'wafw.py', 'wscript']
+        >>> dry_run(True)
+        >>> fakefs.is_setup()
+        True
 
-    >>> cd('doc')
-    >>> ls()
-    ['_images', 'dd.rest', 'egcairo.pyg', 'egdot.dot.stpl', 'egeps.eps', 'egeps1.eps', 'egother.pyg', 'egplt.pyg', 'egpygal.pyg', 'egpyx.pyg', 'egsvg.svg.stpl', 'egtikz.tikz', 'egtikz1.tikz', 'eguml.uml', 'gen', 'index.rest', 'ra.rest', 'sr.rest', 'tp.rest', 'wscript_build']
+        >>> initroot('tmp','rest')
+        >>> cd('tmp/src')
+        >>> ls()
+        ['Makefile', 'code', 'conf.py', 'dcx.py', 'doc', 'docutils.conf', 'reference.docx', 'reference.odt', 'reference.tex', 'waf', 'waf.bat', 'wafw.py', 'wscript']
 
-    >>> index_dir('.')
-    svg2png ...
-    >>> [x for x in ls() if x.startswith('_links_') or x=='.tags']
-    ['.tags', '_links_docx.rst', '_links_html.rst', '_links_latex.rst', '_links_odt.rst', '_links_pdf.rst', '_links_sphinx.rst']
+        >>> cd('doc')
+        >>> ls()
+        ['_images', 'dd.rest', 'egcairo.pyg', 'egdot.dot.stpl', 'egeps.eps', 'egeps1.eps', 'egother.pyg', 'egplt.pyg', 'egpygal.pyg', 'egpyx.pyg', 'egsvg.svg.stpl', 'egtikz.tikz', 'egtikz1.tikz', 'eguml.uml', 'gen', 'index.rest', 'ra.rest', 'sr.rest', 'tp.rest', 'wscript_build']
 
-    >>> dry_run(False)
-    >>> fakefs.is_setup()
-    False
+        >>> index_dir('.')
+        svg2png ...
+        >>> [x for x in ls() if x.startswith('_links_') or x=='.tags']
+        ['.tags', '_links_docx.rst', '_links_html.rst', '_links_latex.rst', '_links_odt.rst', '_links_pdf.rst', '_links_sphinx.rst']
+
+        >>> dry_run(False)
+        >>> fakefs.is_setup()
+        False
 
     '''
 

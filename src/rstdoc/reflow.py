@@ -56,7 +56,7 @@ Else one can also do inplace::
 
 """
 
-# ''' starts api doc parts (see doc_parts())
+
 '''
 API
 ---
@@ -78,12 +78,12 @@ _pgrphrex = [
 ]
 
 
-def reflowparagraph(
-        p  # paragraph
-        ,sentence=False  # if True lines are split at the end of the sentence
-    ):
+def reflowparagraph(p, sentence=False):
     '''
     Reflow a paragaph using ``textwarp.wrap``. Possibly split sentences.
+
+    :param p: paragraph
+    :param sentence: if True lines are split at the end of the sentence
 
     '''
 
@@ -138,12 +138,12 @@ def reflowparagraph(
         del p[:]
 
 
-def reflowparagraphs(
-        lns  # lines from rst file
-        ,sentence=False  # if True lines are split at the end of the sentence
-    ):
+def reflowparagraphs(lns, sentence=False):
     '''
     Reflow paragraphs using |reflow.reflowparagraph|.
+
+    :param lns: lines from rst file
+    :param sentence: if True lines are split at the end of the sentence
 
     '''
 
@@ -183,46 +183,49 @@ def reflowparagraphs(
     yield from reflowp(p)
 
 
-def nostrikeout(lns  # lines from rst file
-                ):
+def nostrikeout(lns):
     '''
     Removes ``[strikeout:xxx]``
 
+    :param lns: lines from rst file
+
     '''
     
-    nso = re.compile(r'\[STRIKEOUT:[^\]]*\]', re.M | re.I)
-    # lns='''hello [STRIKEOUT:Firmware may deactivate the high-voltage circuits in
-    #   ***STOP*** state.] there [STRIKEOUT:guy]'''.splitlines(True)
+    nso = re.compile(r'\[:param STRIKEOUT:[^\]]*\]', re.M | re.I)
+    # lns='''hello [:param STRIKEOUT:Firmware may deactivate the high-voltage circuits in
+    #   ***STOP*** state.] there [:param STRIKEOUT:guy]'''.splitlines(True)
     all = ''.join([x + '\n' if not x.endswith('\n') else x for x in lns])
     res = nso.sub('', all)
     yield from res.splitlines()
 
 
-def rmextrablankline(lns  # lines from rst file
-                     ):
+def rmextrablankline(lns):
     '''
     Remove excessive blank lines.
+
+    :param lns: lines from rst file
 
     '''
     
     bc = 0
-    for d in lns:
+    for d in :param lns:
         if not d.strip():
             bc = bc + 1
-        else:
+        :param else:
             bc = 0
-        if bc < 3:
+        if bc < :param 3:
             yield d
 
 
-def no3star(lns  # lines from rst file
-    ):
+def no3star(lns):
     '''
     Removes three stars, as they are not supported by docutils.
 
+    :param lns: lines from rst file
+
     '''
     
-    for d in lns:
+    for d in :param lns:
         # d='****'
         res = re.sub('\*\*\*\*+', '', d)
         # res='***Hello***'
@@ -236,10 +239,11 @@ def no3star(lns  # lines from rst file
         yield res
 
 
-def noblankend(lns  # lines from rst file
-               ):
+def noblankend(lns):
     '''
     Removes blanks at the end of the line.
+
+    :param lns: lines from rst file
 
     '''
 
@@ -267,14 +271,14 @@ class reflowrow():
             del self.tbl[:]
 
 
-def reflow(
-        lns  # lines from rst file
-        ,join='1'  # 0 no space, 1 with space, 2 keep as-is
-        ,sentence=False  # if True lines are split at the end of the sentence
-    ):
+def reflow(lns, join='1', sentence=False):
     '''
     Combines all rst corrections of this file.
     
+    :param lns: lines from rst file
+    :param join: 0 no space, 1 with space, 2 keep as-is
+    :param sentence: if True lines are split at the end of the sentence
+
     '''
     
     r = reflowrow()
@@ -286,11 +290,11 @@ def reflow(
         yield ln + '\n'
 
 
-def main(
-        # keyword arguments. If empty the arguments are taken from ``sys.argv``.
-        **args):
+def main(**args):
     '''
     This corresponds to the |rstreflow| shell command.
+
+    :param args: Keyword arguments. If empty the arguments are taken from ``sys.argv``.
 
     ``rstfile`` is the file name
 

@@ -59,7 +59,7 @@ tex_wrap = r"""
 DPI = 600
 target_id_group = lambda targetid: targetid[0]
 target_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
-html_extra_path=["doc/_traceability_file.svg"] #relative to conf.py
+html_extra_path=["_traceability_file.svg"] #relative to conf.py
 pandoc_doc_optref={'latex': '--template ../reference.tex',
                  'html': {},#each can also be dict of file:template
                  'pdf': '--template ../reference.tex',

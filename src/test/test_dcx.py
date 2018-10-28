@@ -649,7 +649,7 @@ def test_waf_samples(wafbuild):
 
 def test_selfdoc():
     '''
-    Tests creation of documentation from the source file using |dcx.docparts| and the |dcx.gen| file.
+    Tests creation of documentation from the source file using |dcx.doc_parts| and the |dcx.gen| file.
 
     '''
 
@@ -668,7 +668,7 @@ def test_selfdoc():
 
 def test_docparts_after():
     '''
-    Tests |dcx.docparts| with different parameters for documentation extraction.
+    Tests |dcx.doc_parts| with different parameters for documentation extraction.
 
     '''
 
