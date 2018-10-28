@@ -653,15 +653,15 @@ def test_selfdoc():
 
     '''
 
-    selfdoc_accoridng_doc_gen=os.path.join('rstdoc','doc','_dcx_api.rst')
+    selfdoc_accoridng_doc_gen=os.path.join('src','doc','_dcx_api.rst')
     try:
         os.remove(selfdoc_accoridng_doc_gen)
     except: pass
     main(verbose=True)
     assert os.path.exists(selfdoc_accoridng_doc_gen)
-    assert os.path.exists(os.path.join('rstdoc','doc','ra.rest'))
-    with new_cwd('rstdoc/doc'):
-        run('make','html')
+    assert os.path.exists(os.path.join('src','doc','ra.rest'))
+    with new_cwd('src/doc'):
+        run(['make','html'])
     assert os.path.exists(os.path.join('build','doc','html'))
     assert os.path.exists(os.path.join('build','doc','html','index.html'))
     assert os.path.exists(os.path.join('build','doc','html','ra.html'))

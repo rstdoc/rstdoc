@@ -110,7 +110,7 @@ The ID within a file
 
 All IDs that end up in a top level file should start with the same letter.
 This way one can immediately tell which top level file the ID is from.
-|dcx.lnksandtags| uses this to color a graph of all the ID dependencies.
+|dcx.links_and_tags| uses this to color a graph of all the ID dependencies.
 
 Files
 =====

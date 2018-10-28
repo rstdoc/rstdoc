@@ -32,7 +32,7 @@ long_description = '\n'.join(["rstdoc\n======\n\n"
 ,read('src/rstdoc/retable.py')
 ])
 
-long_description = dorstlines(long_description.splitlines())
+long_description = '\n'.join(dorst(long_description.splitlines()))
 
 setup(name = 'rstdoc',
     version = __version__,

@@ -50,30 +50,6 @@ Purpose
 .. include:: _retable_api.rst
 
 
-
-.. .. .. alternatively one could make a rstdoc.rest.stpl with
-.. .. %import sys
-.. .. %sys.path.append('..')
-.. .. %from setup.py import read
-.. .. 
-.. .. {{read('readme.rst')}}
-.. .. 
-.. .. {{read('rstdoc/dcx.py')}}
-.. .. 
-.. .. {{read('rstdoc/fromdocx.py')}}
-.. .. 
-.. .. {{read('rstdoc/listtable.py')}}
-.. .. 
-.. .. {{read('rstdoc/untable.py')}}
-.. .. 
-.. .. {{read('rstdoc/reflow.py')}}
-.. .. 
-.. .. {{read('rstdoc/reimg.py')}}
-.. .. 
-.. .. {{read('rstdoc/retable.py')}}
-
-
-
 .. .. repeat links here because pandoc does not see those in included file
 
 .. _`substitutions`: http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text

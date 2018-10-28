@@ -455,7 +455,6 @@ _rest = '.rest'
 _rst = '.rst'
 _txt = '.txt'
 
-
 def is_rest(x):
     return x.endswith(_rest) or x.endswith(_rest + _stpl)
 
@@ -476,13 +475,8 @@ _pyg = '.pyg'
 _png = '.png'  # target of all others
 
 
-def _is_rest_type(t):
-    return any(x.endswith(t) for x in [_rest, _rst, _txt])
-
-
 def _is_graphic_type(t):
-    return any(x.endswith(t) for x in graphic_extensions)
-
+    return t!='' and any(x.endswith(t) for x in graphic_extensions)
 
 rextgt = re.compile(
     r'(?:^|^[^\.\%\w]*\s|^\s*\(?\w+[\)\.]\s)\.\. _`?(\w[^:`]*)`?:\s*$')
@@ -723,7 +717,7 @@ def cmd(
 def _imgout(inf):
     inp, inname = dir_base(inf)
     infn, infe = stem_ext(inname)
-    if not _is_graphic_type(infe):
+    if not _is_graphic_type(infe) and not _is_graphic_type(stem_ext(infn)[1]):
         raise ValueError('%s is not an image source' % inf)
     outp, there = here_or_updir(inp, _images)
     if not there:
@@ -738,7 +732,7 @@ def _unioe(args):
     try:
         (i, o), a = args[:2], args[2:]
     except:
-        i, a = args[:1], args[1:]
+        (i,), a = args[:1], args[1:]
     return i, o, a
 
 
@@ -765,29 +759,6 @@ def _ext(x):
     return x[0] == '.' and x or '.' + x
 
 
-def normoutfile(f, suffix=None):
-    """
-    Make outfile from infile by appending suffix, or, if None,
-    ``.png`` in ``./_images`` or ``../_images``  or ``./`` from infile directory.
-    The outfile is returned.
-    """
-
-    @wraps(f)
-    def normoutfiler(*args, **kwargs):
-        infile, outfile, args = _unioe(args)
-        if isinstance(infile, str):
-            if not outfile:
-                if suffix:
-                    infn, infe = stem_ext(infile)
-                    outfile = infn + _ext(suffix)
-                else:
-                    outfile = _imgout(infile)
-        f(infile, outfile, *args, **kwargs)
-        return outfile
-
-    return normoutfiler
-
-
 _cdlock = RLock()
 
 
@@ -803,29 +774,21 @@ def new_cwd(apth):
         _cdlock.release()
 
 
-def infilecwd(f):
-    """
-    Changes into the directory of the infile if infile is a file name string.
-    """
+def startfile(filepath):
+    '''
+    Extends the Python startfile to non-Windows platforms
 
-    @wraps(f)
-    def infilecwder(*args, **kwargs):
-        infile, outfile, args = _unioe(args)
-        if isinstance(infile, str):
-            ndir, inf = dir_base(infile)
-        else:
-            ndir, inf = '', infile
-        if ndir:
-            if outfile:
-                outfile = relpath(outfile, start=ndir)
-            with new_cwd(ndir):
-                return f(inf, outfile, *args, **kwargs)
-        return f(infile, outfile, *args, **kwargs)
+    '''
 
-    return infilecwder
+    if sys.platform.startswith('darwin'):
+        sp.call(('open', filepath))
+    elif os.name == 'nt': # For Windows
+        os.startfile(filepath)
+    elif os.name == 'posix': # For Linux, Mac, etc.
+        sp.call(('xdg-open', filepath))
 
 
-def mkdtemp():
+def tempdir():
     '''
     Make temporary directory and register it to be removed with ``atexit``.
 
@@ -840,9 +803,56 @@ def mkdtemp():
     return atmpdir
 
 
-def intmpiflist(
+def infilecwd(f):
+    """
+    Changes into the directory of the infile if infile is a file name string.
+    """
+
+    @wraps(f)
+    def infilecwder(*args, **kwargs):
+        infile, outfile, args = _unioe(args)
+        if isinstance(infile, str):
+            ndir, inf = dir_base(infile)
+        else:
+            ndir, inf = '', infile
+        if ndir:
+            if isinstance(outfile,str) and outfile!='-':
+                outfile = relpath(outfile, start=ndir)
+            with new_cwd(ndir):
+                return f(inf, outfile, *args, **kwargs)
+        return f(infile, outfile, *args, **kwargs)
+
+    return infilecwder
+
+
+def normoutfile(f, suffix=None):
+    """
+    Make outfile from infile by appending suffix, or, if None,
+    ``.png`` in ``./_images`` or ``../_images``  or ``./`` from infile directory.
+    The outfile is returned.
+    """
+
+    @wraps(f)
+    def normoutfiler(*args, **kwargs):
+        infile, outfile, args = _unioe(args)
+        if isinstance(infile, str):
+            if not outfile:
+                if not suffix or _is_graphic_type(suffix):
+                    outfile = _imgout(infile)
+                elif suffix:
+                    infn, infe = stem_ext(infile)
+                    if _stpl.endswith(infe):
+                        infn, infe = stem_ext(infn)
+                    outfile = infn
+        f(infile, outfile, *args, **kwargs)
+        return outfile
+
+    return normoutfiler
+
+
+def in_temp_if_list(
         f,
-        suffix=None  # .dot, .uml, ... or rst.stpl,...
+        suffix='stpl'  # .dot, .uml, ... or rest.stpl,... default it will assume stpl and use outinfo
 ):
     """
     Wraps f(infile,outfile) returning None
@@ -862,17 +872,28 @@ def intmpiflist(
     @wraps(f)
     def intmpiflister(*args, **kwargs):
         infile, outfile, args = _unioe(args)
-        suf0, suf1 = suffix.split('.')
+        outinfo = kwargs.get('outinfo','rest')
+        try:
+            suf0, suf1 = suffix.split('.',1)
+        except:
+            if _is_graphic_type(outinfo):
+                suf0, suf1 = outinfo, suffix
+            else:
+                try:
+                    tool,suf = outinfo.split('_')
+                except:
+                    suf = outinfo
+                suf0, suf1 = suf+_rest, suffix
         if isinstance(infile, list) and infile:
-            if outfile:
+            if outfile and isinstance(outfile,str):
                 outfile = abspath(outfile)
-            atmpdir = mkdtemp()
+            atmpdir = tempdir()
             content = _joinlines(infile).encode('utf-8')
-            if outfile:
+            if outfile and isinstance(outfile,str):
                 infn = stem(base(outfile))
             else:
                 infn = sha(content).hexdigest()
-            infile = normjoin(atmpdir, infn + '.' + suf1)
+            infile = normjoin(atmpdir, '.'.join([infn,suf0,suf1]))
             with open(infile, 'bw') as ff:
                 ff.write(content)
             return normoutfile(f, suf0)(infile, outfile, *args, **kwargs)
@@ -1147,6 +1168,25 @@ def rst_pandoc(
         PageBreakHack(outfile)
     return stdout
 
+def _indented_default_role_math(filelines):
+    """
+
+    .. `x`:
+
+    xlabel:
+
+    hello
+
+    """
+    indent = ''
+    i = 0
+    try:
+        while not filelines[i].strip():
+            i = i+1
+        indent = ' '*filelines[i].index(filelines[i].lstrip())
+    except:
+        pass
+    return indent + '.. default-role:: math\n'
 
 @infilecwd
 def rst_rst2(
@@ -1168,7 +1208,7 @@ def rst_rst2(
         outtype = 'odf_odt'
     stdout = None
     if isinstance(infile, list):
-        source = '.. default-role:: math\n' + _joinlines(infile)
+        source = _indented_default_role_math(infile) + _joinlines(infile)
         stdout = publish_string(
             source,
             destination_path=destination_path,
@@ -1212,7 +1252,7 @@ def svgpng(
 
 
 @png_post_process_if_any
-@partial(intmpiflist, suffix='.tex')
+@partial(in_temp_if_list, suffix='.tex')
 @infilecwd
 def texpng(
         infile,# a .tex file name or list of lines (provide outfile in the latter case)
@@ -1273,7 +1313,7 @@ tikzpng = normoutfile(readin(_tikzwrap(_texwrap(texpng))))
 
 
 @png_post_process_if_any
-@partial(intmpiflist, suffix='.dot')
+@partial(in_temp_if_list, suffix='.dot')
 @infilecwd
 def dotpng(
         infile, # a .dot file name or list of lines (provide outfile in the latter case)
@@ -1289,7 +1329,7 @@ def dotpng(
 
 
 @png_post_process_if_any
-@partial(intmpiflist, suffix='.uml')
+@partial(in_temp_if_list, suffix='.uml')
 @infilecwd
 def umlpng(
         infile, # a .uml file name or list of lines (provide outfile in the latter case)
@@ -1307,7 +1347,7 @@ def umlpng(
 
 
 @png_post_process_if_any
-@partial(intmpiflist, suffix='.eps')
+@partial(in_temp_if_list, suffix='.eps')
 @infilecwd
 def epspng(
         infile, # a .eps file name or list of lines (provide outfile in the latter case)
@@ -1412,7 +1452,7 @@ def dostpl(
     ``.stpl`` provides full python power:
 
     - e.g. one can create temporary images which are then included in the final .docx of .odt
-      See |mkdtemp|.
+      See |tempdir|.
 
     '''
     
@@ -1432,14 +1472,13 @@ def dostpl(
     variables.update(globals())
     variables.update(kwargs)
     variables.update({'__file__': filename})
+    #TODO include outfile and outinfo
     if filenewer(infile, outfile):
         st = stpl.template(
             infile,
             template_settings={'escape_func': lambda x: x},
             template_lookup=lookup,
             **variables
-            # ,__file__ = filename
-            # ,**kwargs
         )
         if outfile:
             with opnwrite(outfile) as f:
@@ -1447,22 +1486,9 @@ def dostpl(
         else:
             return st.replace('\r\n', '\n').splitlines(keepends=True)
 
-def dorstlines(
-    infile  # a .rest, .rst, .txt file name or list of lines
-    ):
-    '''
-    This calls |dorst|, but gives the lines back, instead of writing them to stdout or a file.
-
-    '''
-
-    tmpio = io.StringIO()
-    dorst(infile,tmpio)
-    tmpio.seek(0)
-    return tmpio.readlines()
-
 def dorst(
         infile  # a .rest, .rst, .txt file name or list of lines
-        ,outfile=None  # None and '-' mean standard out. Can be io.StringIO().
+        ,outfile=io.StringIO  # None and '-' mean standard out. If io.StringIO, then the lines are returned.
         # for .rest |xxx| substitutions for reST link targets in infile are appended if no ``_links_sphinx.rst`` there
         ,outinfo=None  # specifies the tool to use
         # 'html', 'docx', 'odt',... via pandoc if output
@@ -1470,42 +1496,44 @@ def dorst(
         # 'rst_html',... via rst2xxx frontend tools
         # '[infile/][substitution.]docx[.]' substitutions stands for the file used in substitutions if no ``_links_sphinx.rst``
         # The infile is used, if the actual infile are lines. The final dot tells to stop after substitutions.
-        ,fn_i_ln=None # (fn,i,ln) of the .stpl with all stpl includes sequenced (used by convert())
+        ,fn_i_ln=None # (fn,i,ln) of the .stpl with all stpl includes sequenced (used by |dcx.convert|)
         ):
     '''
     Default interpreted text role is set to math.
     The link lines are added to a .rest file.
 
-    >>> cd(dirname(__file__))
-    >>> cd('../doc')
+    Examples::
 
-    >>> dorst('dd.rest') # doctest: +ELLIPSIS
-    .. default-role:: math...
+        >>> cd(dirname(__file__))
+        >>> cd('../doc')
 
-    >>> dorst('ra.rest.stpl') # doctest: +ELLIPSIS
-    .. default-role:: math...
+        >>> dorst('dd.rest') # doctest: +ELLIPSIS
+        .. default-role:: math...
 
-    >>> dorst(['hi there']) # doctest: +ELLIPSIS
-    .. default-role:: math...
-    hi there
+        >>> dorst('ra.rest.stpl') # doctest: +ELLIPSIS
+        .. default-role:: math...
 
-    >>> dorst(['hi there'],None,'html') # doctest: +ELLIPSIS
-    run (['pandoc', ..., '-o', '-'],) ...
+        >>> dorst(['hi there']) # doctest: +ELLIPSIS
+        .. default-role:: math...
+        hi there
 
-    >>> dorst('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
-    run (['pandoc', ..., '-o', 'ra.docx'],) ...
+        >>> dorst(['hi there'],None,'html') # doctest: +ELLIPSIS
+        run (['pandoc', ..., '-o', '-'],) ...
 
-    >>> dorst(['hi there'],'test.html') # doctest: +ELLIPSIS
-    run (['pandoc', ..., '-o', 'test.html'],) ...
+        >>> dorst('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
+        run (['pandoc', ..., '-o', 'ra.docx'],) ...
 
-    >>> dorst(['hi there'],'test.html','sphinx_html') # doctest: +ELLIPSIS
-    run (['sphinx-build',...
+        >>> dorst(['hi there'],'test.html') # doctest: +ELLIPSIS
+        run (['pandoc', ..., '-o', 'test.html'],) ...
 
-    >>> dorst(['hi there'],'test.html','sphinx') # doctest: +ELLIPSIS
-    run (['sphinx-build',...
+        >>> dorst(['hi there'],'test.html','sphinx_html') # doctest: +ELLIPSIS
+        run (['sphinx-build',...
 
-    >>> dorst(['hi there'],'test.odt','rst') # doctest: +ELLIPSIS
-    run (['rst2odt.py', ...
+        >>> dorst(['hi there'],'test.html','sphinx') # doctest: +ELLIPSIS
+        run (['sphinx-build',...
+
+        >>> dorst(['hi there'],'test.odt','rst') # doctest: +ELLIPSIS
+        run (['rst2odt.py', ...
 
     '''
 
@@ -1514,14 +1542,18 @@ def dorst(
     if outinfo:
         dinfo, binfo = dir_base(outinfo)
         outinfo = binfo
-    try:
-        rsttool, outinfo = outinfo.split('_')
+    if not isinstance(outfile,str) and outinfo in rst_tools:
+        rsttool = rst_tools[outinfo]
+        outinfo = 'html'
+    else:
         try:
-            rsttool = rst_tools[rsttool]
+            rsttool, outinfo = outinfo.split('_')
+            try:
+                rsttool = rst_tools[rsttool]
+            except:
+                rsttool = None
         except:
-            rsttool = None
-    except:
-        pass
+            pass
     if isinstance(infile, str):
         infile = abspath(infile)
         if rsttool != rst_sphinx:
@@ -1552,21 +1584,20 @@ def dorst(
                 except:
                     pass
                 sysout = sys.stdout
+        elif callable(outfile):
+            sysout = outfile()
         else:
-            try:
-                _, ofext = stem_ext(outfile)
-                ofext = ofext.strip('.')
-                if not outinfo:  # x.rst a/b/c.docx
-                    outinfo = ofext
-                elif outinfo in rst_tools:  # x.rst a/b/c.docx pandoc
-                    rsttool = rst_tools[outinfo]
-                    outinfo = ofext
-            except:
-                rsttool = None
+            _, ofext = stem_ext(outfile)
+            ofext = ofext.strip('.')
+            if not outinfo:  # x.rst a/b/c.docx
+                outinfo = ofext
+            elif outinfo in rst_tools:  # x.rst a/b/c.docx pandoc
+                rsttool = rst_tools[outinfo]
+                outinfo = ofext
         try:
             if outinfo.endswith('.'):  # x.rest - docx.
                 rsttool = None  # ... will output the rest code with links for docx
-            # drop file info from outinfo
+            # drop file information from outinfo
             outinfo = outinfo.strip('.')
             t, outinfo = stem_ext(outinfo)
             if not outinfo:
@@ -1574,27 +1605,23 @@ def dorst(
             outinfo = outinfo.strip('.')
         except:
             outinfo = 'rest'
-        if _is_rest_type(outinfo):
+
+        if _rest.endswith(outinfo):
             rsttool = None  # no further processing wanted, sysout is final
         if not rsttool and not sysout:
-            try:
-                sysout = opnwrite(outfile)
-            except:
-                sysout = outfile #outfile can be a file object like io.StringIO
+            sysout = opnwrite(outfile)
         tmprestindir = None
 
         if rsttool != rst_sphinx:  # sphinx can read substitutions from included files
             if rsttool:
                 finalsysout = sysout
-                tmprestindir = normjoin(
-                    dirname(infile),
-                    base(outfile) + '.rest')
+                tmprestindir = infile + '.rest'
                 sysout = opnwrite(tmprestindir)
                 infile = tmprestindir
                 if not fakefs.is_setup():
                     atexit.register(rmrf, tmprestindir)
             if sysout:
-                sysout.write('.. default-role:: math\n')
+                sysout.write(_indented_default_role_math(filelines))
                 links_done = False
                 for x in filelines:
                     if x.startswith('.. include:: _links_sphinx.rst'):
@@ -1605,7 +1632,7 @@ def dorst(
                                 sysout.write(f.read())
                                 links_done = True
                     else:
-                        sysout.write(x)
+                        sysout.write(x if x.endswith('\n') else x+'\n')
                 if not links_done:
                     sysout.write('\n')
                     try:
@@ -1619,19 +1646,24 @@ def dorst(
                                 outinfo.replace('rest', 'html'), filenoext))
 
         if rsttool:
-            if finalsysout and rsttool != rst_sphinx:
-                outfile = '-'
             config = conf_py(dirname(infile))
             if sysout:
                 sysout.close()
                 sysout = None
-            stdout = rsttool(infile, outfile, outinfo, **config)
-            if stdout != None and finalsysout and rsttool != rst_sphinx:
+            stdout = rsttool(infile, 
+                '-' if finalsysout and rsttool != rst_sphinx
+                else outfile,
+                outinfo, **config)
+            if stdout != None and finalsysout:
                 finalsysout.write(stdout)
     finally:
         for x in [sysout, finalsysout]:
-            if x is not None and x != sys.stdout and not isinstance(tmpio,io.StringIO):
+            if x is not None and x != sys.stdout and not isinstance(x,io.StringIO):
                 x.close()
+        for x in [sysout, finalsysout]:
+            if isinstance(x,io.StringIO):
+                x.seek(0)
+                return x.readlines()
 
 
 converters = {
@@ -1651,50 +1683,55 @@ graphic_extensions = {_svg, _tikz, _tex, _dot, _uml, _eps, _pyg}
 
 
 def convert(
-        infile        # any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else stpl is assumed 
-        ,outfile=None # '-' means standard out, else a file name, or None for automatic (using outinfo)
+        infile        # any of '.tikz' '.svg' '.dot' '.uml' '.eps' '.pyg' or else stpl is assumed. Can be list of lines, too.
+        ,outfile=io.StringIO # '-' means standard out, else a file name, or None for automatic (using outinfo), or io.StringIO to return lines instead of stdout
         ,outinfo=None # 'html', 'sphinx_html', 'docx', 'odt', 'file.docx',... interpet input as rest, else specifies graph type
         ):
     '''
-    Converts the known files.
+    Converts any of the known files.
 
-    Stpl files are immediately forwarded to the next converter.
+    Stpl files are forwarded to the next converter.
 
     The main job is to normalized the input params, because this is called from main() and via Python.
-    The it forwards to the right converter.
+    It forwards to the right converter.
 
-    >>> cd(dirname(__file__))
-    >>> cd('../doc')
+    Examples::
 
-    >>> convert(['hi {{2+3}}!'])
-    ['hi 5!']
+        >>> cd(dirname(__file__))
+        >>> cd('../doc')
 
-    >>> dry_run(True)
+        >>> convert([' ','   hi {{2+3}}!'],outinfo='rest')
+        ['hi 5!']
 
-    >>> infile,outfile,outinfo = (["newpath {{' '.join(str(i)for i in range(4))}} rectstroke showpage"],'tst.png','eps')
-    >>> convert(infile,outfile,outinfo) # doctest: +ELLIPSIS
-    run (['inkscape', ...tst.png'],) ...
+        >>> convert([' ','   hi {{2+3}}!'])  # doctest: +ELLIPSIS
+        ['<!DOCTYPE html>\n', ...]
 
-    >>> convert('ra.rest.stpl') # doctest: +ELLIPSIS
-    .. default-role:: math
-    ...
+        >>> dry_run(True)
 
-    >>> convert('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
-    run (['pandoc', ..., '-o', 'ra.docx'],) ...
+        >>> infile,outfile,outinfo = (["newpath {{' '.join(str(i)for i in range(4))}} rectstroke showpage"],'tst.png','eps')
+        >>> convert(infile,outfile,outinfo) # doctest: +ELLIPSIS
+        run (['inkscape', ...tst.png'],) ...
 
-    >>> convert('ra.rest.stpl','ra.docx','sphinx') # doctest: +ELLIPSIS
-    run (['sphinx-build', ...
+        >>> convert('ra.rest.stpl') # doctest: +ELLIPSIS
+        .. default-role:: math
+        ...
 
-    >>> convert('dd.rest',None,'html') # doctest: +ELLIPSIS
-    run (['pandoc', ..., '-o', '-'],) ...
+        >>> convert('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
+        run (['pandoc', ..., '-o', 'ra.docx'],) ...
 
-    >>> convert('dd.rest','html') # doctest: +ELLIPSIS
-    run (['pandoc', ..., '-o', 'dd.html'],) ...
+        >>> convert('ra.rest.stpl','ra.docx','sphinx') # doctest: +ELLIPSIS
+        run (['sphinx-build', ...
 
-    >>> convert('index.rest','../../build/doc/sphinx_singlehtml') # doctest: +ELLIPSIS
-    run (['sphinx-build', '-b', 'singlehtml', ..., '../../build/doc', ...],) ...
+        >>> convert('dd.rest',None,'html') # doctest: +ELLIPSIS
+        run (['pandoc', ..., '-o', '-'],) ...
 
-    >>> dry_run(False)
+        >>> convert('dd.rest','html') # doctest: +ELLIPSIS
+        run (['pandoc', ..., '-o', 'dd.html'],) ...
+
+        >>> convert('index.rest','../../build/doc/sphinx_singlehtml') # doctest: +ELLIPSIS
+        run (['sphinx-build', '-b', 'singlehtml', ..., '../../build/doc', ...],) ...
+
+        >>> dry_run(False)
 
     '''
 
@@ -1710,10 +1747,10 @@ def convert(
             pass
         infile = sys.stdin.readlines()
     if infile:
-        if outinfo == None:
+        if not outinfo:
             if outfile == '-':
                 outinfo = 'rest'
-            elif outfile == None:
+            elif outfile == None or callable(outfile):
                 outinfo = 'html'
         if isinstance(infile, str):
             nextinfile, fext = stem_ext(infile)
@@ -1723,12 +1760,15 @@ def convert(
                 nextinfile = outinfo.strip('.') + '.' + outinfo.strip('.')
             else:
                 nextinfile = 'rest' + _rest
-                if not outinfo:
-                    outinfo = 'rest'
         fn_i_ln = None
         while fext in converters:
+            if not outfile or callable(outfile):
+                if _is_graphic_type(fext):
+                    outfile = _imgout(nextinfile + fext)
             try:
                 nextinfile, fextnext = stem_ext(nextinfile)
+                if fextnext not in converters:
+                    fextnext = None
             except:
                 fextnext = None
             thisconverter = converters[fext]
@@ -1750,12 +1790,36 @@ def convert(
                 break
             if not fextnext:
                 break
-            if not outfile:
-                if _is_graphic_type(fextnext):
-                    outfile = _imgout(nextinfile + fextnext)
             fext = fextnext
         return infile
 
+
+'''
+Same as |dcx.convert|, but creates temporary folder for a list of lines infile argument.
+
+Example::
+
+  >>> tmpfile = convert_in_tempdir("""digraph {
+  ... %for i in range(3):    
+  ...    "From {{i}}" -> "To {{i}}";
+  ... %end
+  ...    }""".splitlines(),outinfo='dot')
+  >>> stem_ext(tmpfile)[1]
+  '.png'
+  >>> tmpfile = convert_in_tempdir("""
+  ... This is re{{'st'.upper()}}
+  ... 
+  ... .. `xx`:
+  ... 
+  ... xx:
+  ...     text
+  ... 
+  ... """.splitlines(),outinfo='rst_html')
+  >>> stem_ext(tmpfile)[1]
+  '.html'
+
+'''
+convert_in_tempdir = in_temp_if_list(convert)
 
 def rindices(
         r    # regular expression string or compiled
@@ -2112,7 +2176,7 @@ class Traceability:
             '.. _`fig' + _traceability_file + '`:\n', '\n',
             '.. figure:: ' + trcpath + '.png\n', '   :name:\n', '\n',
             '   |fig' + _traceability_file +
-            ': `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies'
+            '|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies'
         ])
         if target_id_color is not None:
             legend = ', '.join(
@@ -2222,21 +2286,23 @@ def gen(
     if '.' not in sys.path:
         sys.path.append('.')
     if fun:
-        gen_regex = r'#def gen_' + fun + r'(\w*(lns,\*\*kw):)*'
+        gen_regex = r'#\s*def gen_' + fun + r'(\w*(lns,\*\*kw):)*'
     else:
-        gen_regex = r'#def gen(\w*(lns,\*\*kw):)*'
+        gen_regex = r'#\s*def gen(\w*(lns,\*\*kw):)*'
     iblks = list(rindices(gen_regex, lns))
-    py3 = '\n'.join([
+    py3 = [
         lns[k][lns[i].index('#') + 1:] for i, j in in2s(iblks)
         for k in range(i, j)
-    ])
-    eval(compile(py3, source + '#gen', 'exec'), globals())
+    ]
+    indent = py3[0].index(py3[0].lstrip())
+    py3 = '\n'.join(x[indent:] for x in py3)
+    eval(compile(py3, source + '#\s*gen', 'exec'), globals())
     if fun:
         gened = list(eval('gen_' + fun + '(lns,**kw)'))
     else:  # else eval all gen_ funtions
         gened = []
         for i in iblks[0::2]:
-            gencode = re.split("#def |:", lns[i])[1]  # gen(lns,**kw)
+            gencode = re.split("#\s*def |:", lns[i])[1]  # gen(lns,**kw)
             gened += list(eval(gencode))
     if target:
         drn = dirname(target)
@@ -2586,14 +2652,14 @@ class Fldr(OrderedDict):
     def __str__(self):
         return str(list(sorted(self.keys())))
 
-    def scan(
+    def scandir(
             self,
             fs  # all files in the directory as returned by ``os.walk()``
         ):
         """Fldr.
 
         Scans the directory for rest files.
-        All files (.rest and included .rst) are added.
+        All files (.rest and included .rst) are added if there is at least one ``.rest[.stpl]``.
 
         Sphinx index.rest is processed last.
 
@@ -2784,12 +2850,12 @@ class Fldrs(OrderedDict):
     def __str__(self):
         return super().__str__()
 
-    def scan(self):
+    def scandirs(self):
         for p, ds, fs in os.walk(self.scanroot):
             if not p.endswith(_images):
                 directory = normjoin(p)
                 fldr = Fldr(directory)
-                fldr.scan(fs)
+                fldr.scandir(fs)
                 if len(fldr):
                     self[directory] = fldr
 
@@ -2811,7 +2877,7 @@ def links_and_tags(adir  # directory name
     '''
 
     fldrs = Fldrs(adir)
-    fldrs.scan()
+    fldrs.scandirs()
     for fldr in fldrs.values():
         fldr.create_links_and_tags(fldrs.scanroot)
 
@@ -3255,27 +3321,27 @@ example_tree = r'''
             SPHINXOPTS  = -c .
             SPHINXBLD   = sphinx-build
             SPHINXPROJ  = sample
-            SRCDIR      = ./doc
+            SRCDIR      = ./doc/
             SRCBACK     = ../
             DCXPATH     = ../
-            BLDDIR      = ../build/doc
-            STPLS       = $(wildcard $(SRCDIR)/*.stpl)
+            BLDDIR      = ../build/doc/
+            STPLS       = $(wildcard $(SRCDIR)*.stpl)
             STPLTGTS    = $(STPLS:%.stpl=%)
-            SRCS        = $(filter-out $(SRCDIR)/index.rest,$(wildcard $(SRCDIR)/*.rest))
-            SRCSTPL     = $(wildcard $(SRCDIR)/*.rest.stpl)
+            SRCS        = $(filter-out $(SRCDIR)index.rest,$(wildcard $(SRCDIR)*.rest))
+            SRCSTPL     = $(wildcard $(SRCDIR)*.rest.stpl)
             IMGS        = \
-            	$(wildcard $(SRCDIR)/*.pyg)\
-            	$(wildcard $(SRCDIR)/*.eps)\
-            	$(wildcard $(SRCDIR)/*.tikz)\
-            	$(wildcard $(SRCDIR)/*.svg)\
-            	$(wildcard $(SRCDIR)/*.uml)\
-            	$(wildcard $(SRCDIR)/*.dot)\
-            	$(wildcard $(SRCDIR)/*.eps.stpl)\
-            	$(wildcard $(SRCDIR)/*.tikz.stpl)\
-            	$(wildcard $(SRCDIR)/*.svg.stpl)\
-            	$(wildcard $(SRCDIR)/*.uml.stpl)\
-            	$(wildcard $(SRCDIR)/*.dot.stpl)
-            PNGS=$(subst $(SRCDIR),$(SRCDIR)/_images,\
+            	$(wildcard $(SRCDIR)*.pyg)\
+            	$(wildcard $(SRCDIR)*.eps)\
+            	$(wildcard $(SRCDIR)*.tikz)\
+            	$(wildcard $(SRCDIR)*.svg)\
+            	$(wildcard $(SRCDIR)*.uml)\
+            	$(wildcard $(SRCDIR)*.dot)\
+            	$(wildcard $(SRCDIR)*.eps.stpl)\
+            	$(wildcard $(SRCDIR)*.tikz.stpl)\
+            	$(wildcard $(SRCDIR)*.svg.stpl)\
+            	$(wildcard $(SRCDIR)*.uml.stpl)\
+            	$(wildcard $(SRCDIR)*.dot.stpl)
+            PNGS=$(subst $(SRCDIR),$(SRCDIR)_images/,\
             	$(patsubst %.eps,%.png,\
             	$(patsubst %.pyg,%.png,\
             	$(patsubst %.tikz,%.png,\
@@ -3287,36 +3353,36 @@ example_tree = r'''
             	$(patsubst %.tikz.stpl,%.png,\
             	$(patsubst %.svg.stpl,%.png,\
             	$(patsubst %.uml.stpl,%.png,$(IMGS)))))))))))))
-            DOCXS = $(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCS:%.rest=%.docx))\
-            	$(subst $(SRCDIR),$(BLDDIR)/docx,$(SRCSTPL:%.rest.stpl=%.docx))
-            PDFS  = $(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCS:%.rest=%.pdf))\
-            	$(subst $(SRCDIR),$(BLDDIR)/pdf,$(SRCSTPL:%.rest.stpl=%.pdf))
+            DOCXS = $(subst $(SRCDIR),$(BLDDIR)docx/,$(SRCS:%.rest=%.docx))\
+            	$(subst $(SRCDIR),$(BLDDIR)docx/,$(SRCSTPL:%.rest.stpl=%.docx))
+            PDFS  = $(subst $(SRCDIR),$(BLDDIR)pdf/,$(SRCS:%.rest=%.pdf))\
+            	$(subst $(SRCDIR),$(BLDDIR)pdf/,$(SRCSTPL:%.rest.stpl=%.pdf))
             .PHONY: docx help Makefile docxdir pdfdir stpl index imgs
             stpl: $(STPLTGTS)
             %:%.stpl
             	@cd $(SRCDIR) && stpl "$(<F)" "$(@F)"
             imgs: $(PNGS)
-            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.pyg
-            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
-            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.eps
-            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
-            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.tikz
-            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
-            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.svg
-            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
-            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.uml
-            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
-            $(SRCDIR)/_images/%.png:$(SRCDIR)/%.dot
-            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py $(<F)
-            docxdir: ${BLDDIR}/docx
-            pdfdir: ${BLDDIR}/pdf
+            $(SRCDIR)_images/%.png:$(SRCDIR)%.pyg
+            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+            $(SRCDIR)_images/%.png:$(SRCDIR)%.eps
+            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+            $(SRCDIR)_images/%.png:$(SRCDIR)%.tikz
+            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+            $(SRCDIR)_images/%.png:$(SRCDIR)%.svg
+            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+            $(SRCDIR)_images/%.png:$(SRCDIR)%.uml
+            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+            $(SRCDIR)_images/%.png:$(SRCDIR)%.dot
+            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+            docxdir: ${BLDDIR}docx
+            pdfdir: ${BLDDIR}pdf
             MKDIR_P = mkdir -p
-            ${BLDDIR}/docx:
-            	@${MKDIR_P} ${BLDDIR}/docx
-            ${BLDDIR}/pdf:
-            	@${MKDIR_P} ${BLDDIR}/pdf
+            ${BLDDIR}docx:
+            	@${MKDIR_P} ${BLDDIR}docx
+            ${BLDDIR}pdf:
+            	@${MKDIR_P} ${BLDDIR}pdf
             index:
-            	@python ./dcx.py
+            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py
             help:
             	@$(SPHINXBLD) -M help "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
             	@echo "  docx        to docx"
@@ -3325,11 +3391,11 @@ example_tree = r'''
             html dirhtml singlehtml htmlhelp qthelp applehelp devhelp epub latex text man texinfo pickle json xml pseudoxml: Makefile index stpl imgs
             	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
             docx:  docxdir index stpl imgs $(DOCXS)
-            $(BLDDIR)/docx/%.docx:$(SRCDIR)/%.rest
-            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py "$(<F)" "$(SRCBACK)/$@"
+            $(BLDDIR)/docx/%.docx:$(SRCDIR)%.rest
+            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py "$(<F)" "$(SRCBACK)$@"
             pdf: pdfdir index stpl imgs $(PDFS)
-            $(BLDDIR)/pdf/%.pdf:$(SRCDIR)/%.rest
-            	@cd $(SRCDIR) && python $(DCXPATH)/dcx.py "$(<F)" "$(SRCBACK)/$@"
+            $(BLDDIR)/pdf/%.pdf:$(SRCDIR)%.rest
+            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py "$(<F)" "$(SRCBACK)$@"
         ├ code
             └ some.h
                 /*
@@ -4450,9 +4516,10 @@ def initroot(
         mktree(inittree)
 
 
-def index_dir(root  # all sub directories of ``root`` are indexed
-              ):
+def index_dir(root):
     ''' 
+    All subdirectories of ``root`` that contain a ``.rest`` or ``.rest.stpl`` file are indexed.
+
     - expands the .stpl files
     - generates the files as defined in the ``gen`` file (see example in dcx.py) 
     - generates ``_links_xxx.rst`` for xxx = {sphinx latex html pdf docx odt}
@@ -4486,7 +4553,7 @@ def index_dir(root  # all sub directories of ``root`` are indexed
 
     # link, gen and tags per directory
     fldrs = Fldrs(root)
-    fldrs.scan()
+    fldrs.scandirs()
     for directory, fldr in fldrs.items():
         if verbose:
             print(directory)
