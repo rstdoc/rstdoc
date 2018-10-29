@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-#sudo pip install -e .
-#py.test --cov rstdoc --cov-report term-missing
+#pip uninstall rstdoc
+#python setup.py bdist_wheel
+#pip install dist/rstdoc-1.6.2-py3-non-any.whl
+#py.test -vv --cov rstdoc --cov-report term-missing
 
 #sudo python setup.py bdist_wheel
 #twine upload ./dist/*.whl
@@ -15,7 +17,7 @@ import sys
 sys.path.append('./src/rstdoc')
 from dcx import dorst
 
-__version__ = '1.6.1'
+__version__ = '1.6.2'
 
 def read(fname,separator='\n"""'):
     with open(os.path.join(os.path.dirname(__file__), fname),encoding='utf-8') as f:

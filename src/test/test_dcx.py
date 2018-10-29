@@ -679,3 +679,10 @@ def test_docparts_after():
         '   int x //int variable\n', '   )\n', '', "afun's description\n"]
 
 
+@pytest.mark.parametrize('outinfo',['pdf','docx','html','odt','rst_odt','rst_html','sphinx_html'])
+def test_convert_in_tempdir(outinfo):
+    with opn('src/test/fixtures/with_images.rest.stpl') as fp:
+        lines = fp.readlines()
+    filename = convert_in_tempdir(lines,outinfo=outinfo)
+    assert exists(filename)
+

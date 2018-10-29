@@ -1,0 +1,227 @@
+.. vim: syntax=rst
+
+.. rstdcx with_images.rest.stpl with_images.odt odt && swriter --convert-to pdf with_images.odt
+.. rstdcx with_images.rest.stpl with_images.docx docx && swriter --convert-to pdf with_images.docx
+.. rstdcx with_images.rest.stpl with_images.html html
+.. rstdcx with_images.rest.stpl with_images.html rst_html
+.. rstdcx with_images.rest.stpl with_images.html sphinx_html
+
+%cntr = lambda alist0,prefix='',width=2: alist0.append(alist0[-1]+1) or ("{}{:0>%s}"%width).format(prefix,alist0[-1])
+%II=lambda prefix,alist0,short:':{}: **{}**'.format(cntr(alist0,prefix),short)
+%R=lambda short,alist0=[0]:II('R',alist0,short)
+%import time
+%tmpdir = tempdir()
+%intmp = lambda x: normjoin(tmpdir,x)
+
+##############
+Images to Sign
+##############
+
+
+<%
+svgsign_name_role="""<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   viewBox="0 0 57.349998 28.76"
+   id="svg2"
+   height="28.76mm"
+   width="57.349998mm"
+   version="1.0">
+  <metadata
+     id="metadata75">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs4">
+    <clipPath
+       id="clipEmfPath1"
+       clipPathUnits="userSpaceOnUse">
+      <path
+         id="path7"
+         d="m 6.98976,76.252 189.35924,0 0,10.1669 -189.35924,0 z" />
+    </clipPath>
+    <clipPath
+       id="clipEmfPath2"
+       clipPathUnits="userSpaceOnUse">
+      <path
+         id="path10"
+         d="m 6.98976,88.9606 189.35924,0 0,10.167 -189.35924,0 z" />
+    </clipPath>
+    <pattern
+       y="0"
+       x="0"
+       height="6"
+       width="6"
+       patternUnits="userSpaceOnUse"
+       id="EMFhbasepattern" />
+  </defs>
+  <path
+     id="path13"
+     d="m 0,0 57.386784,0 0,28.693251 -57.386784,0 z"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path15"
+     d="m 0,0 57.386784,0 0,28.693251 -57.386784,0 z"
+     style="fill:#f0f0f0;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path17"
+     d="m 0,0 57.386784,0 0,28.693251 -57.386784,0 z"
+     style="fill:#f0f0f0;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path19"
+     d="m 0,0 57.386784,0 0,28.693251 -57.386784,0 z"
+     style="fill:#f0f0f0;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path21"
+     d="m 0,0 57.386784,0 0,28.693251 -57.386784,0 z"
+     style="fill:#f0f0f0;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path23"
+     d="m 0,0 57.386784,0 0,28.693251 -57.386784,0 z"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path25"
+     d="m 0,0 57.386784,0 0,28.693251 -57.386784,0 z"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path27"
+     d="m 0,0.71733269 57.386784,0 0,3.58666911 -57.386784,0 z"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path29"
+     d="m 0,5.021326 0,0 0,15.422682 0,0 z"
+     style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path31"
+     d="m 0,5.021326 57.386784,0 0,0 -57.386784,0 z"
+     style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path33"
+     d="m 57.386784,5.021326 0,0 0,15.422682 0,0 z"
+     style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path35"
+     d="m 0,20.444008 57.386784,0 0,0.358648 -57.386784,0 z"
+     style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path37"
+     d="m 0,5.021326 57.386784,0 0,15.422682 -57.386784,0 z"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path39"
+     d="m 1.9726656,13.988006 4.1246608,0 0,6.456002 -4.1246608,0 z"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <text
+     id="text41"
+     y="18.437576"
+     x="2.152"
+     style="font-style:normal;font-variant:normal;font-weight:400;font-size:5.73263884px;line-height:125%;font-family:arial;text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+     xml:space="preserve"><tspan
+       id="tspan43"
+       y="18.437576"
+       x="2.152"><tspan
+         id="tspan45"
+         style="font-style:normal;font-variant:normal;font-weight:400;font-size:5.73263884px;font-family:arial;fill:#000000"
+         dy="0"
+         dx="0">X</tspan></tspan></text>
+  <path
+     id="path47"
+     d="m 8.0700033,5.7386784 47.3440477,0 0,14.7053296 -47.3440477,0 z"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path49"
+     d="m 8.0700033,5.7386784 47.3440477,0 0,13.9879776 -47.3440477,0 z"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path51"
+     d="m 0,21.520009 57.386784,0 0,6.456003 -57.386784,0 z"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <path
+     id="path53"
+     d="m 1.9726656,21.520009 53.4413854,0 0,2.869325 -53.4413854,0 z"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <g
+     transform="scale(0.28222222,0.28222222)"
+     id="g55"
+     clip-path="url(#clipEmfPath1)">
+    <text
+       id="text57"
+       y="8.2540283"
+       x="0"
+       transform="translate(7.625197,76.251969)"
+       style="font-style:normal;font-variant:normal;font-weight:400;font-size:8.25px;line-height:125%;font-family:tahoma;text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+       xml:space="preserve"><tspan
+         id="tspan59"
+         y="8.2540283"
+         x="0"><tspan
+           id="tspan61"
+           style="font-style:normal;font-variant:normal;font-weight:400;font-size:8.25px;font-family:tahoma;fill:#000000"
+           dy="0"
+           dx="0">{0}</tspan></tspan></text>
+  </g>
+  <path
+     id="path63"
+     d="m 1.9726656,25.106658 53.4413854,0 0,2.869354 -53.4413854,0 z"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none" />
+  <g
+     transform="scale(0.28222222,0.28222222)"
+     id="g65"
+     clip-path="url(#clipEmfPath2)">
+    <text
+       id="text67"
+       y="8.2540283"
+       x="0"
+       transform="translate(7.625197,88.96063)"
+       style="font-style:normal;font-variant:normal;font-weight:400;font-size:8.25px;line-height:125%;font-family:tahoma;text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none"
+       xml:space="preserve"><tspan
+         id="tspan69"
+         y="8.2540283"
+         x="0"><tspan
+           id="tspan71"
+           style="font-style:normal;font-variant:normal;font-weight:400;font-size:8.25px;font-family:tahoma;fill:#000000"
+           dy="0"
+           dx="0">{1}</tspan></tspan></text>
+  </g>
+</svg>"""
+indent = lambda nindent,txt: '\n'.join(' '*nindent+x for x in txt.splitlines())
+signings = []
+%>
+
+Please sign (|r_thank_you|):
+
+%people = {'Puntaier':'Preparation','You':'Review'}
+
+%for name,role in people.items():
+%    svgsrc = svgsign_name_role.format(name,role)
+%    if outinfo.endswith('html'):
+%        signings.append('.. raw:: html\n\n'+indent(4,svgsrc))
+%    else:
+%        signfile = intmp('sign%s.png'%name)
+%        svgpng(svgsrc.splitlines(),signfile,'svg')
+%        signings.append(""".. |{}| image:: {}\n   :width: 40%\n""".format(base(signfile),signfile))
+{{'|'+base(signfile)+'|'}}        
+%   end
+%end
+
+%for s in signings:
+{{s}}
+%end
+
+
+.. _`r_thank_you`:
+
+{{R('Thank you')}}
+
+    Thank you for signing.
+
+

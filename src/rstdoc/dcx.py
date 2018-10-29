@@ -264,13 +264,15 @@ class _Verbose:
         self.tools = tools
 
     def svg2png(self, *args, **kwargs):
-        print(_plus, relpath(kwargs['write_to']))
+        if verbose:
+            print(_plus, relpath(kwargs['write_to']))
         return self.tools.svg2png(*args, **kwargs)
 
     def run(self, *args, **kwargs):
-        print('run', args, kwargs)
-        if 'outfile' in kwargs:
-            print(_plus, kwargs['outfile'])
+        if verbose:
+            print('run', args, kwargs)
+            if 'outfile' in kwargs:
+                print(_plus, kwargs['outfile'])
         return self.tools.run(*args, **kwargs)
 
 
@@ -303,15 +305,17 @@ fakefs = _FakeFs()
 tools = None
 
 
-def dry_run(
-        dry=None  # None: initialize with False if not yet, else keep as is.
-        # True: fake fs and dry-run
-        # False: use real tools
-    ):
-    """
-    Adjusts ``dcx`` classes to produce a dry run.
+def dry_run(dry=None):
+    '''
+    Use ``pyfakefs`` Adjusts ``dcx`` classes to produce a dry run.
 
-    """
+
+    :param dry:
+    - None: initialize with False if not yet, else keep as is.
+    - True: use pyfakefs, but only applies to python, not Pandoc or other external tools
+    - False: use real tools
+
+    '''
 
     global tools
     if dry:
@@ -343,10 +347,7 @@ def dry_run(
     else:
         if dry != None or tools == None:
             fakefs.teardown()
-            if verbose:
-                tools = _Verbose(_Tools())
-            else:
-                tools = _Tools()
+            tools = _Verbose(_Tools())
 
 
 dry_run(None)
@@ -493,6 +494,11 @@ reximg = re.compile(r'(?:image|figure):: ((?:\.|/|\\|\w).*)')
 rerstinclude = re.compile(r'\.\. include::\s*([\./\w\\].*)')
 restplinclude = re.compile(r"""%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*""")
 
+_rstlinkfixer = re.compile('#[^>]+>')
+def _rst_id_fixer(matchobj):
+    return matchobj.group(0).replace(' ','-').replace('_','-')
+def _rst_id_fix(linktxt):
+    return _rstlinkfixer.sub(_rst_id_fixer, linktxt, re.MULTILINE)
 
 @lru_cache()
 def here_or_updir(fldr, file):
@@ -765,6 +771,14 @@ _cdlock = RLock()
 
 @contextlib.contextmanager
 def new_cwd(apth):
+    '''
+    Use as::
+
+        with new_cwd(dir):
+            #inside that directory
+
+    '''
+
     prev_cwd = cwd()
     _cdlock.acquire()
     cd(apth)
@@ -804,7 +818,7 @@ def tempdir():
     return atmpdir
 
 
-def infilecwd(f):
+def infile_cwd(f):
     """
     Changes into the directory of the infile if infile is a file name string.
     """
@@ -826,6 +840,7 @@ def infilecwd(f):
     return infilecwder
 
 
+_after_ = lambda x: x[x.find('_')+1:]
 def normoutfile(f, suffix=None):
     """
     Make outfile from infile by appending suffix, or, if None,
@@ -842,9 +857,13 @@ def normoutfile(f, suffix=None):
                     outfile = _imgout(infile)
                 elif suffix:
                     infn, infe = stem_ext(infile)
-                    if _stpl.endswith(infe):
-                        infn, infe = stem_ext(infn)
-                    outfile = infn
+                    outinfo = kwargs.get('outinfo',None)
+                    if outinfo.startswith('sphinx'):
+                        outfile = "{1}/{0}/{2}".format(outinfo,*dir_base(infn))+'.'+_after_(outinfo)
+                    else:
+                        if _stpl.endswith(infe):
+                            infn, infe = stem_ext(infn)
+                        outfile = infn
         f(infile, outfile, *args, **kwargs)
         return outfile
 
@@ -873,10 +892,10 @@ def in_temp_if_list(
     @wraps(f)
     def intmpiflister(*args, **kwargs):
         infile, outfile, args = _unioe(args)
-        outinfo = kwargs.get('outinfo','rest')
         try:
             suf0, suf1 = suffix.split('.',1)
         except:
+            outinfo = kwargs.get('outinfo','rest')
             if _is_graphic_type(outinfo):
                 suf0, suf1 = outinfo, suffix
             else:
@@ -885,7 +904,7 @@ def in_temp_if_list(
                 except:
                     suf = outinfo
                 suf0, suf1 = suf+_rest, suffix
-        if isinstance(infile, list) and infile:
+        if not isinstance(infile, str) and infile:
             if outfile and isinstance(outfile,str):
                 outfile = abspath(outfile)
             atmpdir = tempdir()
@@ -942,7 +961,7 @@ def run_inkscape(infile,  outfile, dpi=DPI):
         outfile=outfile)
 
 
-@infilecwd
+@infile_cwd
 def rst_sphinx(
         infile, outfile, outtype=None, **config
     ):
@@ -985,10 +1004,13 @@ def rst_sphinx(
         return ['-D', n + '=' + v]
 
     indr, infn = dir_base(infile)
-    if not indr:
-        indr = '.'
     outdr, outn = dir_base(outfile)
     outnn, outne = stem_ext(outn)
+    samedir = False
+    if outdr == indr:
+        samedir = True
+    if not indr:
+        indr = '.'
     cfg = {}
     cfg.update({
         k: v
@@ -1008,6 +1030,12 @@ def rst_sphinx(
             outtype = 'latex'
         else:
             outtype = outne.strip('.')
+    if samedir:
+        outdr = normjoin(outdr,'sphinx_'+outtype)
+        outfn = normjoin(outdr,outn)
+        print('Warning: Shinx output cannot be in same directory. Using '+outdr)
+    else:
+        outfn = outfile
     latex_elements = []
     latex_documents = []
     if 'latex' in outtype:
@@ -1037,10 +1065,10 @@ def rst_sphinx(
         '-D', "%s=%s" % (k, (','.join(v) if isinstance(v, list) else v))
     ] for k, v in cfg.items()] + latex_elements + latex_documents)
     sphinxcmd = ['sphinx-build', '-b', outtype, indr, outdr] + extras
-    cmd(sphinxcmd, outfile=outfile)
+    cmd(sphinxcmd, outfile=outfn)
     if 'latex' in outtype:
         texfile = next(x for x in os.listdir(outdr) if x.endswith('.tex'))
-        os.rename(normjoin(outdr, texfile), outfile)
+        os.rename(normjoin(outdr, texfile), outfn)
     if 'html' in outtype and 'html_extra_path' in cfgt:
         for epth in cfgt['html_extra_path']:
             try:
@@ -1081,7 +1109,7 @@ def _copy_images_for(infile, outfile, with_trace):
                     pass
 
 
-@infilecwd
+@infile_cwd
 def rst_pandoc(
         infile, outfile, outtype, **config
     ):
@@ -1141,7 +1169,7 @@ def _indented_default_role_math(filelines):
     return indent + '.. default-role:: math\n'
 
 
-@infilecwd
+@infile_cwd
 def rst_rst2(
         infile, outfile, outtype, **config
     ):
@@ -1162,16 +1190,16 @@ def rst_rst2(
     if outtype == 'odt':
         outtype = 'odf_odt'
     stdout = None
-    if isinstance(infile, list):
-        source = _indented_default_role_math(infile) + _joinlines(infile)
-        stdout = publish_string(
-            source,
+    if isinstance(infile, str):
+        publish_file(
+            source_path=infile,
             destination_path=destination_path,
             writer_name=outtype,
             settings_overrides=cfg['rst_opts'])
     else:
-        publish_file(
-            source_path=infile,
+        source = _indented_default_role_math(infile) + _joinlines(infile)
+        stdout = publish_string(
+            source,
             destination_path=destination_path,
             writer_name=outtype,
             settings_overrides=cfg['rst_opts'])
@@ -1267,7 +1295,7 @@ def svgpng(infile, outfile=None, *args, **kwargs):
 
 @png_post_process_if_any
 @partial(in_temp_if_list, suffix='.tex')
-@infilecwd
+@infile_cwd
 def texpng(infile, outfile=None, *args, **kwargs):
     '''
     Latex has several graphic packages, like
@@ -1327,7 +1355,7 @@ tikzpng = normoutfile(readin(_tikzwrap(_texwrap(texpng))))
 
 @png_post_process_if_any
 @partial(in_temp_if_list, suffix='.dot')
-@infilecwd
+@infile_cwd
 def dotpng(
     infile
     ,outfile=None
@@ -1347,7 +1375,7 @@ def dotpng(
 
 @png_post_process_if_any
 @partial(in_temp_if_list, suffix='.uml')
-@infilecwd
+@infile_cwd
 def umlpng(
         infile
         ,outfile=None
@@ -1369,7 +1397,7 @@ def umlpng(
 
 @png_post_process_if_any
 @partial(in_temp_if_list, suffix='.eps')
-@infilecwd
+@infile_cwd
 def epspng(
         infile
         ,outfile=None
@@ -1388,7 +1416,7 @@ def epspng(
 
 @png_post_process_if_any
 @normoutfile
-@infilecwd
+@infile_cwd
 @readin
 def pygpng(
         infile, outfile=None, *args,
@@ -1460,7 +1488,7 @@ def pygpng(
                     continue
 
 
-@infilecwd
+@infile_cwd
 def dostpl(
         infile
         ,outfile=None
@@ -1491,21 +1519,20 @@ def dostpl(
     
     if not lookup:
         lookup = ['.', '..']
-    if isinstance(infile, list):
+    if isinstance(infile, str):
+        lookup = [abspath(normjoin(dirname(infile), x)) for x in lookup]
+        filename = abspath(infile)
+    else:
         lookup = [abspath(x) for x in lookup]
         try:
             filename = abspath(outfile)
         except:
             filename = None
         infile = _joinlines(infile)
-    else:
-        lookup = [abspath(normjoin(dirname(infile), x)) for x in lookup]
-        filename = abspath(infile)
     variables = {}
     variables.update(globals())
     variables.update(kwargs)
     variables.update({'__file__': filename})
-    #TODO include outfile and outinfo
     if filenewer(infile, outfile):
         st = stpl.template(
             infile,
@@ -1601,7 +1628,8 @@ def dorst(
 
     '''
 
-    rsttool = rst_tools['pandoc']
+    tool = 'pandoc'
+    rsttool = rst_tools[tool]
     dinfo, binfo = None, None
     if outinfo:
         dinfo, binfo = dir_base(outinfo)
@@ -1611,9 +1639,9 @@ def dorst(
         outinfo = 'html'
     else:
         try:
-            rsttool, outinfo = outinfo.split('_')
+            tool, outinfo = outinfo.split('_')
             try:
-                rsttool = rst_tools[rsttool]
+                rsttool = rst_tools[tool]
             except:
                 rsttool = None
         except:
@@ -1656,6 +1684,7 @@ def dorst(
             if not outinfo:  # x.rst a/b/c.docx
                 outinfo = ofext
             elif outinfo in rst_tools:  # x.rst a/b/c.docx pandoc
+                tool = outinfo
                 rsttool = rst_tools[outinfo]
                 outinfo = ofext
         try:
@@ -1676,48 +1705,51 @@ def dorst(
             sysout = opnwrite(outfile)
         tmprestindir = None
 
-        if rsttool != rst_sphinx:  # sphinx can read substitutions from included files
-            if rsttool:
-                finalsysout = sysout
-                tmprestindir = infile + '.rest'
-                sysout = opnwrite(tmprestindir)
-                infile = tmprestindir
-                if not fakefs.is_setup():
-                    atexit.register(rmrf, tmprestindir)
-            if sysout:
-                sysout.write(_indented_default_role_math(filelines))
-                links_done = False
-                for x in filelines:
-                    if x.startswith('.. include:: _links_sphinx.rst'):
+        if rsttool:
+            finalsysout = sysout
+            tmprestindir = infile + '.rest'
+            sysout = opnwrite(tmprestindir)
+            infile = tmprestindir
+            if not fakefs.is_setup():
+                atexit.register(rmrf, tmprestindir)
+        if sysout:
+            sysout.write(_indented_default_role_math(filelines))
+            links_done = False
+            for x in filelines:
+                if x.startswith('.. include:: _links_sphinx.rst'):
+                    if tool=='sphinx':
+                        links_done = True
+                    else:
                         linksfilename = normjoin(
                             dirname(infile), '_links_' + outinfo + '.rst')
                         if exists(linksfilename):
                             with opn(linksfilename) as f:
-                                sysout.write(f.read())
+                                if tool == 'rst' and outinfo == 'html':
+                                    sysout.write(_rst_id_fix(f.read()))
+                                else:
+                                    sysout.write(f.read())
                                 links_done = True
-                    else:
-                        sysout.write(x if x.endswith('\n') else x+'\n')
-                if not links_done:
-                    sysout.write('\n')
-                    try:
-                        filenoext = stem(outfile)
-                    except:
-                        filenoext = None
-                    for tgt in RstFile.make_tgts(filelines, infile,
-                                                 make_counters(), fn_i_ln):
-                        sysout.write(
-                            tgt.create_link(
-                                outinfo.replace('rest', 'html'), filenoext))
+                else:
+                    sysout.write(x if x.endswith('\n') else x+'\n')
+            if not links_done:
+                sysout.write('\n')
+                try:
+                    filenoext = stem(outfile)
+                except:
+                    filenoext = ''
+                for tgt in RstFile.make_tgts(filelines, infile,
+                                             make_counters(), fn_i_ln):
+                    sysout.write(
+                        tgt.create_link(
+                            outinfo.replace('rest', 'html'), 
+                            filenoext, tool))
 
         if rsttool:
             config = conf_py(dirname(infile))
             if sysout:
                 sysout.close()
                 sysout = None
-            stdout = rsttool(infile, 
-                '-' if finalsysout and rsttool != rst_sphinx
-                else outfile,
-                outinfo, **config)
+            stdout = rsttool(infile,'-' if finalsysout else outfile, outinfo, **config)
             if stdout != None and finalsysout:
                 finalsysout.write(stdout)
     finally:
@@ -1867,16 +1899,18 @@ def convert(
                 infile = thisconverter(infile, outfile if not fextnext else
                                        None, outinfo, fn_i_ln)
             else:
+                kwargs = {}
                 if thisconverter == dostpl:
+                    kwargs = {'outinfo':outinfo}
                     # save infile for dorst() in outinfo as "infile/outinfo"
-                    if fextnext and converters[fextnext] == dorst:
-                        if isinstance(infile, list):
-                            fn_i_ln = list(_flatten_stpl_includes_it(infile))
-                        else:
+                    if fextnext in converters and converters[fextnext] == dorst:
+                        if isinstance(infile, str):
                             fn_i_ln = _flatten_stpl_includes(infile)
+                        else:
+                            fn_i_ln = list(_flatten_stpl_includes_it(infile))
                         outinfo = nextinfile + '/' + (outinfo or '')
                 infile = thisconverter(infile, outfile
-                                       if not fextnext else None)
+                             if not fextnext else None, **kwargs)
             if not infile:
                 break
             if not fextnext:
@@ -1910,13 +1944,13 @@ Same as |dcx.convert|, but creates temporary folder for a list of lines infile a
     '.html'
 
 '''
-convert_in_tempdir = in_temp_if_list(convert)
+convert_in_tempdir = in_temp_if_list(infile_cwd(convert))
 
-def rindices(r, lns):
+def rindices(regex, lns):
     r'''
-    Return the indices matching the regular expression ``r``.
+    Return the indices matching the regular expression ``regex``.
 
-    :param r: regular expression string or compiled
+    :param regex: regular expression string or compiled
     :param lns: lines
 
     ::
@@ -1927,23 +1961,23 @@ def rindices(r, lns):
 
     '''
 
-    if isinstance(r, str):
-        r = re.compile(r)
+    if isinstance(regex, str):
+        regex = re.compile(regex)
     for i, ln in enumerate(lns):
-        if r.search(ln):
+        if regex.search(ln):
             yield i
 
 
-def rlines(r, lns):
+def rlines(regex, lns):
     '''
-    Return the lines matched by ``r``.
+    Return the lines matched by ``regex``.
 
-    :param r: regular expression string or compiled
+    :param regex: regular expression string or compiled
     :param lns: lines
 
     '''
 
-    return [lns[i] for i in rindices(r, lns)]
+    return [lns[i] for i in rindices(regex, lns)]
 
 
 def intervals(nms  # list of indices
@@ -2385,16 +2419,16 @@ def gen(
 
     '''
 
-    if isinstance(source, list):
-        lns = source
-        source = ""
-    else:
+    if isinstance(source, str):
         lns = []
         try:
             lns = _read_lines(source)
         except:
             sys.stderr.write("ERROR: {} cannot be opened\n".format(source))
             return
+    else:
+        lns = source
+        source = ""
     if '.' not in sys.path:
         sys.path.append('.')
     if fun:
@@ -2579,9 +2613,10 @@ class Tgt:
             lnkname = self.target
         self.lnkname = lnkname
 
-    def create_link(self, 
-        linktype, # file extension: one of rest, html, docx, odt, latex, pdf
-        reststem  # the file name without extension (not used for linktype='sphinx' or 'rest')
+    def create_link(self 
+        ,linktype # file extension: one of rest, html, docx, odt, latex, pdf
+        ,reststem  # the file name without extension (not used for linktype='sphinx' or 'rest')
+        ,tool # pandoc, sphinx or rst
         ):
         """Tgt.
 
@@ -2593,19 +2628,24 @@ class Tgt:
             targetfile = reststem + '.' + linktype
         else:
             targetfile = ''
+        id = self.target
         if linktype == 'latex':
             linktype = 'pdf'
-        if linktype == 'sphinx':
-            tgte = ".. |{0}| replace:: :ref:`{1}<{0}>`\n".format(
-                self.target, self.lnkname)
-        elif linktype == 'odt':
-            # https://github.com/jgm/pandoc/issues/3524
-            tgte = ".. |{0}| replace:: `{1} <../{2}#{0}>`__\n".format(
-                self.target, self.lnkname, targetfile)
+        if tool == 'sphinx':
+            tgte = ".. |{0}| replace:: :ref:`{1}<{2}>`\n".format(
+                self.target, self.lnkname, id)
         else:
-            tgte = ".. |{0}| replace:: `{1} <{2}#{0}>`__\n".format(
-                self.target, self.lnkname, targetfile)
-        return tgte
+            if linktype == 'odt':
+                # https://github.com/jgm/pandoc/issues/3524
+                tgte = ".. |{0}| replace:: `{1} <../{2}#{3}>`__\n".format(
+                    self.target, self.lnkname, targetfile, id)
+            else:
+                tgte = ".. |{0}| replace:: `{1} <{2}#{3}>`__\n".format(
+                    self.target, self.lnkname, targetfile, id)
+        if tool == 'rst' and linktype == 'html':
+            return _rst_id_fix(tgte)
+        else:
+            return tgte
 
     def create_tag(self):
         return r'{0}	{1}	/\.\. _`\?{0}`\?:/;"		line:{2}'.format(
@@ -2871,7 +2911,8 @@ class Fldr(OrderedDict):
 
         def add_tgt(tgt, reststem):
             for linktype, linklines in linkfiles:
-                linklines.append(tgt.create_link(linktype, reststem))
+                linklines.append(tgt.create_link(linktype, reststem, 
+                  linktype if linktype=='sphinx' else 'pandoc'))
             if isabs(tgt.tagentry[0]):
                 tgt.tagentry = (relpath(tgt.tagentry[0], start=scanroot),
                                 tgt.tagentry[1])
@@ -4861,3 +4902,4 @@ Input file or - for stdin.''')
 
 if __name__ == '__main__':
     main()
+
