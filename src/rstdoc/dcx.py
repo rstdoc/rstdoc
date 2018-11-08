@@ -17,7 +17,6 @@
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from pyfakefs.fake_filesystem_unittest import TestCaseMixin
 from collections import OrderedDict, defaultdict
 import sphinx_bootstrap_theme
 from hashlib import sha1 as sha
@@ -219,6 +218,37 @@ except:
     cairocffi = None
     cairosvg = None
 
+try:
+  from pyfakefs.fake_filesystem_unittest import TestCaseMixin
+
+  class _FakeFs(TestCaseMixin):
+      def __init__(self):
+          self.stack = []
+
+      def is_setup(self):
+          return self.stack != []
+
+      def addCleanup(self, function, *args, **kwargs):
+          self.stack.append((function, args, kwargs))
+
+      def doCleanups(self):
+          while self.stack:
+              function, args, kwargs = self.stack.pop()
+              function(*args, **kwargs)
+
+      def setup(self):
+          if self.stack:
+              return
+          self.setUpPyfakefs()
+
+      def teardown(self):
+          self.doCleanups()
+
+
+  fakefs = _FakeFs()
+
+except:
+  fakefs = None
 
 html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
@@ -275,33 +305,6 @@ class _Verbose:
                 print(_plus, kwargs['outfile'])
         return self.tools.run(*args, **kwargs)
 
-
-class _FakeFs(TestCaseMixin):
-    def __init__(self):
-        self.stack = []
-
-    def is_setup(self):
-        return self.stack != []
-
-    def addCleanup(self, function, *args, **kwargs):
-        self.stack.append((function, args, kwargs))
-
-    def doCleanups(self):
-        while self.stack:
-            function, args, kwargs = self.stack.pop()
-            function(*args, **kwargs)
-
-    def setup(self):
-        if self.stack:
-            return
-        self.setUpPyfakefs()
-
-    def teardown(self):
-        self.doCleanups()
-
-
-fakefs = _FakeFs()
-
 tools = None
 
 
@@ -318,7 +321,7 @@ def dry_run(dry=None):
     '''
 
     global tools
-    if dry:
+    if dry and fakefs:
         if not fakefs.is_setup():
             rstdir = os.path.dirname(os.path.dirname(__file__))
             cdir = os.getcwd()
@@ -346,7 +349,10 @@ def dry_run(dry=None):
                 raise e
     else:
         if dry != None or tools == None:
-            fakefs.teardown()
+            try:
+                fakefs.teardown()
+            except:
+                pass
             tools = _Verbose(_Tools())
 
 
