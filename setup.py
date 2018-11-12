@@ -17,7 +17,7 @@ import sys
 sys.path.append('./src/rstdoc')
 from dcx import dorst
 
-__version__ = '1.6.2'
+__version__ = '1.6.3'
 
 def read(fname,separator='\n"""'):
     with open(os.path.join(os.path.dirname(__file__), fname),encoding='utf-8') as f:
@@ -58,7 +58,7 @@ setup(name = 'rstdoc',
         ],
 
     install_requires = ['pillow','pyx','pyfca','pygal','cairosvg','svgwrite',
-        'stpl','pypandoc','sphinx','sphinx_bootstrap_theme','pint'],
+        'stpl','pypandoc','sphinx','sphinx_bootstrap_theme','pyfakefs','pint'],
     extras_require = {'develop': ['mock','pytest-coverage'],'build':['waf']},
     long_description = long_description,
     packages=['rstdoc'],

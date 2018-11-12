@@ -819,7 +819,7 @@ def tempdir():
     '''
 
     atmpdir = tempfile.mkdtemp()
-    if not fakefs.is_setup():
+    if not fakefs or not fakefs.is_setup():
         atexit.register(rmrf, atmpdir)
     return atmpdir
 
