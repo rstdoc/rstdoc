@@ -1715,7 +1715,7 @@ def dorst(
             tmprestindir = infile + '.rest'
             sysout = opnwrite(tmprestindir)
             infile = tmprestindir
-            if not fakefs.is_setup():
+            if not fakefs or not fakefs.is_setup():
                 atexit.register(rmrf, tmprestindir)
         if sysout:
             sysout.write(_indented_default_role_math(filelines))

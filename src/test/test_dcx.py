@@ -1,5 +1,7 @@
 # encoding: utf-8 
 
+#TODO: use ``mount -t tmpfs -o size=512m tmpfs /mnt/ramdisk`` on linux
+
 ##lns=open(__file__).readlines()
 ##list(gen_tests(lns))
 #def gen_tests(lns,**kw):
