@@ -1539,6 +1539,8 @@ def dostpl(
     variables.update(globals())
     variables.update(kwargs)
     variables.update({'__file__': filename})
+    if 'outinfo' not in variables and outfile:
+        _,variables['outinfo'] = stem_ext(outfile)
     if filenewer(infile, outfile):
         st = stpl.template(
             infile,
