@@ -1541,18 +1541,17 @@ def dostpl(
     variables.update({'__file__': filename})
     if 'outinfo' not in variables and outfile:
         _,variables['outinfo'] = stem_ext(outfile)
-    if filenewer(infile, outfile):
-        st = stpl.template(
-            infile,
-            template_settings={'escape_func': lambda x: x},
-            template_lookup=lookup,
-            **variables
-        )
-        if outfile:
-            with opnwrite(outfile) as f:
-                f.write(st)
-        else:
-            return st.replace('\r\n', '\n').splitlines(keepends=True)
+    st = stpl.template(
+        infile,
+        template_settings={'escape_func': lambda x: x},
+        template_lookup=lookup,
+        **variables
+    )
+    if outfile:
+        with opnwrite(outfile) as f:
+            f.write(st)
+    else:
+        return st.replace('\r\n', '\n').splitlines(keepends=True)
 
 def dorst(
         infile
