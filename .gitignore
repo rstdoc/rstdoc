@@ -13,6 +13,7 @@ tmp/
 tex2pdf.*
 
 ra.rest
+ra.docx
 main.rest
 normalfromstpl.rst
 
@@ -25,4 +26,5 @@ _*
 .waf????????*
 **/waf*-*-*/
 **/waf/*
+**/WAFDIR
 

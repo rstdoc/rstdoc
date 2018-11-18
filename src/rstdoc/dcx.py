@@ -218,40 +218,7 @@ except:
     cairocffi = None
     cairosvg = None
 
-try:
-  from pyfakefs.fake_filesystem_unittest import TestCaseMixin
-
-  class _FakeFs(TestCaseMixin):
-      def __init__(self):
-          self.stack = []
-
-      def is_setup(self):
-          return self.stack != []
-
-      def addCleanup(self, function, *args, **kwargs):
-          self.stack.append((function, args, kwargs))
-
-      def doCleanups(self):
-          while self.stack:
-              function, args, kwargs = self.stack.pop()
-              function(*args, **kwargs)
-
-      def setup(self):
-          if self.stack:
-              return
-          self.setUpPyfakefs()
-
-      def teardown(self):
-          self.doCleanups()
-
-
-  fakefs = _FakeFs()
-
-except:
-  fakefs = None
-
 html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
-
 
 class RstDocError(Exception):
     pass
@@ -281,7 +248,7 @@ class _Tools:
         return sp.run(*args, **kwargs)
 
 
-class _DryTools:  # together with FakeFs
+class _DryTools:
     def svg2png(self, *args, **kwargs):
         pass
 
@@ -307,57 +274,24 @@ class _Verbose:
 
 tools = None
 
-
-def dry_run(dry=None):
-    '''
-    Use ``pyfakefs`` Adjusts ``dcx`` classes to produce a dry run.
-
-
-    :param dry:
-    - None: initialize with False if not yet, else keep as is.
-    - True: use pyfakefs, but only applies to python, not Pandoc or other external tools
-    - False: use real tools
-
-    '''
-
+def dry_run(dry=None, verbose_=None):
     global tools
-    if dry and fakefs:
-        if not fakefs.is_setup():
-            rstdir = os.path.dirname(os.path.dirname(__file__))
-            cdir = os.getcwd()
-            fakefs.setup()
-            try:
-                try:
-                    fakefs.fs.add_real_directory(rstdir)
-                    if verbose:
-                        print('Added %s to fake fs' % rstdir)
-                except Exception as e:
-                    print('Error %s ' % rstdir, e)
-                try:
-                    fakefs.fs.add_real_directory(cdir)
-                    if verbose:
-                        print('Added %s to fake fs' % cdir)
-                except Exception as e:
-                    print('Error %s ' % cdir, e)
-                cd(cdir)
-                if verbose:
-                    print('Fake %s' % cwd())
-                tools = _Verbose(_DryTools())
-            except Exception as e:
-                tools = _Tools()
-                fakefs.teardown()
-                raise e
+    global verbose
+    if dry:
+        if verbose_ == None:
+            verbose = True
+        else:
+            verbose = verbose_
+        tools = _Verbose(_DryTools())
     else:
+        if verbose_ == None:
+            verbose = False
+        else:
+            verbose = verbose_
         if dry != None or tools == None:
-            try:
-                fakefs.teardown()
-            except:
-                pass
             tools = _Verbose(_Tools())
 
-
 dry_run(None)
-
 
 def opnwrite(filename):
     if verbose:
@@ -819,8 +753,7 @@ def tempdir():
     '''
 
     atmpdir = tempfile.mkdtemp()
-    if not fakefs or not fakefs.is_setup():
-        atexit.register(rmrf, atmpdir)
+    atexit.register(rmrf, atmpdir)
     return atmpdir
 
 
@@ -986,16 +919,15 @@ def rst_sphinx(
 
         >>> dry_run(True)
         >>> #ls()
-        >>> #fakefs.is_setup()
 
         >>> infile,outfile = ('index.rest','../../build/doc/sphinx_html/index.html')
-        >>> rst_sphinx(infile,outfile) # doctest: +ELLIPSIS
+        >>> rst_sphinx(infile,outfile) #doctest: +ELLIPSIS
         run (['sphinx-build', '-b', 'html', '.', '../../build/doc/sphinx_html', '-C', ... 'master_doc=index'],) ...
 
-        >>> rst_sphinx('dd.rest','../../build/doc/sphinx_html/dd.html') # doctest: +ELLIPSIS
+        >>> rst_sphinx('dd.rest','../../build/doc/sphinx_html/dd.html') #doctest: +ELLIPSIS
         run (['sphinx-build', '-b', 'singlehtml', '.', '../../build/doc/sphinx_html', '-C', ..., '-D', 'master_doc=dd'],) ...
 
-        >>> rst_sphinx('dd.rest','../../build/doc/sphinx_latex/dd.tex') # doctest: +ELLIPSIS
+        >>> rst_sphinx('dd.rest','../../build/doc/sphinx_latex/dd.tex') #doctest: +ELLIPSIS
         run (['sphinx-build', '-b', 'tex', '.', '../../build/doc/sphinx_latex', '-C', ..., '-D', 'master_doc=dd'],) ...
 
         >>> dry_run(False)
@@ -1559,7 +1491,7 @@ def dorst(
         ,outinfo=None
         ,fn_i_ln=None
         ):
-    '''
+    r'''
     Default interpreted text role is set to math.
     The link lines are added to the .rest file or .rest lines
 
@@ -1582,23 +1514,27 @@ def dorst(
         >>> cd(dirname(__file__))
         >>> cd('../doc')
 
-        >>> dorst('dd.rest') # doctest: +ELLIPSIS
+        >>> dorst('dd.rest') #doctest: +ELLIPSIS
         ['.. default-role:: math\n', ...
 
-        >>> dorst('ra.rest.stpl') # doctest: +ELLIPSIS
+        >>> dorst('ra.rest.stpl') #doctest: +ELLIPSIS
         ['.. default-role:: math\n', ...
 
-        >>> dorst(['hi there']) # doctest: +ELLIPSIS
+        >>> dorst(['hi there']) #doctest: +ELLIPSIS
         ['.. default-role:: math\n', 'hi there\n', ...
 
-        >>> dorst(['hi there'],None,'html') # doctest: +ELLIPSIS
+        >>> dry_run(False,True)
+        >>> dorst(['hi there'],None,'html') #doctest: +ELLIPSIS
+        + .../rest.rest.rest
+        run (['pandoc', ...
         <!DOCTYPE html>
         ...
 
-        >>> verbose = True
-        >>> dry_run(False)
-        >>> dorst('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
+        >>> dorst('ra.rest.stpl','ra.docx') #doctest: +ELLIPSIS
+        + .../ra.rest.stpl.rest
         run (['pandoc', ..., '-o', 'ra.docx'],) ...
+        + ra.docx
+
         >>> exists('ra.docx')
         True
         >>> rmrf('ra.docx')
@@ -1608,9 +1544,10 @@ def dorst(
         >>> exists('ra.rest.stpl.rest')
         False
 
-        >>> dorst(['hi there'],'test.html') # doctest: +ELLIPSIS
+        >>> dorst(['hi there'],'test.html') #doctest: +ELLIPSIS
         + .../rest.rest.rest
         run (['pandoc', ..., '-o', 'test.html'],) ...
+
         >>> exists('test.html')
         True
         >>> rmrf('test.html')
@@ -1620,7 +1557,9 @@ def dorst(
         >>> exists('rest.rest.rest')
         False
 
-        >>> dorst(['hi there'],'test.odt','rst') # doctest: +ELLIPSIS
+        >>> dorst(['hi there'],'test.odt','rst') #doctest: +ELLIPSIS
+        + ...rest.rest.rest
+
         >>> exists('rest.rest.rest')
         True
         >>> rmrf('rest.rest.rest')
@@ -1716,8 +1655,7 @@ def dorst(
             tmprestindir = infile + '.rest'
             sysout = opnwrite(tmprestindir)
             infile = tmprestindir
-            if not fakefs or not fakefs.is_setup():
-                atexit.register(rmrf, tmprestindir)
+            atexit.register(rmrf, tmprestindir)
         if sysout:
             sysout.write(_indented_default_role_math(filelines))
             links_done = False
@@ -1789,7 +1727,7 @@ def convert(
         ,outfile=io.StringIO
         ,outinfo=None
         ):
-    '''
+    r'''
     Converts any of the known files.
 
     Stpl files are forwarded to the next converter.
@@ -1802,20 +1740,19 @@ def convert(
         >>> cd(dirname(__file__))
         >>> cd('../doc')
 
-        >>> verbose = True
-        >>> dry_run(False)
+        >>> dry_run(False,True)
 
         >>> convert([' ','   hi {{2+3}}!'],outinfo='rest')
         ['   .. default-role:: math\n', ' \n', '   hi 5!\n', '\n']
 
-        >>> convert([' ','   hi {{2+3}}!'])  # doctest: +ELLIPSIS
+        >>> convert([' ','   hi {{2+3}}!'])  #doctest: +ELLIPSIS
         + .../rest.rest.rest
         run (['pandoc', ...
         ['<!DOCTYPE html>\n', ...]
         >>> rmrf('rest.rest.rest')
 
         >>> infile,outfile,outinfo = (["newpath {{' '.join(str(i)for i in range(4))}} rectstroke showpage"],'tst.png','eps')
-        >>> convert(infile,outfile,outinfo) # doctest: +ELLIPSIS
+        >>> convert(infile,outfile,outinfo) #doctest: +ELLIPSIS
         run (['inkscape', ...tst.png'],) ...
         ...
         >>> exists('tst.png')
@@ -1824,14 +1761,16 @@ def convert(
         >>> exists('tst.png')
         False
 
-        >>> convert('ra.rest.stpl') # doctest: +ELLIPSIS
+        >>> convert('ra.rest.stpl') #doctest: +ELLIPSIS
         + .../ra.rest.rest
         run (['pandoc', ..., '-o', '-'],) ...
         ['<!DOCTYPE html>\n', ...
-        >>> convert('ra.rest.stpl','ra.docx') # doctest: +ELLIPSIS
+
+        >>> convert('ra.rest.stpl','ra.docx') #doctest: +ELLIPSIS
         + .../ra.rest.rest
         run (['pandoc', ..., '-o', 'ra.docx'],) ...
-        + .../ra.docx
+        + ra.docx
+
         >>> exists('ra.rest.rest')
         True
         >>> rmrf('ra.rest.rest')
@@ -1843,11 +1782,12 @@ def convert(
         >>> exists('ra.docx')
         False
 
-        >>> convert('dd.rest',None,'html') # doctest: +ELLIPSIS
+        >>> convert('dd.rest',None,'html') #doctest: +ELLIPSIS
         + .../dd.rest.rest
         run (['pandoc', ..., '-o', '-'],) ...
         <!DOCTYPE html>
         ...
+
         >>> exists('dd.rest.rest')
         True
         >>> rmrf('dd.rest.rest')
@@ -2062,7 +2002,7 @@ def doc_parts(
         ...     docparts = list(doc_parts(lns,signature='py'))
         ...     doc_parts_line = rlines('doc_parts',docparts)
         >>> doc_parts_line[1]
-        'doc_parts(\n'
+        ':doc_parts:\n'
 
     '''
 
@@ -2153,7 +2093,7 @@ def _memoized(f):
 def _read_lines(fn):
     lns = []
     with opn(fn) as f:
-        lns = f.readlines()
+        lns = list(f.readlines())
     return lns
 
 
@@ -2334,7 +2274,8 @@ class Traceability:
                     '" type="image/svg+xml"></object>\n')
             if target_id_color is not None:
                 f.write(
-                    '    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a> diagram of dependencies with clickable nodes: '
+                    '''    <p><a href="https://en.wikipedia.org/wiki/Formal_concept_analysis">FCA</a>
+                  diagram of dependencies with clickable nodes: '''
                     + legend + '</p>\n\n')
             f.writelines(tlines)
         ld = pyfca.LatticeDiagram(fca, 4 * 297, 4 * 210)
@@ -2368,9 +2309,9 @@ def pair(alist ,blist ,cmp):
         [(1, 1), (2, 2), (None, 3), (4, 4), (None, 5), (None, 6), (7, 7)]
 
         >>> alist=[1,2,3,4,5,6,7]
-        ... blist=[1,2,3,4,5,6,7]
-        ... cmp = lambda x,y: x==y
-        ... list(pair(alist,blist,cmp))
+        >>> blist=[1,2,3,4,5,6,7]
+        >>> cmp = lambda x,y: x==y
+        >>> list(pair(alist,blist,cmp))
         [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)]
 
     '''
@@ -2384,7 +2325,7 @@ def pair(alist ,blist ,cmp):
     alen = len(alist)
     tlen = max(alen, len(blist))
     d = 0
-    for j in range(i + 1, alen):
+    for j in range(i, alen):
         for dd in range(tlen - j - d):
             bb = blist[j + d + dd]
             if not cmp(alist[j], bb):
@@ -2396,14 +2337,13 @@ def pair(alist ,blist ,cmp):
         else:
             return
 
-
 def gen(
         source
         ,target=None
         ,fun=None
         ,**kw
     ):
-    r'''
+    '''
     Take the ``gen_[fun]`` functions enclosed by ``#def gen_[fun](lns,**kw)`` to create a new file.
 
     :param source: either a list of lines of a path to the source code
@@ -2418,10 +2358,10 @@ def gen(
         ...        #  return [l.split('#@')[1] for l in rlines(r'^\s*#@',lns)]
         ...        #def gen
         ...        #@some lines
-        ...        #@to extrace
+        ...        #@to extract
         ...        """.splitlines()]
         >>> [l.strip() for l in gen(source)]
-        ['some lines', 'to extrace']
+        ['some lines', 'to extract']
 
     '''
 
@@ -2772,7 +2712,7 @@ class RstFile:
 
         ::
 
-            >>> list(substs('''
+            >>> list(RstFile.substs('''
             ...   .. |sub| image:: xx
             ...   .. |s-b| date::
             ...   '''.splitlines()))
@@ -3030,6 +2970,7 @@ def links_and_tags(adir):
 
     ::
 
+        >>> dry_run(False,False)
         >>> cd(dirname(__file__))
         >>> rmrf('../doc/_links_sphinx.rst')
         >>> '_links_sphinx.rst' in ls('../doc')
@@ -4605,9 +4546,9 @@ def tree(
 
     ::
 
-        >>> path='.'
-        >>> tree(path,False)
-        >>> tree(path,True)
+        >>> path = dirname(__file__)
+        >>> tree(path,False,max_depth=1).startswith('├─')
+        True
 
     '''
 
@@ -4631,7 +4572,9 @@ def tree(
                     if with_dot_files or not f.startswith('.'):
                         yield prefix + entryprefix[i == lenfs - 1] + f
                         if with_content:
-                            for ln in _read_lines(normjoin(p, f)):
+                            pf = normjoin(p, f)
+                            lns = _read_lines(pf)
+                            for ln in lns:
                                 yield prefix + subprefix[1] + ln
 
     return '\n'.join(_tree(path, ''))
@@ -4646,18 +4589,6 @@ def initroot(
 
     rootfldr: directory name that becomes root of the sample tree
     sampletype: either 'stpl' for the templated sample tree, or 'rest'
-
-    ::
-
-        >>> dry_run(True)
-        >>> initroot('tmp','stpl')
-        >>> cd('tmp/src')
-        >>> ls()
-        ['Makefile', 'code', 'conf.py', 'dcx.py', 'doc', 'docutils.conf', 'reference.docx', 'reference.odt', 'reference.tex', 'waf', 'waf.bat', 'wafw.py', 'wscript']
-        >>> cd('doc')
-        >>> ls()
-        ['_images', 'dd.rest.stpl', 'dd_diagrams.tpl', 'dd_included.rst.stpl', 'dd_math.tpl', 'dd_tables.rst', 'egcairo.pyg', 'egdot.dot.stpl', 'egeps.eps', 'egeps1.eps', 'egother.pyg', 'egplt.pyg', 'egpygal.pyg', 'egpyx.pyg', 'egsvg.svg.stpl', 'egtikz.tikz', 'egtikz1.tikz', 'eguml.uml', 'gen', 'index.rest', 'model.py', 'ra.rest.stpl', 'sr.rest.stpl', 'sy.rest.stpl', 'tp.rest.stpl', 'utility.rst.tpl', 'wscript_build']
-        >>> dry_run(False)
 
     '''
 
@@ -4699,30 +4630,6 @@ def index_dir(root):
     - generates ``.tags`` with jumps to reST targets
 
     If dcx.verbose is set to True the indexed files are printed.
-
-    ::
-
-        >>> dry_run(True)
-        >>> fakefs.is_setup()
-        True
-
-        >>> initroot('tmp','rest')
-        >>> cd('tmp/src')
-        >>> ls()
-        ['Makefile', 'code', 'conf.py', 'dcx.py', 'doc', 'docutils.conf', 'reference.docx', 'reference.odt', 'reference.tex', 'waf', 'waf.bat', 'wafw.py', 'wscript']
-
-        >>> cd('doc')
-        >>> ls()
-        ['_images', 'dd.rest', 'egcairo.pyg', 'egdot.dot.stpl', 'egeps.eps', 'egeps1.eps', 'egother.pyg', 'egplt.pyg', 'egpygal.pyg', 'egpyx.pyg', 'egsvg.svg.stpl', 'egtikz.tikz', 'egtikz1.tikz', 'eguml.uml', 'gen', 'index.rest', 'ra.rest', 'sr.rest', 'tp.rest', 'wscript_build']
-
-        >>> index_dir('.')
-        svg2png ...
-        >>> [x for x in ls() if x.startswith('_links_') or x=='.tags']
-        ['.tags', '_links_docx.rst', '_links_html.rst', '_links_latex.rst', '_links_odt.rst', '_links_pdf.rst', '_links_sphinx.rst']
-
-        >>> dry_run(False)
-        >>> fakefs.is_setup()
-        False
 
     '''
 
@@ -4880,7 +4787,7 @@ Input file or - for stdin.''')
         )
         args = parser.parse_args().__dict__
 
-    if 'code' in args and args['code'] is not None:
+    if 'code' in args and args['code'] is not None and args['code'] != []:
         code = '\n'.join(args['code'])
         eval(compile(code, '<string>', 'exec'), globals())
 
@@ -4889,7 +4796,7 @@ Input file or - for stdin.''')
     if 'verbose' in args:
         verbose = args['verbose']
 
-    if 'dry_run' in args and dry_run(args['dry_run']):
+    if 'dry_run' in args and args['dry_run']:
         dry_run(args['dry_run'])
 
     if 'stplroot' in args and args['stplroot']:
@@ -4897,14 +4804,13 @@ Input file or - for stdin.''')
     elif 'restroot' in args and args['restroot']:
         initroot(args['restroot'], 'rest')
     elif 'infile' in args and args['infile']:
-        for x in 'infile outfile'.split():
+        for x in 'infile outfile outtype'.split():
             if x not in args:
                 args[x] = None
-        convert(args['infile'], args['outfile'], args['outtype']
-                if args['outtype'] != '-' else None)
+        convert(args['infile'], args['outfile'],
+                args['outtype'] if args['outtype'] != '-' else None)
     else:
         index_dir('.')
-
 
 if __name__ == '__main__':
     main()

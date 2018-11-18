@@ -60,7 +60,7 @@ setup(name = 'rstdoc',
         ],
 
     install_requires = ['pillow','pyx','pyfca','pygal','cairosvg','svgwrite',
-        'stpl','pypandoc','sphinx','sphinx_bootstrap_theme','pyfakefs','pint'],
+        'stpl','pypandoc','sphinx','sphinx_bootstrap_theme','pint'],
     extras_require = {'develop': ['mock','pytest-coverage'],'build':['waf']},
     long_description = long_description,
     packages=['rstdoc'],

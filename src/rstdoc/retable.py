@@ -24,7 +24,7 @@ retable: rstdoc module
 
 Transforms list tables to grid tables.
 
-This file also contains the code from 
+This file also contains the code from
 the Vim plugin `vim-rst-tables-py3`_, plus some little fixes.
 ``rstdoc`` is used by the Vim plugin `vim_py3_rst`_, which replaces `vim-rst-tables-py3`_.
 
@@ -329,7 +329,7 @@ def get_bounds(lines, row, col):
 
 
 def reformat_table(lines, row=0, col=0, withheader=0):
-    ''' 
+    '''
     Create or reformat a grid table in lines.
     The table is delimited by emtpy lines starting from (row,col).
 
@@ -348,13 +348,14 @@ def reformat_table(lines, row=0, col=0, withheader=0):
 
 
 def create_rst_table(data, withheader=0):
-    '''
+    r'''
     Create a rst table from data
 
     Example:
 
     >>> lns=[['one','two','three'],[1,2,3]]
     >>> create_rst_table(lns)
+    '+-----+-----+-------+\n| one | two | three |\n+-----+-----+-------+\n| 1   | 2   | 3     |\n+-----+-----+-------+'
 
     :param data: list of list of data
 
@@ -369,13 +370,13 @@ def reflow_table(lines, row=0, col=0):
     '''
     Adapt an existing table to the widths of the first line.
     The table is delimited by emtpy lines starting from (row,col).
-    
+
     lines: list of strings
     row: of cursor position,
     col: ... as only the lines delimited by an empty line are considered
 
     '''
-    
+
     upper, lower, indent = get_bounds(lines, row, col)
     slice_ = lines[upper:lower + 1]
     withheader = 0
@@ -390,7 +391,7 @@ def reflow_table(lines, row=0, col=0):
 
 
 def re_title(lines, row=0, col=0, down=0):
-    '''
+    r'''
     Adjust the under- or overline of a title.
 
     :param lines: list of lines
@@ -407,11 +408,11 @@ def re_title(lines, row=0, col=0, down=0):
         ...   """.splitlines()
         >>> re_title(lines)
         >>> lines
-        ['      #####', 'title', '      #####', '  ']
+        ['      #####', '      title', '      #####', '  ']
 
 
     '''
-    
+
     upper, lower, indent = get_bounds(lines, row, col)
     t = None
     for i in range(upper, lower + 1):
