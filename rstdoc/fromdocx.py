@@ -47,7 +47,7 @@ There are options to post-process through::
 
 ``rstfromdocx -lurg`` combines all of these.
 
-To convert more DOCX documents into the same 
+To convert more DOCX documents into the same
 RST documentation folder, proceed like this:
 
 - rename/copy the original DOCX to the name you want for the ``.rest`` file
@@ -177,7 +177,7 @@ def _write_index(adocx):
 
 def _write_makefile(adocx):
     # Takes the Makefile from the ``example_tree`` in ``rstdoc.dcx``.
-    mf = re.split(r'\s+├ code\s+', re.split('├ Makefile', example_tree)[1])[0]
+    mf = re.split(r'\s\s+__code__', re.split('\s\sMakefile', example_tree)[1])[0]
     lns = mf.splitlines(True)
     s = re.search(r'\w', lns[1]).span(0)[0]
     lns = [l[s:] for l in lns]
@@ -313,7 +313,7 @@ def docx_rst_5(docx ,rename ,sentence=True):
     :param sentence: split sentences into new lines (reflow)
 
     '''
-    
+
     shutil.copy2(docx, rename + ".docx")
     rstfn = main(docx=rename + ".docx")
     r, _ = os.path.splitext(rstfn)

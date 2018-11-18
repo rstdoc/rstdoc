@@ -1,5 +1,5 @@
 import sys
-sys.path = ['src/test/mocks'] + sys.path
+sys.path = ['test/mocks'] + sys.path
 import pytest
 from rstdoc.untable import untable
 from rstdoc.retable import retable
@@ -127,10 +127,10 @@ the lazy
 ..    :name:
 ..    :widths: 20 80
 ..    :header-rows: 1
-.. 
+..
 ..    * - Bit
 ..      - Function
-.. 
+..
 ..    * - 0
 ..      - xxx
 
@@ -221,13 +221,13 @@ badtableres='''\
      - **Accuracy**
 
    * - 0;±90V
-     - 
+     -
      - x
 
 
 '''
 def test_listtablebasic0():
-    res = ''.join(gridtable(badtables,join='0'))
+    res = ''.join(x.rstrip()+'\n' for x in gridtable(badtables,join='0'))
     assert res == badtableres
 
 
@@ -267,7 +267,7 @@ badtable012res='''\
 
    * - 1.6
      - DRAFT
-     - 
+     -
      - Updated: Manual
        tests in System
        performance
@@ -275,12 +275,12 @@ badtable012res='''\
 
 '''
 def test_listtablebasic012():
-    res = ''.join(gridtable(badtable012,join='012'))
+    res = ''.join(x.rstrip()+'\n' for x in gridtable(badtable012,join='012'))
     assert res == badtable012res
 
 def test_listtablebasic012indent():
-    res = ''.join(gridtable([' '*3+x for x in badtable012],join='012'))
-    assert res == ''.join([' '*3+x for x in badtable012res.splitlines(True)])
+    res = ''.join(x.rstrip()+'\n' for x in gridtable([' '*3+x for x in badtable012],join='012'))
+    assert res == ''.join([' '*3+x if x.strip() else x for x in badtable012res.splitlines(True)])
 
 joindata='''\
 line before
@@ -424,7 +424,7 @@ here.
 sentence
 per
 line.
-That is a 
+That is a
 good idea.
 
 =====  =====  =======
@@ -494,7 +494,7 @@ Title
 sentence
 per
 line.
-That is a 
+That is a
 good idea.
 '''.splitlines(True)
 refl2res='''\
@@ -518,7 +518,7 @@ rfec='''\
    :header-rows: 0
 
 
-   * - 
+   * -
      - **Basic**
      - **Intermediate**
      - **Advanced**
@@ -527,13 +527,13 @@ rfec='''\
      - a is equal b if c
      is equal d or is it not well let us see
      if it works out after all
-     - 
-     - 
+     -
+     -
 
    * - **NOT**
-     - 
-     - 
-     - 
+     -
+     -
+     -
 '''.splitlines(True)
 rfecres='''\
 .. list-table::

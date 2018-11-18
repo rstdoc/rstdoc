@@ -922,15 +922,15 @@ def rst_sphinx(
         >>> dry_run(True)
         >>> #ls()
 
-        >>> infile,outfile = ('index.rest','../../build/doc/sphinx_html/index.html')
+        >>> infile,outfile = ('index.rest','../build/doc/sphinx_html/index.html')
         >>> rst_sphinx(infile,outfile) #doctest: +ELLIPSIS
-        run (['sphinx-build', '-b', 'html', '.', '../../build/doc/sphinx_html', '-C', ... 'master_doc=index'],) ...
+        run (['sphinx-build', '-b', 'html', '.', '../build/doc/sphinx_html', '-C', ... 'master_doc=index'],) ...
 
-        >>> rst_sphinx('dd.rest','../../build/doc/sphinx_html/dd.html') #doctest: +ELLIPSIS
-        run (['sphinx-build', '-b', 'singlehtml', '.', '../../build/doc/sphinx_html', '-C', ..., '-D', 'master_doc=dd'],) ...
+        >>> rst_sphinx('dd.rest','../build/doc/sphinx_html/dd.html') #doctest: +ELLIPSIS
+        run (['sphinx-build', '-b', 'singlehtml', '.', '../build/doc/sphinx_html', '-C', ..., '-D', 'master_doc=dd'],) ...
 
-        >>> rst_sphinx('dd.rest','../../build/doc/sphinx_latex/dd.tex') #doctest: +ELLIPSIS
-        run (['sphinx-build', '-b', 'tex', '.', '../../build/doc/sphinx_latex', '-C', ..., '-D', 'master_doc=dd'],) ...
+        >>> rst_sphinx('dd.rest','../build/doc/sphinx_latex/dd.tex') #doctest: +ELLIPSIS
+        run (['sphinx-build', '-b', 'tex', '.', '../build/doc/sphinx_latex', '-C', ..., '-D', 'master_doc=dd'],) ...
 
         >>> dry_run(False)
 
@@ -3331,7 +3331,7 @@ example_tree = r'''
          Logs.colors_lst['BLUE']='\x1b[01;36m'
 
          top='.'
-         out='../build'
+         out='build'
 
          def options(opt):
            opt.load('dcx',tooldir='.')
@@ -3428,27 +3428,27 @@ example_tree = r'''
          SPHINXOPTS  = -c .
          SPHINXBLD   = sphinx-build
          SPHINXPROJ  = sample
-         SRCDIR      = doc/
-         SRCBACK     = ../
-         DCXPATH     = ../
-         BLDDIR      = ../build/doc/
-         STPLS       = $(wildcard $(SRCDIR)*.stpl)
+         DOCDIR      = doc/
+         DOCBACK     = ../
+         DCXFROMDOC  = ../
+         BLDDIR      = build/doc/
+         STPLS       = $(wildcard $(DOCDIR)*.stpl)
          STPLTGTS    = $(STPLS:%.stpl=%)
-         SRCS        = $(filter-out $(SRCDIR)index.rest,$(wildcard $(SRCDIR)*.rest))
-         SRCSTPL     = $(wildcard $(SRCDIR)*.rest.stpl)
+         SRCS        = $(filter-out $(DOCDIR)index.rest,$(wildcard $(DOCDIR)*.rest))
+         SRCSTPL     = $(wildcard $(DOCDIR)*.rest.stpl)
          IMGS        = \
-         	$(wildcard $(SRCDIR)*.pyg)\
-         	$(wildcard $(SRCDIR)*.eps)\
-         	$(wildcard $(SRCDIR)*.tikz)\
-         	$(wildcard $(SRCDIR)*.svg)\
-         	$(wildcard $(SRCDIR)*.uml)\
-         	$(wildcard $(SRCDIR)*.dot)\
-         	$(wildcard $(SRCDIR)*.eps.stpl)\
-         	$(wildcard $(SRCDIR)*.tikz.stpl)\
-         	$(wildcard $(SRCDIR)*.svg.stpl)\
-         	$(wildcard $(SRCDIR)*.uml.stpl)\
-         	$(wildcard $(SRCDIR)*.dot.stpl)
-         PNGS=$(subst $(SRCDIR),$(SRCDIR)_images/,\
+         	$(wildcard $(DOCDIR)*.pyg)\
+         	$(wildcard $(DOCDIR)*.eps)\
+         	$(wildcard $(DOCDIR)*.tikz)\
+         	$(wildcard $(DOCDIR)*.svg)\
+         	$(wildcard $(DOCDIR)*.uml)\
+         	$(wildcard $(DOCDIR)*.dot)\
+         	$(wildcard $(DOCDIR)*.eps.stpl)\
+         	$(wildcard $(DOCDIR)*.tikz.stpl)\
+         	$(wildcard $(DOCDIR)*.svg.stpl)\
+         	$(wildcard $(DOCDIR)*.uml.stpl)\
+         	$(wildcard $(DOCDIR)*.dot.stpl)
+         PNGS=$(subst $(DOCDIR),$(DOCDIR)_images/,\
          	$(patsubst %.eps,%.png,\
          	$(patsubst %.pyg,%.png,\
          	$(patsubst %.tikz,%.png,\
@@ -3460,27 +3460,27 @@ example_tree = r'''
          	$(patsubst %.tikz.stpl,%.png,\
          	$(patsubst %.svg.stpl,%.png,\
          	$(patsubst %.uml.stpl,%.png,$(IMGS)))))))))))))
-         DOCXS = $(subst $(SRCDIR),$(BLDDIR)docx/,$(SRCS:%.rest=%.docx))\
-         	$(subst $(SRCDIR),$(BLDDIR)docx/,$(SRCSTPL:%.rest.stpl=%.docx))
-         PDFS  = $(subst $(SRCDIR),$(BLDDIR)pdf/,$(SRCS:%.rest=%.pdf))\
-         	$(subst $(SRCDIR),$(BLDDIR)pdf/,$(SRCSTPL:%.rest.stpl=%.pdf))
+         DOCXS = $(subst $(DOCDIR),$(BLDDIR)docx/,$(SRCS:%.rest=%.docx))\
+         	$(subst $(DOCDIR),$(BLDDIR)docx/,$(SRCSTPL:%.rest.stpl=%.docx))
+         PDFS  = $(subst $(DOCDIR),$(BLDDIR)pdf/,$(SRCS:%.rest=%.pdf))\
+         	$(subst $(DOCDIR),$(BLDDIR)pdf/,$(SRCSTPL:%.rest.stpl=%.pdf))
          .PHONY: docx help Makefile docxdir pdfdir stpl index imgs
          stpl: $(STPLTGTS)
          %:%.stpl
-         	@cd $(SRCDIR) && stpl "$(<F)" "$(@F)"
+         	@cd $(DOCDIR) && stpl "$(<F)" "$(@F)"
          imgs: $(PNGS)
-         $(SRCDIR)_images/%.png:$(SRCDIR)%.pyg
-         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
-         $(SRCDIR)_images/%.png:$(SRCDIR)%.eps
-         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
-         $(SRCDIR)_images/%.png:$(SRCDIR)%.tikz
-         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
-         $(SRCDIR)_images/%.png:$(SRCDIR)%.svg
-         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
-         $(SRCDIR)_images/%.png:$(SRCDIR)%.uml
-         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
-         $(SRCDIR)_images/%.png:$(SRCDIR)%.dot
-         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+         $(DOCDIR)_images/%.png:$(DOCDIR)%.pyg
+         	@cd $(DOCDIR) && python $(DCXFROMDOC)dcx.py $(<F)
+         $(DOCDIR)_images/%.png:$(DOCDIR)%.eps
+         	@cd $(DOCDIR) && python $(DCXFROMDOC)dcx.py $(<F)
+         $(DOCDIR)_images/%.png:$(DOCDIR)%.tikz
+         	@cd $(DOCDIR) && python $(DCXFROMDOC)dcx.py $(<F)
+         $(DOCDIR)_images/%.png:$(DOCDIR)%.svg
+         	@cd $(DOCDIR) && python $(DCXFROMDOC)dcx.py $(<F)
+         $(DOCDIR)_images/%.png:$(DOCDIR)%.uml
+         	@cd $(DOCDIR) && python $(DCXFROMDOC)dcx.py $(<F)
+         $(DOCDIR)_images/%.png:$(DOCDIR)%.dot
+         	@cd $(DOCDIR) && python $(DCXFROMDOC)dcx.py $(<F)
          docxdir: ${BLDDIR}docx
          pdfdir: ${BLDDIR}pdf
          MKDIR_P = mkdir -p
@@ -3489,20 +3489,20 @@ example_tree = r'''
          ${BLDDIR}pdf:
          	@${MKDIR_P} ${BLDDIR}pdf
          index:
-         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py
+         	@cd $(DOCDIR) && python $(DCXFROMDOC)dcx.py
          help:
-         	@$(SPHINXBLD) -M help "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
+         	@$(SPHINXBLD) -M help "$(DOCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
          	@echo "  docx        to docx"
          	@echo "  pdf         to pdf"
          #http://www.sphinx-doc.org/en/stable/usage/builders/
          html dirhtml singlehtml htmlhelp qthelp applehelp devhelp epub latex text man texinfo pickle json xml pseudoxml: Makefile index stpl imgs
-         	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
+         	@$(SPHINXBLD) -M $@ "$(DOCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
          docx:  docxdir index stpl imgs $(DOCXS)
-         $(BLDDIR)docx/%.docx:$(SRCDIR)%.rest
-         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py "$(<F)" "$(SRCBACK)$@"
+         $(BLDDIR)docx/%.docx:$(DOCDIR)%.rest
+         	@cd $(DOCDIR) && python $(DCXFROMDOC)dcx.py "$(<F)" "$(DOCBACK)$@"
          pdf: pdfdir index stpl imgs $(PDFS)
-         $(BLDDIR)pdf/%.pdf:$(SRCDIR)%.rest
-         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py "$(<F)" "$(SRCBACK)$@"
+         $(BLDDIR)pdf/%.pdf:$(DOCDIR)%.rest
+         	@cd $(DOCDIR) && python $(DCXFROMDOC)dcx.py "$(<F)" "$(DOCBACK)$@"
        __code__
          └ some.h
              /*
@@ -3938,8 +3938,8 @@ example_tree = r'''
             context.stroke()
         ├ gen
             #from|to|gen_xxx|kwargs
-            ../code/some.h | _sometst.rst                | tstdoc | {}
-            ../code/some.h | ../../build/code/some_tst.c | tst    | {}'''
+            ../__code__/some.h | _sometst.rst                | tstdoc | {}
+            ../__code__/some.h | ../build/__code__/some_tst.c | tst    | {}'''
 
 # replaces from '├ index.rest' to '├ egtikz.tikz'
 example_stp_subtree = r'''
@@ -4712,7 +4712,7 @@ Examples with the files generated with the ``--stpl tmp``:
     #Sphinx is not file-oriented
     #but with rstdcx you need to provide the files to give Sphinx ``master_doc`` (normally: index.rest)
     #Directly from ``.stpl`` does not work with Sphinx
-    rstdcx index.rest ../../build/index.html sphinx_html   # via Sphinx the output directory must be different
+    rstdcx index.rest ../build/index.html sphinx_html   # via Sphinx the output directory must be different
 
     #convert the graphics and place the into _images or ../_images
     #if no _images directory exists they will placed into the same folder

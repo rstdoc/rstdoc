@@ -1,7 +1,5 @@
 # encoding: utf-8
 
-#TODO: use ``mount -t tmpfs -o size=512m tmpfs /mnt/ramdisk`` on linux
-
 ##lns=open(__file__).readlines()
 ##list(gen_tests(lns))
 #def gen_tests(lns,**kw):
@@ -217,8 +215,7 @@ def test_init(rstinit):
 
     if 'tmp_stpl' in rstinit:
         assert tree('.')=="""\
-├─code
-│  └─some.h
+├─build
 ├─doc
 │  ├─_images
 │  ├─dd.rest.stpl
@@ -247,6 +244,8 @@ def test_init(rstinit):
 │  ├─tp.rest.stpl
 │  ├─utility.rst.tpl
 │  └─wscript_build
+├─tmp_stpl
+│  └─some.h
 ├─Makefile
 ├─conf.py
 ├─dcx.py
@@ -260,8 +259,7 @@ def test_init(rstinit):
 └─wscript"""
     elif 'tmp_rest' in rstinit:
         assert tree('.')=="""\
-├─code
-│  └─some.h
+├─build
 ├─doc
 │  ├─_images
 │  ├─dd.rest
@@ -283,6 +281,8 @@ def test_init(rstinit):
 │  ├─sr.rest
 │  ├─tp.rest
 │  └─wscript_build
+├─tmp_rest
+│  └─some.h
 ├─Makefile
 ├─conf.py
 ├─dcx.py
@@ -310,7 +310,7 @@ def test_dcx_alone_samples(rstinit,capfd):
 + egsvg.svg
 doc
 + doc/_sometst.rst
-+ ../build/code/some_tst.c
++ build/tmp_rest/some_tst.c
     doc/tp.rest
     doc/sr.rest
     doc/ra.rest
@@ -338,7 +338,7 @@ run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-
 + tp.rest
 doc
 + doc/_sometst.rst
-+ ../build/code/some_tst.c
++ build/tmp_stpl/some_tst.c
     doc/tp.rest.stpl
     doc/sy.rest.stpl
     doc/sr.rest.stpl
@@ -400,7 +400,7 @@ def test_dcx_in_out(rstinit,cmd_result):
 ,(['dd.rest.stpl','dd.odt'],['dd.odt'],['dd.rest'])
 ,(['sr.rest.stpl','sr.odt','rst_odt'],['sr.odt'],['sr.rest'])
 ,(['sr.rest.stpl','sr.odt','rst'],['sr.odt'],['sr.rest'])
-,(['index.rest','../../build/index.html','sphinx_html'],['../../build/index.html'],[])
+,(['index.rest','build/index.html','sphinx_html'],['build/index.html'],[])
 ,(['egcairo.pyg'],['_images/egcairo.png'],[])
 ,(['egdot.dot.stpl'],['_images/egdot.png'],['egdot.dot'])
 ,(['egeps.eps'],['_images/egeps.png'],[])
@@ -443,7 +443,7 @@ def makebuild(request,rstinit):
     oldd = os.getcwd()
     r=run(['make',request.param])
     assert r.returncode == 0
-    os.chdir(os.path.join('..','build'))
+    os.chdir('build')
     yield (os.getcwd(),request.param)
     os.chdir(oldd)
 
@@ -458,84 +458,84 @@ def test_make_samples(makebuild):
     dir,target = makebuild
     if 'tmp_rest' in dir:
         expected_no_html="""\
-├─code
-│  └─some_tst.c
-└─doc
-   └─{0}
-      ├─dd.{0}
-      ├─ra.{0}
-      ├─sr.{0}
-      └─tp.{0}"""
+├─doc
+│  └─{0}
+│     ├─dd.{0}
+│     ├─ra.{0}
+│     ├─sr.{0}
+│     └─tp.{0}
+└─tmp_rest
+   └─some_tst.c"""
         if target in ['docx','pdf']:
             expected=expected_no_html.format(target)
         elif target=='html':
             expected="""\
-├─code
-│  └─some_tst.c
-└─doc
-   ├─doctrees
-   │  ├─dd.doctree
-   │  ├─environment.pickle
-   │  ├─index.doctree
-   │  ├─ra.doctree
-   │  ├─sr.doctree
-   │  └─tp.doctree
-   └─html
-      ├─_images
-      ├─_sources
-      ├─_static
-      ├─_traceability_file.svg
-      ├─dd.html
-      ├─genindex.html
-      ├─index.html
-      ├─objects.inv
-      ├─ra.html
-      ├─search.html
-      ├─searchindex.js
-      ├─sr.html
-      └─tp.html"""
+├─doc
+│  ├─doctrees
+│  │  ├─dd.doctree
+│  │  ├─environment.pickle
+│  │  ├─index.doctree
+│  │  ├─ra.doctree
+│  │  ├─sr.doctree
+│  │  └─tp.doctree
+│  └─html
+│     ├─_images
+│     ├─_sources
+│     ├─_static
+│     ├─_traceability_file.svg
+│     ├─dd.html
+│     ├─genindex.html
+│     ├─index.html
+│     ├─objects.inv
+│     ├─ra.html
+│     ├─search.html
+│     ├─searchindex.js
+│     ├─sr.html
+│     └─tp.html
+└─tmp_rest
+   └─some_tst.c"""
         assert tree3(makebuild[0])==expected
     elif 'tmp_stpl' in dir:
         expected_no_html="""\
-├─code
-│  └─some_tst.c
-└─doc
-   └─{0}
-      ├─dd.{0}
-      ├─ra.{0}
-      ├─sr.{0}
-      ├─sy.{0}
-      └─tp.{0}"""
+├─doc
+│  └─{0}
+│     ├─dd.{0}
+│     ├─ra.{0}
+│     ├─sr.{0}
+│     ├─sy.{0}
+│     └─tp.{0}
+└─tmp_stpl
+   └─some_tst.c"""
         if target in ['docx','pdf']:
             expected=expected_no_html.format(target)
         elif target=='html':
             expected="""\
-├─code
-│  └─some_tst.c
-└─doc
-   ├─doctrees
-   │  ├─dd.doctree
-   │  ├─environment.pickle
-   │  ├─index.doctree
-   │  ├─ra.doctree
-   │  ├─sr.doctree
-   │  ├─sy.doctree
-   │  └─tp.doctree
-   └─html
-      ├─_images
-      ├─_sources
-      ├─_static
-      ├─_traceability_file.svg
-      ├─dd.html
-      ├─genindex.html
-      ├─index.html
-      ├─objects.inv
-      ├─ra.html
-      ├─search.html
-      ├─searchindex.js
-      ├─sr.html
-      ├─sy.html
-      └─tp.html"""
+├─doc
+│  ├─doctrees
+│  │  ├─dd.doctree
+│  │  ├─environment.pickle
+│  │  ├─index.doctree
+│  │  ├─ra.doctree
+│  │  ├─sr.doctree
+│  │  ├─sy.doctree
+│  │  └─tp.doctree
+│  └─html
+│     ├─_images
+│     ├─_sources
+│     ├─_static
+│     ├─_traceability_file.svg
+│     ├─dd.html
+│     ├─genindex.html
+│     ├─index.html
+│     ├─objects.inv
+│     ├─ra.html
+│     ├─search.html
+│     ├─searchindex.js
+│     ├─sr.html
+│     ├─sy.html
+│     └─tp.html
+└─tmp_stpl
+   └─some_tst.c"""
         assert tree3(makebuild[0])==expected
 
 waf_some = ['docx','odt','pdf','html','latex','sphinx_html','sphinx_latex','rst_html','rst_latex','rst_odt']
@@ -549,7 +549,7 @@ def wafbuild(request,rstinit):
     r2=run(['waf','--docs',request.param])
     assert r2.returncode==0
     oldd = os.getcwd()
-    os.chdir(os.path.join('..','build'))
+    os.chdir('build')
     yield (os.getcwd(),request.param)
     os.chdir(oldd)
 
@@ -560,13 +560,13 @@ def test_waf_samples(wafbuild):
     '''
 
     is_stpl = 'tmp_stpl' in os.getcwd()
+    tmp_xxx = 'tmp_stpl' if is_stpl else 'tmp_rest'
     target=wafbuild[1]
     expected_non_sphinx="""\
 ├─c4che
 │  ├─_cache.py
 │  └─build.config.py
-├─code
-│  └─some_tst.c
+├─build
 ├─doc
 │  └─{0}{2}
 │     ├─dd.{1}
@@ -576,6 +576,8 @@ def test_waf_samples(wafbuild):
 │     ├─sy.{1}
 """ if is_stpl else '')+"""\
 │     └─tp.{1}
+├─{3}
+│  └─some_tst.c
 └─config.log"""
     if target in waf_non_sphinx:
         try:
@@ -587,14 +589,13 @@ def test_waf_samples(wafbuild):
                 extra += '\n│     ├─_traceability_file.svg'
         else:
             extra = ''
-        expected=expected_non_sphinx.format(target,ext,extra)
+        expected=expected_non_sphinx.format(target,ext,extra,tmp_xxx)
     elif target=='sphinx_latex':
         expected="""\
 ├─c4che
 │  ├─_cache.py
 │  └─build.config.py
-├─code
-│  └─some_tst.c
+├─build
 ├─doc
 │  └─sphinx_latex
 │     ├─Makefile
@@ -620,14 +621,15 @@ def test_waf_samples(wafbuild):
 │     ├─sphinxhowto.cls
 │     ├─sphinxmanual.cls
 │     └─sphinxmulticell.sty
-└─config.log"""
+├─{}
+│  └─some_tst.c
+└─config.log""".format(tmp_xxx)
     elif target=='sphinx_html':
         expected="""\
 ├─c4che
 │  ├─_cache.py
 │  └─build.config.py
-├─code
-│  └─some_tst.c
+├─build
 ├─doc
 │  └─sphinx_html
 │     ├─_images
@@ -643,7 +645,9 @@ def test_waf_samples(wafbuild):
 │     ├─sr.html
 │     ├─sy.html
 │     └─tp.html
-└─config.log"""
+├─{}
+│  └─some_tst.c
+└─config.log""".format(tmp_xxx)
     for x in tree3(wafbuild[0]).splitlines():
         if not any(e in x for e in
         '.doctrees .sty .js .inv .xdy .cls latexmk .ist'.split()):

@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-#TODO: check proper rendering of long_description
-
 #pip uninstall rstdoc
 #python setup.py bdist_wheel
 #pip install dist/rstdoc-1.6.2-py3-non-any.whl
