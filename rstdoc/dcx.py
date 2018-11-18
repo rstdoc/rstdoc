@@ -75,18 +75,17 @@ It
   it can also be where the main wscript is.
 
 See example at the end of ``dcx.py``.
-
 It is supposed to be used with a build tool. ``make`` and ``waf`` examples are included.
 
 - Initialize example tree.
-  This copies ``dcx.py`` into the example tree to be independent from possible future changes.
+  This copies ``dcx.py`` into the example tree to be independent from possible future changes::
 
   $ ./dcx.py --rest tmp #.rest files OR
   $ ./dcx.py --stpl tmp #.rest.stpl files
 
 - Only create .tags and _links_xxx.rst::
 
-  $ cd tmp/src/doc
+  $ cd tmp/doc
   $ ./dcx.py
 
 - Create the docs (and .tags and _links_xxx.rst) with **make**::
@@ -105,7 +104,8 @@ It is supposed to be used with a build tool. ``make`` and ``waf`` examples are i
   Instead of using ``make`` one can load ``dcx.py`` in `waf <https://github.com/waf-project/waf>`__.
   ``waf`` also considers all recursively included files,
   such that a change in any of them results in a rebuild of the documentation.
-  All files can have an additional ``.stpl`` extension to use `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax>`__.
+  All files can have an additional ``.stpl`` extension
+  to use `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax>`__.
 
   $ waf configure #copies the latest version of waf in here
   $ waf --docs docx,sphinx_html,rst_odt #or you provide during config to always compile the docs
@@ -157,7 +157,7 @@ Conventions
 - Files
 
   - main docs end in ``.rest``
-  - ``.rst`` are included and ignored by Sphinx (see conf.py).
+  - ``.rst`` are included and ignored by Sphinx (see ``conf.py``).
   - ``.txt`` are literally included (use :literal: option).
   - templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately.
   - ``some.rst.tpl`` are template included
@@ -173,15 +173,17 @@ Conventions
   If one wants to generate also reST targets, then this should happen in a previous step,
   e.g. with ``gen`` files mentioned above.
 
-- References use replacement `substitutions`_ : ``|id|``.
+- References use replacement
+  `substitutions <http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text>`__ : ``|id|``.
 
-- If you want an overview of the linking (traceability), add ``.. include:: _traceability_file.rst`` to ``index.rest`` or another ``.rest`` file.
-  It is there in the generated samples to include it in tests. You might want to remove that line, if you start with the samples.
+- If you want an overview of the linking (traceability),
+  add ``.. include:: _traceability_file.rst`` to ``index.rest`` or another ``.rest`` file.
+  It is there in the generated samples to include it in tests.
+  You might want to remove that line, if you start with the samples.
 
 See the example created with ``--rest`` of ``--stpl`` at the end of this file and the sources of the documentation of
 `rstdoc <https://github.com/rpuntaie/rstdoc>`__.
 
-.. _`substitutions`: http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text
 
 """
 
@@ -3308,1145 +3310,1144 @@ except:
 # this is for mktree(): first line of file content must not be empty!
 example_tree = r'''
        build/
-       src
-        ├ dcx.py << file:///__file__
-        ├ reference.tex << file:///__tex_ref__
-        ├ reference.docx << file:///__docx_ref__
-        ├ reference.odt << file:///__odt_ref__
-        ├ wafw.py << file:///__wafw__
-        ├ waf
-            #!/usr/bin/env sh
-            shift
-            ./wafw.py "$@"
-        ├ waf.bat
-            @setlocal
-            @set PYEXE=python
-            @where %PYEXE% 1>NUL 2>NUL
-            @if %ERRORLEVEL% neq 0 set PYEXE=py
-            @%PYEXE% -x "%~dp0wafw.py" %*
-            @exit /b %ERRORLEVEL%
-        ├ wscript
-            from waflib import Logs
-            Logs.colors_lst['BLUE']='\x1b[01;36m'
+       dcx.py << file:///__file__
+       reference.tex << file:///__tex_ref__
+       reference.docx << file:///__docx_ref__
+       reference.odt << file:///__odt_ref__
+       wafw.py << file:///__wafw__
+       waf
+         #!/usr/bin/env sh
+         shift
+         ./wafw.py "$@"
+       waf.bat
+         @setlocal
+         @set PYEXE=python
+         @where %PYEXE% 1>NUL 2>NUL
+         @if %ERRORLEVEL% neq 0 set PYEXE=py
+         @%PYEXE% -x "%~dp0wafw.py" %*
+         @exit /b %ERRORLEVEL%
+       wscript
+         from waflib import Logs
+         Logs.colors_lst['BLUE']='\x1b[01;36m'
 
-            top='.'
-            out='../build'
+         top='.'
+         out='../build'
 
-            def options(opt):
-              opt.load('dcx',tooldir='.')
+         def options(opt):
+           opt.load('dcx',tooldir='.')
 
-            def configure(cfg):
-              cfg.load('dcx',tooldir='.')
+         def configure(cfg):
+           cfg.load('dcx',tooldir='.')
 
-            def build(bld):
-              #defines bld.gen_files(), bld.gen_links(), bld.build_docs()
-              bld.load('dcx',tooldir='.')
-              bld.recurse('doc')
-        ├ docutils.conf
-            [general]
-            halt_level: severe
-            report_level: error
-        ├ conf.py
-            project = 'sample'
-            author = project+' Project Team'
-            copyright = '2018, '+author
-            version = '1.0'
-            release = '1.0.0'
-            html_theme = 'bootstrap'
-            import sphinx_bootstrap_theme
-            html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+         def build(bld):
+           #defines bld.gen_files(), bld.gen_links(), bld.build_docs()
+           bld.load('dcx',tooldir='.')
+           bld.recurse('doc')
+       docutils.conf
+         [general]
+         halt_level: severe
+         report_level: error
+       conf.py
+         project = 'sample'
+         author = project+' Project Team'
+         copyright = '2018, '+author
+         version = '1.0'
+         release = '1.0.0'
+         html_theme = 'bootstrap'
+         import sphinx_bootstrap_theme
+         html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
-            #these are enforced by rstdoc, but you need to keep them here if you call sphinx-build directly
-            numfig = 0
-            smartquotes = 0
-            source_suffix = '.rest'
-            templates_path = []
-            language = None
-            highlight_language = "none"
-            default_role = 'math'
-            latex_engine = 'xelatex'
-            pygments_style = 'sphinx'
-            exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-            master_doc = 'index'
+         #these are enforced by rstdoc, but you need to keep them here if you call sphinx-build directly
+         numfig = 0
+         smartquotes = 0
+         source_suffix = '.rest'
+         templates_path = []
+         language = None
+         highlight_language = "none"
+         default_role = 'math'
+         latex_engine = 'xelatex'
+         pygments_style = 'sphinx'
+         exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+         master_doc = 'index'
 
-            #You can postprocess pngs. Here an example. default: png_post_processor = None
-            def png_post_processor(filename):
-                from PIL import Image, ImageChops
-                def trim(im):
-                    bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
-                    diff = ImageChops.difference(im, bg)
-                    diff = ImageChops.add(diff, diff, 2.0, -100)
-                    bbox = diff.getbbox()
-                    if bbox:
-                        return im.crop(bbox)
-                im = Image.open(filename)
-                im = trim(im)
-                im.save(filename)
-                return filename
+         #You can postprocess pngs. Here an example. default: png_post_processor = None
+         def png_post_processor(filename):
+             from PIL import Image, ImageChops
+             def trim(im):
+                 bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
+                 diff = ImageChops.difference(im, bg)
+                 diff = ImageChops.add(diff, diff, 2.0, -100)
+                 bbox = diff.getbbox()
+                 if bbox:
+                     return im.crop(bbox)
+             im = Image.open(filename)
+             im = trim(im)
+             im.save(filename)
+             return filename
 
-            #remove the following, if you don't change them, because they are default anyway
-            latex_elements = {'preamble':r"""
-            \usepackage{pgfplots}
-            \usepackage{unicode-math}
-            \usepackage{tikz}
-            \usepackage{caption}
-            \captionsetup[figure]{labelformat=empty}
-            \usetikzlibrary{arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections}
-            """
-            }
+         #remove the following, if you don't change them, because they are default anyway
+         latex_elements = {'preamble':r"""
+         \usepackage{pgfplots}
+         \usepackage{unicode-math}
+         \usepackage{tikz}
+         \usepackage{caption}
+         \captionsetup[figure]{labelformat=empty}
+         \usetikzlibrary{arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections}
+         """
+         }
 
-            #new in rstdcx/dcx/py
-            tex_wrap = r"""
-            \documentclass[12pt,tikz]{standalone}
-            \usepackage{amsmath}
-            """+latex_elements['preamble']+r"""
-            \pagestyle{empty}
-            \begin{document}
-            %s
-            \end{document}
-            """
-            DPI = 600
-            target_id_group = lambda targetid: targetid[0]
-            target_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
-            html_extra_path=["doc/_traceability_file.svg"] #relative to conf.py
-            pandoc_doc_optref={'latex': '--template ../reference.tex',
-                             'html': {},#each can also be dict of file:template
-                             'pdf': '--template ../reference.tex',
-                             'docx': '--reference-doc ../reference.docx',
-                             'odt': '--reference-doc ../reference.odt'
-                             }
-            _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
-            pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
-            rst_opts = { #http://docutils.sourceforge.net/docs/user/config.html
-                        'strip_comments':True
-                        ,'report_level':3
-                        ,'raw_enabled':True
-                        }
-            name_from_directive = lambda directive,count: directive[0].upper()+directive[1:]+' '+str(count)
-        ├ Makefile
-            SPHINXOPTS  = -c .
-            SPHINXBLD   = sphinx-build
-            SPHINXPROJ  = sample
-            SRCDIR      = doc/
-            SRCBACK     = ../
-            DCXPATH     = ../
-            BLDDIR      = ../build/doc/
-            STPLS       = $(wildcard $(SRCDIR)*.stpl)
-            STPLTGTS    = $(STPLS:%.stpl=%)
-            SRCS        = $(filter-out $(SRCDIR)index.rest,$(wildcard $(SRCDIR)*.rest))
-            SRCSTPL     = $(wildcard $(SRCDIR)*.rest.stpl)
-            IMGS        = \
-            	$(wildcard $(SRCDIR)*.pyg)\
-            	$(wildcard $(SRCDIR)*.eps)\
-            	$(wildcard $(SRCDIR)*.tikz)\
-            	$(wildcard $(SRCDIR)*.svg)\
-            	$(wildcard $(SRCDIR)*.uml)\
-            	$(wildcard $(SRCDIR)*.dot)\
-            	$(wildcard $(SRCDIR)*.eps.stpl)\
-            	$(wildcard $(SRCDIR)*.tikz.stpl)\
-            	$(wildcard $(SRCDIR)*.svg.stpl)\
-            	$(wildcard $(SRCDIR)*.uml.stpl)\
-            	$(wildcard $(SRCDIR)*.dot.stpl)
-            PNGS=$(subst $(SRCDIR),$(SRCDIR)_images/,\
-            	$(patsubst %.eps,%.png,\
-            	$(patsubst %.pyg,%.png,\
-            	$(patsubst %.tikz,%.png,\
-            	$(patsubst %.svg,%.png,\
-            	$(patsubst %.uml,%.png,\
-            	$(patsubst %.dot,%.png,\
-            	$(patsubst %.eps.stpl,%.png,\
-            	$(patsubst %.dot.stpl,%.png,\
-            	$(patsubst %.tikz.stpl,%.png,\
-            	$(patsubst %.svg.stpl,%.png,\
-            	$(patsubst %.uml.stpl,%.png,$(IMGS)))))))))))))
-            DOCXS = $(subst $(SRCDIR),$(BLDDIR)docx/,$(SRCS:%.rest=%.docx))\
-            	$(subst $(SRCDIR),$(BLDDIR)docx/,$(SRCSTPL:%.rest.stpl=%.docx))
-            PDFS  = $(subst $(SRCDIR),$(BLDDIR)pdf/,$(SRCS:%.rest=%.pdf))\
-            	$(subst $(SRCDIR),$(BLDDIR)pdf/,$(SRCSTPL:%.rest.stpl=%.pdf))
-            .PHONY: docx help Makefile docxdir pdfdir stpl index imgs
-            stpl: $(STPLTGTS)
-            %:%.stpl
-            	@cd $(SRCDIR) && stpl "$(<F)" "$(@F)"
-            imgs: $(PNGS)
-            $(SRCDIR)_images/%.png:$(SRCDIR)%.pyg
-            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
-            $(SRCDIR)_images/%.png:$(SRCDIR)%.eps
-            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
-            $(SRCDIR)_images/%.png:$(SRCDIR)%.tikz
-            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
-            $(SRCDIR)_images/%.png:$(SRCDIR)%.svg
-            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
-            $(SRCDIR)_images/%.png:$(SRCDIR)%.uml
-            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
-            $(SRCDIR)_images/%.png:$(SRCDIR)%.dot
-            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
-            docxdir: ${BLDDIR}docx
-            pdfdir: ${BLDDIR}pdf
-            MKDIR_P = mkdir -p
-            ${BLDDIR}docx:
-            	@${MKDIR_P} ${BLDDIR}docx
-            ${BLDDIR}pdf:
-            	@${MKDIR_P} ${BLDDIR}pdf
-            index:
-            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py
-            help:
-            	@$(SPHINXBLD) -M help "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
-            	@echo "  docx        to docx"
-            	@echo "  pdf         to pdf"
-            #http://www.sphinx-doc.org/en/stable/usage/builders/
-            html dirhtml singlehtml htmlhelp qthelp applehelp devhelp epub latex text man texinfo pickle json xml pseudoxml: Makefile index stpl imgs
-            	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
-            docx:  docxdir index stpl imgs $(DOCXS)
-            $(BLDDIR)docx/%.docx:$(SRCDIR)%.rest
-            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py "$(<F)" "$(SRCBACK)$@"
-            pdf: pdfdir index stpl imgs $(PDFS)
-            $(BLDDIR)pdf/%.pdf:$(SRCDIR)%.rest
-            	@cd $(SRCDIR) && python $(DCXPATH)dcx.py "$(<F)" "$(SRCBACK)$@"
-        ├ code
-            └ some.h
-                /*
-                #def gen_tst(lns,**kw):
-                #  return [l.split('@')[1] for l in rlines(r'^\s*@',lns)]
-                #def gen_tst
-                #def gen_tstdoc(lns,**kw):
-                #  return ['#) '+l.split('**')[1] for l in rlines(r'^/\*\*',lns)]
-                #def gen_tstdoc
+         #new in rstdcx/dcx/py
+         tex_wrap = r"""
+         \documentclass[12pt,tikz]{standalone}
+         \usepackage{amsmath}
+         """+latex_elements['preamble']+r"""
+         \pagestyle{empty}
+         \begin{document}
+         %s
+         \end{document}
+         """
+         DPI = 600
+         target_id_group = lambda targetid: targetid[0]
+         target_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
+         html_extra_path=["doc/_traceability_file.svg"] #relative to conf.py
+         pandoc_doc_optref={'latex': '--template ../reference.tex',
+                          'html': {},#each can also be dict of file:template
+                          'pdf': '--template ../reference.tex',
+                          'docx': '--reference-doc ../reference.docx',
+                          'odt': '--reference-doc ../reference.odt'
+                          }
+         _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
+         pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
+         rst_opts = { #http://docutils.sourceforge.net/docs/user/config.html
+                     'strip_comments':True
+                     ,'report_level':3
+                     ,'raw_enabled':True
+                     }
+         name_from_directive = lambda directive,count: directive[0].upper()+directive[1:]+' '+str(count)
+       Makefile
+         SPHINXOPTS  = -c .
+         SPHINXBLD   = sphinx-build
+         SPHINXPROJ  = sample
+         SRCDIR      = doc/
+         SRCBACK     = ../
+         DCXPATH     = ../
+         BLDDIR      = ../build/doc/
+         STPLS       = $(wildcard $(SRCDIR)*.stpl)
+         STPLTGTS    = $(STPLS:%.stpl=%)
+         SRCS        = $(filter-out $(SRCDIR)index.rest,$(wildcard $(SRCDIR)*.rest))
+         SRCSTPL     = $(wildcard $(SRCDIR)*.rest.stpl)
+         IMGS        = \
+         	$(wildcard $(SRCDIR)*.pyg)\
+         	$(wildcard $(SRCDIR)*.eps)\
+         	$(wildcard $(SRCDIR)*.tikz)\
+         	$(wildcard $(SRCDIR)*.svg)\
+         	$(wildcard $(SRCDIR)*.uml)\
+         	$(wildcard $(SRCDIR)*.dot)\
+         	$(wildcard $(SRCDIR)*.eps.stpl)\
+         	$(wildcard $(SRCDIR)*.tikz.stpl)\
+         	$(wildcard $(SRCDIR)*.svg.stpl)\
+         	$(wildcard $(SRCDIR)*.uml.stpl)\
+         	$(wildcard $(SRCDIR)*.dot.stpl)
+         PNGS=$(subst $(SRCDIR),$(SRCDIR)_images/,\
+         	$(patsubst %.eps,%.png,\
+         	$(patsubst %.pyg,%.png,\
+         	$(patsubst %.tikz,%.png,\
+         	$(patsubst %.svg,%.png,\
+         	$(patsubst %.uml,%.png,\
+         	$(patsubst %.dot,%.png,\
+         	$(patsubst %.eps.stpl,%.png,\
+         	$(patsubst %.dot.stpl,%.png,\
+         	$(patsubst %.tikz.stpl,%.png,\
+         	$(patsubst %.svg.stpl,%.png,\
+         	$(patsubst %.uml.stpl,%.png,$(IMGS)))))))))))))
+         DOCXS = $(subst $(SRCDIR),$(BLDDIR)docx/,$(SRCS:%.rest=%.docx))\
+         	$(subst $(SRCDIR),$(BLDDIR)docx/,$(SRCSTPL:%.rest.stpl=%.docx))
+         PDFS  = $(subst $(SRCDIR),$(BLDDIR)pdf/,$(SRCS:%.rest=%.pdf))\
+         	$(subst $(SRCDIR),$(BLDDIR)pdf/,$(SRCSTPL:%.rest.stpl=%.pdf))
+         .PHONY: docx help Makefile docxdir pdfdir stpl index imgs
+         stpl: $(STPLTGTS)
+         %:%.stpl
+         	@cd $(SRCDIR) && stpl "$(<F)" "$(@F)"
+         imgs: $(PNGS)
+         $(SRCDIR)_images/%.png:$(SRCDIR)%.pyg
+         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+         $(SRCDIR)_images/%.png:$(SRCDIR)%.eps
+         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+         $(SRCDIR)_images/%.png:$(SRCDIR)%.tikz
+         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+         $(SRCDIR)_images/%.png:$(SRCDIR)%.svg
+         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+         $(SRCDIR)_images/%.png:$(SRCDIR)%.uml
+         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+         $(SRCDIR)_images/%.png:$(SRCDIR)%.dot
+         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py $(<F)
+         docxdir: ${BLDDIR}docx
+         pdfdir: ${BLDDIR}pdf
+         MKDIR_P = mkdir -p
+         ${BLDDIR}docx:
+         	@${MKDIR_P} ${BLDDIR}docx
+         ${BLDDIR}pdf:
+         	@${MKDIR_P} ${BLDDIR}pdf
+         index:
+         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py
+         help:
+         	@$(SPHINXBLD) -M help "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
+         	@echo "  docx        to docx"
+         	@echo "  pdf         to pdf"
+         #http://www.sphinx-doc.org/en/stable/usage/builders/
+         html dirhtml singlehtml htmlhelp qthelp applehelp devhelp epub latex text man texinfo pickle json xml pseudoxml: Makefile index stpl imgs
+         	@$(SPHINXBLD) -M $@ "$(SRCDIR)" "$(BLDDIR)" $(SPHINXOPTS) $(O)
+         docx:  docxdir index stpl imgs $(DOCXS)
+         $(BLDDIR)docx/%.docx:$(SRCDIR)%.rest
+         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py "$(<F)" "$(SRCBACK)$@"
+         pdf: pdfdir index stpl imgs $(PDFS)
+         $(BLDDIR)pdf/%.pdf:$(SRCDIR)%.rest
+         	@cd $(SRCDIR) && python $(DCXPATH)dcx.py "$(<F)" "$(SRCBACK)$@"
+       __code__
+         └ some.h
+             /*
+             #def gen_tst(lns,**kw):
+             #  return [l.split('@')[1] for l in rlines(r'^\s*@',lns)]
+             #def gen_tst
+             #def gen_tstdoc(lns,**kw):
+             #  return ['#) '+l.split('**')[1] for l in rlines(r'^/\*\*',lns)]
+             #def gen_tstdoc
 
-                @//generated from some.h
-                @#include <assert.h>
-                @#include "some.h"
-                @int main()
-                @{
-                */
+             @//generated from some.h
+             @#include <assert.h>
+             @#include "some.h"
+             @int main()
+             @{
+             */
 
-                /**Test add1()
-                @assert(add1(1)==2);
-                */
-                int add1(int a)
-                {
-                  return a+1;
+             /**Test add1()
+             @assert(add1(1)==2);
+             */
+             int add1(int a)
+             {
+               return a+1;
+             }
+
+             /**Test add2()
+             @assert(add2(1)==3);
+             */
+             int add2(int a)
+             {
+               return a+2;
+             }
+
+             /*
+             @}
+             */
+       doc
+        ├ _images/
+        ├ wscript_build
+            bld.build_docs()
+        ├ index.rest
+            ============
+            Project Name
+            ============
+
+            .. toctree::
+               ra.rest
+               sr.rest
+               dd.rest
+               tp.rest
+
+            One can also have a
+
+            - issues.rest for issues
+
+            - pp.rest for the project plan
+              (with backlog, epics, stories, tasks)
+
+            .. REMOVE THIS IF NO LINKING OVERVIEW WANTED
+            .. include:: _traceability_file.rst
+
+            .. include:: _links_sphinx.rst
+
+        ├ ra.rest
+            Risk Analysis
+            =============
+
+            .. _`rz7`:
+
+            :rz7: risk calculations
+
+            Risk calculations are done with python in the ``.stpl`` file.
+
+            .. include:: _links_sphinx.rst
+
+        ├ sr.rest
+            Software/System Requirements
+            ============================
+
+            .. _`s97`:
+
+            Requirements are testable (see |t9a|).
+
+            .. _`su7`:
+
+            ``dcx.py`` produces its own labeling consistent across DOCX, PDF, HTML.
+
+            .. _`sy7`:
+
+            A Requirement Group
+            -------------------
+
+            .. _`s3a`:
+
+            :s3a: brief description
+
+            Don't count the ID, since the order will change.
+            The IDs have the first letter of the file and 2 or more random letters of ``[0-9a-z]``.
+            Use an editor macro to generate IDs.
+
+            A link: |s3a|
+
+            If one prefers ordered IDs, one can use templates::
+
+              %id = lambda x=[0]: x.append(x[-1]+1) or "s{:0>2}".format(x[-1])
+
+              .. _`soi`:
+
+              :{{id()}}: auto numbered.
+
+            The disadvantage is that the id will differ between rst and final doc.
+            When this is needed in an included file use template include: ``%include('x.rst.tpl`)``
+            See the the ``test/stpl`` directory.
+
+            Every ``.rest`` has this line at the end::
+
+               .. include:: _links_sphinx.rst
+
+            .. include:: _links_sphinx.rst
+
+        ├ dd.rest
+            Design Description
+            ==================
+
+            .. _`d97`:
+
+            :d97: Independent DD IDs
+
+              The relation with RS IDs is m-n. Links like |s3a| can be scattered over more DD entries.
+
+            .. _`dx3`:
+
+            .. figure:: _images/egtikz1.png
+               :name:
+               :width: 30%
+
+               |dx3|: Create from egtikz1.tikz
+
+            .. _`dz3`:
+
+            .. figure:: _images/egtikz.png
+               :name:
+               :width: 50%
+
+               |dz3|: Create from egtikz.tikz
+
+               The usage of ``:name:`` produces: ``WARNING: Duplicate explicit target name: ""``. Ignore.
+
+            Reference via |dz3|.
+
+            ``.tikz``, ``.svg``, ``.dot``,  ``.uml``, ``.eps`` or ``.stpl`` thereof and ``.pyg``, are converted to ``.png``.
+
+            .. _`dz4`:
+
+            .. figure:: _images/egsvg.png
+               :name:
+
+               |dz4|: Created from egsvg.svg.stpl
+
+            .. _`dz5`:
+
+            .. figure:: _images/egdot.png
+               :name:
+
+               |dz5|: Created from egdot.dot.stpl
+
+            .. _`dz6`:
+
+            .. figure:: _images/eguml.png
+               :name:
+
+               |dz6|: Created from eguml.uml
+
+            .. _`dz7`:
+
+            .. figure:: _images/egplt.png
+               :name:
+               :width: 30%
+
+               |dz7|: Created from egplt.pyg
+
+            .. _`dz8`:
+
+            .. figure:: _images/egpyx.png
+               :name:
+
+               |dz8|: Created from egpyx.pyg
+
+            .. _`dr8`:
+
+            .. figure:: _images/egcairo.png
+               :name:
+
+               |dr8|: Created from egcairo.pyg
+
+            .. _`ds8`:
+
+            .. figure:: _images/egpygal.png
+               :name:
+               :width: 30%
+
+               |ds8|: Created from egpygal.pyg
+
+            .. _`dsx`:
+
+            .. figure:: _images/egother.png
+               :name:
+
+               |dsx|: Created from egother.pyg
+
+            .. _`du8`:
+
+            .. figure:: _images/egeps1.png
+               :name:
+
+               |du8|: Created from egeps1.eps
+
+            .. _`d98`:
+
+            .. figure:: _images/egeps.png
+               :name:
+
+               |d98|: Created from egeps.eps
+
+            .. _`dua`:
+
+            |dua|: Table legend
+
+            .. table::
+               :name:
+
+               +--------+--------+
+               | A      | B      |
+               +========+========+
+               | |eps1| | |eps|  |
+               +--------+--------+
+
+            .. _`dta`:
+
+            |dta|: Table legend
+
+            .. list-table::
+               :name:
+               :widths: 20 80
+               :header-rows: 1
+
+               * - Bit
+                 - Function
+
+               * - 0
+                 - afun
+
+            Reference |dta| does not show ``dta``.
+
+            .. _`dyi`:
+
+            |dyi|: Listing showing struct.
+
+            .. code-block:: cpp
+               :name:
+
+               struct astruct{
+                  int afield; //afield description
+               }
+
+            .. _`d9x`:
+
+            .. math::
+               :name:
+
+               V = \frac{K}{r^2}
+
+            ``:math:`` is the default inline role: `mc^2`
+
+            .. _`d99`:
+
+            :OtherName: Keep names the same all over.
+
+            Here instead of ``d99:`` we use ``:OtherName:``, but now we have two synonyms for the same item.
+            This is no good. If possible, keep ``d99`` in the source and in the final docs.
+
+            The item target must be in the same file as the item content. The following would not work::
+
+              .. _`dh5`:
+
+              .. include:: somefile.rst
+
+            .. |eps1| image:: _images/egeps1.png
+            .. |eps| image:: _images/egeps.png
+
+            .. include:: _links_sphinx.rst
+
+        ├ tp.rest
+            Test Plan
+            =========
+
+            .. _`t9a`:
+
+            Requirement Tests
+            -----------------
+
+            No duplication. Only reference the requirements to be tested.
+
+            - |s97|
+            - |su7|
+            - |s3a|
+            - |rz7|
+
+            Or better: reference the according SR chapter, else changes there would need an update here.
+
+            - Test |sy7|
+
+            Unit Tests
+            ----------
+
+            Use ``.rst`` for included files and start the file with ``_`` if generated.
+
+            - |d97|
+            - |dx3|
+            - |dz4|
+            - |dz5|
+            - |dz6|
+            - |dz7|
+            - |dz8|
+            - |dsx|
+            - |du8|
+            - |d98|
+            - |dua|
+            - |dta|
+            - |dyi|
+            - |d9x|
+            - |d99|
+
+            .. include:: _sometst.rst
+
+            .. include:: _links_sphinx.rst
+
+        ├ egtikz.tikz
+            [thick,red]
+            \draw (0,0) grid (3,3);
+            \foreach \c in {(0,0), (1,0), (2,0), (2,1), (1,2)}
+                \fill \c + (0.5,0.5) circle (0.42);
+        ├ egtikz1.tikz
+            \begin{scope}[blend group = soft light]
+            \fill[red!30!white]   ( 90:1.2) circle (2);
+            \fill[green!30!white] (210:1.2) circle (2);
+            \fill[blue!30!white]  (330:1.2) circle (2);
+            \end{scope}
+            \node at ( 90:2)    {Typography};
+            \node at ( 210:2)   {Design};
+            \node at ( 330:2)   {Coding};
+            \node [font=\Large] {\LaTeX};
+        ├ egsvg.svg.stpl
+            <?xml version="1.0" encoding="utf-8"?>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" width="110pt" height="60pt" stroke-width="0.566929" stroke-miterlimit="10.000000">
+            %for i in range(10):
+              <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,{{i*5}}" />
+            %end
+            %for i in range(10):
+              <path fill="none" stroke="#f40" stroke-width="1" d="M10,{{i*5}} C15,5 100,5 100,55" />
+            %end
+            <text x="50" y="50" fill="red">Hi!</text>
+            </svg>
+        ├ egdot.dot.stpl
+            digraph {
+            %for i in range(3):
+                "From {{i}}" -> "To {{i}}";
+            %end
                 }
-
-                /**Test add2()
-                @assert(add2(1)==3);
-                */
-                int add2(int a)
-                {
-                  return a+2;
-                }
-
-                /*
-                @}
-                */
-        └ doc
-           ├ _images/
-           ├ wscript_build
-               bld.build_docs()
-           ├ index.rest
-               ============
-               Project Name
-               ============
-
-               .. toctree::
-                  ra.rest
-                  sr.rest
-                  dd.rest
-                  tp.rest
-
-               One can also have a
-
-               - issues.rest for issues
-
-               - pp.rest for the project plan
-                 (with backlog, epics, stories, tasks)
-
-               .. REMOVE THIS IF NO LINKING OVERVIEW WANTED
-               .. include:: _traceability_file.rst
-
-               .. include:: _links_sphinx.rst
-
-           ├ ra.rest
-               Risk Analysis
-               =============
-
-               .. _`rz7`:
-
-               :rz7: risk calculations
-
-               Risk calculations are done with python in the ``.stpl`` file.
-
-               .. include:: _links_sphinx.rst
-
-           ├ sr.rest
-               Software/System Requirements
-               ============================
-
-               .. _`s97`:
-
-               Requirements are testable (see |t9a|).
-
-               .. _`su7`:
-
-               ``dcx.py`` produces its own labeling consistent across DOCX, PDF, HTML.
-
-               .. _`sy7`:
-
-               A Requirement Group
-               -------------------
-
-               .. _`s3a`:
-
-               :s3a: brief description
-
-               Don't count the ID, since the order will change.
-               The IDs have the first letter of the file and 2 or more random letters of ``[0-9a-z]``.
-               Use an editor macro to generate IDs.
-
-               A link: |s3a|
-
-               If one prefers ordered IDs, one can use templates::
-
-                 %id = lambda x=[0]: x.append(x[-1]+1) or "s{:0>2}".format(x[-1])
-
-                 .. _`soi`:
-
-                 :{{id()}}: auto numbered.
-
-               The disadvantage is that the id will differ between rst and final doc.
-               When this is needed in an included file use template include: ``%include('x.rst.tpl`)``
-               See the the ``test/stpl`` directory.
-
-               Every ``.rest`` has this line at the end::
-
-                  .. include:: _links_sphinx.rst
-
-               .. include:: _links_sphinx.rst
-
-           ├ dd.rest
-               Design Description
-               ==================
-
-               .. _`d97`:
-
-               :d97: Independent DD IDs
-
-                 The relation with RS IDs is m-n. Links like |s3a| can be scattered over more DD entries.
-
-               .. _`dx3`:
-
-               .. figure:: _images/egtikz1.png
-                  :name:
-                  :width: 30%
-
-                  |dx3|: Create from egtikz1.tikz
-
-               .. _`dz3`:
-
-               .. figure:: _images/egtikz.png
-                  :name:
-                  :width: 50%
-
-                  |dz3|: Create from egtikz.tikz
-
-                  The usage of ``:name:`` produces: ``WARNING: Duplicate explicit target name: ""``. Ignore.
-
-               Reference via |dz3|.
-
-               ``.tikz``, ``.svg``, ``.dot``,  ``.uml``, ``.eps`` or ``.stpl`` thereof and ``.pyg``, are converted to ``.png``.
-
-               .. _`dz4`:
-
-               .. figure:: _images/egsvg.png
-                  :name:
-
-                  |dz4|: Created from egsvg.svg.stpl
-
-               .. _`dz5`:
-
-               .. figure:: _images/egdot.png
-                  :name:
-
-                  |dz5|: Created from egdot.dot.stpl
-
-               .. _`dz6`:
-
-               .. figure:: _images/eguml.png
-                  :name:
-
-                  |dz6|: Created from eguml.uml
-
-               .. _`dz7`:
-
-               .. figure:: _images/egplt.png
-                  :name:
-                  :width: 30%
-
-                  |dz7|: Created from egplt.pyg
-
-               .. _`dz8`:
-
-               .. figure:: _images/egpyx.png
-                  :name:
-
-                  |dz8|: Created from egpyx.pyg
-
-               .. _`dr8`:
-
-               .. figure:: _images/egcairo.png
-                  :name:
-
-                  |dr8|: Created from egcairo.pyg
-
-               .. _`ds8`:
-
-               .. figure:: _images/egpygal.png
-                  :name:
-                  :width: 30%
-
-                  |ds8|: Created from egpygal.pyg
-
-               .. _`dsx`:
-
-               .. figure:: _images/egother.png
-                  :name:
-
-                  |dsx|: Created from egother.pyg
-
-               .. _`du8`:
-
-               .. figure:: _images/egeps1.png
-                  :name:
-
-                  |du8|: Created from egeps1.eps
-
-               .. _`d98`:
-
-               .. figure:: _images/egeps.png
-                  :name:
-
-                  |d98|: Created from egeps.eps
-
-               .. _`dua`:
-
-               |dua|: Table legend
-
-               .. table::
-                  :name:
-
-                  +--------+--------+
-                  | A      | B      |
-                  +========+========+
-                  | |eps1| | |eps|  |
-                  +--------+--------+
-
-               .. _`dta`:
-
-               |dta|: Table legend
-
-               .. list-table::
-                  :name:
-                  :widths: 20 80
-                  :header-rows: 1
-
-                  * - Bit
-                    - Function
-
-                  * - 0
-                    - afun
-
-               Reference |dta| does not show ``dta``.
-
-               .. _`dyi`:
-
-               |dyi|: Listing showing struct.
-
-               .. code-block:: cpp
-                  :name:
-
-                  struct astruct{
-                     int afield; //afield description
-                  }
-
-               .. _`d9x`:
-
-               .. math::
-                  :name:
-
-                  V = \frac{K}{r^2}
-
-               ``:math:`` is the default inline role: `mc^2`
-
-               .. _`d99`:
-
-               :OtherName: Keep names the same all over.
-
-               Here instead of ``d99:`` we use ``:OtherName:``, but now we have two synonyms for the same item.
-               This is no good. If possible, keep ``d99`` in the source and in the final docs.
-
-               The item target must be in the same file as the item content. The following would not work::
-
-                 .. _`dh5`:
-
-                 .. include:: somefile.rst
-
-               .. |eps1| image:: _images/egeps1.png
-               .. |eps| image:: _images/egeps.png
-
-               .. include:: _links_sphinx.rst
-
-           ├ tp.rest
-               Test Plan
-               =========
-
-               .. _`t9a`:
-
-               Requirement Tests
-               -----------------
-
-               No duplication. Only reference the requirements to be tested.
-
-               - |s97|
-               - |su7|
-               - |s3a|
-               - |rz7|
-
-               Or better: reference the according SR chapter, else changes there would need an update here.
-
-               - Test |sy7|
-
-               Unit Tests
-               ----------
-
-               Use ``.rst`` for included files and start the file with ``_`` if generated.
-
-               - |d97|
-               - |dx3|
-               - |dz4|
-               - |dz5|
-               - |dz6|
-               - |dz7|
-               - |dz8|
-               - |dsx|
-               - |du8|
-               - |d98|
-               - |dua|
-               - |dta|
-               - |dyi|
-               - |d9x|
-               - |d99|
-
-               .. include:: _sometst.rst
-
-               .. include:: _links_sphinx.rst
-
-           ├ egtikz.tikz
-               [thick,red]
-               \draw (0,0) grid (3,3);
-               \foreach \c in {(0,0), (1,0), (2,0), (2,1), (1,2)}
-                   \fill \c + (0.5,0.5) circle (0.42);
-           ├ egtikz1.tikz
-               \begin{scope}[blend group = soft light]
-               \fill[red!30!white]   ( 90:1.2) circle (2);
-               \fill[green!30!white] (210:1.2) circle (2);
-               \fill[blue!30!white]  (330:1.2) circle (2);
-               \end{scope}
-               \node at ( 90:2)    {Typography};
-               \node at ( 210:2)   {Design};
-               \node at ( 330:2)   {Coding};
-               \node [font=\Large] {\LaTeX};
-           ├ egsvg.svg.stpl
-               <?xml version="1.0" encoding="utf-8"?>
-               <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" width="110pt" height="60pt" stroke-width="0.566929" stroke-miterlimit="10.000000">
-               %for i in range(10):
-                 <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,{{i*5}}" />
-               %end
-               %for i in range(10):
-                 <path fill="none" stroke="#f40" stroke-width="1" d="M10,{{i*5}} C15,5 100,5 100,55" />
-               %end
-               <text x="50" y="50" fill="red">Hi!</text>
-               </svg>
-           ├ egdot.dot.stpl
-               digraph {
-               %for i in range(3):
-                   "From {{i}}" -> "To {{i}}";
-               %end
-                   }
-           ├ eguml.uml
-               @startuml
-               'style options
-               skinparam monochrome true
-               skinparam circledCharacterRadius 0
-               skinparam circledCharacterFontSize 0
-               skinparam classAttributeIconSize 0
-               hide empty members
-               Class01 <|-- Class02
-               Class03 *-- Class04
-               Class05 o-- Class06
-               Class07 .. Class08
-               Class09 -- Class10
-               @enduml
-           ├ egplt.pyg
-               #vim: syntax=python
-               import matplotlib.pyplot as plt
-               import numpy as np
-               x = np.random.randn(1000)
-               plt.hist( x, 20)
-               plt.grid()
-               plt.title(r'Normal: $\mu=%.2f, \sigma=%.2f$'%(x.mean(), x.std()))
-               plt.show()
-           ├ egpyx.pyg
-               import pyx
-               c = pyx.canvas.canvas()
-               c.stroke(pyx.path.circle(0,0,2),[pyx.style.linewidth.Thick,pyx.color.rgb.red])
-               c.text(1, 1, 'Hi',[pyx.color.rgb.red])
-           ├ egpygal.pyg
-               import pygal
-               diagram=pygal.Bar()(1, 3, 3, 7)(1, 6, 6, 4)
-           ├ egother.pyg
-               from PIL import Image, ImageDraw, ImageFont
-               im = Image.new("RGBA",size=(50,50),color=(155,0,100))
-               draw = ImageDraw.Draw(im)
-               draw.rectangle(((0, 0), (40, 40)), fill="red")
-               draw.text((20, 20), "123")
-               save_to_png = lambda out_file: im.save(out_file, "PNG")
-           ├ egeps.eps
-               1 0 0 setrgbcolor
-               newpath 6 2 36 54 rectstroke
-               showpage
-           ├ egeps1.eps
-               0 0 1 setrgbcolor
-               newpath 6 2 36 54 rectstroke
-               showpage
-           ├ egcairo.pyg
-               import cairocffi as cairo
-               surface = cairo.SVGSurface(None, 200, 200)
-               context = cairo.Context(surface)
-               x, y, x1, y1 = 0.1, 0.5, 0.4, 0.9
-               x2, y2, x3, y3 = 0.6, 0.1, 0.9, 0.5
-               context.set_source_rgba(1, 0.2, 0.2, 0.6)
-               context.scale(200, 200)
-               context.set_line_width(0.04)
-               context.move_to(x, y)
-               context.curve_to(x1, y1, x2, y2, x3, y3)
-               context.stroke()
-               context.set_line_width(0.02)
-               context.move_to(x, y)
-               context.line_to(x1, y1)
-               context.move_to(x2, y2)
-               context.line_to(x3, y3)
-               context.stroke()
-           ├ gen
-               #from|to|gen_xxx|kwargs
-               ../code/some.h | _sometst.rst                | tstdoc | {}
-               ../code/some.h | ../../build/code/some_tst.c | tst    | {}'''
+        ├ eguml.uml
+            @startuml
+            'style options
+            skinparam monochrome true
+            skinparam circledCharacterRadius 0
+            skinparam circledCharacterFontSize 0
+            skinparam classAttributeIconSize 0
+            hide empty members
+            Class01 <|-- Class02
+            Class03 *-- Class04
+            Class05 o-- Class06
+            Class07 .. Class08
+            Class09 -- Class10
+            @enduml
+        ├ egplt.pyg
+            #vim: syntax=python
+            import matplotlib.pyplot as plt
+            import numpy as np
+            x = np.random.randn(1000)
+            plt.hist( x, 20)
+            plt.grid()
+            plt.title(r'Normal: $\mu=%.2f, \sigma=%.2f$'%(x.mean(), x.std()))
+            plt.show()
+        ├ egpyx.pyg
+            import pyx
+            c = pyx.canvas.canvas()
+            c.stroke(pyx.path.circle(0,0,2),[pyx.style.linewidth.Thick,pyx.color.rgb.red])
+            c.text(1, 1, 'Hi',[pyx.color.rgb.red])
+        ├ egpygal.pyg
+            import pygal
+            diagram=pygal.Bar()(1, 3, 3, 7)(1, 6, 6, 4)
+        ├ egother.pyg
+            from PIL import Image, ImageDraw, ImageFont
+            im = Image.new("RGBA",size=(50,50),color=(155,0,100))
+            draw = ImageDraw.Draw(im)
+            draw.rectangle(((0, 0), (40, 40)), fill="red")
+            draw.text((20, 20), "123")
+            save_to_png = lambda out_file: im.save(out_file, "PNG")
+        ├ egeps.eps
+            1 0 0 setrgbcolor
+            newpath 6 2 36 54 rectstroke
+            showpage
+        ├ egeps1.eps
+            0 0 1 setrgbcolor
+            newpath 6 2 36 54 rectstroke
+            showpage
+        ├ egcairo.pyg
+            import cairocffi as cairo
+            surface = cairo.SVGSurface(None, 200, 200)
+            context = cairo.Context(surface)
+            x, y, x1, y1 = 0.1, 0.5, 0.4, 0.9
+            x2, y2, x3, y3 = 0.6, 0.1, 0.9, 0.5
+            context.set_source_rgba(1, 0.2, 0.2, 0.6)
+            context.scale(200, 200)
+            context.set_line_width(0.04)
+            context.move_to(x, y)
+            context.curve_to(x1, y1, x2, y2, x3, y3)
+            context.stroke()
+            context.set_line_width(0.02)
+            context.move_to(x, y)
+            context.line_to(x1, y1)
+            context.move_to(x2, y2)
+            context.line_to(x3, y3)
+            context.stroke()
+        ├ gen
+            #from|to|gen_xxx|kwargs
+            ../code/some.h | _sometst.rst                | tstdoc | {}
+            ../code/some.h | ../../build/code/some_tst.c | tst    | {}'''
 
 # replaces from '├ index.rest' to '├ egtikz.tikz'
 example_stp_subtree = r'''
-           ├ model.py
-               """
-               This contains definitions used in template files ending in ``.stpl``.
-               """
-               from pint import UnitRegistry
-               u = UnitRegistry()
-               u.define('percent = 0.01*count = %')
-               def U(*k,sep=", "):
-                   """
-                   Returns string where pint quantities are formatted with units, if possible, else normally.
-                   """
-                   try:
-                       return sep.join(["{:~P}"]*len(k)).format(*k)
-                   except:
-                       res = sep.join(["{}"]*len(k)).format(*k)
-                       if res == 'None':
-                           res = '-'
-                       return res
-               # Definitions
-               max_charging_time = 3.5*u.hour #in |hw_charger|
-           ├ utility.rst.tpl
-               % import sys
-               % import os
-               % sys.path.append(os.path.dirname(__file__))
-               % from model import *
-               % cntr = lambda alist0,prefix='',width=2: alist0.append(alist0[-1]+1) or ("{}{:0>%s}"%width).format(prefix,alist0[-1])
-               % II=lambda prefix,alist0,short:':{}: **{}**'.format(cntr(alist0,prefix),short)
-               % #define in file e.g. ``SR=lambda short,alist0=[0]:II('SR',alist0,short)`` and use like ``{{SR('Item Title')}}``
-               %def pagebreak():
-               .. raw:: openxml
+        ├ model.py
+            """
+            This contains definitions used in template files ending in ``.stpl``.
+            """
+            from pint import UnitRegistry
+            u = UnitRegistry()
+            u.define('percent = 0.01*count = %')
+            def U(*k,sep=", "):
+                """
+                Returns string where pint quantities are formatted with units, if possible, else normally.
+                """
+                try:
+                    return sep.join(["{:~P}"]*len(k)).format(*k)
+                except:
+                    res = sep.join(["{}"]*len(k)).format(*k)
+                    if res == 'None':
+                        res = '-'
+                    return res
+            # Definitions
+            max_charging_time = 3.5*u.hour #in |hw_charger|
+        ├ utility.rst.tpl
+            % import sys
+            % import os
+            % sys.path.append(os.path.dirname(__file__))
+            % from model import *
+            % cntr = lambda alist0,prefix='',width=2: alist0.append(alist0[-1]+1) or ("{}{:0>%s}"%width).format(prefix,alist0[-1])
+            % II=lambda prefix,alist0,short:':{}: **{}**'.format(cntr(alist0,prefix),short)
+            % #define in file e.g. ``SR=lambda short,alist0=[0]:II('SR',alist0,short)`` and use like ``{{SR('Item Title')}}``
+            %def pagebreak():
+            .. raw:: openxml
 
-                   <w:p>
-                     <w:r>
-                       <w:br w:type="page"/>
-                     </w:r>
-                   </w:p>
+                <w:p>
+                  <w:r>
+                    <w:br w:type="page"/>
+                  </w:r>
+                </w:p>
 
-               .. raw:: html
+            .. raw:: html
 
-                   <p style="page-break-before: always;">&nbsp;</p>
+                <p style="page-break-before: always;">&nbsp;</p>
 
-               .. raw:: latex
+            .. raw:: latex
 
-                   \pagebreak
+                \pagebreak
 
-               .. for docutils
-               .. raw:: odt
+            .. for docutils
+            .. raw:: odt
 
-                   <text:p text:style-name="PageBreak"/>
+                <text:p text:style-name="PageBreak"/>
 
-               .. for pandoc
-               .. raw:: opendocument
+            .. for pandoc
+            .. raw:: opendocument
 
-                   <text:p text:style-name="PageBreak"/>
+                <text:p text:style-name="PageBreak"/>
 
-               %end
-           ├ index.rest
-               .. encoding: utf-8
-               .. vim: syntax=rst
+            %end
+        ├ index.rest
+            .. encoding: utf-8
+            .. vim: syntax=rst
 
-               ============
-               Project Name
-               ============
+            ============
+            Project Name
+            ============
 
-               .. toctree::
-                  sy.rest
-                  ra.rest
-                  sr.rest
-                  dd.rest
-                  tp.rest
+            .. toctree::
+               sy.rest
+               ra.rest
+               sr.rest
+               dd.rest
+               tp.rest
 
-               One can also have a
+            One can also have a
 
-               - issues.rest for issues
+            - issues.rest for issues
 
-               - pp.rest for the project plan
-                 (with backlog, epics, stories, tasks)
+            - pp.rest for the project plan
+              (with backlog, epics, stories, tasks)
 
-               .. REMOVE THIS IF NO LINKING OVERVIEW WANTED
-               .. include:: _traceability_file.rst
+            .. REMOVE THIS IF NO LINKING OVERVIEW WANTED
+            .. include:: _traceability_file.rst
 
-               .. include:: _links_sphinx.rst
+            .. include:: _links_sphinx.rst
 
-           ├ sy.rest.stpl
-               .. encoding: utf-8
-               .. vim: syntax=rst
+        ├ sy.rest.stpl
+            .. encoding: utf-8
+            .. vim: syntax=rst
 
-               % globals().update(include('utility.rst.tpl'))
-               % SY=lambda short,alist0=[0]:II('SY',alist0,short)
+            % globals().update(include('utility.rst.tpl'))
+            % SY=lambda short,alist0=[0]:II('SY',alist0,short)
 
-               .. _`sy_system_scope`:
+            .. _`sy_system_scope`:
 
-               ############
-               System Scope
-               ############
+            ############
+            System Scope
+            ############
 
-               .. _`sy_general_idea`:
+            .. _`sy_general_idea`:
 
-               {{SY('General Idea')}}
+            {{SY('General Idea')}}
 
-                 Source code is text done in a good editor.
-                 Use the same editor also for documentation.
-                 Jump around like in hypertext.
+              Source code is text done in a good editor.
+              Use the same editor also for documentation.
+              Jump around like in hypertext.
 
-               .. include:: _links_sphinx.rst
-           ├ ra.rest.stpl
-               .. encoding: utf-8
-               .. vim: syntax=rst
+            .. include:: _links_sphinx.rst
+        ├ ra.rest.stpl
+            .. encoding: utf-8
+            .. vim: syntax=rst
 
-               % globals().update(include('utility.rst.tpl'))
-               % RA=lambda short,alist0=[0]:II('RA',alist0,short)
+            % globals().update(include('utility.rst.tpl'))
+            % RA=lambda short,alist0=[0]:II('RA',alist0,short)
 
-               .. _`ra_risk_analysis`:
+            .. _`ra_risk_analysis`:
 
-               #############
-               Risk Analysis
-               #############
+            #############
+            Risk Analysis
+            #############
 
-               .. _`r_restructured_text`:
+            .. _`r_restructured_text`:
 
-               Advantages
-               ==========
+            Advantages
+            ==========
 
-               {{RA('Restructured Text')}}
+            {{RA('Restructured Text')}}
 
-                 We use `restructuredText <http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html>`_
-                 together with `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax>`_.
+              We use `restructuredText <http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html>`_
+              together with `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax>`_.
 
-                 This is very flexible:
+              This is very flexible:
 
-                 - it allows to generate boilerplate text with python
-                 - it allows to link the text across documents
-                 - it allows to have many final formats (html, docx, pdf, odt, ...)
-                 - ...
+              - it allows to generate boilerplate text with python
+              - it allows to link the text across documents
+              - it allows to have many final formats (html, docx, pdf, odt, ...)
+              - ...
 
-               .. _`ra_risks`:
+            .. _`ra_risks`:
 
-               Risks
-               =====
+            Risks
+            =====
 
-               .. _`r_editor`:
+            .. _`r_editor`:
 
-               {{RA('Wrong Editor')}}
+            {{RA('Wrong Editor')}}
 
-                 This is not for people that only know how to edit in MS Words.
-                 Users should have embraced a good text editor.
-                 Software guys normally have.
+              This is not for people that only know how to edit in MS Words.
+              Users should have embraced a good text editor.
+              Software guys normally have.
 
-                 One needs a good text editor that supports ctags.
-                 These have been tested
+              One needs a good text editor that supports ctags.
+              These have been tested
 
-                 - `atom <https://atom.io/>`_
-                 - `vim <https://www.vim.org/>`_
+              - `atom <https://atom.io/>`_
+              - `vim <https://www.vim.org/>`_
 
-               .. include:: _links_sphinx.rst
-           ├ sr.rest.stpl
-               .. encoding: utf-8
-               .. vim: syntax=rst
+            .. include:: _links_sphinx.rst
+        ├ sr.rest.stpl
+            .. encoding: utf-8
+            .. vim: syntax=rst
 
-               % globals().update(include('utility.rst.tpl'))
-               % SR=lambda short,alist0=[0]:II('SR',alist0,short)
+            % globals().update(include('utility.rst.tpl'))
+            % SR=lambda short,alist0=[0]:II('SR',alist0,short)
 
-               .. _`sr_software_system_requirements`:
+            .. _`sr_software_system_requirements`:
 
-               ############################
-               Software/System Requirements
-               ############################
+            ############################
+            Software/System Requirements
+            ############################
 
-               .. _`sr_general`:
+            .. _`sr_general`:
 
-               General
-               =======
+            General
+            =======
 
-               .. _`sr_testable`:
+            .. _`sr_testable`:
 
-               {{SR('Testable')}}
+            {{SR('Testable')}}
 
-                 Requirements are testable (see |tp_requirement_tests|).
+              Requirements are testable (see |tp_requirement_tests|).
 
-               .. _`sr_style`:
+            .. _`sr_style`:
 
-               {{SR('Style')}}
+            {{SR('Style')}}
 
-                 In a restructuredText file, have one sentence in one line.
+              In a restructuredText file, have one sentence in one line.
 
-                 Make long sentences into
+              Make long sentences into
 
-                 - lists
+              - lists
 
-                   - with sub items, if needed
+                - with sub items, if needed
 
-                 - or simply make more sentences out of it
+              - or simply make more sentences out of it
 
-                 A link: |sr_style|.
+              A link: |sr_style|.
 
-               .. _`sr_a_requirement_group`:
+            .. _`sr_a_requirement_group`:
 
-               A Requirement Group
-               ===================
+            A Requirement Group
+            ===================
 
-               .. _`sr_id`:
+            .. _`sr_id`:
 
-               {{SR('ID')}}
+            {{SR('ID')}}
 
-                 The ID seen in the final document is numbered by a python function.
-                 In the restructuredText files there is no numbering.
-                 The targets use key words instead.
-                 This way one can rearrange the items keeping the items sorted and still referentially consistent.
+              The ID seen in the final document is numbered by a python function.
+              In the restructuredText files there is no numbering.
+              The targets use key words instead.
+              This way one can rearrange the items keeping the items sorted and still referentially consistent.
 
-                 The ID shall not contain any hyphens or dots or other non-identifier characters,
-                 as some final formats, like DOCX, demand that.
+              The ID shall not contain any hyphens or dots or other non-identifier characters,
+              as some final formats, like DOCX, demand that.
 
-               .. include:: _links_sphinx.rst
-           ├ dd.rest.stpl
-               .. encoding: utf-8
-               .. vim: syntax=rst
+            .. include:: _links_sphinx.rst
+        ├ dd.rest.stpl
+            .. encoding: utf-8
+            .. vim: syntax=rst
 
-               % globals().update(include('utility.rst.tpl'))
-               % DD=lambda short,alist0=[0]:II('DD',alist0,short)
+            % globals().update(include('utility.rst.tpl'))
+            % DD=lambda short,alist0=[0]:II('DD',alist0,short)
 
-               .. _`dd_design_description`:
+            .. _`dd_design_description`:
 
-               ##################
-               Design Description
-               ##################
+            ##################
+            Design Description
+            ##################
 
-               .. _`dd_traceability`:
+            .. _`dd_traceability`:
 
-               {{DD('Traceability')}}
+            {{DD('Traceability')}}
 
-                 ``dcx.py`` associates all links between two targets to the first target.
-                 This can be used as traceability.
+              ``dcx.py`` associates all links between two targets to the first target.
+              This can be used as traceability.
 
-                 Warnings issued during conversion to final documents help to keep the documents consistent.
+              Warnings issued during conversion to final documents help to keep the documents consistent.
 
-               .. _`dd_name`:
+            .. _`dd_name`:
 
-               {{DD('Name')}}
+            {{DD('Name')}}
 
-                 For targeted ``.. table::``, ``.. list-table::``, ``.. figure::``, ``.. code-block::`` and ``.. math::`` use ``:name:``.
-                 In the legend use the same ID as in the target definition.
+              For targeted ``.. table::``, ``.. list-table::``, ``.. figure::``, ``.. code-block::`` and ``.. math::`` use ``:name:``.
+              In the legend use the same ID as in the target definition.
 
-                 .. _`dd_figure`:
+              .. _`dd_figure`:
 
-                 .. figure:: _images/egtikz.png
-                    :name:
-                    :width: 50%
+              .. figure:: _images/egtikz.png
+                 :name:
+                 :width: 50%
 
-                    |dd_figure|: Caption here.
-                    Reference this via ``|dd_figure|``.
+                 |dd_figure|: Caption here.
+                 Reference this via ``|dd_figure|``.
 
-               For testing purpose the following is rendered via include files.
+            For testing purpose the following is rendered via include files.
 
-               Include normal .rst way, where the .rst might be gnerated by a ``.rst.stpl``
+            Include normal .rst way, where the .rst might be gnerated by a ``.rst.stpl``
 
-               .. include:: dd_included.rst
+            .. include:: dd_included.rst
 
-               Include the stpl way
+            Include the stpl way
 
-               %include('dd_diagrams.tpl',DD=DD)#you optionally can provide python definitions
+            %include('dd_diagrams.tpl',DD=DD)#you optionally can provide python definitions
 
-               Pandoc does not know about `definitions in included files <https://github.com/jgm/pandoc/issues/4160>`__.
+            Pandoc does not know about `definitions in included files <https://github.com/jgm/pandoc/issues/4160>`__.
 
-               .. |eps1| image:: _images/egeps1.png
-               .. |eps| image:: _images/egeps.png
+            .. |eps1| image:: _images/egeps1.png
+            .. |eps| image:: _images/egeps.png
 
-               .. include:: _links_sphinx.rst
+            .. include:: _links_sphinx.rst
 
-           ├ dd_included.rst.stpl
-               .. encoding: utf-8
-               .. vim: syntax=rst
+        ├ dd_included.rst.stpl
+            .. encoding: utf-8
+            .. vim: syntax=rst
 
-               .. _`dd_code`:
+            .. _`dd_code`:
 
-               |dd_code|: Listing showing struct.
+            |dd_code|: Listing showing struct.
 
-               .. code-block:: cpp
-                  :name:
+            .. code-block:: cpp
+               :name:
 
-                  struct xxx{
-                     int yyy; //yyy for zzz
-                  }
+               struct xxx{
+                  int yyy; //yyy for zzz
+               }
 
-               Include normal ``.rst``.
+            Include normal ``.rst``.
 
-               .. include:: dd_tables.rst
+            .. include:: dd_tables.rst
 
-               Again include the stpl way.
+            Again include the stpl way.
 
-               %include('dd_math.tpl')
+            %include('dd_math.tpl')
 
-           ├ dd_tables.rst
-               .. encoding: utf-8
-               .. vim: syntax=rst
+        ├ dd_tables.rst
+            .. encoding: utf-8
+            .. vim: syntax=rst
 
-               .. _`dd_table`:
+            .. _`dd_table`:
 
-               |dd_table|: Table legend
+            |dd_table|: Table legend
 
-               .. table::
-                  :name:
+            .. table::
+               :name:
 
-                  +--------+--------+
-                  | A      | B      |
-                  +========+========+
-                  | |eps1| | |eps|  |
-                  +--------+--------+
+               +--------+--------+
+               | A      | B      |
+               +========+========+
+               | |eps1| | |eps|  |
+               +--------+--------+
 
-               .. _`dd_list_table`:
+            .. _`dd_list_table`:
 
-               |dd_list_table|: Table legend
+            |dd_list_table|: Table legend
 
-               .. list-table::
-                  :name:
-                  :widths: 20 80
-                  :header-rows: 1
+            .. list-table::
+               :name:
+               :widths: 20 80
+               :header-rows: 1
 
-                  * - Bit
-                    - Function
+               * - Bit
+                 - Function
 
-                  * - 0
-                    - xxx
+               * - 0
+                 - xxx
 
-               Reference |dd_table| or |dd_list_table| does not show ``dd_table`` or ``dd_list_table``.
+            Reference |dd_table| or |dd_list_table| does not show ``dd_table`` or ``dd_list_table``.
 
-           ├ dd_math.tpl
-               .. encoding: utf-8
-               .. vim: syntax=rst
+        ├ dd_math.tpl
+            .. encoding: utf-8
+            .. vim: syntax=rst
 
-               .. _`dd_math`:
+            .. _`dd_math`:
 
-               .. math::
-                  :name:
+            .. math::
+               :name:
 
-                  V = \frac{K}{r^2}
+               V = \frac{K}{r^2}
 
-               ``:math:`` is the default inline role: `mc^2`
+            ``:math:`` is the default inline role: `mc^2`
 
-               With `sympy <www.sympy.org>`_ one can have formulas in ``some.py`` that are usable for calculation.
-               The formulas can be converted to latex in the ``.stpl`` or ``.tpl`` file.
+            With `sympy <www.sympy.org>`_ one can have formulas in ``some.py`` that are usable for calculation.
+            The formulas can be converted to latex in the ``.stpl`` or ``.tpl`` file.
 
-               %def hyp(a,b):
-               %    return a**2+b**2
-               %end
+            %def hyp(a,b):
+            %    return a**2+b**2
+            %end
 
-               The long side of a rectangular triangle with legs {{3}} and {{4}} is {{hyp(3,4)**0.5}}. See |hyp|.
+            The long side of a rectangular triangle with legs {{3}} and {{4}} is {{hyp(3,4)**0.5}}. See |hyp|.
 
-               .. _`hyp`:
+            .. _`hyp`:
 
-               .. math::
-                   :name:
+            .. math::
+                :name:
 
-                   %import sympy
-                   %from sympy.abc import a,b,c
-                   {{sympy.latex(sympy.Eq(c,hyp(a,b)))}}
+                %import sympy
+                %from sympy.abc import a,b,c
+                {{sympy.latex(sympy.Eq(c,hyp(a,b)))}}
 
-           ├ dd_diagrams.tpl
-               .. encoding: utf-8
-               .. vim: syntax=rst
+        ├ dd_diagrams.tpl
+            .. encoding: utf-8
+            .. vim: syntax=rst
 
-               .. _`dd_diagrams`:
+            .. _`dd_diagrams`:
 
-               {{DD('Diagrams')}}
+            {{DD('Diagrams')}}
 
-                 .. _`exampletikz1`:
+              .. _`exampletikz1`:
 
-                 .. figure:: _images/egtikz1.png
-                    :name:
-                    :width: 30%
+              .. figure:: _images/egtikz1.png
+                 :name:
+                 :width: 30%
 
-                    |exampletikz1|: Create from egtikz1.tikz
+                 |exampletikz1|: Create from egtikz1.tikz
 
-                    The usage of ``:name:`` produces: ``WARNING: Duplicate explicit target name: ""``. Ignore.
+                 The usage of ``:name:`` produces: ``WARNING: Duplicate explicit target name: ""``. Ignore.
 
-                 Reference via |exampletikz1|.
+              Reference via |exampletikz1|.
 
-                 ``.tikz``, ``.svg``, ``.dot``,  ``.uml``, ``.eps`` or ``.stpl`` thereof and ``.pyg``, are converted to ``.png``.
+              ``.tikz``, ``.svg``, ``.dot``,  ``.uml``, ``.eps`` or ``.stpl`` thereof and ``.pyg``, are converted to ``.png``.
 
-                 .. _`examplesvg`:
+              .. _`examplesvg`:
 
-                 .. figure:: _images/egsvg.png
-                    :name:
+              .. figure:: _images/egsvg.png
+                 :name:
 
-                    |examplesvg|: Created from egsvg.svg.stpl
+                 |examplesvg|: Created from egsvg.svg.stpl
 
-                 .. _`exampledot`:
+              .. _`exampledot`:
 
-                 .. figure:: _images/egdot.png
-                    :name:
+              .. figure:: _images/egdot.png
+                 :name:
 
-                    |exampledot|: Created from egdot.dot.stpl
+                 |exampledot|: Created from egdot.dot.stpl
 
-                 .. _`exampleuml`:
+              .. _`exampleuml`:
 
-                 .. figure:: _images/eguml.png
-                    :name:
+              .. figure:: _images/eguml.png
+                 :name:
 
-                    |exampleuml|: Created from eguml.uml
+                 |exampleuml|: Created from eguml.uml
 
-                 .. _`exampleplt`:
+              .. _`exampleplt`:
 
-                 .. figure:: _images/egplt.png
-                    :name:
-                    :width: 30%
+              .. figure:: _images/egplt.png
+                 :name:
+                 :width: 30%
 
-                    |exampleplt|: Created from egplt.pyg
+                 |exampleplt|: Created from egplt.pyg
 
-                 .. _`examplepyx`:
+              .. _`examplepyx`:
 
-                 .. figure:: _images/egpyx.png
-                    :name:
+              .. figure:: _images/egpyx.png
+                 :name:
 
-                    |examplepyx|: Created from egpyx.pyg
+                 |examplepyx|: Created from egpyx.pyg
 
-                 .. _`examplecairo`:
+              .. _`examplecairo`:
 
-                 .. figure:: _images/egcairo.png
-                    :name:
+              .. figure:: _images/egcairo.png
+                 :name:
 
-                    |examplecairo|: Created from egcairo.pyg
+                 |examplecairo|: Created from egcairo.pyg
 
-                 .. _`examplepygal`:
+              .. _`examplepygal`:
 
-                 .. figure:: _images/egpygal.png
-                    :name:
-                    :width: 30%
+              .. figure:: _images/egpygal.png
+                 :name:
+                 :width: 30%
 
-                    |examplepygal|: Created from egpygal.pyg
+                 |examplepygal|: Created from egpygal.pyg
 
-                 .. _`exampleother`:
+              .. _`exampleother`:
 
-                 .. figure:: _images/egother.png
-                    :name:
+              .. figure:: _images/egother.png
+                 :name:
 
-                    |exampleother|: Created from egother.pyg
+                 |exampleother|: Created from egother.pyg
 
-                 .. _`exampleeps1`:
+              .. _`exampleeps1`:
 
-                 .. figure:: _images/egeps1.png
-                    :name:
+              .. figure:: _images/egeps1.png
+                 :name:
 
-                    |exampleeps1|: Created from egeps1.eps
+                 |exampleeps1|: Created from egeps1.eps
 
-                 .. _`exampleeps`:
+              .. _`exampleeps`:
 
-                 .. figure:: _images/egeps.png
-                    :name:
+              .. figure:: _images/egeps.png
+                 :name:
 
-                    |exampleeps|: Created from egeps.eps
+                 |exampleeps|: Created from egeps.eps
 
-                 %if False:
-                 .. _`target_more_than_in_rest`:
+              %if False:
+              .. _`target_more_than_in_rest`:
 
-                    It is OK to have more targets in the .stpl file.
-                 %end
+                 It is OK to have more targets in the .stpl file.
+              %end
 
-           ├ tp.rest.stpl
-               .. encoding: utf-8
-               .. vim: syntax=rst
+        ├ tp.rest.stpl
+            .. encoding: utf-8
+            .. vim: syntax=rst
 
-               % globals().update(include('utility.rst.tpl'))
-               % TP=lambda short,alist0=[0]:II('TP',alist0,short)
+            % globals().update(include('utility.rst.tpl'))
+            % TP=lambda short,alist0=[0]:II('TP',alist0,short)
 
-               .. _`tp_test_plan`:
+            .. _`tp_test_plan`:
 
-               #########
-               Test Plan
-               #########
+            #########
+            Test Plan
+            #########
 
-               .. _`tp_requirement_tests`:
+            .. _`tp_requirement_tests`:
 
-               Requirement Tests
-               =================
+            Requirement Tests
+            =================
 
-               .. _`tp_test_types`:
+            .. _`tp_test_types`:
 
-               {{TP('Test Types')}}
+            {{TP('Test Types')}}
 
-                 Performance tests are only one kind of tests.
+              Performance tests are only one kind of tests.
 
-               .. _`tp_no_duplication`:
+            .. _`tp_no_duplication`:
 
-               {{TP('No duplication')}}
+            {{TP('No duplication')}}
 
-                 Since items in other documents are phrased as tests, there is no need to repeat the text here.
+              Since items in other documents are phrased as tests, there is no need to repeat the text here.
 
-                 - |sr_id|
+              - |sr_id|
 
-                 Or better: Reference the according chapter:
+              Or better: Reference the according chapter:
 
-                 - Test |sr_a_requirement_group|
+              - Test |sr_a_requirement_group|
 
-               .. _`tp_unit_tests`:
+            .. _`tp_unit_tests`:
 
-               Unit Tests
-               ==========
+            Unit Tests
+            ==========
 
-               .. _`tp_gen_file`:
+            .. _`tp_gen_file`:
 
-               {{TP('gen file')}}
+            {{TP('gen file')}}
 
-                 Use ``.rst`` for included files and start the file with ``_`` if generated.
-                 How test documentation files are generated from test source code can be specified in the ``gen`` file.
+              Use ``.rst`` for included files and start the file with ``_`` if generated.
+              How test documentation files are generated from test source code can be specified in the ``gen`` file.
 
-               .. include:: _links_sphinx.rst'''
+            .. include:: _links_sphinx.rst'''
 
 
 def mktree(tree):
@@ -4600,9 +4601,13 @@ def initroot(
     odt_ref = normjoin(dirname(thisfile), 'reference.odt')
     wafw = normjoin(dirname(thisfile), 'wafw.py')
     inittree = [
-        l for l in example_tree.replace('__file__', thisfile).replace(
-            '__tex_ref__', tex_ref).replace('__docx_ref__', docx_ref).replace(
-                '__odt_ref__', odt_ref).replace('__wafw__', wafw).splitlines()
+        l for l in example_tree.replace(
+            '__file__', thisfile).replace(
+            '__tex_ref__', tex_ref).replace(
+            '__docx_ref__', docx_ref).replace(
+            '__odt_ref__', odt_ref).replace(
+            '__wafw__', wafw).replace(
+            '__code__',rootfldr).splitlines()
     ]
     if stpltype:
 
@@ -4681,7 +4686,7 @@ Examples with the files generated with the ``--stpl tmp``:
 
 .. code-block:: sh
 
-    cd tmp/src/doc
+    cd tmp/doc
     rstdcx   #expand .stpl and produce _links_xxx.rst and .tags
 
     #expand stpl and append substitutions (for simple expansion use ``stpl <file> .``)

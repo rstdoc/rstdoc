@@ -9,7 +9,9 @@ hence ``:ref:`` and the like cannot be used.
 
 This python package supports working with `RST`_ as documentation format without depending on `Sphinx`_.
 
-- link `RST`_ documents (``.rest``) using `substitutions`_ (generated in ``_links_xxx.rst``)
+- link `RST`_ documents (``.rest``) using 
+  `substitutions <http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#substitution-definitions>`__
+  (generated in ``_links_xxx.rst``)
 - create a ``.tags`` file to jump around in an editor that support `ctags`_
 - `RST`_ handling with python: reformat/create `RST`_ tables
 - postprocess `Pandoc`_'s conversion from `DOCX`_ to `RST`_
@@ -23,9 +25,9 @@ This python package supports working with `RST`_ as documentation format without
 
 The conventions used are shown 
 
-- by the example produced via ``rstdcx --init samplerstdoc`` or ``rstdcx --stpl sampletemplated``
+- by the example produced via ``rstdcx --rest samplerstdoc`` or ``rstdcx --stpl sampletemplated``
 - by the documentation sources that can be found at 
-  https://github.com/rpuntaie/rstdoc/tree/master/src/doc 
+  https://github.com/rpuntaie/rstdoc/tree/master/doc 
 
 ``pip install rstdoc`` installs:
 
@@ -67,5 +69,4 @@ The conventions used are shown
 .. _`waf`: https://github.com/waf-project/waf
 .. _`sphinx bootstrap theme`: https://github.com/ryan-roemer/sphinx-bootstrap-theme
 .. _`rst2html`: http://docutils.sourceforge.net/0.6/docs/user/tools.html
-.. _`substitutions`: http://docutils.sourceforge.net/0.6/docs/ref/rst/restructuredtext.html#substitution-definitions
 

@@ -1,4 +1,4 @@
-# encoding: utf-8 
+# encoding: utf-8
 
 #TODO: use ``mount -t tmpfs -o size=512m tmpfs /mnt/ramdisk`` on linux
 
@@ -12,7 +12,7 @@
 #win32:
 #  pip install -I waftools
 #  wafinstall -v2.0.6
-#linux: 
+#linux:
 #  git clone https://bitbucket.org/Moo7/waftools
 #  cd waftools
 #  pip install -e .
@@ -21,7 +21,7 @@
 
 import sys
 import os
-sys.path = ['src/test/mocks'] + sys.path
+sys.path = ['test/mocks'] + sys.path
 import pytest
 import glob
 import re
@@ -51,7 +51,7 @@ And some more text.
 ("""
 .. _`id`:
 
-:idname: 
+:idname:
 
 **key words** and some more text.
 """.splitlines(),('id','idname')),
@@ -97,7 +97,7 @@ ss""".splitlines(),('sy7','A Requirement Group')),
 ("""
 .. _`d9x`:
 
-.. math:: 
+.. math::
    :name:
 """.splitlines(),('d9x','Math 1'))
 ]
@@ -107,7 +107,7 @@ def test_lnkname(lnsres):
     '''
     Test the extraction of the name for different kinds of targets::
 
-        header, figure, list-table, table, code-block, code, math, definition (:id:) 
+        header, figure, list-table, table, code-block, code, math, definition (:id:)
     '''
     lns,res = lnsres
     tgts = list(RstFile.make_tgts(lns,0,
@@ -136,7 +136,7 @@ def test_dcx_regex():
     assert rexitem.match(':t11:').group(1) == 't11'
     assert rexitem.match('**t11**:').group(1) == 't11'
     assert rexitem.match('*t11*:').group(1) == 't11'
-    assert reximg.search(r'.. image:: ..\img.png').group(1) == r'..\img.png' 
+    assert reximg.search(r'.. image:: ..\img.png').group(1) == r'..\img.png'
     assert reximg.search(r'.. |c:\x y\im.jpg| image:: /tmp/img.png').group(1) == '/tmp/img.png'
     assert reximg.search(r'.. image:: c:\tmp\img.png').group(1) == r'c:\tmp\img.png'
     assert reximg.search(r'.. figure:: \\public\img.png').group(1) == r'\\public\img.png'
@@ -178,7 +178,7 @@ def rstinit(request,tmpworkdir):
     r=run(['rstdcx','--'+request.param,smpl])
     assert r.returncode == 0
     oldd=os.getcwd()
-    os.chdir(os.path.join(tmpworkdir,smpl,'src'))
+    os.chdir(os.path.join(tmpworkdir,smpl))
     yield os.getcwd()
     os.chdir(oldd)
 
@@ -556,7 +556,7 @@ def wafbuild(request,rstinit):
 def test_waf_samples(wafbuild):
     '''
     Tests running Waf on the sample projects.
-    
+
     '''
 
     is_stpl = 'tmp_stpl' in os.getcwd()
@@ -645,7 +645,7 @@ def test_waf_samples(wafbuild):
 │     └─tp.html
 └─config.log"""
     for x in tree3(wafbuild[0]).splitlines():
-        if not any(e in x for e in 
+        if not any(e in x for e in
         '.doctrees .sty .js .inv .xdy .cls latexmk .ist'.split()):
             assert expected.find(x.strip('└─├ '))>=0
 
@@ -655,14 +655,14 @@ def test_selfdoc():
 
     '''
 
-    selfdoc_accoridng_doc_gen=os.path.join('src','doc','_dcx_api.rst')
+    selfdoc_accoridng_doc_gen=os.path.join('doc','_dcx_api.rst')
     try:
         os.remove(selfdoc_accoridng_doc_gen)
     except: pass
     main(verbose=True)
     assert os.path.exists(selfdoc_accoridng_doc_gen)
-    assert os.path.exists(os.path.join('src','doc','ra.rest'))
-    with new_cwd('src/doc'):
+    assert os.path.exists(os.path.join('doc','ra.rest'))
+    with new_cwd('doc'):
         run(['make','html'])
     assert os.path.exists(os.path.join('build','doc','html'))
     assert os.path.exists(os.path.join('build','doc','html','index.html'))
@@ -683,7 +683,7 @@ def test_docparts_after():
 
 @pytest.mark.parametrize('outinfo',['pdf','docx','html','odt','rst_odt','rst_html','sphinx_html'])
 def test_convert_in_tempdir(outinfo):
-    with opn('src/test/fixtures/with_images.rest.stpl') as fp:
+    with opn('test/fixtures/with_images.rest.stpl') as fp:
         lines = fp.readlines()
     filename = convert_in_tempdir(lines,outinfo=outinfo)
     assert exists(filename)

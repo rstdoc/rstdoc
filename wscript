@@ -1,14 +1,14 @@
 from waflib import Logs
 Logs.colors_lst['BLUE']='\x1b[01;36m'
-top='src'
+top='.'
 out='build'
 def options(opt):
-  opt.load('dcx',tooldir='src/rstdoc')
+  opt.load('dcx',tooldir='rstdoc')
   opt.add_option("--tests", default=False, action="store_true", help="Run the tests") 
 def configure(cfg):
-  cfg.load('dcx',tooldir='src/rstdoc')
+  cfg.load('dcx',tooldir='rstdoc')
 def build(bld):
-  bld.load('dcx',tooldir='src/rstdoc')
+  bld.load('dcx',tooldir='rstdoc')
   if bld.options.tests:
-      bld.exec_command('py.test --cov rstdoc --cov-report term-missing > src/doc/_testcoverage.rst')
-  bld.recurse('src/doc')
+      bld.exec_command('py.test --cov rstdoc --cov-report term-missing > doc/_testcoverage.rst')
+  bld.recurse('doc')

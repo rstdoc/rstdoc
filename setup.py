@@ -16,7 +16,7 @@ import os, os.path
 import io
 import sys
 
-sys.path.append('./src/rstdoc')
+sys.path.append('./rstdoc')
 from dcx import dorst
 
 __version__ = '1.6.3'
@@ -27,17 +27,15 @@ def read(fname,separator='\n"""'):
 
 long_description = '\n'.join(["rstdoc\n======\n\n"
 ,open('readme.rst').read()
-,read('src/rstdoc/dcx.py')
-,read('src/rstdoc/dcx.py',separator="'''\\").split("'''")[0]
-,read('src/rstdoc/fromdocx.py')
-,read('src/rstdoc/listtable.py')
-,read('src/rstdoc/untable.py')
-,read('src/rstdoc/reflow.py')
-,read('src/rstdoc/reimg.py')
-,read('src/rstdoc/retable.py')
+,read('rstdoc/dcx.py')
+,read('rstdoc/dcx.py',separator="'''\\").split("'''")[0]
+,read('rstdoc/fromdocx.py')
+,read('rstdoc/listtable.py')
+,read('rstdoc/untable.py')
+,read('rstdoc/reflow.py')
+,read('rstdoc/reimg.py')
+,read('rstdoc/retable.py')
 ])
-
-long_description = '\n'.join(dorst(long_description.splitlines()))
 
 setup(name = 'rstdoc',
     version = __version__,
@@ -64,7 +62,6 @@ setup(name = 'rstdoc',
     extras_require = {'develop': ['mock','pytest-coverage'],'build':['waf']},
     long_description = long_description,
     packages=['rstdoc'],
-    package_dir = {'rstdoc': 'src/rstdoc'},
     package_data = {'rstdoc':['reference.tex','reference.docx','reference.odt','wafw.py']},
     zip_safe=False,
     tests_require=['pytest','pytest-coverage','mock'],
