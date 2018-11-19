@@ -3,7 +3,7 @@ SPHINXBLD   = sphinx-build
 SPHINXPROJ  = sample
 SRCDIR      = ./
 DCXPATH     = ../rstdoc
-BLDDIR      = ../../build/doc
+BLDDIR      = ../build/doc
 STPLS       = $(wildcard $(SRCDIR)*.stpl)
 STPLTGTS    = $(STPLS:%.stpl=%)
 SRCS        = $(filter-out $(SRCDIR)index.rest,$(wildcard $(SRCDIR)*.rest))
