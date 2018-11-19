@@ -24,7 +24,7 @@ from setuptools import setup
 import os
 import sys
 
-__version__ = '1.6.4'
+__version__ = '1.6.5'
 
 sys.path.append('./rstdoc')
 from dcx import dorst
@@ -47,8 +47,13 @@ long_description = '\n'.join([
     read('rstdoc/retable.py')
     ])
 
-long_description = ''.join([x for x in dorst(long_description.splitlines())
-                            if not x.startswith('.. _`')])
+long_description = ''.join([x for i,x in enumerate(
+                        dorst(long_description.splitlines()))
+                        if not x.startswith('.. _`') and i>0])
+
+##to check with ``restview --pypi-strict long_description.rst``
+#with open('long_description.rst','w',encoding='utf-8') as f:
+#    f.write(long_description)
 
 setup(name='rstdoc',
       version=__version__,
