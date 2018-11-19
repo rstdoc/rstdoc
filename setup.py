@@ -1,20 +1,24 @@
 #!/usr/bin/env python
 
-##test
-#py.test -vv --cov rstdoc --cov-report term-missing
-##or
-#waf configure && waf --docs sphinx_html --tests
+"""
+#install: latex, plantuml, graphviz, inkscape
 
-##install
-#pip uninstall rstdoc
-#pip install -e .
-##or
-#python setup.py bdist_wheel
-#pip install dist/rstdoc-X.Y.Z-py3-non-any.whl
+#test
+py.test -vv --cov rstdoc --cov-report term-missing
+#or
+waf configure && waf --docs sphinx_html --tests
 
-##upload
-#sudo python setup.py bdist_wheel
-#twine upload ./dist/*.whl
+#install
+pip uninstall rstdoc
+pip install -e .
+#or
+python setup.py bdist_wheel
+pip install dist/rstdoc-X.Y.Z-py3-non-any.whl
+
+#upload
+sudo python setup.py bdist_wheel
+twine upload ./dist/*.whl
+"""
 
 from setuptools import setup
 import platform

@@ -18,7 +18,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from collections import OrderedDict, defaultdict
-import sphinx_bootstrap_theme
 from hashlib import sha1 as sha
 import pygal
 import pyx
@@ -220,7 +219,11 @@ except:
     cairocffi = None
     cairosvg = None
 
-html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+try:
+    import sphinx_bootstrap_theme
+    html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+except:
+    html_theme_path = ''
 
 class RstDocError(Exception):
     pass
