@@ -1,10 +1,18 @@
 #!/usr/bin/env python
 
-#pip uninstall rstdoc
-#python setup.py bdist_wheel
-#pip install dist/rstdoc-1.6.2-py3-non-any.whl
+##test
 #py.test -vv --cov rstdoc --cov-report term-missing
+##or
+#waf configure && waf --docs sphinx_html --tests
 
+##install
+#pip uninstall rstdoc
+#pip install -e .
+##or
+#python setup.py bdist_wheel
+#pip install dist/rstdoc-X.Y.Z-py3-non-any.whl
+
+##upload
 #sudo python setup.py bdist_wheel
 #twine upload ./dist/*.whl
 
