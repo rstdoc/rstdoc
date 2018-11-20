@@ -25,7 +25,7 @@ import stpl
 from docutils.core import publish_file, publish_string
 from argparse import Namespace
 from types import GeneratorType
-from itertools import chain, tee
+from itertools import tee
 from functools import lru_cache, wraps, partial, reduce
 from urllib import request
 from threading import RLock
@@ -38,6 +38,7 @@ import os
 import io
 import re
 import sys
+import codecs
 
 """
 .. _`rstdcx`:
@@ -51,9 +52,6 @@ from restructuredText (RST, reST) using either
 - `Pandoc <https://pandoc.org>`__
 - `Sphinx <http://www.sphinx-doc.org>`__
 - Docutils `configurable <http://docutils.sourceforge.net/docs/user/config.html>`__
-
-Usage
------
 
 ``rstdoc`` installs the ``rstdcx`` command line tool that calls ``dcx.py``.
 It
@@ -962,7 +960,7 @@ def rst_sphinx(
     })
     # html_extra_path is done here below
     cfg.update({k: v for k, v in sphinx_enforced.items() if 'latex' not in k})
-    cfg['master_doc'] = steminfn = stem(infn)
+    cfg['master_doc'] = stem(infn)
     if not outtype:
         if outne == '.html':
             if infn.startswith('index.'):
@@ -997,13 +995,7 @@ def rst_sphinx(
             pass
         del cfg['latex_elements']
         del cfg['latex_engine']
-        project = cfg.get('project', stem(infn))
-        author = cfg.get('author', '')
-        # there seems to be a sphinx bug when this is in command line
-        # [['-D',"latex_documents=[(%s,%s,%s,%s,%s,%s)]"%(
         latex_documents = []
-        #    infn,steminfn+'.latex',project,author,'manual',0
-        #    )]]
     extras = ['-C'] + reduce(lambda x, y: x + y, [[
         '-D', "%s=%s" % (k, (','.join(v) if isinstance(v, list) else v))
     ] for k, v in cfg.items()] + latex_elements + latex_documents)
@@ -1109,7 +1101,7 @@ def _indented_default_role_math(filelines):
         indent = ' '*filelines[i].index(filelines[i].lstrip())
     except:
         pass
-    return indent + '.. default-role:: math\n'
+    return indent + '.. default-role:: math\n\n'
 
 
 @infile_cwd
@@ -1403,7 +1395,7 @@ def pygpng(
                 break
             elif svgwrite and isinstance(v, svgwrite.drawing.Drawing):
                 svgio = io.StringIO()
-                d.write(svgio)
+                v.write(svgio)
                 svgio.seek(0)
                 svgsrc = svgio.read()
                 tools.svg2png(bytestring=svgsrc, write_to=outfile, dpi=dpi)
@@ -1520,13 +1512,13 @@ def dorst(
         >>> cd('../doc')
 
         >>> dorst('dd.rest') #doctest: +ELLIPSIS
-        ['.. default-role:: math\n', ...
+        ['.. default-role:: math\n\n', ...
 
         >>> dorst('ra.rest.stpl') #doctest: +ELLIPSIS
-        ['.. default-role:: math\n', ...
+        ['.. default-role:: math\n\n', ...
 
         >>> dorst(['hi there']) #doctest: +ELLIPSIS
-        ['.. default-role:: math\n', 'hi there\n', ...
+        ['.. default-role:: math\n\n', 'hi there\n', ...
 
         >>> dry_run(False,True)
         >>> dorst(['hi there'],None,'html') #doctest: +ELLIPSIS
@@ -1748,7 +1740,7 @@ def convert(
         >>> dry_run(False,True)
 
         >>> convert([' ','   hi {{2+3}}!'],outinfo='rest')
-        ['   .. default-role:: math\n', ' \n', '   hi 5!\n', '\n']
+        ['   .. default-role:: math\n\n', ' \n', '   hi 5!\n', '\n']
 
         >>> convert([' ','   hi {{2+3}}!'])  #doctest: +ELLIPSIS
         + .../rest.rest.rest
@@ -2393,13 +2385,13 @@ def gen(
     ]
     indent = py3[0].index(py3[0].lstrip())
     py3 = '\n'.join(x[indent:] for x in py3)
-    eval(compile(py3, source + '#\s*gen', 'exec'), globals())
+    eval(compile(py3, source + r'#\s*gen', 'exec'), globals())
     if fun:
         gened = list(eval('gen_' + fun + '(lns,**kw)'))
     else:  # else eval all gen_ funtions
         gened = []
         for i in iblks[0::2]:
-            gencode = re.split("#\s*def |:", lns[i])[1]  # gen(lns,**kw)
+            gencode = re.split(r"#\s*def |:", lns[i])[1]  # gen(lns,**kw)
             gened += list(eval(gencode))
     if target:
         drn = dirname(target)
@@ -3052,7 +3044,8 @@ try:
         n = node.name
         nod = None
         if node.is_bld(
-        ) and not node.name.endswith(_stpl) and not x.endswith(_tpl):
+            ) and not node.name.endswith(_stpl
+            ) and not node.name.endswith(_tpl):
             nod = srcpath.find_node(node.name + _stpl)
         if not nod:
             nod = node
@@ -4744,7 +4737,6 @@ def main(**args):
 
     '''
 
-    import codecs
     import argparse
 
     if not args:
@@ -4822,4 +4814,3 @@ Input file or - for stdin.''')
 
 if __name__ == '__main__':
     main()
-
