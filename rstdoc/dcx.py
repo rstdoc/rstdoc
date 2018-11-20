@@ -1106,7 +1106,7 @@ def _indented_default_role_math(filelines):
         indent = ' '*filelines[i].index(filelines[i].lstrip())
     except:
         pass
-    return indent + '.. default-role:: math\n\n'
+    return indent + '.. default-role:: math\n'
 
 
 @infile_cwd
@@ -1518,13 +1518,13 @@ def dorst(
         >>> cd('../doc')
 
         >>> dorst('dd.rest') #doctest: +ELLIPSIS
-        ['.. default-role:: math\n\n', ...
+        ['.. default-role:: math\n', ...
 
         >>> dorst('ra.rest.stpl') #doctest: +ELLIPSIS
-        ['.. default-role:: math\n\n', ...
+        ['.. default-role:: math\n', ...
 
         >>> dorst(['hi there']) #doctest: +ELLIPSIS
-        ['.. default-role:: math\n\n', 'hi there\n', ...
+        ['.. default-role:: math\n', 'hi there\n', ...
 
         >>> dry_run(False,True)
         >>> dorst(['hi there'],None,'html') #doctest: +ELLIPSIS
@@ -1748,7 +1748,7 @@ def convert(
         >>> dry_run(False,True)
 
         >>> convert([' ','   hi {{2+3}}!'],outinfo='rest')
-        ['   .. default-role:: math\n\n', ' \n', '   hi 5!\n', '\n']
+        ['   .. default-role:: math\n', ' \n', '   hi 5!\n', '\n']
 
         >>> convert([' ','   hi {{2+3}}!'])  #doctest: +ELLIPSIS
         + .../rest.rest.rest
