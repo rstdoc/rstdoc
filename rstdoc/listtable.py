@@ -23,9 +23,6 @@ listable: rstdoc module
 
 Convert RST grid tables to list-tables.
 
-Usage
------
-
 #. Convert grid tables in a file to list-tables. The result is output to stdout::
 
     $ listtable.py input.rst
@@ -94,7 +91,7 @@ def row_to_listtable(
     :param withheader: produce :header-:param rows: 1
     :param join: 0,1,2 telling how to combine the lines of a cell
 
-    - 0 = without space 
+    - 0 = without space
     - 1 = with space
     - 2 = keep multi-line
 
@@ -103,7 +100,7 @@ def row_to_listtable(
 
 
     '''
-    
+
     nColumns = len(colwidths)
 
     def splitline(lne):
@@ -204,7 +201,7 @@ def main(**args):
 
 
     '''
-    
+
     import argparse
     import codecs
     import sys

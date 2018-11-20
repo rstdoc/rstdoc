@@ -190,7 +190,7 @@ def nostrikeout(lns):
     :param lns: lines from rst file
 
     '''
-    
+
     nso = re.compile(r'\[STRIKEOUT:[^\]]*\]', re.M | re.I)
     # lns='''hello [STRIKEOUT:Firmware may deactivate the high-voltage circuits in
     #   ***STOP*** state.] there [STRIKEOUT:guy]'''.splitlines(True)
@@ -206,7 +206,7 @@ def rmextrablankline(lns):
     :param lns: lines from rst file
 
     '''
-    
+
     bc = 0
     for d in lns:
         if not d.strip():
@@ -224,7 +224,7 @@ def no3star(lns):
     :param lns: lines from rst file
 
     '''
-    
+
     for d in lns:
         # d='****'
         res = re.sub('\*\*\*\*+', '', d)
@@ -274,13 +274,13 @@ class reflowrow():
 def reflow(lns, join='1', sentence=False):
     '''
     Combines all rst corrections of this file.
-    
+
     :param lns: lines from rst file
     :param join: 0 no space, 1 with space, 2 keep as-is
     :param sentence: if True lines are split at the end of the sentence
 
     '''
-    
+
     r = reflowrow()
     for ln in noblankend(
             rmextrablankline(
@@ -301,7 +301,7 @@ def main(**args):
     ``in_place`` defaults to False
 
     '''
-    
+
     import codecs
     import sys
     import argparse
