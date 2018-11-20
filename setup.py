@@ -4,7 +4,7 @@
 #install: latex, plantuml, graphviz, inkscape
 
 #test
-py.test -vv --cov rstdoc --cov-report term-missing
+py.test -vv --cov=rstdoc --cov-report term-missing
 #or
 waf configure && waf --docs sphinx_html --tests
 

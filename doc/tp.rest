@@ -36,7 +36,7 @@ To run `pytest`_, in the root folder, enter::
 
 To have a test coverage report, enter::
 
-    py.test --cov rstdoc --cov-report term-missing
+    py.test --cov=rstdoc --cov-report term-missing
 
 Test Coverage
 =============

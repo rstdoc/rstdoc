@@ -238,7 +238,7 @@ _plus = '+'
 _indent = '    '
 
 
-class _Tools:
+class _ToolRunner:
     def svg2png(self, *args, **kwargs):
         if cairosvg:
             cairosvg.svg2png(*args, **kwargs)
@@ -253,7 +253,7 @@ class _Tools:
         return sp.run(*args, **kwargs)
 
 
-class _DryTools:
+class _DryRunner:
     def svg2png(self, *args, **kwargs):
         pass
 
@@ -262,39 +262,44 @@ class _DryTools:
 
 
 class _Verbose:
-    def __init__(self, tools):
-        self.tools = tools
+    def __init__(self, toolrunner):
+        self.toolrunner = toolrunner
 
     def svg2png(self, *args, **kwargs):
         if verbose:
             print(_plus, relpath(kwargs['write_to']))
-        return self.tools.svg2png(*args, **kwargs)
+        return self.toolrunner.svg2png(*args, **kwargs)
 
     def run(self, *args, **kwargs):
         if verbose:
             print('run', args, kwargs)
             if 'outfile' in kwargs:
                 print(_plus, kwargs['outfile'])
-        return self.tools.run(*args, **kwargs)
+        return self.toolrunner.run(*args, **kwargs)
 
-tools = None
+_toolrunner = None
 
 def dry_run(dry=None, verbose_=None):
-    global tools
+    '''
+    Set or unset dry run.
+    For dry run verbosity is on per default.
+    For non-dry run verbosity is off per default.
+    '''
+    global _toolrunner
     global verbose
     if dry:
         if verbose_ == None:
             verbose = True
         else:
             verbose = verbose_
-        tools = _Verbose(_DryTools())
+        _toolrunner = _Verbose(_DryRunner())
     else:
         if verbose_ == None:
             verbose = False
         else:
             verbose = verbose_
-        if dry != None or tools == None:
-            tools = _Verbose(_Tools())
+        if dry != None or _toolrunner == None:
+            _toolrunner = _Verbose(_ToolRunner())
 
 dry_run(None)
 
@@ -648,7 +653,7 @@ def cmd(cmdlist , **kwargs):
     try:
         for x in 'out err'.split():
             kwargs['std' + x] = sp.PIPE
-        r = tools.run(cmdlist, **kwargs)
+        r = _toolrunner.run(cmdlist, **kwargs)
         try:
             stdout, stderr = _nstr(r.stdout), _nstr(r.stderr)
         except:
@@ -919,11 +924,10 @@ def rst_sphinx(
 
     ::
 
+        >>> olddir = os.getcwd()
         >>> cd(dirname(__file__))
         >>> cd('../doc')
-
         >>> dry_run(True)
-        >>> #ls()
 
         >>> infile,outfile = ('index.rest','../build/doc/sphinx_html/index.html')
         >>> rst_sphinx(infile,outfile) #doctest: +ELLIPSIS
@@ -936,6 +940,7 @@ def rst_sphinx(
         run (['sphinx-build', '-b', 'tex', '.', '../build/doc/sphinx_latex', '-C', ..., '-D', 'master_doc=dd'],) ...
 
         >>> dry_run(False)
+        >>> cd(olddir)
 
     '''
 
@@ -1230,7 +1235,7 @@ def svgpng(infile, outfile=None, *args, **kwargs):
 
     '''
 
-    tools.svg2png(
+    _toolrunner.svg2png(
         bytestring=_joinlines(infile),
         write_to=outfile,
         dpi=kwargs.get('DPI', DPI))
@@ -1392,11 +1397,11 @@ def pygpng(
     else:
         for k, v in pygvars.items():
             if isinstance(v, pyx.canvas.canvas):
-                tools.svg2png(
+                _toolrunner.svg2png(
                     bytestring=v._repr_svg_(), write_to=outfile, dpi=dpi)
                 break
             elif isinstance(v, pygal.Graph):
-                tools.svg2png(bytestring=v.render(), write_to=outfile, dpi=dpi)
+                _toolrunner.svg2png(bytestring=v.render(), write_to=outfile, dpi=dpi)
                 break
             elif cairocffi and isinstance(v, cairocffi.Surface):
                 v.write_to_png(target=outfile)
@@ -1406,7 +1411,7 @@ def pygpng(
                 d.write(svgio)
                 svgio.seek(0)
                 svgsrc = svgio.read()
-                tools.svg2png(bytestring=svgsrc, write_to=outfile, dpi=dpi)
+                _toolrunner.svg2png(bytestring=svgsrc, write_to=outfile, dpi=dpi)
                 break
             else:  # try matplotlib.pyplot
                 try:
@@ -1516,6 +1521,7 @@ def dorst(
 
     ::
 
+        >>> olddir = os.getcwd()
         >>> cd(dirname(__file__))
         >>> cd('../doc')
 
@@ -1575,6 +1581,7 @@ def dorst(
         >>> rmrf('test.odt')
         >>> exists('test.odt')
         False
+        >>> cd(olddir)
 
 
     '''
@@ -1742,6 +1749,7 @@ def convert(
 
     Examples::
 
+        >>> olddir = os.getcwd()
         >>> cd(dirname(__file__))
         >>> cd('../doc')
 
@@ -1798,6 +1806,7 @@ def convert(
         >>> rmrf('dd.rest.rest')
         >>> exists('dd.rest.rest')
         False
+        >>> cd(olddir)
 
 
     :param infile: any of ``.tikz`` ``.svg`` ``.dot`` ``.uml`` ``.eps`` ``.pyg`` or else stpl is assumed. Can be list of lines, too.
@@ -2119,6 +2128,7 @@ def rstincluded(
 
     ::
 
+        >>> olddir = os.getcwd()
         >>> cd(dirname(__file__))
         >>> list(rstincluded('ra.rest',('../doc',)))
         ['ra.rest.stpl', '_links_sphinx.rst']
@@ -2128,6 +2138,7 @@ def rstincluded(
         ['meta.rest', 'files.rst', '_traceability_file.rst', '_links_sphinx.rst']
         >>> 'dd.rest' in list(rstincluded('index.rest',('../doc',),False,True))
         True
+        >>> cd(olddir)
 
     '''
 
@@ -2975,6 +2986,7 @@ def links_and_tags(adir):
 
     ::
 
+        >>> olddir = os.getcwd()
         >>> dry_run(False,False)
         >>> cd(dirname(__file__))
         >>> rmrf('../doc/_links_sphinx.rst')
@@ -2984,6 +2996,7 @@ def links_and_tags(adir):
         >>> links_and_tags('../doc')
         >>> '_links_sphinx.rst' in ls('../doc')
         True
+        >>> cd(olddir)
 
     '''
 

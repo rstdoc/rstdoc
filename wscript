@@ -10,5 +10,5 @@ def configure(cfg):
 def build(bld):
   bld.load('dcx',tooldir='rstdoc')
   if bld.options.tests:
-      bld.exec_command('py.test --cov rstdoc --doctest-modules --cov-report term-missing > doc/_testcoverage.rst')
+      bld.exec_command('py.test --cov=rstdoc --doctest-modules --cov-report term-missing > doc/_testcoverage.rst')
   bld.recurse('doc')
