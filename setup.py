@@ -24,7 +24,7 @@ from setuptools import setup
 import os
 import sys
 
-__version__ = '1.6.5'
+__version__ = '1.6.6'
 
 sys.path.append('./rstdoc')
 from dcx import dorst
@@ -76,16 +76,17 @@ setup(name='rstdoc',
           ],
 
       install_requires=['pillow', 'pyx', 'pyfca', 'pygal', 'cairosvg',
-                        'svgwrite', 'stpl', 'pypandoc', 'sphinx',
-                        'sphinx_bootstrap_theme', 'pint'],
-      extras_require={'develop': ['mock', 'pytest-coverage'],
+                        'numpy', 'matplotlib','sympy','pint',
+                        'svgwrite', 'stpl', 'pypandoc', 'docutils',
+                        'sphinx', 'sphinx_bootstrap_theme'],
+      extras_require={'develop': ['mock', 'virtualenv', 'pytest-coverage'],
                       'build': ['waf']},
       long_description=long_description,
       packages=['rstdoc'],
-      package_data={'rstdoc': ['reference.tex', 'reference.docx',
+      package_data={'rstdoc': ['../readme.rst','reference.tex', 'reference.docx',
                                'reference.odt', 'wafw.py']},
       zip_safe=False,
-      tests_require=['pytest', 'pytest-coverage', 'mock'],
+      tests_require=['pytest', 'pyyaml', 'pytest-coverage', 'mock'],
       entry_points={
           'console_scripts': [
               'rstlisttable=rstdoc.listtable:main',

@@ -4147,21 +4147,17 @@ example_stp_subtree = r'''
             # Definitions
             max_charging_time = 3.5*u.hour #in |hw_charger|
         ├ utility.rst.tpl
-            <%
-            import sys
-            import os
-            sys.path.append(os.path.dirname(__file__))
-            from model import *
-            def cntr(alist0,prefix='',width=2):
-                return (alist0.append(alist0[-1]+1)
-                        or ("{}{:0>%s}"%width).format(prefix,alist0[-1]))
-            def II(prefix,alist0,short):
-                """define in file e.g.
-                ``SR=lambda short,alist0=[0]:II('SR',alist0,short)``
-                and use like ``{{SR('Item Title')}}``
-                """
-                return ':{}: **{}**'.format(cntr(alist0,prefix),short)
-            %>
+            % import sys
+            % import os
+            % sys.path.append(os.path.dirname(__file__))
+            % from model import *
+            % cntr = lambda alist0,prefix='',width=2: alist0.append(
+            %        alist0[-1]+1) or ("{}{:0>%s}"%width).format(prefix,alist0[-1])
+            % II = lambda prefix,alist0,short:':{}: **{}**'.format(
+            %      cntr(alist0,prefix),short)
+            % #define in file e.g. 
+            % #SR=lambda short,alist0=[0]:II('SR',alist0,short)
+            % #and use like {{SR('Item Title')}}
             %def pagebreak():
             .. raw:: openxml
 

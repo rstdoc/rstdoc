@@ -653,25 +653,6 @@ def test_waf_samples(wafbuild):
         '.doctrees .sty .js .inv .xdy .cls latexmk .ist'.split()):
             assert expected.find(x.strip('└─├ '))>=0
 
-def test_selfdoc():
-    '''
-    Tests creation of documentation from the source file using |dcx.doc_parts| and the |dcx.gen| file.
-
-    '''
-
-    selfdoc_accoridng_doc_gen=os.path.join('doc','_dcx_api.rst')
-    try:
-        os.remove(selfdoc_accoridng_doc_gen)
-    except: pass
-    main(verbose=True)
-    assert os.path.exists(selfdoc_accoridng_doc_gen)
-    assert os.path.exists(os.path.join('doc','ra.rest'))
-    with new_cwd('doc'):
-        run(['make','html'])
-    assert os.path.exists(os.path.join('build','doc','html'))
-    assert os.path.exists(os.path.join('build','doc','html','index.html'))
-    assert os.path.exists(os.path.join('build','doc','html','ra.html'))
-
 def test_docparts_after():
     '''
     Tests |dcx.doc_parts| with different parameters for documentation extraction.
