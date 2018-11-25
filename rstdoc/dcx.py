@@ -4155,7 +4155,7 @@ example_stp_subtree = r'''
             %        alist0[-1]+1) or ("{}{:0>%s}"%width).format(prefix,alist0[-1])
             % II = lambda prefix,alist0,short:':{}: **{}**'.format(
             %      cntr(alist0,prefix),short)
-            % #define in file e.g. 
+            % #define in file e.g.
             % #SR=lambda short,alist0=[0]:II('SR',alist0,short)
             % #and use like {{SR('Item Title')}}
             %def pagebreak():

@@ -17,11 +17,11 @@
 #  possibly edit .local to local
 #  sudo wafinstall -v2.0.6 -s --user
 
+
 import sys
 import os
 sys.path = ['test/mocks'] + sys.path
 import pytest
-import glob
 import re
 from rstdoc.dcx import *
 
@@ -105,7 +105,8 @@ def test_lnkname(lnsres):
     '''
     Test the extraction of the name for different kinds of targets::
 
-        header, figure, list-table, table, code-block, code, math, definition (:id:)
+        header, figure, list-table, table,
+        code-block, code, math, definition (:id:)
     '''
     lns,res = lnsres
     tgts = list(RstFile.make_tgts(lns,0,
@@ -119,9 +120,12 @@ def test_dcx_regex():
 
     '''
 
-    assert list(rexlnks.findall('|xx| A `|lnk|` here |gos11|\n')) == ['xx', 'gos11']
-    assert list(rexlnks.findall('  | |xeps1| | |xeps|  |')) == ['xeps1', 'xeps']
-    assert list(rexlnks.findall('     |dd_figure|: Caption here.')) == ['dd_figure']
+    assert list(rexlnks.findall('|xx| A `|lnk|` here |gos11|\n'
+                                )) == ['xx', 'gos11']
+    assert list(rexlnks.findall('  | |xeps1| | |xeps|  |'
+                                )) == ['xeps1', 'xeps']
+    assert list(rexlnks.findall('     |dd_figure|: Caption here.'
+                                )) == ['dd_figure']
     assert rextgt.search('.. _`_t11`:').group(1) == '_t11'
     assert rextgt.search('  .. _`_t11`:').group(1) == '_t11'
     assert rextgt.search('#) .. _`_t11`:').group(1) == '_t11'
@@ -134,16 +138,26 @@ def test_dcx_regex():
     assert rexitem.match(':t11:').group(1) == 't11'
     assert rexitem.match('**t11**:').group(1) == 't11'
     assert rexitem.match('*t11*:').group(1) == 't11'
-    assert reximg.search(r'.. image:: ..\img.png').group(1) == r'..\img.png'
-    assert reximg.search(r'.. |c:\x y\im.jpg| image:: /tmp/img.png').group(1) == '/tmp/img.png'
-    assert reximg.search(r'.. image:: c:\tmp\img.png').group(1) == r'c:\tmp\img.png'
-    assert reximg.search(r'.. figure:: \\public\img.png').group(1) == r'\\public\img.png'
-    assert rerstinclude.split('.. include:: test.rst') == ['', 'test.rst', '']
-    assert rerstinclude.split('.. include:: ../test.rst') == ['', '../test.rst', '']
-    assert rerstinclude.split('  .. include:: ../test.rst') == ['  ', '../test.rst', '']
-    assert restplinclude.split('%include("test.rst.stpl",v="aparam")') == ['', 'test.rst.stpl', '']
-    assert restplinclude.split('%include("../test.rst.stpl",v="aparam")') == ['', '../test.rst.stpl', '']
-    assert restplinclude.split(' % include(  "../test.rst.stpl",v="aparam")') == [' ', '../test.rst.stpl', '']
+    assert reximg.search(r'.. image:: ..\img.png'
+                         ).group(1) == r'..\img.png'
+    assert reximg.search(r'.. |c:\x y\im.jpg| image:: /tmp/img.png'
+                         ).group(1) == '/tmp/img.png'
+    assert reximg.search(r'.. image:: c:\tmp\img.png'
+                         ).group(1) == r'c:\tmp\img.png'
+    assert reximg.search(r'.. figure:: \\public\img.png'
+                         ).group(1) == r'\\public\img.png'
+    assert rerstinclude.split('.. include:: test.rst'
+                              ) == ['', 'test.rst', '']
+    assert rerstinclude.split('.. include:: ../test.rst'
+                              ) == ['', '../test.rst', '']
+    assert rerstinclude.split('  .. include:: ../test.rst'
+                              ) == ['  ', '../test.rst', '']
+    assert restplinclude.split('%include("test.rst.stpl",v="aparam")'
+                               ) == ['', 'test.rst.stpl', '']
+    assert restplinclude.split('%include("../test.rst.stpl",v="aparam")'
+                               ) == ['', '../test.rst.stpl', '']
+    assert restplinclude.split(' % include(  "../test.rst.stpl",v="aparam")'
+                               ) == [' ', '../test.rst.stpl', '']
     with pytest.raises(AttributeError):
         rextgt.search('x  .. _`_t11`:').group(1)
     with pytest.raises(AttributeError):
@@ -194,7 +208,8 @@ def test_rstincluded(rstinit):
         assert list(rstincluded('sr.rest.stpl',(r'./doc',))) == [
                 'sr.rest.stpl', '_links_sphinx.rst']
         assert list(rstincluded('dd.rest.stpl',(r'./doc',))) == [
-                'dd.rest.stpl', 'dd_included.rst.stpl', 'dd_tables.rst', 'dd_math.tpl', 'dd_diagrams.tpl', '_links_sphinx.rst']
+                'dd.rest.stpl', 'dd_included.rst.stpl', 'dd_tables.rst',
+                'dd_math.tpl', 'dd_diagrams.tpl', '_links_sphinx.rst']
         assert list(rstincluded('tp.rest.stpl',(r'./doc',))) == [
                 'tp.rest.stpl', '_links_sphinx.rst']
     elif 'tmp_rest' in rstinit:
@@ -209,7 +224,8 @@ def test_rstincluded(rstinit):
 
 def test_init(rstinit):
     '''
-    Tests the initialization of a sample directory tree with the ``--stpl tmp`` or ``--rest tmp`` options.
+    Tests the initialization of a sample directory tree
+    with the ``--stpl tmp`` or ``--rest tmp`` options.
 
     '''
 
@@ -305,7 +321,8 @@ def test_dcx_alone_samples(rstinit,capfd):
     assert r.returncode == 0
     out, err = capfd.readouterr()
     if 'tmp_rest' in rstinit:
-        assert list(sorted(x for x in out.splitlines() if 'png_post_processor' not in x)) == list(sorted("""\
+        assert list(sorted(x for x in out.splitlines(
+            ) if 'png_post_processor' not in x)) == list(sorted("""\
 + egdot.dot
 + egsvg.svg
 doc
@@ -327,7 +344,8 @@ doc
 run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-kinds=-i', '-f', '-', '*'],) {'cwd': 'doc', 'stdout': -1, 'stderr': -1}
 + doc/.tags""".splitlines()))
     elif 'tmp_stpl' in rstinit:
-        assert list(sorted(x for x in out.splitlines() if 'png_post_processor' not in x)) == list(sorted("""\
+        assert list(sorted(x for x in out.splitlines(
+            ) if 'png_post_processor' not in x)) == list(sorted("""\
 + dd.rest
 + dd_included.rst
 + egdot.dot
@@ -373,7 +391,8 @@ run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-
 
 def test_dcx_in_out(rstinit,cmd_result):
     '''
-    Tests calling ``rstdcx``/``dcx.py`` with in-file or standard in to standard out.
+    Tests calling ``rstdcx``/``dcx.py``
+    with in-file or standard in to standard out.
 
     '''
 
@@ -417,7 +436,8 @@ def test_dcx_in_out(rstinit,cmd_result):
 ])
 def test_dcx_out_file(rstinit,cmd_exists_not_exists):
     '''
-    Tests calling ``rstdcx``/``dcx.py`` with in-file and out-file and out type parameter.
+    Tests calling ``rstdcx``/``dcx.py``
+    with in-file and out-file and out type parameter.
 
     '''
     cmd,result,notexists = cmd_exists_not_exists
@@ -538,7 +558,8 @@ def test_make_samples(makebuild):
    └─some_tst.c"""
         assert tree3(makebuild[0])==expected
 
-waf_some = ['docx','odt','pdf','html','latex','sphinx_html','sphinx_latex','rst_html','rst_latex','rst_odt']
+waf_some = ['docx','odt','pdf','html','latex',
+            'sphinx_html','sphinx_latex','rst_html','rst_latex','rst_odt']
 waf_non_sphinx = [x for x in waf_some if not x.startswith('sphinx')]
 waf_sphinx = [x for x in waf_some if x.startswith('sphinx')]
 
@@ -666,10 +687,11 @@ def test_docparts_after():
         '   int x //int variable\n', '   )\n', '', "afun's description\n"]
 
 
-@pytest.mark.parametrize('outinfo',['pdf','docx','html','odt','rst_odt','rst_html','sphinx_html'])
-def test_convert_in_tempdir(outinfo):
+@pytest.mark.parametrize( 'outinfo',[
+    'pdf','docx','html','odt','latex',
+    'rst_odt','rst_html','rst_latex','sphinx_html'])
+def test_with_images(outinfo):
     with opn('test/fixtures/with_images.rest.stpl') as fp:
         lines = fp.readlines()
     filename = convert_in_tempdir(lines,outinfo=outinfo)
     assert exists(filename)
-
