@@ -10,6 +10,7 @@ waf configure && waf --docs sphinx_html --tests
 
 #install
 pip uninstall rstdoc
+pip install pillow pyx pyfca pygal cairosvg numpy matplotlib sympy pint svgwrite stpl pypandoc docutils sphinx sphinx_bootstrap_theme
 pip install -e .
 #or
 python setup.py bdist_wheel
