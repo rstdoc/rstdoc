@@ -2999,7 +2999,8 @@ class Fldr(OrderedDict):
         upcnt = 0
         if self.folder.strip():
             relfolder = relpath(self.folder, start=scanroot)
-            upcnt = len(relfolder.split('/'))
+            if '/' in relfolder:
+                upcnt = len(relfolder.split('/'))
         links_types = "sphinx latex html pdf docx odt".split()
         linkfiles = [(linktype, []) for linktype in links_types]
 
