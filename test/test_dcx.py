@@ -687,11 +687,37 @@ def test_docparts_after():
         '   int x //int variable\n', '   )\n', '', "afun's description\n"]
 
 
+with_images = os.path.join(os.path.dirname(__file__),
+                           'fixtures','with_images.rest.stpl')
+
+
 @pytest.mark.parametrize( 'outinfo',[
     'pdf','docx','html','odt','latex',
     'rst_odt','rst_html','rst_latex','sphinx_html'])
 def test_with_images(outinfo):
-    with opn('test/fixtures/with_images.rest.stpl') as fp:
+    with opn(with_images) as fp:
         lines = fp.readlines()
     filename = convert_in_tempdir(lines,outinfo=outinfo)
     assert exists(filename)
+
+@pytest.mark.parametrize('outext',
+                         ['.pdf', '.docx', '.html', '.odt', '.latex'])
+def test_convert_with_images_no_outinfo(tmpworkdir,outext):
+    import shutil
+    print(os.getcwd())
+    print(with_images)
+    shutil.copy2(with_images,'with_images.rest.stpl')
+    filename = 'with_images'+outext
+    #import pdb; pdb.set_trace()
+    convert('with_images.rest.stpl',filename,None)
+    assert exists(filename)
+
+def test_include_cmd(tmpworkdir):
+    r=run(['rstdcx','with_images.rest.stpl', 'with_images.html', '-I', dirname(with_images)])
+    assert r.returncode == 0
+    assert exists('with_images.html')
+
+def test_include_reference(tmpworkdir):
+    r=run(['rstdcx','with_images.rest.stpl', 'with_images.docx', '-I', dirname(__file__), '-I', dirname(with_images)])
+    assert r.returncode == 0
+    assert exists('with_images.docx')

@@ -458,7 +458,7 @@ _pyg = '.pyg'
 _png = '.png'  # target of all others
 
 
-def _is_graphic_type(t):
+def _is_graphic(t):
     return t != '' and any(x.endswith(t) for x in graphic_extensions)
 
 
@@ -639,7 +639,7 @@ g_config = None
 @lru_cache()
 def conf_py(fldr):
     """
-    ``defaults``, ``g_config`` or ``conf.py`` or ``../conf.py`` is used.
+    ``defaults``, ``g_config``, ``./conf.py`` or ``../conf.py`` is used.
 
     """
     config = {}
@@ -651,6 +651,13 @@ def conf_py(fldr):
         with opn(confpypath) as f:
             config['__file__'] = abspath(confpypath)
             eval(compile(f.read(), abspath(confpypath), 'exec'), config)
+    elif g_include:
+        for gi in g_include:
+            confpypath = normjoin(gi,'conf.py')
+            if exists(confpypath):
+                config['__file__'] = abspath(confpypath)
+                eval(compile(f.read(), abspath(confpypath), 'exec'), config)
+                break
     config.update(sphinx_enforced)
     return config
 
@@ -715,7 +722,7 @@ def cmd(cmdlist, **kwargs):
 def _imgout(inf):
     inp, inname = dir_base(inf)
     infn, infe = stem_ext(inname)
-    if not _is_graphic_type(infe) and not _is_graphic_type(stem_ext(infn)[1]):
+    if not _is_graphic(infe) and not _is_graphic(stem_ext(infn)[1]):
         raise ValueError('%s is not an image source' % inf)
     outp, there = here_or_updir(inp, _images)
     if not there:
@@ -845,7 +852,7 @@ def normoutfile(f, suffix=None):
         infile, outfile, args = _unioe(args)
         if isinstance(infile, str):
             if not outfile:
-                if not suffix or _is_graphic_type(suffix):
+                if not suffix or _is_graphic(suffix):
                     outfile = _imgout(infile)
                 elif suffix:
                     infn, infe = stem_ext(infile)
@@ -894,7 +901,7 @@ def in_temp_if_list(
             suf0, suf1 = suffix.split('.', 1)
         except: #noqa
             outinfo = kwargs.get('outinfo', 'rest')
-            if _is_graphic_type(outinfo):
+            if _is_graphic(outinfo):
                 suf0, suf1 = outinfo, suffix
             else:
                 try:
@@ -1105,6 +1112,8 @@ def _copy_images_for(infile, outfile, with_trace):
                     pass
 
 
+g_include = []
+
 @infile_cwd
 def rst_pandoc(
         infile, outfile, outtype, **config
@@ -1133,10 +1142,18 @@ def rst_pandoc(
             opt_refdoc = opt_refdoc.get(base(infile), '')
         if opt_refdoc:
             refoption, refdoc = opt_refdoc.split()
-            refdoc, there = here_or_updir('.', refdoc)
+            refdocfound, there = here_or_updir('.', refdoc)
             if there:
                 pandoccmd.append(refoption)
-                pandoccmd.append(abspath(refdoc))
+                pandoccmd.append(abspath(refdocfound))
+            elif g_include:
+                refdoc = dir_base(refdoc)[1]
+                for gi in g_include:
+                    refdoctry = normjoin(gi,refdoc)
+                    if exists(refdoctry):
+                        pandoccmd.append(refoption)
+                        pandoccmd.append(refdoctry)
+                        break
     stdout = cmd(pandoccmd, outfile=outfile)
     if outtype.endswith('html') or outtype.endswith('latex'):
         _copy_images_for(infile, outfile, outtype.endswith('html'))
@@ -1504,7 +1521,6 @@ def pygpng(
                 except:
                     continue
 
-
 @infile_cwd
 def dostpl(
         infile,
@@ -1536,7 +1552,7 @@ def dostpl(
     '''
 
     if not lookup:
-        lookup = ['.', '..']
+        lookup = ['.', '..'] + g_include
     if isinstance(infile, str):
         lookup = [abspath(normjoin(dirname(infile), x)) for x in lookup]
         filename = abspath(infile)
@@ -1811,7 +1827,6 @@ converters = {
 }
 graphic_extensions = {_svg, _tikz, _tex, _dot, _uml, _eps, _pyg}
 
-
 def convert(
         infile,
         outfile=io.StringIO,
@@ -1915,55 +1930,58 @@ def convert(
         except:
             pass
         infile = sys.stdin.readlines()
-    if infile:
-        if not outinfo:
-            if outfile == '-':
-                outinfo = 'rest'
-            elif outfile is None or callable(outfile):
-                outinfo = 'html'
-        if isinstance(infile, str):
-            nextinfile, fext = stem_ext(infile)
+    if not infile:
+        return;
+    if not outinfo:
+        if outfile == '-':
+            outinfo = 'rest'
+        elif outfile is None or callable(outfile):
+            outinfo = 'html'
         else:
-            fext = _stpl
-            if outinfo and _is_graphic_type(outinfo):
-                nextinfile = outinfo.strip('.') + '.' + outinfo.strip('.')
-            else:
-                nextinfile = 'rest' + _rest
-        fn_i_ln = None
-        while fext in converters:
-            if not outfile or callable(outfile):
-                if _is_graphic_type(fext):
-                    outfile = _imgout(nextinfile + fext)
-            try:
-                nextinfile, fextnext = stem_ext(nextinfile)
-                if fextnext not in converters:
-                    fextnext = None
-            except:
+            _,outinfo = stem_ext(outfile)
+            outinfo = outinfo.strip('.')
+    fext = None
+    if isinstance(infile, str):
+        nextinfile, fext = stem_ext(infile)
+    else:
+        fext = _stpl
+        if outinfo and _is_graphic(outinfo):
+            soi = outinfo.strip('.')
+            nextinfile = soi + '.' + soi
+        else:
+            nextinfile = 'rest' + _rest
+    fn_i_ln = None
+    while fext in converters:
+        if (outfile is None or callable(outfile)) and _is_graphic(fext):
+                outfile = _imgout(nextinfile + fext)
+        try:
+            nextinfile, fextnext = stem_ext(nextinfile)
+            if fextnext not in converters:
                 fextnext = None
-            thisconverter = converters[fext]
-            if thisconverter == dorst:
-                infile = thisconverter(infile, outfile if not fextnext else
-                                       None, outinfo, fn_i_ln)
-            else:
-                kwargs = {}
-                if thisconverter == dostpl:
-                    kwargs = {'outinfo': outinfo}
-                    # save infile for dorst() in outinfo as "infile/outinfo"
-                    if fextnext in converters and converters[
-                            fextnext] == dorst:
-                        if isinstance(infile, str):
-                            fn_i_ln = _flatten_stpl_includes(infile)
-                        else:
-                            fn_i_ln = list(_flatten_stpl_includes_it(infile))
-                        outinfo = nextinfile + '/' + (outinfo or '')
-                infile = thisconverter(infile, outfile
-                                       if not fextnext else None, **kwargs)
-            if not infile:
-                break
-            if not fextnext:
-                break
-            fext = fextnext
-        return infile
+        except:
+            fextnext = None
+        out_ = lambda:outfile if not fextnext else None
+        thisconverter = converters[fext]
+        if thisconverter == dorst:
+            infile = thisconverter(infile, out_(), outinfo, fn_i_ln)
+        else:
+            kwargs = {}
+            if thisconverter == dostpl:
+                kwargs = {'outinfo': outinfo}
+                # save infile for dorst() in outinfo as "infile/outinfo"
+                if fextnext in converters and converters[fextnext] == dorst:
+                    if isinstance(infile, str):
+                        fn_i_ln = _flatten_stpl_includes(infile)
+                    else:
+                        fn_i_ln = list(_flatten_stpl_includes_it(infile))
+                    outinfo = nextinfile + '/' + (outinfo or '')
+            infile = thisconverter(infile, out_(), **kwargs)
+        if not infile:
+            break
+        if not fextnext:
+            break
+        fext = fextnext
+    return infile
 
 
 '''
@@ -4974,6 +4992,12 @@ def main(**args):
             action='store',
             help='Create a sample directory structure with .rest.stpl files.')
         parser.add_argument(
+            '-I',
+            action='append',
+            metavar='folder',
+            nargs=1,
+            help='Add folders to look for ``conf.py``, ``.[s]tpl`` and reference.docx/odt/tex')
+        parser.add_argument(
             '-v',
             '--verbose',
             action='store_true',
@@ -5029,6 +5053,8 @@ to define variables that can be used in templates."""
         for x in 'infile outfile outtype'.split():
             if x not in args:
                 args[x] = None
+        if 'I' in args and args['I']:
+            g_include[:] = reduce(lambda x,y:x+y,args['I'],[])
         convert(args['infile'], args['outfile'],
                 args['outtype'] if args['outtype'] != '-' else None)
     else:
