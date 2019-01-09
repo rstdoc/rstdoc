@@ -713,8 +713,6 @@ def cmd(cmdlist, **kwargs):
                 cwd()) + '\n[stdout]\n%s\n[stderr]\n%s' % (stdout, stderr))
         return stdout
     except OSError as err:
-        if err.errno != os.errno.ENOENT:  # No such file or directory
-            raise
         raise RstDocError(
             'Error: Cannot run ' + cmdstr + ' in ' + cwd() + str(err))
 
