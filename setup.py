@@ -25,7 +25,7 @@ from setuptools import setup
 import os
 import sys
 
-__version__ = '1.6.6'
+__version__ = '1.6.7'
 
 sys.path.append('./rstdoc')
 from dcx import dorst
@@ -96,6 +96,7 @@ setup(name='rstdoc',
               'rstreimg=rstdoc.reimg:main',
               'rstretable=rstdoc.retable:main',
               'rstdcx=rstdoc.dcx:main',
+              'rstdoc=rstdoc.dcx:main',
               'rstfromdocx=rstdoc.fromdocx:main',
               'rstuntable=rstdoc.untable:main',
               ]

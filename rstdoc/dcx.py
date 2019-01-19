@@ -359,9 +359,7 @@ def relpath(x, start=None):
 def dirname(x):
     return os.path.dirname(x).replace('\\', '/')
 
-
 base = os.path.basename
-
 
 def dir_base(x):
     return [e.replace('\\', '/') for e in os.path.split(x)]
@@ -868,6 +866,18 @@ def normoutfile(f, suffix=None):
 
     return normoutfiler
 
+def _suffix(outinfo):
+    try:
+        _, suf = outinfo.split('_')
+    except: #noqa
+        suf = outinfo
+    return suf
+
+def _in_2_out_name(inname,outinfo):
+    instem = stem(inname)
+    if instem.endswith(_rest) or instem.endswith(_rst):
+        instem = stem(instem)
+    return base(instem) + '.' + _suffix(outinfo).strip('.')
 
 def in_temp_if_list(
         f,
@@ -902,11 +912,7 @@ def in_temp_if_list(
             if _is_graphic(outinfo):
                 suf0, suf1 = outinfo, suffix
             else:
-                try:
-                    tool, suf = outinfo.split('_')
-                except: #noqa
-                    suf = outinfo
-                suf0, suf1 = suf+_rest, suffix
+                suf0, suf1 = _suffix(outinfo) + _rest, suffix
         if not isinstance(infile, str) and infile:
             if outfile and isinstance(outfile, str):
                 outfile = abspath(outfile)
@@ -1922,18 +1928,16 @@ def convert(
         afile = infile and isfile(infile) or False
     except:
         pass
-    if not afile and infile == '-':
+    if not afile and (infile == '-' or infile is None):
         try:
             sys.stdin = codecs.getreader("utf-8")(sys.stdin.detach())
         except:
             pass
         infile = sys.stdin.readlines()
-    if not infile:
-        return;
     if not outinfo:
-        if outfile == '-':
+        if outfile == '-' or outfile is None:
             outinfo = 'rest'
-        elif outfile is None or callable(outfile):
+        elif callable(outfile):
             outinfo = 'html'
         else:
             _,outinfo = stem_ext(outfile)
@@ -3358,10 +3362,7 @@ try:
             for doctgt in docs:
                 if doctgt.startswith('sphinx_'):
                     continue
-                try:
-                    _, doctype = doctgt.split('_')
-                except:
-                    doctype = doctgt
+                doctype = _suffix(doctgt)
                 out_node = node.parent.find_or_declare("{0}/{1}.{2}".format(
                     doctgt, stem(node.name), doctype))
                 self.create_task(
@@ -5010,12 +5011,12 @@ def main(**args):
             nargs='?',
             help='''\
 Integrates Sphinx, Pandoc and Docutils to produce output supported by any of them.
-To use all three, document must not use Sphinx extensions.
-Input file or - for stdin.''')
+To use all three, restructuredText must not use Sphinx extensions.
+Input file, dir or - for stdin.''')
         parser.add_argument(
             'outfile',
             nargs='?',
-            help='Output file or - or nothing to print to std out.')
+            help='Output file, dir or - or nothing to print to std out.')
         parser.add_argument(
             'outtype',
             nargs='?',
@@ -5053,11 +5054,24 @@ to define variables that can be used in templates."""
                 args[x] = None
         if 'I' in args and args['I']:
             g_include[:] = reduce(lambda x,y:x+y,args['I'],[])
-        convert(args['infile'], args['outfile'],
-                args['outtype'] if args['outtype'] != '-' else None)
+        outinfo = args['outtype'] if args['outtype'] != '-' else None
+        outfile = args['outfile'] if args['outfile'] != '-' else None
+        infiles = [args['infile']]
+        outfiles = [args['outfile']]
+        if outinfo is not None:
+            if os.path.isdir(args['infile']):
+                infiles = [x for x in os.listdir(args['infile']) if is_rest(x)]
+                if outfile and not os.path.exists(outfile):
+                    mkdir(outfile)
+            else:
+                if outfile and not os.path.exists(outfile) and '.' not in base(outfile):
+                    mkdir(outfile)
+            if outfile and os.path.isdir(outfile):
+                outfiles = [os.path.join(outfile, _in_2_out_name(inf,outinfo)) for inf in infiles]
+        for i,o in zip(infiles,outfiles):
+            convert(i,o,outinfo)
     else:
         index_dir('.')
-
 
 if __name__ == '__main__':
     main()
