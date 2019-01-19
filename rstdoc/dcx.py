@@ -417,10 +417,10 @@ def updir(fn):
 
 
 # fn='x/y/../y/a.b'
-# updir(fn)#x\a.b
-# updir('a.b')#..\a.b
-# updir('a.b/a.b')#a.b
-# normjoin(fn)#x\y\a.b
+# updir(fn) # x\a.b
+# updir('a.b') # ..\a.b
+# updir('a.b/a.b') # a.b
+# normjoin(fn) # x\y\a.b
 
 
 '''
@@ -697,8 +697,9 @@ def cmd(cmdlist, **kwargs):
 
     cmdstr = ' '.join(cmdlist)
     try:
-        for x in 'out err'.split():
-            kwargs['std' + x] = sp.PIPE
+        if not verbose:
+            for x in 'out err'.split():
+                kwargs['std' + x] = sp.PIPE
         r = _toolrunner.run(cmdlist, **kwargs)
         try:
             stdout, stderr = _nstr(r.stdout), _nstr(r.stderr)
@@ -871,13 +872,14 @@ def _suffix(outinfo):
         _, suf = outinfo.split('_')
     except: #noqa
         suf = outinfo
-    return suf
+    return suf or 'html'
 
 def _in_2_out_name(inname,outinfo):
     instem = stem(inname)
     if instem.endswith(_rest) or instem.endswith(_rst):
         instem = stem(instem)
-    return base(instem) + '.' + _suffix(outinfo).strip('.')
+    res = base(instem) + '.' + _suffix(outinfo).strip('.')
+    return res
 
 def in_temp_if_list(
         f,
@@ -1029,10 +1031,7 @@ def rst_sphinx(
         for k, v in cfgt.items() if k in sphinx_config_keys
         and 'latex' not in k and k != 'html_extra_path'
     })
-    # html_extra_path is done here below
-    cfg.update({k: v for k, v in sphinx_enforced.items() if 'latex' not in k})
-    cfg['master_doc'] = stem(infn)
-    if not outtype:
+    if not outtype or outtype=='html':
         if outne == '.html':
             if infn.startswith('index.'):
                 outtype = 'html'
@@ -1042,6 +1041,11 @@ def rst_sphinx(
             outtype = 'latex'
         else:
             outtype = outne.strip('.')
+    cfg.update({k: v for k, v in sphinx_enforced.items() if 'latex' not in k})
+    cfg['master_doc'] = stem(infn) #rest.rest -> .rest (see rest_rest)
+    # .rest.rest contains temporary modification and is used instead of .rest
+    if outtype == 'html' and is_rest(cfg['master_doc']): #... not for index.rest
+        cfg['master_doc'] = stem(cfg['master_doc'])
     if samedir:
         outdr = normjoin(outdr, 'sphinx_'+outtype)
         outfn = normjoin(outdr, outn)
@@ -1073,6 +1077,9 @@ def rst_sphinx(
     ] for k, v in cfg.items()] + latex_elements + latex_documents)
     sphinxcmd = ['sphinx-build', '-b', outtype, indr, outdr] + extras
     cmd(sphinxcmd, outfile=outfn)
+    if outtype == 'html':
+        #undo duplication via temp file's see: rest_rest
+        rmrf(os.path.join(outdr,cfg['master_doc']+'.rest.html'))
     if 'latex' in outtype:
         texfile = next(x for x in os.listdir(outdr) if x.endswith('.tex'))
         os.rename(normjoin(outdr, texfile), outfn)
@@ -1509,7 +1516,7 @@ def pygpng(
                     if len(fignums) == 0:
                         continue
                     if len(fignums) > 1:
-                        # makename('a.b', 1)#a1.b
+                        # makename('a.b', 1) # a1.b
                         def makename(x, i):
                             return ('{0}%s{1}' % i).format(*stem_ext(x))
                     else:
@@ -1760,7 +1767,7 @@ def dorst(
 
         if rsttool:
             finalsysout = sysout
-            tmprestindir = infile + '.rest'
+            tmprestindir = infile + _rest # .rest->rest_rest
             sysout = opnwrite(tmprestindir)
             infile = tmprestindir
             atexit.register(rmrf, tmprestindir)
@@ -4422,7 +4429,7 @@ example_stp_subtree = r'''
 
             Include the stpl way
 
-            %include('dd_diagrams.tpl',DD=DD)#you optionally can provide python definitions
+            %include('dd_diagrams.tpl',DD=DD) # you optionally can provide python definitions
 
             Pandoc does not know about `definitions in included files \
             <https://github.com/jgm/pandoc/issues/4160>`__.
@@ -5058,16 +5065,19 @@ to define variables that can be used in templates."""
         outfile = args['outfile'] if args['outfile'] != '-' else None
         infiles = [args['infile']]
         outfiles = [args['outfile']]
-        if outinfo is not None:
-            if os.path.isdir(args['infile']):
-                infiles = [x for x in os.listdir(args['infile']) if is_rest(x)]
-                if outfile and not os.path.exists(outfile):
-                    mkdir(outfile)
-            else:
-                if outfile and not os.path.exists(outfile) and '.' not in base(outfile):
-                    mkdir(outfile)
-            if outfile and os.path.isdir(outfile):
-                outfiles = [os.path.join(outfile, _in_2_out_name(inf,outinfo)) for inf in infiles]
+        if os.path.isdir(args['infile']):
+            infiles = [x for x in os.listdir(args['infile']) if is_rest(x)]
+            if outfile and not os.path.exists(outfile):
+                mkdir(outfile)
+        else:
+            if outfile and not os.path.exists(outfile) and '.' not in base(outfile):
+                mkdir(outfile)
+        if outfile and os.path.isdir(outfile):
+            if outinfo.startswith('sphinx'):
+                onlyindex = [x for x in infiles if x.find('index.')>=0];
+                if len(onlyindex)>0:
+                    infiles = onlyindex;
+            outfiles = [os.path.join(outfile, _in_2_out_name(inf,outinfo)) for inf in infiles]
         for i,o in zip(infiles,outfiles):
             convert(i,o,outinfo)
     else:
