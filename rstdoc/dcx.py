@@ -4950,6 +4950,8 @@ Examples with the files generated with the ``--stpl tmp``:
     rstdcx dd.rest.stpl dd.odt           # as before
     rstdcx dd.rest.stpl dd.odt rst_odt   # expand template, process through Docutils to produce dd.odt
     rstdcx dd.rest.stpl dd.odt rst       # as before
+    rstdcx . build html                  # convert current dir to build output dir using pandoc
+    rstdcx . build sphinx_html           # ... using sphinx (if no index.rest, every file separately)
 
     #Sphinx is not file-oriented
     #but with rstdcx you need to provide the files to give Sphinx ``master_doc`` (normally: index.rest)
@@ -4986,7 +4988,8 @@ def main(**args):
     import argparse
 
     if not args:
-        parser = argparse.ArgumentParser(description=description)
+        parser = argparse.ArgumentParser(description=description,
+                          formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument(
             '--rest',
             dest='restroot',
