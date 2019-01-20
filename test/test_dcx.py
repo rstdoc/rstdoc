@@ -322,7 +322,7 @@ def test_dcx_alone_samples(rstinit,capfd):
     out, err = capfd.readouterr()
     if 'tmp_rest' in rstinit:
         assert list(sorted(x for x in out.splitlines(
-            ) if 'png_post_processor' not in x)) == list(sorted("""\
+            ) if 'png_post_processor' not in x and 'ctags' not in x)) == list(sorted("""\
 + egdot.dot
 + egsvg.svg
 doc
@@ -341,11 +341,10 @@ doc
 + doc/_links_pdf.rst
 + doc/_links_docx.rst
 + doc/_links_odt.rst
-run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-kinds=-i', '-f', '-', '*'],) {'cwd': 'doc', 'stdout': -1, 'stderr': -1}
 + doc/.tags""".splitlines()))
     elif 'tmp_stpl' in rstinit:
         assert list(sorted(x for x in out.splitlines(
-            ) if 'png_post_processor' not in x)) == list(sorted("""\
+            ) if 'png_post_processor' not in x and 'ctags' not in x)) == list(sorted("""\
 + dd.rest
 + dd_included.rst
 + egdot.dot
@@ -373,7 +372,6 @@ doc
 + doc/_links_pdf.rst
 + doc/_links_docx.rst
 + doc/_links_odt.rst
-run (['ctags', '-R', '--sort=0', '--fields=+n', '--languages=python', '--python-kinds=-i', '-f', '-', '*'],) {'cwd': 'doc', 'stdout': -1, 'stderr': -1}
 + doc/.tags""".splitlines()))
 
 @pytest.mark.parametrize('cmd_result',[
@@ -433,6 +431,8 @@ def test_dcx_in_out(rstinit,cmd_result):
 ,(['egtikz1.tikz'],['_images/egtikz1.png'],[])
 ,(['eguml.uml'],['_images/eguml.png'],[])
 ,(['eguml.uml','eguml.png'],['eguml.png'],['_images/eguml.png'])
+,(['.','build','html'],['build/dd.html'],[])
+,(['.','build','sphinx_html'],['build/index.html'],[])
 ])
 def test_dcx_out_file(rstinit,cmd_exists_not_exists):
     '''

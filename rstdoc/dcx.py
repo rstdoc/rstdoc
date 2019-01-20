@@ -1942,9 +1942,9 @@ def convert(
             pass
         infile = sys.stdin.readlines()
     if not outinfo:
-        if outfile == '-' or outfile is None:
+        if outfile == '-':
             outinfo = 'rest'
-        elif callable(outfile):
+        elif outfile is None or callable(outfile):
             outinfo = 'html'
         else:
             _,outinfo = stem_ext(outfile)
@@ -5062,22 +5062,32 @@ to define variables that can be used in templates."""
         if 'I' in args and args['I']:
             g_include[:] = reduce(lambda x,y:x+y,args['I'],[])
         outinfo = args['outtype'] if args['outtype'] != '-' else None
-        outfile = args['outfile'] if args['outfile'] != '-' else None
+        outfile = args['outfile']
         infiles = [args['infile']]
         outfiles = [args['outfile']]
+        notexistsout = outfile and outfile!='-' and not os.path.exists(outfile)
+        imgfiles = []
         if os.path.isdir(args['infile']):
+            index_dir(args['infile'])
+            if outfile is None:
+                return
+            imgfiles = [x for x in os.listdir(args['infile']) if _is_graphic(stem_ext(x)[1])]
             infiles = [x for x in os.listdir(args['infile']) if is_rest(x)]
-            if outfile and not os.path.exists(outfile):
+            if notexistsout:
                 mkdir(outfile)
-        else:
-            if outfile and not os.path.exists(outfile) and '.' not in base(outfile):
+        elif outfile:
+            bout = base(outfile)
+            fdo = bout.find('.')
+            if notexistsout and not (fdo>0 and fdo<len(bout)-1):
                 mkdir(outfile)
-        if outfile and os.path.isdir(outfile):
+        if outinfo and outfile and os.path.isdir(outfile):
             if outinfo.startswith('sphinx'):
                 onlyindex = [x for x in infiles if x.find('index.')>=0];
                 if len(onlyindex)>0:
                     infiles = onlyindex;
             outfiles = [os.path.join(outfile, _in_2_out_name(inf,outinfo)) for inf in infiles]
+        for i in imgfiles:
+            convert(i,None)
         for i,o in zip(infiles,outfiles):
             convert(i,o,outinfo)
     else:
