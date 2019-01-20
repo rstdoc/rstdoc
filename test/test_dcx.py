@@ -322,7 +322,9 @@ def test_dcx_alone_samples(rstinit,capfd):
     out, err = capfd.readouterr()
     if 'tmp_rest' in rstinit:
         assert list(sorted(x for x in out.splitlines(
-            ) if 'png_post_processor' not in x and 'ctags' not in x)) == list(sorted("""\
+            ) if not any(y in x for y in
+                'png_post_processor ctags model.py'.split()))) == list(
+                    sorted("""\
 + egdot.dot
 + egsvg.svg
 doc
@@ -344,7 +346,9 @@ doc
 + doc/.tags""".splitlines()))
     elif 'tmp_stpl' in rstinit:
         assert list(sorted(x for x in out.splitlines(
-            ) if 'png_post_processor' not in x and 'ctags' not in x)) == list(sorted("""\
+            ) if not any(y in x for y in
+                'png_post_processor ctags model.py'.split()))) == list(
+                    sorted("""\
 + dd.rest
 + dd_included.rst
 + egdot.dot
