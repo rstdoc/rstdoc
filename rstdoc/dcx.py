@@ -3510,18 +3510,15 @@ example_tree = r'''
          @%PYEXE% -x "%~dp0wafw.py" %*
          @exit /b %ERRORLEVEL%
        wscript
+         #vim: syntax=python
          from waflib import Logs
          Logs.colors_lst['BLUE']='\x1b[01;36m'
-
          top='.'
          out='build'
-
          def options(opt):
            opt.load('dcx', tooldir='.')
-
          def configure(cfg):
            cfg.load('dcx', tooldir='.')
-
          def build(bld):
            #defines bld.gen_files(), bld.gen_links(), bld.build_docs()
            bld.load('dcx', tooldir='.')
@@ -4151,16 +4148,16 @@ example_tree = r'''
 example_stp_subtree = r'''
         ├ model.py
             """
-            This contains definitions used in template files
-            ending in ``.stpl``.
+            Contains definitions used in 
+            - template files (``.rst.tpl`` or standalone ``.rest.stpl``)
+            - test programs
             """
             from pint import UnitRegistry
             u = UnitRegistry()
             u.define('percent = 0.01*count = %')
             def U(*k,sep=", "):
                 """
-                Returns string where pint quantities are formatted with units,
-                if possible, else normally.
+                Returns string of quantity, with units if possible.
                 """
                 try:
                     return sep.join(["{:~P}"]*len(k)).format(*k)
@@ -4169,8 +4166,7 @@ example_stp_subtree = r'''
                     if res == 'None':
                         res = '-'
                     return res
-            # Definitions
-            max_charging_time = 3.5*u.hour #in |hw_charger|
+            # Definitions e.g. x_some = 3.5*u.hour #see |x_some_doc|
         ├ utility.rst.tpl
             % import sys
             % import os
