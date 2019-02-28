@@ -7,7 +7,7 @@ Documentation with RST
 :Author: Roland Puntaier
 
 .. toctree::
-   meta.rest
+   readme.rest
    ra.rest
    sr.rest
    dd.rest

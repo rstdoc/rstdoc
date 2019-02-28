@@ -1,0 +1,80 @@
+%from rstdoc import dcx
+%dcx.DPI=100
+
+{{!svgembed("egcairo.pyg",outinfo)}}
+{{!svgembed("egplt.pyg",outinfo)}}
+{{!svgembed("egpygal.pyg",outinfo)}}
+{{!svgembed("egpyx.pyg",outinfo)}}
+
+<%
+svg1=svgembed("""
+from svgwrite import cm, mm, drawing
+d=drawing.Drawing(viewBox=('0 0 300 300'))
+d.add(d.circle(center=(2*cm, 2*cm), r='1cm', stroke='blue', stroke_width=9))
+""".splitlines(),outinfo)
+%>
+{{svg1}}
+
+<%
+svg2=svgembed("""
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" width="110pt" height="60pt" stroke-width="0.566929" stroke-miterlimit="10.000000">
+  <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,0" />
+  <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,5" />
+  <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,10" />
+  <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,15" />
+  <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,20" />
+  <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,25" />
+  <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,30" />
+  <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,35" />
+  <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,40" />
+  <path fill="none" stroke="#f00" stroke-width="1" d="M10,55 C15,5 100,5 100,45" />
+  <path fill="none" stroke="#f40" stroke-width="1" d="M10,0 C15,5 100,5 100,55" />
+  <path fill="none" stroke="#f40" stroke-width="1" d="M10,5 C15,5 100,5 100,55" />
+  <path fill="none" stroke="#f40" stroke-width="1" d="M10,10 C15,5 100,5 100,55" />
+  <path fill="none" stroke="#f40" stroke-width="1" d="M10,15 C15,5 100,5 100,55" />
+  <path fill="none" stroke="#f40" stroke-width="1" d="M10,20 C15,5 100,5 100,55" />
+  <path fill="none" stroke="#f40" stroke-width="1" d="M10,25 C15,5 100,5 100,55" />
+  <path fill="none" stroke="#f40" stroke-width="1" d="M10,30 C15,5 100,5 100,55" />
+  <path fill="none" stroke="#f40" stroke-width="1" d="M10,35 C15,5 100,5 100,55" />
+  <path fill="none" stroke="#f40" stroke-width="1" d="M10,40 C15,5 100,5 100,55" />
+  <path fill="none" stroke="#f40" stroke-width="1" d="M10,45 C15,5 100,5 100,55" />
+<text x="50" y="50" fill="red">Hi!</text>
+</svg>
+""".splitlines(),outinfo)
+%>
+{{svg2}}
+
+
+<%
+svg3=svgembed("""
+import drawSvg as draw
+d = draw.Drawing(1.5, 0.8, origin='center')
+d.draw(draw.Rectangle(-0.75,-0.5,1.5,1, fill='#ddd'))
+# Create gradient
+gradient = draw.RadialGradient(0,-0.35,0.7*10)
+gradient.addStop(0.5/0.7/10, 'green', 1)
+gradient.addStop(1/10, 'red', 0)
+# Draw a shape to fill with the gradient
+p = draw.Path(fill=gradient, stroke='black', stroke_width=0.002)
+p.arc(0,-0.35,0.7,30,120)
+p.arc(0,-0.35,0.5,120,30,cw=True, includeL=True)
+p.Z()
+d.append(p)
+# Draw another shape to fill with the same gradient
+p = draw.Path(fill=gradient, stroke='red', stroke_width=0.002)
+p.arc(0,-0.35,0.75,130,160)
+p.arc(0,-0.35,0,160,130,cw=True, includeL=True)
+p.Z()
+d.append(p)
+# Another gradient
+gradient2 = draw.LinearGradient(0.1,-0.35,0.1+0.6,-0.35+0.2)
+gradient2.addStop(0, 'green', 1)
+gradient2.addStop(1, 'red', 0)
+d.append(draw.Rectangle(0.1,-0.35,0.6,0.2,
+                        stroke='black', stroke_width=0.002,
+                        fill=gradient2))
+# Display
+d.setRenderSize(w=600)
+""".splitlines(),outinfo)
+%>
+{{svg3}}

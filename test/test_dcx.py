@@ -20,6 +20,7 @@
 
 import sys
 import os
+from itertools import product
 sys.path = ['test/mocks'] + sys.path
 import pytest
 import re
@@ -691,37 +692,39 @@ def test_docparts_after():
         '   int x //int variable\n', '   )\n', '', "afun's description\n"]
 
 
-with_images = os.path.join(os.path.dirname(__file__),
-                           'fixtures','with_images.rest.stpl')
+_a_fix = lambda x: os.path.join(os.path.dirname(__file__),
+                           'fixtures',x+'.rest.stpl')
 
 
 @pytest.mark.parametrize( 'outinfo',[
     'pdf','docx','html','odt','latex',
     'rst_odt','rst_html','rst_latex','sphinx_html'])
 def test_with_images(outinfo):
-    with opn(with_images) as fp:
+    with opn(_a_fix('with_images')) as fp:
         lines = fp.readlines()
     filename = convert_in_tempdir(lines,outinfo=outinfo)
     assert exists(filename)
 
-@pytest.mark.parametrize('outext',
-                         ['.pdf', '.docx', '.html', '.odt', '.latex'])
-def test_convert_with_images_no_outinfo(tmpworkdir,outext):
+@pytest.mark.parametrize('infile,outext',
+                         product(['with_images','pngembed','svgembed'],
+                             ['.pdf', '.docx', '.html', '.odt', '.latex'])
+                         )
+def test_convert_with_images_no_outinfo(tmpworkdir,infile,outext):
     import shutil
-    print(os.getcwd())
-    print(with_images)
-    shutil.copy2(with_images,'with_images.rest.stpl')
-    filename = 'with_images'+outext
-    #import pdb; pdb.set_trace()
-    convert('with_images.rest.stpl',filename,None)
+    shutil.copy2(_a_fix(infile),infile+'.rest.stpl')
+    filename = infile+outext
+    convert(infile+'.rest.stpl',filename,None)
     assert exists(filename)
 
-def test_include_cmd(tmpworkdir):
-    r=run(['rstdcx','with_images.rest.stpl', 'with_images.html', '-I', dirname(with_images)])
+@pytest.mark.parametrize('infile', ['with_images','pngembed','svgembed'])
+def test_include_cmd(tmpworkdir,infile):
+    r=run(['rstdcx',infile+'.rest.stpl', infile+'.html', '-I', dirname(_a_fix(infile))])
     assert r.returncode == 0
-    assert exists('with_images.html')
+    assert exists(infile+'.html')
 
+@pytest.mark.parametrize('infile', ['with_images','pngembed','svgembed'])
 def test_include_reference(tmpworkdir):
-    r=run(['rstdcx','with_images.rest.stpl', 'with_images.docx', '-I', dirname(__file__), '-I', dirname(with_images)])
+    r=run(['rstdcx',infile+'.rest.stpl', infile+'.docx', '-I', dirname(__file__), '-I', dirname(_a_fix(infile))])
     assert r.returncode == 0
-    assert exists('with_images.docx')
+    assert exists(infile+'.docx')
+

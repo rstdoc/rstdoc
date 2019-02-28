@@ -28,7 +28,8 @@ as documentation format without depending on Sphinx.
   - expand 
     `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax>`_ 
     template files ``.stpl``
-  - ``.tikz``, ``.svg``, ``.dot``,  ``.uml``, ``.eps`` or ``.stpl`` thereof, and ``.pyg`` for Python-generated graphics, are converted to ``.png``
+  - graphics files (``.tikz``, ``.svg``, ``.dot``,  ``.uml``, ``.eps`` or ``.stpl`` thereof, and ``.pyg``)
+    are converted to ``.png``
     and placed into ``./_images`` or ``../_images``
   - a ``gen`` file specifies how `RST`_ should be generated from source code files (see ``dcx.py``)
 
@@ -40,30 +41,21 @@ The conventions used are shown
 
 ``pip install rstdoc`` installs:
 
-+-----------+--------------+--------------------------------------------+
-| Module    | Script       | Description                                |
-+===========+==============+============================================+
-| dcx       | rstdcx       | create ``.tags``, labels and links         |
-+-----------+--------------+--------------------------------------------+
-| fromdocx  | rstfromdocx  | Convert DOCX to RST using Pandoc           |
-+-----------+--------------+--------------------------------------------+
-| listtable | rstlisttable | Convert RST grid tables to list-tables     |
-+-----------+--------------+--------------------------------------------+
-| untable   | rstuntable   | Converts certain list-tables to paragraphs |
-+-----------+--------------+--------------------------------------------+
-| reflow    | rstreflow    | Reflow paragraphs and tables               |
-+-----------+--------------+--------------------------------------------+
-| reimg     | rstreimg     | Rename images referenced in the RST file   |
-+-----------+--------------+--------------------------------------------+
-| retable   | rstretable   | Transforms list tables to grid tables      |
-+-----------+--------------+--------------------------------------------+
-
-- ``html``, ``docx``, ``pdf``, ... uses  Pandoc.
-
-- ``rst_html``, ``rst_pdf``, ...  uses 
-  `rst2html <http://docutils.sourceforge.net/0.6/docs/user/tools.html>`__, ...
-
-- ``sphinx_html``, ``sphinx_pdf``, ...  uses Sphinx.
-  Sphinx provides a nice entry point via the 
-  `sphinx bootstrap theme <https://github.com/ryan-roemer/sphinx-bootstrap-theme>`__.
++-----------+------------------+--------------------------------------------+
+| Module    | CLI Script       | Description                                |
++===========+==================+============================================+
+| dcx       | `rstdcx`_, rstoc | create ``.tags``, labels and links         |
++-----------+------------------+--------------------------------------------+
+| fromdocx  | `rstfromdocx`_   | Convert DOCX to RST using Pandoc           |
++-----------+------------------+--------------------------------------------+
+| listtable | `rstlisttable`_  | Convert RST grid tables to list-tables     |
++-----------+------------------+--------------------------------------------+
+| untable   | `rstuntable`_    | Converts certain list-tables to paragraphs |
++-----------+------------------+--------------------------------------------+
+| reflow    | `rstreflow`_     | Reflow paragraphs and tables               |
++-----------+------------------+--------------------------------------------+
+| reimg     | `rstreimg`_      | Rename images referenced in the RST file   |
++-----------+------------------+--------------------------------------------+
+| retable   | `rstretable`_    | Transforms list tables to grid tables      |
++-----------+------------------+--------------------------------------------+
 

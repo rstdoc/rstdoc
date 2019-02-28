@@ -4,6 +4,7 @@
 #install: latex, plantuml, graphviz, inkscape
 
 #test
+rm -rf test/__pycache__
 py.test -vv --cov=rstdoc --cov-report term-missing
 #or
 waf configure && waf --docs sphinx_html --tests
@@ -78,7 +79,7 @@ setup(name='rstdoc',
 
       install_requires=['cffi','cairocffi','cairosvg',
                         'pillow', 'pyx', 'pyfca', 'pygal',
-                        'numpy', 'matplotlib','sympy','pint',
+                        'numpy', 'matplotlib','sympy','pint','drawsvg',
                         'svgwrite', 'stpl', 'pypandoc', 'docutils',
                         'sphinx', 'sphinx_bootstrap_theme'],
       extras_require={'develop': ['mock', 'virtualenv', 'pytest-coverage'],

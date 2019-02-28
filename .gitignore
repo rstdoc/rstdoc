@@ -13,7 +13,6 @@ tmp/
 .tags
 tex2pdf.*
 
-ra.rest
 ra.docx
 main.rest
 normalfromstpl.rst

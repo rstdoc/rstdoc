@@ -131,7 +131,7 @@ For image substitutions to work place the ``.. |xxx| image:: _images/xxx.jpg`` i
 It includes all top level ``.rest`` files for a project-wide table of contents::
 
     .. toctree::
-       meta.rest
+       readme.rest
        ra.rest
        sr.rest
        dd.rest
@@ -238,7 +238,7 @@ As build system `waf`_ is used (|dw8|).
 :d7o: `Sphinx`_, `Project Site`_, |scf|
 
 Optionally `Sphinx`_ can be used to create a central HTML site for the project
-with links to all the top level files (`.rest`) (|d1w|)
+with links to all the top level files (``.rest``) (|d1w|)
 
 .. _`df3`:
 

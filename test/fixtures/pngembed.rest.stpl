@@ -1,0 +1,51 @@
+%from rstdoc import dcx
+%dcx.DPI=100
+
+{{!pngembed("egother.pyg",outinfo)}}
+{{!pngembed("egcairo.pyg",outinfo)}}
+{{!pngembed("egplt.pyg",outinfo)}}
+{{!pngembed("egpygal.pyg",outinfo)}}
+{{!pngembed("egpyx.pyg",outinfo)}}
+
+<%
+png1=pngembed("""
+from svgwrite import cm, mm, drawing
+d=drawing.Drawing(viewBox=('0 0 300 300'))
+d.add(d.circle(center=(2*cm, 2*cm), r='1cm', stroke='blue', stroke_width=9))
+""".splitlines(),outinfo)
+%>
+{{png1}}
+
+<%
+png3=pngembed("""
+import drawSvg as draw
+d = draw.Drawing(1.5, 0.8, origin='center')
+d.draw(draw.Rectangle(-0.75,-0.5,1.5,1, fill='#ddd'))
+# Create gradient
+gradient = draw.RadialGradient(0,-0.35,0.7*10)
+gradient.addStop(0.5/0.7/10, 'green', 1)
+gradient.addStop(1/10, 'red', 0)
+# Draw a shape to fill with the gradient
+p = draw.Path(fill=gradient, stroke='black', stroke_width=0.002)
+p.arc(0,-0.35,0.7,30,120)
+p.arc(0,-0.35,0.5,120,30,cw=True, includeL=True)
+p.Z()
+d.append(p)
+# Draw another shape to fill with the same gradient
+p = draw.Path(fill=gradient, stroke='red', stroke_width=0.002)
+p.arc(0,-0.35,0.75,130,160)
+p.arc(0,-0.35,0,160,130,cw=True, includeL=True)
+p.Z()
+d.append(p)
+# Another gradient
+gradient2 = draw.LinearGradient(0.1,-0.35,0.1+0.6,-0.35+0.2)
+gradient2.addStop(0, 'green', 1)
+gradient2.addStop(1, 'red', 0)
+d.append(draw.Rectangle(0.1,-0.35,0.6,0.2,
+                        stroke='black', stroke_width=0.002,
+                        fill=gradient2))
+# Display
+d.setRenderSize(w=600)
+""".splitlines(),outinfo)
+%>
+{{png3}}

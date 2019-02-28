@@ -1,10 +1,13 @@
 
-meta.rest
----------
+readme.rest
+-----------
 
 |m0d|
 
-Project and documentation overview.
+``readme.rest`` provides an overview of the documentation, 
+such that new team members or reviewers can find their way in the documentation.
+
+No actual content is placed in the ``readme.rest`` file.
 
 ra.rest
 -------
@@ -38,7 +41,7 @@ tp.rest
 
 |tkf|
 
-Tests to python code provided by this package (|or1|).
+Documentation for the tests of this package (|or1|).
 
 rstdoc.rest
 -----------

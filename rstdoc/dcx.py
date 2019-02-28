@@ -5,8 +5,9 @@
 # #lns=open(__file__).readlines()
 # #list(gen_head(lns))
 # def gen_head(lns,**kw):
-#    b, e = list(rindices('^"""', lns))[:2]
-#    return lns[b+1:e]
+#    dl = list(rindices('^"""', lns))
+#    yield from lns[dl[0]+1:dl[1]]
+#    yield from lns[dl[-2]+1:dl[-1]]
 # def gen_head
 # #list(gen_api(lns))
 # def gen_api(lns,**kw):
@@ -21,6 +22,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from collections import OrderedDict, defaultdict
 from hashlib import sha1 as sha
+from binascii import b2a_base64
 import pygal
 import pyx
 import stpl
@@ -149,9 +151,7 @@ and placed into ``./_images`` or ``../_images``.
 
 - ``.pyg`` contains python code that produces a graphic.
   If the python code defines a ``save_to_png`` function,
-  then that is used, which allows to use whatever python library you want
-  (`graph_tool <https://graph-tool.skewed.de/static/doc/quickstart.html>`__,
-  `igraph <http://igraph.org/python/doc/tutorial/tutorial.html>`__,...)
+  then that is used, to create a png.
   Else the following is tried
 
   - ``pyx.canvas.canvas`` from the
@@ -199,7 +199,7 @@ Conventions
   It is there in the generated samples to include it in tests.
   You might want to remove that line, if you start with the samples.
 
-See the example created with ``--rest`` of ``--stpl``
+See the example created with ``--rest`` or ``--stpl``
 at the end of this file and the sources of the documentation of
 `rstdoc <https://github.com/rpuntaie/rstdoc>`__.
 
@@ -258,6 +258,7 @@ verbose = False
 
 _plus = '+'
 _indent = '    '
+_indent_text = lambda txt: '\n'.join(_indent+x for x in txt.splitlines())
 
 
 class _ToolRunner:
@@ -1451,8 +1452,8 @@ def epspng(
 
 @png_post_process_if_any
 @normoutfile
-@infile_cwd
 @readin
+@infile_cwd
 def pygpng(
         infile, outfile=None, *args,
         **kwargs
@@ -1491,7 +1492,7 @@ def pygpng(
         pygvars['save_to_png'](outfile)
     else:
         for k, v in pygvars.items():
-            if isinstance(v, pyx.canvas.canvas):
+            if hasattr(v,'_repr_svg_'):
                 _toolrunner.svg2png(
                     bytestring=v._repr_svg_(), write_to=outfile, dpi=dpi)
                 break
@@ -1503,11 +1504,7 @@ def pygpng(
                 v.write_to_png(target=outfile)
                 break
             elif svgwrite and isinstance(v, svgwrite.drawing.Drawing):
-                svgio = io.StringIO()
-                v.write(svgio)
-                svgio.seek(0)
-                svgsrc = svgio.read()
-                _toolrunner.svg2png(bytestring=svgsrc,
+                _toolrunner.svg2png(bytestring=v.tostring(),
                                     write_to=outfile, dpi=dpi)
                 break
             else:  # try matplotlib.pyplot
@@ -1523,14 +1520,123 @@ def pygpng(
 
                         def makename(x, i):
                             return x
-
                     for i in fignums:
                         plt.figure(i).savefig(
                             makename(outfile, i), format='png')
-                        plt.close(i)
+                    plt.close()
                     break
                 except:
                     continue
+
+@readin
+@infile_cwd
+def pygsvg(infile, *args, **kwargs):
+    '''
+    Converts a .pyg file or according python code to an svg string.
+
+    ``.pyg`` contains python code that produces an SVG graphic.
+    Either there is a ``to_svg()`` function or
+    the following is tried
+
+    - ``io.BytesIO`` containing SVG, e.g via ``cairo.SVGSurface(ioobj,width,height)``
+    - ``io.StringIO`` containing SVG
+    - object with attribute ``_repr_svg_``
+    - ``svgwrite.drawing.Drawing`` from the
+      `svgwrite <https://svgwrite.readthedocs.io>`__ library or
+    - ``cairocffi.SVGSurface`` from `cairocffi \
+      <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
+    - ``pygal.Graph`` from
+      `pygal <https://pygal.org>`__
+    - `matplotlib <https://matplotlib.org>`__.
+
+    :param infile: a .pyg file name or list of lines
+
+    '''
+
+    onlysvg = lambda x: '<svg'+x.split('<svg')[1]
+    pygcode = _joinlines(infile)
+    pygvars = {}
+    eval(compile(pygcode, "pygsvg", 'exec'), pygvars)
+    if 'to_svg' in pygvars:
+        return onlysvg(pygvars['to_svg']())
+    else:
+        for k, v in pygvars.items():
+            if hasattr(v,'_repr_svg_'):
+                return onlysvg(v._repr_svg_())
+            elif isinstance(v, pygal.Graph):
+                return onlysvg(v.render().decode('utf-8'))
+            elif cairocffi and isinstance(v, cairocffi.SVGSurface):
+                v.finish()
+                break #find io.BytesIO
+            elif svgwrite and isinstance(v, svgwrite.drawing.Drawing):
+                return v.tostring()
+            else:  # try matplotlib.pyplot
+                try:
+                    fignums = plt.get_fignums()
+                    if len(fignums) == 0:
+                        continue
+                    svgsrc = ""
+                    for i in fignums:
+                        bio = io.BytesIO()
+                        plt.figure(i).savefig(bio,format='svg')
+                        bio.seek(0)
+                        svgsrc += onlysvg(bio.read().decode('utf-8'))
+                    plt.close()
+                    return svgsrc
+                except:
+                    continue
+        for k, v in pygvars.items():
+            if isinstance(v, io.BytesIO):
+                v.seek(0)
+                return onlysvg(v.read().decode('utf-8'))
+            elif isinstance(v, io.StringIO):
+                v.seek(0)
+                return onlysvg(v.read())
+
+def svgembed(
+        pyg_or_svg, outinfo, *args, **kwargs
+        ):
+    '''
+    If ``outinfo`` ends with ``html``, SVG is embedded.
+    Else the SVG is converted to a temporary image file
+    and included in the DOCX or ODT zip.
+
+    '''
+
+    try:
+        svgsrc = pygsvg(pyg_or_svg)
+    except Exception as e:
+        svgsrc = _joinlines(pyg_or_svg)
+    if outinfo.endswith('html') or outinfo.endswith('rest'):
+        return '.. raw:: html\n\n'+_indent_text(svgsrc)
+    else:
+        svgfn = normjoin(tempdir(),'svg.png')
+        svgpng(svgsrc.splitlines(),svgfn, *args, **kwargs)
+        return ".. image:: {}".format(svgfn)
+
+
+def _png64(pngfn):
+    with open(pngfn,'rb') as f:
+        b64 = b2a_base64(f.read())
+        return '<img src="data:image/png;base64,{0}"/>'.format(b64.decode("utf-8"))
+
+
+def pngembed(
+        pyg_or_pngfile, outinfo, *args, **kwargs
+        ):
+    '''
+    If ``outinfo`` ends with ``html``, the PNG is embedded.
+    Else the PNG is included in the DOCX or ODT zip.
+
+    '''
+
+    pngfn = normjoin(tempdir(),'png.png')
+    pygpng(pyg_or_pngfile,pngfn,*args,**kwargs)
+    if outinfo.endswith('html') or outinfo.endswith('rest'):
+        return '.. raw:: html\n\n'+_indent_text(_png64(pngfn))
+    else:
+        return ".. image:: {}".format(pngfn)
+
 
 @infile_cwd
 def dostpl(
@@ -4907,16 +5013,31 @@ def index_dir(root):
         fldr.create_links_and_tags(root)
 
 
-description = """\
+description = (
+
+"""
 ``rstdcx`` CLI
 --------------
 
 Without parameters: creates |substitution| links and .tags ctags for reST targets.
 
-With two or three parameters: process files through Pandoc, Sphinx, Docutils  (.rest);
+With two or three parameters: process file or dir to out file or dir
+through Pandoc, Sphinx, Docutils (third parameter):
+
+- ``html``, ``docx``, ``pdf``, ... uses  Pandoc.
+
+- ``rst_html``, ``rst_pdf``, ...  uses 
+  `rst2html <http://docutils.sourceforge.net/0.6/docs/user/tools.html>`__, ...
+
+- ``sphinx_html``, ``sphinx_pdf``, ...  uses Sphinx.
+  Sphinx provides a nice entry point via the 
+  `sphinx bootstrap theme <https://github.com/ryan-roemer/sphinx-bootstrap-theme>`__.
+
+4th parameter onward become python defines usable in ``.stpl`` files.
+
 Inkscape (.eps, .svg), Dot (.dot), Planuml (.uml), latex (.tex,.tikz)
 are converted to .png into ``./_images`` or ``../_images``.
-Any of the files can be a SimpleTemplate templates (xxx.yyy.stpl).
+Any of the files can be a SimpleTemplate template (xxx.yyy.stpl).
 
 Configuration is in ``conf.py`` or ``../conf.py``.
 
@@ -4973,6 +5094,8 @@ Examples with the files generated with the ``--stpl tmp``:
     rstdcx eguml.uml eguml.png
 
 """
+
+)
 
 
 def main(**args):

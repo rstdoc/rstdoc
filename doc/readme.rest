@@ -1,0 +1,47 @@
+.. vi: syntax=rst
+
+.. _`m0d`:
+
+========
+Overview
+========
+
+Github does not support ``include``.
+You can find a rendered version on 
+`readthedocs <https://rstdoc.readthedocs.io/en/latest/doc/readme.html>`__.
+
+Purpose
+=======
+
+The ``doc`` folder 
+
+- motivates to use light markup text, specifically
+  `restructuredText <http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html>`__,
+  over DOCX or ODT for documentation of software projects
+
+- is an example documentation using 
+  `rstdoc <https://rstdoc.readthedocs.io/en/latest/doc/rstdoc.html>`__,
+  a wrapper around
+  `Sphinx <http://www.sphinx-doc.org/en/stable/>`__
+  and
+  `Pandoc <https://pandoc.org/>`__
+
+For your project documenation a ``readme`` 
+
+- gives an overview of the documents: `Files`_
+
+- summaries dependencies between the documents: `Dependencies`_
+
+Files
+=====
+
+.. include:: files.rst
+
+Dependencies
+============
+
+.. include:: _traceability_file.rst
+
+
+.. include:: _links_sphinx.rst
+

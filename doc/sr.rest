@@ -179,7 +179,7 @@ All documentation of concern to development is integrated in the text-based docu
 
 :sim: |rvd|
 
-There is a meta-document that informs,
+There is a readme document that informs,
 where to put and how to find which information.
 
 .. _`seo`:

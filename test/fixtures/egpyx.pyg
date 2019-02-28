@@ -1,0 +1,4 @@
+import pyx
+c = pyx.canvas.canvas()
+c.stroke(pyx.path.circle(0,0,2),[pyx.style.linewidth.Thick,pyx.color.rgb.red])
+c.text(1, 1, 'Hi',[pyx.color.rgb.red])
