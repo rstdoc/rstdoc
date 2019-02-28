@@ -26,7 +26,7 @@ from setuptools import setup
 import os
 import sys
 
-__version__ = '1.6.7'
+__version__ = '1.6.8'
 
 sys.path.append('./rstdoc')
 from dcx import dorst
