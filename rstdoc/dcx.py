@@ -163,6 +163,9 @@ and placed into ``./_images`` or ``../_images``.
     If ``matplotlib.pyplot.get_fignums()>1``
     the figures result in ``<name><fignum>.png``
 
+  The same code or the file names can be used in a ``.rest.stpl`` file
+  with `dcx.pngembed()`_ or `dcx.svgembed()`_ to embed in html output.
+
 Conventions
 -----------
 

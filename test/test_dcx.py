@@ -692,15 +692,18 @@ def test_docparts_after():
         '   int x //int variable\n', '   )\n', '', "afun's description\n"]
 
 
-_a_fix = lambda x: os.path.join(os.path.dirname(__file__),
-                           'fixtures',x+'.rest.stpl')
+_a_fix = lambda x: os.path.join(os.path.dirname(__file__),'fixtures',x)
+def _cp_pyg():
+    for x in os.listdir(_a_fix('')):
+        if x.endswith('.pyg'):
+            shutil.copy2(_a_fix(x),x)
 
 
 @pytest.mark.parametrize( 'outinfo',[
     'pdf','docx','html','odt','latex',
     'rst_odt','rst_html','rst_latex','sphinx_html'])
 def test_with_images(outinfo):
-    with opn(_a_fix('with_images')) as fp:
+    with opn(_a_fix('with_images.rest.stpl')) as fp:
         lines = fp.readlines()
     filename = convert_in_tempdir(lines,outinfo=outinfo)
     assert exists(filename)
@@ -711,19 +714,25 @@ def test_with_images(outinfo):
                          )
 def test_convert_with_images_no_outinfo(tmpworkdir,infile,outext):
     import shutil
-    shutil.copy2(_a_fix(infile),infile+'.rest.stpl')
+    if 'embed' in infile:
+        _cp_pyg()
+    shutil.copy2(_a_fix(infile)+'.rest.stpl',infile+'.rest.stpl')
     filename = infile+outext
     convert(infile+'.rest.stpl',filename,None)
     assert exists(filename)
 
 @pytest.mark.parametrize('infile', ['with_images','pngembed','svgembed'])
 def test_include_cmd(tmpworkdir,infile):
+    if 'embed' in infile:
+        _cp_pyg()
     r=run(['rstdcx',infile+'.rest.stpl', infile+'.html', '-I', dirname(_a_fix(infile))])
     assert r.returncode == 0
     assert exists(infile+'.html')
 
 @pytest.mark.parametrize('infile', ['with_images','pngembed','svgembed'])
-def test_include_reference(tmpworkdir):
+def test_include_reference(tmpworkdir,infile):
+    if 'embed' in infile:
+        _cp_pyg()
     r=run(['rstdcx',infile+'.rest.stpl', infile+'.docx', '-I', dirname(__file__), '-I', dirname(_a_fix(infile))])
     assert r.returncode == 0
     assert exists(infile+'.docx')
