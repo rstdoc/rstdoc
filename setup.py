@@ -11,13 +11,15 @@ waf configure && waf --docs sphinx_html --tests
 
 #install
 pip uninstall rstdoc
-pip install pillow pyx pyfca pygal cairosvg numpy matplotlib sympy pint svgwrite stpl pypandoc docutils sphinx sphinx_bootstrap_theme
+pip install pillow pyx pyfca pygal cairosvg numpy matplotlib sympy pint svgwrite
+pip install drawsvg stpl pypandoc docutils sphinx sphinx_bootstrap_theme
 pip install -e .
 #or
 python setup.py bdist_wheel
 pip install dist/rstdoc-X.Y.Z-py3-non-any.whl
 
 #upload
+restview --long-description --strict
 sudo python setup.py bdist_wheel
 twine upload ./dist/*.whl
 """

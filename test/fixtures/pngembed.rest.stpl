@@ -14,7 +14,7 @@ d=drawing.Drawing(viewBox=('0 0 300 300'))
 d.add(d.circle(center=(2*cm, 2*cm), r='1cm', stroke='blue', stroke_width=9))
 """.splitlines(),outinfo)
 %>
-{{png1}}
+{{!png1}}
 
 <%
 png3=pngembed("""
@@ -48,4 +48,4 @@ d.append(draw.Rectangle(0.1,-0.35,0.6,0.2,
 d.setRenderSize(w=600)
 """.splitlines(),outinfo)
 %>
-{{png3}}
+{{!png3}}

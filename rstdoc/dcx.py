@@ -164,7 +164,20 @@ and placed into ``./_images`` or ``../_images``.
     the figures result in ``<name><fignum>.png``
 
   The same code or the file names can be used in a ``.rest.stpl`` file
-  with `dcx.pngembed()`_ or `dcx.svgembed()`_ to embed in html output.
+  with ``pngembed()`` or ``dcx.svgembed()`` to embed in html output.
+
+  ::
+  
+     {{!svgembed("egpyx.pyg",outinfo)}}
+     <%
+     ansvg=svgembed('''
+     from svgwrite import cm, mm, drawing
+     d=drawing.Drawing(viewBox=('0 0 300 300'))
+     d.add(d.circle(center=(2*cm, 2*cm), r='1cm', stroke='blue', stroke_width=9))
+     '''.splitlines(),outinfo)
+     %>
+     {{!ansvg}}
+
 
 Conventions
 -----------
