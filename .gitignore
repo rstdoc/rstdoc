@@ -18,10 +18,10 @@ main.rest
 normalfromstpl.rst
 with_images.rest
 
-_*
-!_images
-!__init__.py
-
+_links_*
+_test_*
+!doc/_links_sphinx.rst
+test/fixtures/*
 
 #waf
 .waf????????*
