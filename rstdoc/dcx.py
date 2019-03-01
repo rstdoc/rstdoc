@@ -2437,7 +2437,7 @@ class Traceability:
             '.. _`fig' + _traceability_file + '`:\n', '\n',
             '.. figure:: ' + trcpath + '.png\n', '   :name:\n', '\n',
             '   |fig' + _traceability_file + '|: `FCA <%s>`__ %s' % (
-                "https://en.wikipedia.org/wiki/Formal_concept_analysis>",
+                "https://en.wikipedia.org/wiki/Formal_concept_analysis",
                 "diagram of dependencies"
                 )
         ])
