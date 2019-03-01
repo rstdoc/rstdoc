@@ -104,9 +104,7 @@ and placed into ``./_images`` or ``../_images``.
 
 - ``.pyg`` contains python code that produces a graphic.
   If the python code defines a ``save_to_png`` function,
-  then that is used, which allows to use whatever python library you want
-  (`graph_tool <https://graph-tool.skewed.de/static/doc/quickstart.html>`__,
-  `igraph <http://igraph.org/python/doc/tutorial/tutorial.html>`__,...)
+  then that is used, to create a png.
   Else the following is tried
 
   - ``pyx.canvas.canvas`` from the
@@ -117,6 +115,22 @@ and placed into ``./_images`` or ``../_images``.
   - `matplotlib <https://matplotlib.org>`__.
     If ``matplotlib.pyplot.get_fignums()>1``
     the figures result in ``<name><fignum>.png``
+
+  The same code or the file names can be used in a ``.rest.stpl`` file
+  with ``pngembed()`` or ``dcx.svgembed()`` to embed in html output.
+
+  ::
+  
+     {{!svgembed("egpyx.pyg",outinfo)}}
+     <%
+     ansvg=svgembed('''
+     from svgwrite import cm, mm, drawing
+     d=drawing.Drawing(viewBox=('0 0 300 300'))
+     d.add(d.circle(center=(2*cm, 2*cm), r='1cm', stroke='blue', stroke_width=9))
+     '''.splitlines(),outinfo)
+     %>
+     {{!ansvg}}
+
 
 Conventions
 -----------
@@ -162,7 +176,7 @@ at the end of this file and the sources of the documentation of
 ``rstdcx`` CLI
 --------------
 
-Without parameters: creates |substitution| links and .tags ctags for reST targets.
+Without parameters: creates ``|substitution|`` links and .tags ctags for reST targets.
 
 With two or three parameters: process file or dir to out file or dir
 through Pandoc, Sphinx, Docutils (third parameter):

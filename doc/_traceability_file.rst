@@ -188,7 +188,7 @@ Down: |tr0|
 
 :tr18:
 
-|r62|, |sed|
+|dcx.rst_pandoc|, |dhy|, |rak|
 
 Up: |tr1|
 
@@ -198,7 +198,7 @@ Down: |tr0|
 
 :tr19:
 
-|son|, |test_lnkname|
+|r9h|, |rj4|, |s9o|
 
 Up: |tr1|
 
@@ -208,7 +208,7 @@ Down: |tr0|
 
 :tr20:
 
-|r9h|, |rj4|, |s9o|
+|son|, |test_lnkname|
 
 Up: |tr1|
 
@@ -238,7 +238,7 @@ Down: |tr0|
 
 :tr23:
 
-|dcx.rst_pandoc|, |dhy|, |rak|
+|r62|, |sed|
 
 Up: |tr1|
 
@@ -259,5 +259,5 @@ Down: |tr0|
 .. figure:: _images/_traceability_file.png
    :name:
 
-   |fig_traceability_file|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>>`__ diagram of dependencies: ra lightblue, sr red, dd yellow, tp green
+   |fig_traceability_file|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies: ra lightblue, sr red, dd yellow, tp green
 

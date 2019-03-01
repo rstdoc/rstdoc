@@ -10,46 +10,6 @@ The functions in ``dcx.py``
 are available to the ``gen_xxx(lns,**kw)`` functions (|dhy|).
 
 
-.. _`dcx.verbose`:
-
-:dcx.verbose:
-
-.. code-block:: py
-
-   verbose = False
-
-Increase output if set to True.
-
-.. _`dcx.dry_run`:
-
-:dcx.dry_run:
-
-.. code-block:: py
-
-   def dry_run(dry=None, verbose_=None):
-
-.. code-block:: py
-
-       global _toolrunner
-       global verbose
-       if dry:
-           if verbose_ is None:
-               verbose = True
-           else:
-               verbose = verbose_
-           _toolrunner = _Verbose(_DryRunner())
-       else:
-           if verbose_ is None:
-               verbose = False
-           else:
-               verbose = verbose_
-           if dry is not None or _toolrunner is None:
-               _toolrunner = _Verbose(_ToolRunner())
-
-Set or unset dry run.
-For dry run verbosity is on per default.
-For non-dry run verbosity is off per default.
-
 .. _`dcx.DPI`:
 
 :dcx.DPI:
@@ -167,22 +127,25 @@ Run Sphinx on infile.
     >>> olddir = os.getcwd()
     >>> cd(dirname(__file__))
     >>> cd('../doc')
-    >>> dry_run(True)
 
     >>> infile, outfile = ('index.rest',
     ... '../build/doc/sphinx_html/index.html')
     >>> rst_sphinx(infile, outfile) #doctest: +ELLIPSIS
-    run (['sphinx-build', '-b', 'html', ... 'master_doc=index'],) ...
+    >>> exists(outfile)
+    True
 
-    >>> rst_sphinx('dd.rest',
-    ... '../build/doc/sphinx_html/dd.html') #doctest: +ELLIPSIS
-    run ([... '-b', 'singlehtml', ..., '-D', 'master_doc=dd'],) ...
+    >>> infile, outfile = ('dd.rest',
+    ... '../build/doc/sphinx_html/dd.html')
+    >>> rst_sphinx(infile, outfile) #doctest: +ELLIPSIS
+    >>> exists(outfile)
+    True
 
-    >>> rst_sphinx('dd.rest',
-    ... '../build/doc/sphinx_latex/dd.tex') #doctest: +ELLIPSIS
-    run ([... '-b', 'tex', ...sphinx_latex', ... 'master_doc=dd'],) ...
+    >>> infile, outfile = ('dd.rest',
+    ... '../build/doc/sphinx_latex/dd.tex')
+    >>> rst_sphinx(infile, outfile) #doctest: +ELLIPSIS
+    >>> exists(outfile)
+    True
 
-    >>> dry_run(False)
     >>> cd(olddir)
 
 
@@ -397,8 +360,8 @@ Converts an .eps file to a png file using inkscape.
 
    @png_post_process_if_any
    @normoutfile
-   @infile_cwd
    @readin
+   @infile_cwd
    def pygpng(
            infile, outfile=None, *args,
            **kwargs
@@ -426,6 +389,65 @@ Else the following is tried
     (provide outfile in the latter case)
 :param outfile: if not provided the input file with new extension
     ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+
+
+.. _`dcx.pygsvg`:
+
+:dcx.pygsvg:
+
+.. code-block:: py
+
+   @readin
+   @infile_cwd
+   def pygsvg(infile, *args, **kwargs):
+
+Converts a .pyg file or according python code to an svg string.
+
+``.pyg`` contains python code that produces an SVG graphic.
+Either there is a ``to_svg()`` function or
+the following is tried
+
+- ``io.BytesIO`` containing SVG, e.g via ``cairo.SVGSurface(ioobj,width,height)``
+- ``io.StringIO`` containing SVG
+- object with attribute ``_repr_svg_``
+- ``svgwrite.drawing.Drawing`` from the
+  `svgwrite <https://svgwrite.readthedocs.io>`__ library or
+- ``cairocffi.SVGSurface`` from `cairocffi \
+  <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
+- ``pygal.Graph`` from
+  `pygal <https://pygal.org>`__
+- `matplotlib <https://matplotlib.org>`__.
+
+:param infile: a .pyg file name or list of lines
+
+
+.. _`dcx.svgembed`:
+
+:dcx.svgembed:
+
+.. code-block:: py
+
+   def svgembed(
+           pyg_or_svg, outinfo, *args, **kwargs
+           ):
+
+If ``outinfo`` ends with ``html``, SVG is embedded.
+Else the SVG is converted to a temporary image file
+and included in the DOCX or ODT zip.
+
+
+.. _`dcx.pngembed`:
+
+:dcx.pngembed:
+
+.. code-block:: py
+
+   def pngembed(
+           pyg_or_pngfile, outinfo, *args, **kwargs
+           ):
+
+If ``outinfo`` ends with ``html``, the PNG is embedded.
+Else the PNG is included in the DOCX or ODT zip.
 
 
 .. _`dcx.dostpl`:
@@ -513,18 +535,11 @@ The link lines are added to the .rest file or .rest lines
     >>> dorst(['hi there']) #doctest: +ELLIPSIS
     ['.. default-role:: math\n', '\n', 'hi there\n', ...
 
-    >>> dry_run(False, True)
     >>> dorst(['hi there'], None,'html') #doctest: +ELLIPSIS
-    + .../rest.rest.rest
-    run (['pandoc', ...
     <!DOCTYPE html>
     ...
 
     >>> dorst('ra.rest.stpl','ra.docx') #doctest: +ELLIPSIS
-    + .../ra.rest.stpl.rest
-    run (['pandoc', ..., '-o', 'ra.docx'],) ...
-    + ra.docx
-
     >>> exists('ra.docx')
     True
     >>> rmrf('ra.docx')
@@ -535,9 +550,6 @@ The link lines are added to the .rest file or .rest lines
     False
 
     >>> dorst(['hi there'],'test.html') #doctest: +ELLIPSIS
-    + .../rest.rest.rest
-    run (['pandoc', ..., '-o', 'test.html'],) ...
-
     >>> exists('test.html')
     True
     >>> rmrf('test.html')
@@ -548,8 +560,6 @@ The link lines are added to the .rest file or .rest lines
     False
 
     >>> dorst(['hi there'],'test.odt','rst') #doctest: +ELLIPSIS
-    + ...rest.rest.rest
-
     >>> exists('rest.rest.rest')
     True
     >>> rmrf('rest.rest.rest')
@@ -590,23 +600,18 @@ Examples::
     >>> cd(dirname(__file__))
     >>> cd('../doc')
 
-    >>> dry_run(False, True)
-
     >>> convert([' ','   hi {{2+3}}!'], outinfo='rest')
     ['   .. default-role:: math\n', '\n', ' \n', '   hi 5!\n', '\n']
 
     >>> convert([' ','   hi {{2+3}}!'])  #doctest: +ELLIPSIS
-    + .../rest.rest.rest
-    run (['pandoc', ...
     ['<!DOCTYPE html>\n', ...]
     >>> rmrf('rest.rest.rest')
 
     >>> infile, outfile, outinfo = ([
     ... "newpath {{' '.join(str(i)for i in range(4))}} rectstroke showpage"
     ... ],'tst.png','eps')
-    >>> convert(infile, outfile, outinfo) #doctest: +ELLIPSIS
-    run (['inkscape', ...tst.png'],) ...
-    ...
+    >>> 'tst.png' in convert(infile, outfile, outinfo) #doctest: +ELLIPSIS
+    True
     >>> exists('tst.png')
     True
     >>> rmrf('tst.png')
@@ -614,15 +619,9 @@ Examples::
     False
 
     >>> convert('ra.rest.stpl') #doctest: +ELLIPSIS
-    + .../ra.rest.rest
-    run (['pandoc', ..., '-o', '-'],) ...
     ['<!DOCTYPE html>\n', ...
 
     >>> convert('ra.rest.stpl','ra.docx') #doctest: +ELLIPSIS
-    + .../ra.rest.rest
-    run (['pandoc', ..., '-o', 'ra.docx'],) ...
-    + ra.docx
-
     >>> exists('ra.rest.rest')
     True
     >>> rmrf('ra.rest.rest')
@@ -635,11 +634,8 @@ Examples::
     False
 
     >>> convert('dd.rest', None,'html') #doctest: +ELLIPSIS
-    + .../dd.rest.rest
-    run (['pandoc', ..., '-o', '-'],) ...
     <!DOCTYPE html>
     ...
-
     >>> exists('dd.rest.rest')
     True
     >>> rmrf('dd.rest.rest')
@@ -966,7 +962,6 @@ Creates _links_xxx.rst`` files and a ``.tags``.
 ::
 
     >>> olddir = os.getcwd()
-    >>> dry_run(False, False)
     >>> cd(dirname(__file__))
     >>> rmrf('../doc/_links_sphinx.rst')
     >>> '_links_sphinx.rst' in ls('../doc')
@@ -1085,8 +1080,6 @@ Index a directory.
 - generates the files as defined in the ``gen`` file (see example in dcx.py)
 - generates ``_links_xxx.rst`` for xxx = {sphinx latex html pdf docx odt}
 - generates ``.tags`` with jumps to reST targets
-
-If dcx.verbose is set to True the indexed files are printed.
 
 
 .. _`dcx.main`:
