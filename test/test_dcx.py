@@ -312,72 +312,48 @@ def test_init(rstinit):
 ├─wafw.py
 └─wscript"""
 
-def test_dcx_alone_samples(rstinit,capfd):
+def test_dcx_alone_samples(rstinit):
     '''
     Tests calling ``rstdcx``/``dcx.py`` without parameters.
 
     '''
 
-    r=run(['python','dcx.py','--verbose'])
+    r=run(['python','dcx.py'])
     assert r.returncode == 0
-    out, err = capfd.readouterr()
     if 'tmp_rest' in rstinit:
-        assert list(sorted(x for x in out.splitlines(
-            ) if not any(y in x for y in
-                'png_post_processor ctags model.py'.split()))) == list(
-                    sorted("""\
-+ egdot.dot
-+ egsvg.svg
-doc
-+ doc/_sometst.rst
-+ build/tmp_rest/some_tst.c
-    doc/tp.rest
-    doc/sr.rest
-    doc/ra.rest
-    doc/dd.rest
-    doc/index.rest
-+ doc/_traceability_file.rst
-+ doc/_images/_traceability_file.png
-+ doc/_links_sphinx.rst
-+ doc/_links_latex.rst
-+ doc/_links_html.rst
-+ doc/_links_pdf.rst
-+ doc/_links_docx.rst
-+ doc/_links_odt.rst
-+ doc/.tags""".splitlines()))
+        assert exists("doc/egdot.dot")
+        assert exists("doc/egsvg.svg")
+        assert exists("doc/_sometst.rst")
+        assert exists("build/tmp_rest/some_tst.c")
+        assert exists("doc/_traceability_file.rst")
+        assert exists("doc/_images/_traceability_file.png")
+        assert exists("doc/_links_sphinx.rst")
+        assert exists("doc/_links_latex.rst")
+        assert exists("doc/_links_html.rst")
+        assert exists("doc/_links_pdf.rst")
+        assert exists("doc/_links_docx.rst")
+        assert exists("doc/_links_odt.rst")
+        assert exists("doc/.tags")
     elif 'tmp_stpl' in rstinit:
-        assert list(sorted(x for x in out.splitlines(
-            ) if not any(y in x for y in
-                'png_post_processor ctags model.py'.split()))) == list(
-                    sorted("""\
-+ dd.rest
-+ dd_included.rst
-+ egdot.dot
-+ egsvg.svg
-+ ra.rest
-+ sr.rest
-+ sy.rest
-+ tp.rest
-doc
-+ doc/_sometst.rst
-+ build/tmp_stpl/some_tst.c
-    doc/tp.rest.stpl
-    doc/sy.rest.stpl
-    doc/sr.rest.stpl
-    doc/ra.rest.stpl
-    doc/dd.rest.stpl
-        doc/dd_included.rst.stpl
-        doc/dd_tables.rst
-    doc/index.rest
-+ doc/_traceability_file.rst
-+ doc/_images/_traceability_file.png
-+ doc/_links_sphinx.rst
-+ doc/_links_latex.rst
-+ doc/_links_html.rst
-+ doc/_links_pdf.rst
-+ doc/_links_docx.rst
-+ doc/_links_odt.rst
-+ doc/.tags""".splitlines()))
+        assert exists("doc/dd.rest")
+        assert exists("doc/dd_included.rst")
+        assert exists("doc/egdot.dot")
+        assert exists("doc/egsvg.svg")
+        assert exists("doc/ra.rest")
+        assert exists("doc/sr.rest")
+        assert exists("doc/sy.rest")
+        assert exists("doc/tp.rest")
+        assert exists("doc/_sometst.rst")
+        assert exists("build/tmp_stpl/some_tst.c")
+        assert exists("doc/_traceability_file.rst")
+        assert exists("doc/_images/_traceability_file.png")
+        assert exists("doc/_links_sphinx.rst")
+        assert exists("doc/_links_latex.rst")
+        assert exists("doc/_links_html.rst")
+        assert exists("doc/_links_pdf.rst")
+        assert exists("doc/_links_docx.rst")
+        assert exists("doc/_links_odt.rst")
+        assert exists("doc/.tags")
 
 @pytest.mark.parametrize('cmd_result',[
  ('rstdcx dd.rest.stpl - rest',['default-role:: math',r'<dd.html#'])

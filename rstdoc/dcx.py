@@ -267,11 +267,6 @@ class RstDocError(Exception):
     pass
 
 
-'''
-Increase output if set to True.
-'''
-verbose = False
-
 _plus = '+'
 _indent = '    '
 _indent_text = lambda txt: '\n'.join(_indent+x for x in txt.splitlines())
@@ -292,63 +287,9 @@ class _ToolRunner:
         return sp.run(*args, **kwargs)
 
 
-class _DryRunner:
-    def svg2png(self, *args, **kwargs):
-        pass
-
-    def run(self, *args, **kwargs):
-        return sp.CompletedProcess([], 0, '')
-
-
-class _Verbose:
-    def __init__(self, toolrunner):
-        self.toolrunner = toolrunner
-
-    def svg2png(self, *args, **kwargs):
-        if verbose:
-            print(_plus, relpath(kwargs['write_to']))
-        return self.toolrunner.svg2png(*args, **kwargs)
-
-    def run(self, *args, **kwargs):
-        if verbose:
-            print('run', args, kwargs)
-            if 'outfile' in kwargs:
-                print(_plus, kwargs['outfile'])
-        return self.toolrunner.run(*args, **kwargs)
-
-
-_toolrunner = None
-
-
-def dry_run(dry=None, verbose_=None):
-    '''
-    Set or unset dry run.
-    For dry run verbosity is on per default.
-    For non-dry run verbosity is off per default.
-    '''
-    global _toolrunner
-    global verbose
-    if dry:
-        if verbose_ is None:
-            verbose = True
-        else:
-            verbose = verbose_
-        _toolrunner = _Verbose(_DryRunner())
-    else:
-        if verbose_ is None:
-            verbose = False
-        else:
-            verbose = verbose_
-        if dry is not None or _toolrunner is None:
-            _toolrunner = _Verbose(_ToolRunner())
-
-
-dry_run(None)
-
+_toolrunner = _ToolRunner()
 
 def opnwrite(filename):
-    if verbose:
-        print(_plus, filename)
     return open(filename, 'w', encoding='utf-8', newline='\n')
 
 
@@ -714,9 +655,8 @@ def cmd(cmdlist, **kwargs):
 
     cmdstr = ' '.join(cmdlist)
     try:
-        if not verbose:
-            for x in 'out err'.split():
-                kwargs['std' + x] = sp.PIPE
+        for x in 'out err'.split():
+            kwargs['std' + x] = sp.PIPE
         r = _toolrunner.run(cmdlist, **kwargs)
         try:
             stdout, stderr = _nstr(r.stdout), _nstr(r.stderr)
@@ -764,8 +704,6 @@ def png_post_process_if_any(f):
             pp = config.get('png_post_processor', None)
             if pp:
                 pngfile = f(infile, outfile, *args, **kwargs)
-                if verbose:
-                    print('png_post_processor(%s)' % pngfile)
                 return pp(pngfile)
             else:
                 return f(infile, outfile, *args, **kwargs)
@@ -1007,22 +945,25 @@ def rst_sphinx(
         >>> olddir = os.getcwd()
         >>> cd(dirname(__file__))
         >>> cd('../doc')
-        >>> dry_run(True)
 
         >>> infile, outfile = ('index.rest',
         ... '../build/doc/sphinx_html/index.html')
         >>> rst_sphinx(infile, outfile) #doctest: +ELLIPSIS
-        run (['sphinx-build', '-b', 'html', ... 'master_doc=index'],) ...
+        >>> exists(outfile)
+        True
 
-        >>> rst_sphinx('dd.rest',
-        ... '../build/doc/sphinx_html/dd.html') #doctest: +ELLIPSIS
-        run ([... '-b', 'singlehtml', ..., '-D', 'master_doc=dd'],) ...
+        >>> infile, outfile = ('dd.rest',
+        ... '../build/doc/sphinx_html/dd.html')
+        >>> rst_sphinx(infile, outfile) #doctest: +ELLIPSIS
+        >>> exists(outfile)
+        True
 
-        >>> rst_sphinx('dd.rest',
-        ... '../build/doc/sphinx_latex/dd.tex') #doctest: +ELLIPSIS
-        run ([... '-b', 'tex', ...sphinx_latex', ... 'master_doc=dd'],) ...
+        >>> infile, outfile = ('dd.rest',
+        ... '../build/doc/sphinx_latex/dd.tex')
+        >>> rst_sphinx(infile, outfile) #doctest: +ELLIPSIS
+        >>> exists(outfile)
+        True
 
-        >>> dry_run(False)
         >>> cd(olddir)
 
     '''
@@ -1054,7 +995,7 @@ def rst_sphinx(
                 outtype = 'html'
             else:
                 outtype = 'singlehtml'
-        elif outne == 'tex':
+        elif outne == '.tex':
             outtype = 'latex'
         else:
             outtype = outne.strip('.')
@@ -1759,18 +1700,11 @@ def dorst(
         >>> dorst(['hi there']) #doctest: +ELLIPSIS
         ['.. default-role:: math\n', '\n', 'hi there\n', ...
 
-        >>> dry_run(False, True)
         >>> dorst(['hi there'], None,'html') #doctest: +ELLIPSIS
-        + .../rest.rest.rest
-        run (['pandoc', ...
         <!DOCTYPE html>
         ...
 
         >>> dorst('ra.rest.stpl','ra.docx') #doctest: +ELLIPSIS
-        + .../ra.rest.stpl.rest
-        run (['pandoc', ..., '-o', 'ra.docx'],) ...
-        + ra.docx
-
         >>> exists('ra.docx')
         True
         >>> rmrf('ra.docx')
@@ -1781,9 +1715,6 @@ def dorst(
         False
 
         >>> dorst(['hi there'],'test.html') #doctest: +ELLIPSIS
-        + .../rest.rest.rest
-        run (['pandoc', ..., '-o', 'test.html'],) ...
-
         >>> exists('test.html')
         True
         >>> rmrf('test.html')
@@ -1794,8 +1725,6 @@ def dorst(
         False
 
         >>> dorst(['hi there'],'test.odt','rst') #doctest: +ELLIPSIS
-        + ...rest.rest.rest
-
         >>> exists('rest.rest.rest')
         True
         >>> rmrf('rest.rest.rest')
@@ -1980,23 +1909,18 @@ def convert(
         >>> cd(dirname(__file__))
         >>> cd('../doc')
 
-        >>> dry_run(False, True)
-
         >>> convert([' ','   hi {{2+3}}!'], outinfo='rest')
         ['   .. default-role:: math\n', '\n', ' \n', '   hi 5!\n', '\n']
 
         >>> convert([' ','   hi {{2+3}}!'])  #doctest: +ELLIPSIS
-        + .../rest.rest.rest
-        run (['pandoc', ...
         ['<!DOCTYPE html>\n', ...]
         >>> rmrf('rest.rest.rest')
 
         >>> infile, outfile, outinfo = ([
         ... "newpath {{' '.join(str(i)for i in range(4))}} rectstroke showpage"
         ... ],'tst.png','eps')
-        >>> convert(infile, outfile, outinfo) #doctest: +ELLIPSIS
-        run (['inkscape', ...tst.png'],) ...
-        ...
+        >>> 'tst.png' in convert(infile, outfile, outinfo) #doctest: +ELLIPSIS
+        True
         >>> exists('tst.png')
         True
         >>> rmrf('tst.png')
@@ -2004,15 +1928,9 @@ def convert(
         False
 
         >>> convert('ra.rest.stpl') #doctest: +ELLIPSIS
-        + .../ra.rest.rest
-        run (['pandoc', ..., '-o', '-'],) ...
         ['<!DOCTYPE html>\n', ...
 
         >>> convert('ra.rest.stpl','ra.docx') #doctest: +ELLIPSIS
-        + .../ra.rest.rest
-        run (['pandoc', ..., '-o', 'ra.docx'],) ...
-        + ra.docx
-
         >>> exists('ra.rest.rest')
         True
         >>> rmrf('ra.rest.rest')
@@ -2025,11 +1943,8 @@ def convert(
         False
 
         >>> convert('dd.rest', None,'html') #doctest: +ELLIPSIS
-        + .../dd.rest.rest
-        run (['pandoc', ..., '-o', '-'],) ...
         <!DOCTYPE html>
         ...
-
         >>> exists('dd.rest.rest')
         True
         >>> rmrf('dd.rest.rest')
@@ -2917,11 +2832,6 @@ class RstFile:
                 prevtgt = tgt
         if tgt:
             add_linksto(prevtgt, tgt.lnidx, iterlnks)  # , unknowntgts)
-        if verbose:
-            if '/' + self.reststem + '.' in self.doc:
-                print(_indent + self.doc)
-            else:
-                print(2 * _indent + self.doc)
 
     @staticmethod
     def make_lnks(lns  # lines of the document
@@ -3274,7 +3184,6 @@ def links_and_tags(adir):
     ::
 
         >>> olddir = os.getcwd()
-        >>> dry_run(False, False)
         >>> cd(dirname(__file__))
         >>> rmrf('../doc/_links_sphinx.rst')
         >>> '_links_sphinx.rst' in ls('../doc')
@@ -4994,16 +4903,12 @@ def index_dir(root):
     - generates ``_links_xxx.rst`` for xxx = {sphinx latex html pdf docx odt}
     - generates ``.tags`` with jumps to reST targets
 
-    If dcx.verbose is set to True the indexed files are printed.
-
     '''
 
     # link, gen and tags per directory
     fldrs = Fldrs(root)
     fldrs.scandirs()
     for directory, fldr in fldrs.items():
-        if verbose:
-            print(directory)
         # generated files need to be there to be indexed
         genpth = normjoin(directory, 'gen')
         if exists(genpth):
@@ -5142,16 +5047,6 @@ def main(**args):
             nargs=1,
             help='Add folders to look for ``conf.py``, ``.[s]tpl`` and reference.docx/odt/tex')
         parser.add_argument(
-            '-v',
-            '--verbose',
-            action='store_true',
-            help='''Show files recursively included by each rest''')
-        parser.add_argument(
-            '-n',
-            '--dry-run',
-            action='store_true',
-            help='''Don't actually run, just print.''')
-        parser.add_argument(
             'infile',
             nargs='?',
             help='''\
@@ -5180,14 +5075,6 @@ to define variables that can be used in templates."""
     if 'code' in args and args['code'] is not None and args['code'] != []:
         code = '\n'.join(args['code'])
         eval(compile(code, '<string>', 'exec'), globals())
-
-    global verbose
-    verbose = False
-    if 'verbose' in args:
-        verbose = args['verbose']
-
-    if 'dry_run' in args and args['dry_run']:
-        dry_run(args['dry_run'])
 
     if 'stplroot' in args and args['stplroot']:
         initroot(args['stplroot'], 'stpl')
