@@ -4940,7 +4940,7 @@ description = (
 ``rstdcx`` CLI
 --------------
 
-Without parameters: creates |substitution| links and .tags ctags for reST targets.
+Without parameters: creates ``|substitution|`` links and .tags ctags for reST targets.
 
 With two or three parameters: process file or dir to out file or dir
 through Pandoc, Sphinx, Docutils (third parameter):
