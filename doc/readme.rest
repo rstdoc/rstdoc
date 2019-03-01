@@ -8,7 +8,7 @@ Overview
 
 Github does not support ``include``.
 You can find a rendered version on 
-`readthedocs <https://rstdoc.readthedocs.io/en/latest/doc/readme.html>`__.
+`readthedocs <https://rstdoc.readthedocs.io/en/latest/>`__.
 
 Purpose
 =======
@@ -20,7 +20,7 @@ The ``doc`` folder
   over DOCX or ODT for documentation of software projects
 
 - is an example documentation using 
-  `rstdoc <https://rstdoc.readthedocs.io/en/latest/doc/rstdoc.html>`__,
+  `rstdoc <https://rstdoc.readthedocs.io/en/latest/>`__,
   a wrapper around
   `Sphinx <http://www.sphinx-doc.org/en/stable/>`__
   and
