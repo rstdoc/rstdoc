@@ -28,6 +28,7 @@ from setuptools import setup
 import os
 import sys
 
+#also change ing doc/conf.py
 __version__ = '1.6.8'
 
 sys.path.append('./rstdoc')

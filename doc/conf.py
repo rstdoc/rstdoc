@@ -1,8 +1,8 @@
 project = 'rstdoc'
 author = 'Roland Puntaier'
 copyright = '2018, '+author
-version = '1.6.1'
-release = '1.6.1.0'
+version = '1.6.8'
+release = '1.6.8.0'
 html_theme = 'bootstrap'
 import sphinx_bootstrap_theme
 html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
