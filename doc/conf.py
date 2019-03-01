@@ -3,9 +3,13 @@ author = 'Roland Puntaier'
 copyright = '2018, '+author
 version = '1.6.8'
 release = '1.6.8.0'
-html_theme = 'bootstrap'
-import sphinx_bootstrap_theme
-html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+
+try:
+    import sphinx_bootstrap_theme
+    html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+    html_theme = 'bootstrap'
+except:
+    pass
 
 #these are enforced by rstdoc, but you need to keep them here if you call sphinx-build directly
 numfig = 0
