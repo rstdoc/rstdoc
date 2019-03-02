@@ -23,6 +23,8 @@ pygments_style = 'sphinx'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 master_doc = 'index'
 
+html_extra_path=["_traceability_file.svg"] #relative to conf.py
+
 import os
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if not on_rtd:
@@ -68,7 +70,6 @@ if not on_rtd:
     DPI = 600
     target_id_group = lambda targetid: targetid[0]
     target_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
-    html_extra_path=["_traceability_file.svg"] #relative to conf.py
     pandoc_doc_optref={'latex': '--template ../reference.tex',
                      'html': {},#each can also be dict of file:template
                      'pdf': '--template ../reference.tex',
