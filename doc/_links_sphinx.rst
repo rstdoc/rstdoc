@@ -1,15 +1,19 @@
 
-.. .. tp.rest
+.. .. /home/roland/mine/rstdoc/doc/tp.rest
 
 
 .. |tkf| replace:: :ref:`Test Plan<tkf>`
 
 
-.. .. ../tox.ini
+.. .. /home/roland/mine/rstdoc/tox.ini
 
 
 
-.. .. _test_dcx_tests.rst
+.. .. /home/roland/mine/rstdoc/doc/_testcoverage.rst
+
+
+
+.. .. /home/roland/mine/rstdoc/doc/_test_dcx_tests.rst
 
 
 .. |test_lnkname| replace:: :ref:`test_lnkname<test_lnkname>`
@@ -36,7 +40,7 @@
 .. |test_docparts_after| replace:: :ref:`test_docparts_after<test_docparts_after>`
 
 
-.. .. _test_rst_table.rst
+.. .. /home/roland/mine/rstdoc/doc/_test_rst_table.rst
 
 
 .. |testCreateTable| replace:: :ref:`testCreateTable<testCreateTable>`
@@ -54,7 +58,7 @@
 .. |testCreateFromData| replace:: :ref:`testCreateFromData<testCreateFromData>`
 
 
-.. .. sr.rest
+.. .. /home/roland/mine/rstdoc/doc/sr.rest
 
 
 .. |son| replace:: :ref:`System Requirements<son>`
@@ -151,28 +155,24 @@
 .. |sil| replace:: :ref:`sil<sil>`
 
 
-.. .. rstdoc.rest
+.. .. /home/roland/mine/rstdoc/doc/rstdoc.rest
 
 
 .. |or1| replace:: :ref:`rstdoc<or1>`
 
 
-.. .. ../readme.rst
+.. .. /home/roland/mine/rstdoc/readme.rst
 
 
 
-.. .. _dcx.rst
+.. .. /home/roland/mine/rstdoc/doc/_dcx.rst
 
 
 .. |rstdcx| replace:: :ref:`rstdcx<rstdcx>`
 
 
-.. .. _dcx_api.rst
+.. .. /home/roland/mine/rstdoc/doc/_dcx_api.rst
 
-
-.. |dcx.verbose| replace:: :ref:`dcx.verbose<dcx.verbose>`
-
-.. |dcx.dry_run| replace:: :ref:`dcx.dry_run<dcx.dry_run>`
 
 .. |dcx.DPI| replace:: :ref:`dcx.DPI<dcx.DPI>`
 
@@ -192,12 +192,12 @@
 
 .. |dcx.rst_pandoc| replace:: :ref:`dcx.rst_pandoc<dcx.rst_pandoc>`
 
-.. .. rak,dhy
-
-
 .. |dcx.rst_rst2| replace:: :ref:`dcx.rst_rst2<dcx.rst_rst2>`
 
 .. |dcx.PageBreakHack| replace:: :ref:`dcx.PageBreakHack<dcx.PageBreakHack>`
+
+.. .. rak,dhy
+
 
 .. |dcx.svgpng| replace:: :ref:`dcx.svgpng<dcx.svgpng>`
 
@@ -212,6 +212,12 @@
 .. |dcx.epspng| replace:: :ref:`dcx.epspng<dcx.epspng>`
 
 .. |dcx.pygpng| replace:: :ref:`dcx.pygpng<dcx.pygpng>`
+
+.. |dcx.pygsvg| replace:: :ref:`dcx.pygsvg<dcx.pygsvg>`
+
+.. |dcx.svgembed| replace:: :ref:`dcx.svgembed<dcx.svgembed>`
+
+.. |dcx.pngembed| replace:: :ref:`dcx.pngembed<dcx.pngembed>`
 
 .. |dcx.dostpl| replace:: :ref:`dcx.dostpl<dcx.dostpl>`
 
@@ -252,13 +258,13 @@
 .. |dcx.main| replace:: :ref:`dcx.main<dcx.main>`
 
 
-.. .. _fromdocx.rst
+.. .. /home/roland/mine/rstdoc/doc/_fromdocx.rst
 
 
 .. |rstfromdocx| replace:: :ref:`rstfromdocx<rstfromdocx>`
 
 
-.. .. _fromdocx_api.rst
+.. .. /home/roland/mine/rstdoc/doc/_fromdocx_api.rst
 
 
 .. |fromdocx.extract_media| replace:: :ref:`fromdocx.extract_media<fromdocx.extract_media>`
@@ -268,13 +274,13 @@
 .. |fromdocx.docx_rst_5| replace:: :ref:`fromdocx.docx_rst_5<fromdocx.docx_rst_5>`
 
 
-.. .. _listtable.rst
+.. .. /home/roland/mine/rstdoc/doc/_listtable.rst
 
 
 .. |rstlisttable| replace:: :ref:`rstlisttable<rstlisttable>`
 
 
-.. .. _listtable_api.rst
+.. .. /home/roland/mine/rstdoc/doc/_listtable_api.rst
 
 
 .. |listtable.row_to_listtable| replace:: :ref:`listtable.row_to_listtable<listtable.row_to_listtable>`
@@ -284,13 +290,13 @@
 .. |listtable.main| replace:: :ref:`listtable.main<listtable.main>`
 
 
-.. .. _untable.rst
+.. .. /home/roland/mine/rstdoc/doc/_untable.rst
 
 
 .. |rstuntable| replace:: :ref:`rstuntable<rstuntable>`
 
 
-.. .. _untable_api.rst
+.. .. /home/roland/mine/rstdoc/doc/_untable_api.rst
 
 
 .. |untable.paragraph23| replace:: :ref:`untable.paragraph23<untable.paragraph23>`
@@ -300,13 +306,13 @@
 .. |untable.main| replace:: :ref:`untable.main<untable.main>`
 
 
-.. .. _reflow.rst
+.. .. /home/roland/mine/rstdoc/doc/_reflow.rst
 
 
 .. |rstreflow| replace:: :ref:`rstreflow<rstreflow>`
 
 
-.. .. _reflow_api.rst
+.. .. /home/roland/mine/rstdoc/doc/_reflow_api.rst
 
 
 .. |reflow.reflowparagraph| replace:: :ref:`reflow.reflowparagraph<reflow.reflowparagraph>`
@@ -328,13 +334,13 @@
 .. |reflow.main| replace:: :ref:`reflow.main<reflow.main>`
 
 
-.. .. _reimg.rst
+.. .. /home/roland/mine/rstdoc/doc/_reimg.rst
 
 
 .. |rstreimg| replace:: :ref:`rstreimg<rstreimg>`
 
 
-.. .. _reimg_api.rst
+.. .. /home/roland/mine/rstdoc/doc/_reimg_api.rst
 
 
 .. |reimg.reimg| replace:: :ref:`reimg.reimg<reimg.reimg>`
@@ -342,13 +348,13 @@
 .. |reimg.main| replace:: :ref:`reimg.main<reimg.main>`
 
 
-.. .. _retable.rst
+.. .. /home/roland/mine/rstdoc/doc/_retable.rst
 
 
 .. |rstretable| replace:: :ref:`rstretable<rstretable>`
 
 
-.. .. _retable_api.rst
+.. .. /home/roland/mine/rstdoc/doc/_retable_api.rst
 
 
 .. |retable.title_some| replace:: :ref:`retable.title_some<retable.title_some>`
@@ -366,17 +372,17 @@
 .. |retable.main| replace:: :ref:`retable.main<retable.main>`
 
 
-.. .. readme.rest
+.. .. /home/roland/mine/rstdoc/doc/readme.rest
 
 
 .. |m0d| replace:: :ref:`Overview<m0d>`
 
 
-.. .. files.rst
+.. .. /home/roland/mine/rstdoc/doc/files.rst
 
 
 
-.. .. ra.rest.stpl
+.. .. /home/roland/mine/rstdoc/doc/ra.rest.stpl
 
 
 .. |rwx| replace:: :ref:`Risk Analysis<rwx>`
@@ -436,7 +442,7 @@
 .. |rxj| replace:: :ref:`Math 1<rxj>`
 
 
-.. .. dd.rest
+.. .. /home/roland/mine/rstdoc/doc/dd.rest
 
 
 .. |dcu| replace:: :ref:`Design Description<dcu>`
@@ -506,7 +512,7 @@
 .. |d1w| replace:: :ref:`d1w<d1w>`
 
 
-.. .. index.rest
+.. .. /home/roland/mine/rstdoc/doc/index.rest
 
 
 .. |tr0| replace:: :ref:`tr0<tr0>`

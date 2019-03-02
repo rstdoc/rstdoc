@@ -8,7 +8,7 @@
 
 :tr0:
 
-|dcx.rst_pandoc|, |dhy|, |r1p|, |r62|, |r8d|, |r90|, |r9g|, |r9h|, |rak|, |rbc|, |rj4|, |roc|, |rpn|, |rvd|, |rvl|, |rwj|, |s0t|, |s10|, |s1g|, |s45|, |s8c|, |s9o|, |s9v|, |sa7|, |san|, |scf|, |scs|, |sed|, |seo|, |sgt|, |sim|, |son|, |stq|, |sxr|, |test_lnkname|
+|dcx.PageBreakHack|, |dhy|, |r1p|, |r62|, |r8d|, |r90|, |r9g|, |r9h|, |rak|, |rbc|, |rj4|, |roc|, |rpn|, |rvd|, |rvl|, |rwj|, |s0t|, |s10|, |s1g|, |s45|, |s8c|, |s9o|, |s9v|, |sa7|, |san|, |scf|, |scs|, |sed|, |seo|, |sgt|, |sim|, |son|, |stq|, |sxr|, |test_lnkname|
 
 Up: |tr2|, |tr4|, |tr5|, |tr6|, |tr7|, |tr9|, |tr10|, |tr11|, |tr12|, |tr14|, |tr15|, |tr17|, |tr18|, |tr19|, |tr20|, |tr21|, |tr22|, |tr23|, |tr24|
 
@@ -188,7 +188,7 @@ Down: |tr0|
 
 :tr18:
 
-|dcx.rst_pandoc|, |dhy|, |rak|
+|son|, |test_lnkname|
 
 Up: |tr1|
 
@@ -198,7 +198,7 @@ Down: |tr0|
 
 :tr19:
 
-|r9h|, |rj4|, |s9o|
+|r62|, |sed|
 
 Up: |tr1|
 
@@ -208,7 +208,7 @@ Down: |tr0|
 
 :tr20:
 
-|son|, |test_lnkname|
+|dcx.PageBreakHack|, |dhy|, |rak|
 
 Up: |tr1|
 
@@ -218,7 +218,7 @@ Down: |tr0|
 
 :tr21:
 
-|r90|, |seo|
+|rvl|, |sxr|
 
 Up: |tr1|
 
@@ -228,7 +228,7 @@ Down: |tr0|
 
 :tr22:
 
-|rwj|, |sa7|
+|r9h|, |rj4|, |s9o|
 
 Up: |tr1|
 
@@ -238,7 +238,7 @@ Down: |tr0|
 
 :tr23:
 
-|r62|, |sed|
+|r90|, |seo|
 
 Up: |tr1|
 
@@ -248,7 +248,7 @@ Down: |tr0|
 
 :tr24:
 
-|rvl|, |sxr|
+|rwj|, |sa7|
 
 Up: |tr1|
 

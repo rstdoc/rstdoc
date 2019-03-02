@@ -77,3 +77,19 @@ Tests running Waf on the sample projects.
 
 Tests |dcx.doc_parts| with different parameters for documentation extraction.
 
+
+.. _`test_convert_with_images_no_outinfo`:
+
+:test_convert_with_images_no_outinfo:
+
+Tests |dcx.convert| with images on the fly in ``rest.stpl`` files
+for different targets.
+
+
+.. _`test_include_cmd`:
+
+:test_include_cmd:
+
+Tests |rstdcx| with -I option and ``.rest.stpl`` files generating images on the fly
+and embedding for HTML and DOCX.
+

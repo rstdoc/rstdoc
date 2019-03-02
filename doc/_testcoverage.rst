@@ -30,9 +30,6 @@ TOTAL                  2751    532    81%
 
 
 =============================== warnings summary ===============================
-/home/roland/mine/rstdoc/rstdoc/dcx.py:2550: DeprecationWarning: invalid escape sequence \s
-  '''
-
 /usr/lib/python3.7/site-packages/pygal/_compat.py:23: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated, and in 3.8 it will stop working
   from collections import Iterable
 
@@ -3453,4 +3450,4 @@ TOTAL                  2751    532    81%
   _XMLParser.__init__(self, html, target, encoding)
 
 -- Docs: https://docs.pytest.org/en/latest/warnings.html
-================= 211 passed, 1693 warnings in 1305.45 seconds =================
+================= 211 passed, 1692 warnings in 1261.16 seconds =================
