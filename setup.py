@@ -29,7 +29,7 @@ import os
 import sys
 
 #also change ing doc/conf.py
-__version__ = '1.6.8'
+__version__ = '1.6.9'
 
 sys.path.append('./rstdoc')
 from dcx import dorst

@@ -19,7 +19,6 @@ normalfromstpl.rst
 with_images.rest
 
 _links_*
-_test_*
 !doc/_links_sphinx.rst
 test/fixtures/*
 

@@ -689,6 +689,12 @@ def test_with_images(outinfo):
                              ['.pdf', '.docx', '.html', '.odt', '.latex'])
                          )
 def test_convert_with_images_no_outinfo(tmpworkdir,infile,outext):
+    '''
+    Tests |dcx.convert| with images on the fly in ``rest.stpl`` files
+    for different targets.
+
+    '''
+
     import shutil
     if 'embed' in infile:
         _cp_pyg()
@@ -697,19 +703,20 @@ def test_convert_with_images_no_outinfo(tmpworkdir,infile,outext):
     convert(infile+'.rest.stpl',filename,None)
     assert exists(filename)
 
-@pytest.mark.parametrize('infile', ['with_images','pngembed','svgembed'])
-def test_include_cmd(tmpworkdir,infile):
-    if 'embed' in infile:
-        _cp_pyg()
-    r=run(['rstdcx',infile+'.rest.stpl', infile+'.html', '-I', dirname(_a_fix(infile))])
-    assert r.returncode == 0
-    assert exists(infile+'.html')
+@pytest.mark.parametrize('infile,outext',
+                         product(['with_images','pngembed','svgembed'],
+                             ['.html', '.docx'])
+                         )
+def test_include_cmd(tmpworkdir,infile,outext):
+    '''
+    Tests |rstdcx| with -I option and ``.rest.stpl`` files generating images on the fly
+    and embedding for HTML and DOCX.
 
-@pytest.mark.parametrize('infile', ['with_images','pngembed','svgembed'])
-def test_include_reference(tmpworkdir,infile):
+    '''
+
     if 'embed' in infile:
         _cp_pyg()
-    r=run(['rstdcx',infile+'.rest.stpl', infile+'.docx', '-I', dirname(__file__), '-I', dirname(_a_fix(infile))])
+    r=run(['rstdcx',infile+'.rest.stpl', infile+outext, '-I', dirname(_a_fix(infile))])
     assert r.returncode == 0
-    assert exists(infile+'.docx')
+    assert exists(infile+outext)
 

@@ -1,8 +1,8 @@
 project = 'rstdoc'
 author = 'Roland Puntaier'
-copyright = '2018, '+author
-version = '1.6.8'
-release = '1.6.8.0'
+copyright = '2019, '+author
+version = '1.6.9'
+release = '1.6.9.0'
 
 try:
     import sphinx_bootstrap_theme
