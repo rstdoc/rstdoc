@@ -685,7 +685,7 @@ def test_with_images(outinfo):
     assert exists(filename)
 
 @pytest.mark.parametrize('infile,outext',
-                         product(['with_images','pngembed','svgembed'],
+                         product(['with_images','png_embed','svg_embed'],
                              ['.pdf', '.docx', '.html', '.odt', '.latex'])
                          )
 def test_convert_with_images_no_outinfo(tmpworkdir,infile,outext):
@@ -704,7 +704,7 @@ def test_convert_with_images_no_outinfo(tmpworkdir,infile,outext):
     assert exists(filename)
 
 @pytest.mark.parametrize('infile,outext',
-                         product(['with_images','pngembed','svgembed'],
+                         product(['with_images','png_embed','svg_embed'],
                              ['.html', '.docx'])
                          )
 def test_include_cmd(tmpworkdir,infile,outext):
@@ -720,3 +720,18 @@ def test_include_cmd(tmpworkdir,infile,outext):
     assert r.returncode == 0
     assert exists(infile+outext)
 
+def test_pygrep():
+    os.chdir(_a_fix(''))
+    r = subprocess.run(['rstdcx','--pygrep', 'inline'],shell=True,stdout=subprocess.PIPE)
+    outlines = r.stdout.decode().splitlines()
+    assert len(outlines) > 0
+    for x in outlines:
+        assert 'inline' in x
+
+def test_kw():
+    os.chdir(_a_fix(''))
+    r = subprocess.run(['rstdcx','--kw', 'png'],shell=True,stdout=subprocess.PIPE)
+    outlines = r.stdout.decode().splitlines()
+    assert len(outlines) > 0
+    for x in outlines:
+        assert 'png' in x

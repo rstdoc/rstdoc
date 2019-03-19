@@ -1,11 +1,28 @@
 %from rstdoc import dcx
 %dcx.DPI=100
 
+.. {PIL}
+
 {{!pngembed("egother.pyg",outinfo)}}
+
+.. {cairo}
+
 {{!pngembed("egcairo.pyg",outinfo)}}
+
+.. {pyplot}
+
 {{!pngembed("egplt.pyg",outinfo)}}
+
+.. {pygal}
+
 {{!pngembed("egpygal.pyg",outinfo)}}
+
+.. {pyx}
+
 {{!pngembed("egpyx.pyg",outinfo)}}
+
+
+.. {inline svgwrite}
 
 <%
 png1=pngembed("""
@@ -15,6 +32,8 @@ d.add(d.circle(center=(2*cm, 2*cm), r='1cm', stroke='blue', stroke_width=9))
 """.splitlines(),outinfo)
 %>
 {{!png1}}
+
+.. {inline drawSvg}
 
 <%
 png3=pngembed("""

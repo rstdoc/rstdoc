@@ -24,7 +24,7 @@ def test_docx_to_rest(
     '''
     cwd = os.getcwd()
     try:
-        with open('test/fixtures/doc.rest',encoding='utf-8') as f:
+        with open(os.path.join(os.path.dirname(__file__),'fixtures', 'doc.rest'),encoding='utf-8') as f:
             expected = f.read().replace('\\','/')
         docxabs = os.path.abspath('test/fixtures/doc.docx')
         os.chdir(tmpdir)

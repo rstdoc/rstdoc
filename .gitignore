@@ -20,7 +20,16 @@ with_images.rest
 
 _links_*
 !doc/_links_sphinx.rst
+
 test/fixtures/*
+!test/fixtures/default.txt
+!test/fixtures/doc.rest
+!test/fixtures/multiline-cells.txt
+!test/fixtures/png_embed.rest.stpl
+!test/fixtures/reflow.txt
+!test/fixtures/retitle.txt
+!test/fixtures/svg_embed.rest.stpl
+!test/fixtures/with_images.rest.stpl
 
 #waf
 .waf????????*

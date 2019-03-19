@@ -72,7 +72,7 @@ class TestRSTTableFormatter(unittest.TestCase):
         vim.current.window.cursor = (row, col)
 
     def read_fixture(self, name):
-        with open(os.path.join('test/fixtures/', name + '.txt'),encoding='utf-8') as fp:
+        with open(os.path.join(os.path.dirname(__file__),'fixtures', name + '.txt'),encoding='utf-8') as fp:
             return fp.read().split('\n')
 
     def load_fixture_in_vim(self, name):

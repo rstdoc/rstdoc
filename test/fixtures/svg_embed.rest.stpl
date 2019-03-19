@@ -1,10 +1,23 @@
 %from rstdoc import dcx
 %dcx.DPI=100
 
+.. {cairo}
+
 {{!svgembed("egcairo.pyg",outinfo)}}
+
+.. {pyplot}
+
 {{!svgembed("egplt.pyg",outinfo)}}
+
+.. {pygal}
+
 {{!svgembed("egpygal.pyg",outinfo)}}
+
+.. {pyx}
+
 {{!svgembed("egpyx.pyg",outinfo)}}
+
+.. {svg inline}
 
 <%
 svg1=svgembed("""
@@ -44,6 +57,8 @@ svg2=svgembed("""
 %>
 {{!svg2}}
 
+
+.. {inline drawSvg}
 
 <%
 svg3=svgembed("""

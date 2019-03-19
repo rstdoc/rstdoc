@@ -432,6 +432,8 @@ rexlnks = re.compile(r'(?:^|[^a-zA-Z`])\|(\w+)\|(?:$|[^a-zA-Z`])')
 reximg = re.compile(r'(?:image|figure):: ((?:\.|/|\\|\w).*)')
 rerstinclude = re.compile(r'\.\. include::\s*([\./\w\\].*)')
 restplinclude = re.compile(r"""%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*""")
+rexkw = re.compile(r'^\s*\.\. {')
+rexkwsplit = re.compile(r'[\W_]+')
 
 _rstlinkfixer = re.compile('#[^>]+>')
 
@@ -555,7 +557,7 @@ def name_from_directive(directive, count):
 config_defaults = {
     'project': 'Project',
     'author': 'Project Team',
-    'copyright': '2018, Project Team',
+    'copyright': '2019, Project Team',
     'version': '1.0',
     'release': '1.0.0',
     'html_theme': 'bootstrap',
@@ -1037,7 +1039,7 @@ def rst_sphinx(
     cmd(sphinxcmd, outfile=outfn)
     if outtype == 'html':
         #undo duplication via temp file's see: rest_rest
-        rmrf(os.path.join(outdr,cfg['master_doc']+'.rest.html'))
+        rmrf(normjoin(outdr,cfg['master_doc']+'.rest.html'))
     if 'latex' in outtype:
         texfile = next(x for x in os.listdir(outdr) if x.endswith('.tex'))
         os.rename(normjoin(outdr, texfile), outfn)
@@ -2074,8 +2076,7 @@ def rindices(regex, lns):
 
     '''
 
-    if isinstance(regex, str):
-        regex = re.compile(regex)
+    regex = re.compile(regex)
     for i, ln in enumerate(lns):
         if regex.search(ln):
             yield i
@@ -3201,6 +3202,120 @@ def links_and_tags(adir):
     for fldr in fldrs.values():
         fldr.create_links_and_tags(fldrs.scanroot)
 
+def _kw_from_path(dir):
+    """use file of path up to ``.git`` as keywords
+
+    >>> dir="/pro jects/me_about-this-1.rst"
+    >>> _kw_from_path(dir)
+    frozenset({'me', 'this', '1', 'about'})
+
+    """
+    fr = dir
+    fn = None
+    while True:
+        fr,fn = dir_base(fr)
+        if not fn:
+            break
+        if exists(normjoin(fr,'.git')):
+            break
+    if fn:
+        fn = relpath(dir,fr)
+    else:
+        fn = base(dir)
+    fpth = stem(fn)
+    if fpth.endswith(_rst) or fpth.endswith(_rest):
+        fpth = stem(fpth)
+    res = re.split(rexkwsplit,fpth)
+    return frozenset(res)
+
+def _kw_from_line(ln):
+    """make  a frozenset out of keyword line
+
+    >>> ln='.. {kw1,kw2-kw3.kw4}'
+    >>> _kw_from_line(ln) == frozenset({'kw1','kw2','kw3','kw4'})
+    True
+    >>> ln='   .. {kw1,trag}'
+    >>> _kw_from_line(ln) == frozenset({'kw1', 'trag'})
+    True
+
+    """
+    return frozenset(x for x in re.split(rexkwsplit,ln.lower()) if x)
+
+def grep(
+      regexp=rexkw, 
+      dir=None, 
+      exts=set(['.rst','.rest','.stpl','.tpl','.py'])):
+    '''
+    .. {grep}
+
+    Uses python re to find ``regexp`` and return 
+    ``[(file,1-based index,line),...]``
+    in *dir* (default: os.getcwd()) for ``exts`` files
+
+    :param regexp: default is a rst-commented keywords list
+    :param dir: default is current dir
+    :param exts: the extension of files searched
+
+    >>> list(grep(dir=dirname(__file__))) [0][2]
+    '.. {grep}'
+
+    '''
+    if dir is None:
+        dir = os.getcwd()
+    regexp = re.compile(regexp)
+    for root, dirs, files in os.walk(dir):
+        for name in files:
+            if any(name.endswith(ext) for ext in exts):
+                f = normjoin(root,name)
+                with open(f,encoding="utf-8") as fb:
+                    lines=[l.strip() for l in fb.readlines()]
+                    res = [(i,lines[i]) for i in rindices(regexp, lines)]
+                    for (i,l) in res:
+                        yield (f,i+1,l)
+
+def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
+    '''
+    Find keyword lines in ``fn_ln_kw`` list or using grep(),
+    that contain the keywords in kws.
+
+    Keyword line::
+      
+        .. {kw1,kw2}
+
+    :param kws: string will be split by non-chars
+    :param fn_ln_kw: list of (file, line, keywords) tuples 
+                     or ``regexp`` for grep()
+
+    >>> list(yield_with_kw('a',[('a/b',1,'a b'),('c/d',1,'c d')]))
+    [(0, ['a/b', 1, 'a b'])]
+    >>> list(yield_with_kw('a c',[('a/b',1,'a b'),('c/d',1,'c d')]))
+    []
+    >>> list(yield_with_kw('a',[('a/b',1,'a b'),('c/d',1,'a c d')]))
+    [(0, ['a/b', 1, 'a b']), (1, ['c/d', 1, 'a c d'])]
+    >>> kwargs={'dir':normjoin(dirname(__file__),'../test/fixtures')}
+    >>> kws = 'svg'
+    >>> len(list(yield_with_kw(kws,**kwargs)))
+    6
+    >>> kws = 'png'
+    >>> len(list(yield_with_kw(kws,**kwargs)))
+    7
+
+    '''
+    if fn_ln_kw is None:
+        fn_ln_kw = grep(**kwargs)
+    elif isinstance(fn_ln_kw,str): 
+        fn_ln_kw = grep(fn_ln_kw, **kwargs)
+    oldfn = None
+    qset = _kw_from_line(kws)
+    for i,(fn,ln,kw) in enumerate(fn_ln_kw):
+        #i,(fn,ln,kw) = next(enumerate(fn_ln_kw))
+        if fn != oldfn:
+            fnkw = _kw_from_path(fn)
+            oldfn = fn
+        kws = _kw_from_line(kw)|fnkw
+        if kws and qset<=kws:
+            yield i,[fn,ln,kw]
+
 
 # ==============> for building with WAF
 
@@ -3561,13 +3676,15 @@ example_tree = r'''
        conf.py
          project = 'sample'
          author = project+' Project Team'
-         copyright = '2018, '+author
+         copyright = '2019, '+author
          version = '1.0'
          release = '1.0.0'
-         html_theme = 'bootstrap'
-         import sphinx_bootstrap_theme
-         html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
-
+         try:
+             import sphinx_bootstrap_theme
+             html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+             html_theme = 'bootstrap'
+         except:
+             pass
          #these are enforced by rstdoc, but keep them for sphinx-build
          numfig = 0
          smartquotes = 0
@@ -3576,71 +3693,71 @@ example_tree = r'''
          language = None
          highlight_language = "none"
          default_role = 'math'
-         latex_engine = 'xelatex'
          pygments_style = 'sphinx'
          exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
          master_doc = 'index'
-
-         #You can postprocess pngs.default: png_post_processor = None
-         def png_post_processor(filename):
-             from PIL import Image, ImageChops
-             def trim(im):
-                 bg = Image.new(im.mode, im.size, im.getpixel((0, 0)))
-                 diff = ImageChops.difference(im, bg)
-                 diff = ImageChops.add(diff, diff, 2.0, -100)
-                 bbox = diff.getbbox()
-                 if bbox:
-                     return im.crop(bbox)
-             im = Image.open(filename)
-             im = trim(im)
-             im.save(filename)
-             return filename
-
-         #the following are default and can be omitted
-         latex_elements = {'preamble':r"""
-         \usepackage{pgfplots}
-         \usepackage{unicode-math}
-         \usepackage{tikz}
-         \usepackage{caption}
-         \captionsetup[figure]{labelformat=empty}
-         \usetikzlibrary{arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections}
-         """
-         }
-
-         #new in rstdcx/dcx/py
-         tex_wrap = r"""
-         \documentclass[12pt,tikz]{standalone}
-         \usepackage{amsmath}
-         """+latex_elements['preamble']+r"""
-         \pagestyle{empty}
-         \begin{document}
-         %s
-         \end{document}
-         """
-         DPI = 600
-         target_id_group = lambda targetid: targetid[0]
-         target_id_color={"ra":("r","lightblue"), "sr":("s","red"),
-            "dd":("d","yellow"), "tp":("t","green")}
          html_extra_path=["doc/_traceability_file.svg"] #relative to conf.py
-         pandoc_doc_optref={'latex': '--template ../reference.tex',
-                          'html': {},#each can also be dict of file:template
-                          'pdf': '--template ../reference.tex',
-                          'docx': '--reference-doc ../reference.docx',
-                          'odt': '--reference-doc ../reference.odt'
-                          }
-         _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine',
-            'xelatex','-V','titlepage','-V','papersize=a4',
-            '-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
-         pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,
-            'docx':[],'odt':[],
-            'html':['--mathml','--highlight-style','pygments']}
-         rst_opts = { #http://docutils.sourceforge.net/docs/user/config.html
-                     'strip_comments':True
-                     ,'report_level':3
-                     ,'raw_enabled':True
-                     }
-         def name_from_directive(directive,count):
-              return directive[0].upper() + directive[1:] + ' ' + str(count)
+         import os
+         on_rtd = os.environ.get('READTHEDOCS') == 'True'
+         if not on_rtd:
+             latex_engine = 'xelatex'
+             #You can postprocess pngs.default: png_post_processor = None
+             def png_post_processor(filename):
+                 from PIL import Image, ImageChops
+                 def trim(im):
+                     bg = Image.new(im.mode, im.size, im.getpixel((0, 0)))
+                     diff = ImageChops.difference(im, bg)
+                     diff = ImageChops.add(diff, diff, 2.0, -100)
+                     bbox = diff.getbbox()
+                     if bbox:
+                         return im.crop(bbox)
+                 im = Image.open(filename)
+                 im = trim(im)
+                 im.save(filename)
+                 return filename
+             #the following are default and can be omitted
+             latex_elements = {'preamble':r"""
+             \usepackage{pgfplots}
+             \usepackage{unicode-math}
+             \usepackage{tikz}
+             \usepackage{caption}
+             \captionsetup[figure]{labelformat=empty}
+             \usetikzlibrary{arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections}
+             """
+             }
+             #new in rstdcx/dcx/py
+             tex_wrap = r"""
+             \documentclass[12pt,tikz]{standalone}
+             \usepackage{amsmath}
+             """+latex_elements['preamble']+r"""
+             \pagestyle{empty}
+             \begin{document}
+             %s
+             \end{document}
+             """
+             DPI = 600
+             target_id_group = lambda targetid: targetid[0]
+             target_id_color={"ra":("r","lightblue"), "sr":("s","red"),
+                "dd":("d","yellow"), "tp":("t","green")}
+             pandoc_doc_optref={'latex': '--template ../reference.tex',
+                              'html': {},#each can also be dict of file:template
+                              'pdf': '--template ../reference.tex',
+                              'docx': '--reference-doc ../reference.docx',
+                              'odt': '--reference-doc ../reference.odt'
+                              }
+             _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine',
+                'xelatex','-V','titlepage','-V','papersize=a4',
+                '-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
+             pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,
+                'docx':[],'odt':[],
+                'html':['--mathml','--highlight-style','pygments']}
+             rst_opts = { #http://docutils.sourceforge.net/docs/user/config.html
+                         'strip_comments':True
+                         ,'report_level':3
+                         ,'raw_enabled':True
+                         }
+             def name_from_directive(directive,count):
+                 return directive[0].upper() + directive[1:] + ' ' + str(count)
        Makefile
          SPHINXOPTS  = -c .
          SPHINXBLD   = sphinx-build
@@ -4391,7 +4508,7 @@ example_stp_subtree = r'''
               The ID seen in the final document is numbered
               by a python function.
               In the restructuredText files there is no numbering.
-              The targets use key words instead.
+              The targets use keywords instead.
               This way one can rearrange the items
               keeping the items sorted and still referentially consistent.
 
@@ -5041,6 +5158,16 @@ def main(**args):
             action='store',
             help='Create a sample directory structure with .rest.stpl files.')
         parser.add_argument(
+            '--pygrep',
+            dest='pygrep',
+            action='store',
+            help='Grep rst doc using python regular expressions.')
+        parser.add_argument(
+            '--kw',
+            dest='kw',
+            action='store',
+            help='List keyword lines (.. {kw1,kw2,...}) that contain all given as parameter, e.g kw1,kw2.')
+        parser.add_argument(
             '-I',
             action='append',
             metavar='folder',
@@ -5080,6 +5207,12 @@ to define variables that can be used in templates."""
         initroot(args['stplroot'], 'stpl')
     elif 'restroot' in args and args['restroot']:
         initroot(args['restroot'], 'rest')
+    elif 'pygrep' in args and args['pygrep']:
+        for f,i,l in grep(args['pygrep']):
+            print('"{}":{} {}'.format(f,i,l))
+    elif 'kw' in args and args['kw']:
+        for _, (f,i,l) in yield_with_kw(args['kw']):
+            print('"{}":{} {}'.format(f,i,l))
     elif 'infile' in args and args['infile']:
         for x in 'infile outfile outtype'.split():
             if x not in args:
@@ -5110,7 +5243,7 @@ to define variables that can be used in templates."""
                 onlyindex = [x for x in infiles if x.find('index.')>=0];
                 if len(onlyindex)>0:
                     infiles = onlyindex;
-            outfiles = [os.path.join(outfile, _in_2_out_name(inf,outinfo)) for inf in infiles]
+            outfiles = [normjoin(outfile, _in_2_out_name(inf,outinfo)) for inf in infiles]
         for i in imgfiles:
             convert(i,None)
         for i,o in zip(infiles,outfiles):

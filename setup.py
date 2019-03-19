@@ -5,7 +5,7 @@
 
 #test
 rm -rf test/__pycache__
-py.test -vv --cov=rstdoc --cov-report term-missing
+py.test -vv --doctest-modules --cov=rstdoc --cov-report term-missing
 #or
 waf configure && waf --docs sphinx_html --tests
 
@@ -29,7 +29,7 @@ import os
 import sys
 
 #also change ing doc/conf.py
-__version__ = '1.6.9'
+__version__ = '1.7.0'
 
 sys.path.append('./rstdoc')
 from dcx import dorst
