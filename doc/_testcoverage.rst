@@ -2,34 +2,172 @@
 platform linux -- Python 3.7.0, pytest-3.8.2, py-1.6.0, pluggy-0.7.1
 rootdir: /home/roland/mine/rstdoc, inifile:
 plugins: cov-2.6.0, pyfakefs-3.5
-collected 211 items
+collected 217 items
 
-rstdoc/dcx.py ...............                                            [  7%]
-rstdoc/retable.py ..                                                     [  8%]
-test/test_dcx.py ....................................................... [ 34%]
+rstdoc/dcx.py ..F...............F                                        [  8%]
+rstdoc/retable.py ..                                                     [  9%]
+test/test_dcx.py ....................................................... [ 35%]
 ........................................................................ [ 68%]
-................                                                         [ 75%]
-test/test_fromdocx.py .                                                  [ 76%]
+................FF                                                       [ 76%]
+test/test_fromdocx.py F                                                  [ 76%]
 test/test_rst_tables.py ..................................               [ 92%]
 test/test_unretable.py ................                                  [100%]
 
------------ coverage: platform linux, python 3.7.0-final-0 -----------
-Name                  Stmts   Miss  Cover   Missing
----------------------------------------------------
-rstdoc/__init__.py        0      0   100%
-rstdoc/dcx.py          1785    359    80%   241-243, 247-249, 254-257, 262-263, 280, 313-314, 402, 505, 604, 614-616, 622, 667, 671-672, 680, 683, 716, 748-753, 808, 870, 976, 983, 1001, 1008-1010, 1028-1029, 1048, 1061, 1080-1081, 1111, 1123-1125, 1150-1151, 1183-1184, 1305-1307, 1457-1459, 1474-1475, 1485-1486, 1518, 1524, 1543-1544, 1550-1551, 1750-1751, 1757-1758, 1776, 1783, 1838, 1978-1979, 1983, 2007-2008, 2261, 2324-2332, 2335, 2350, 2354-2356, 2365-2369, 2388, 2393, 2395, 2431-2432, 2519, 2556-2558, 2609-2611, 2619-2620, 2639, 2690-2691, 2717, 2738-2740, 2821, 2872, 2884, 2955, 3036, 3062, 3073, 3093-3094, 3106, 3166, 3210-3513, 4781-4783, 4790-4791, 4795-4796, 4844-4847, 4921-4922, 4932-4933, 5076-5077, 5086, 5098, 5107, 5119, 5122
-rstdoc/fromdocx.py      160     36    78%   80-81, 119-120, 123, 126-127, 152, 165-166, 193-194, 226-263, 278, 280, 282, 284, 317-327, 331
-rstdoc/listtable.py     103     12    88%   210-231, 234, 236, 239, 250-252, 261
-rstdoc/reflow.py        149     14    91%   310-339, 342, 344, 346, 349, 360-362, 371
-rstdoc/reimg.py          79     15    81%   101-102, 117-119, 147-160, 163, 165, 177-179, 192
-rstdoc/retable.py       262     29    89%   237, 317-318, 424, 485-526, 530
-rstdoc/untable.py       127     13    90%   85, 99-100, 240-255, 258, 260, 271-273, 283
-rstdoc/wafw.py           86     54    37%   39-40, 47-55, 60-63, 70-84, 88-95, 98-107, 111-114, 117-128
----------------------------------------------------
-TOTAL                  2751    532    81%
+=================================== FAILURES ===================================
+______________________ [doctest] rstdoc.dcx._kw_from_path ______________________
+3206 use file of path up to ``.git`` as keywords
+3207 
+3208     >>> dir="/pro jects/me_about-this-1.rst"
+3209     >>> _kw_from_path(dir)
+Expected:
+    frozenset({'me', 'this', '1', 'about'})
+Got:
+    frozenset({'about', 'this', 'me', '1'})
 
+/home/roland/mine/rstdoc/rstdoc/dcx.py:3209: DocTestFailure
+______________________ [doctest] rstdoc.dcx.yield_with_kw ______________________
+3288 
+3289     >>> list(yield_with_kw('a',[('a/b',1,'a b'),('c/d',1,'c d')]))
+3290     [(0, ['a/b', 1, 'a b'])]
+3291     >>> list(yield_with_kw('a c',[('a/b',1,'a b'),('c/d',1,'c d')]))
+3292     []
+3293     >>> list(yield_with_kw('a',[('a/b',1,'a b'),('c/d',1,'a c d')]))
+3294     [(0, ['a/b', 1, 'a b']), (1, ['c/d', 1, 'a c d'])]
+3295     >>> kwargs={'dir':normjoin(dirname(__file__),'../test/fixtures')}
+3296     >>> kws = 'svg'
+3297     >>> len(list(yield_with_kw(kws,**kwargs)))
+Expected:
+    6
+Got:
+    12
+
+/home/roland/mine/rstdoc/rstdoc/dcx.py:3297: DocTestFailure
+_________________________________ test_pygrep __________________________________
+
+    def test_pygrep():
+        os.chdir(_a_fix(''))
+        r = subprocess.run(['rstdcx','--pygrep', 'inline'],shell=True,stdout=subprocess.PIPE)
+        outlines = r.stdout.decode().splitlines()
+>       assert len(outlines) > 0
+E       assert 0 > 0
+E        +  where 0 = len([])
+
+../test_dcx.py:727: AssertionError
+----------------------------- Captured stderr call -----------------------------
+/usr/lib/python3.7/site-packages/matplotlib/figure.py:445: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
+  % get_backend())
+Ignoring line 5873 in mapping file 'psfonts.map': Unknown token '<DSSerif-Bold'
+Ignoring line 5875 in mapping file 'psfonts.map': Unknown token '<DSSerifUni-Bold'
+/usr/lib/python3.7/site-packages/matplotlib/figure.py:445: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
+  % get_backend())
+Ignoring line 5873 in mapping file 'psfonts.map': Unknown token '<DSSerif-Bold'
+Ignoring line 5875 in mapping file 'psfonts.map': Unknown token '<DSSerifUni-Bold'
+___________________________________ test_kw ____________________________________
+
+    def test_kw():
+        os.chdir(_a_fix(''))
+        r = subprocess.run(['rstdcx','--kw', 'png'],shell=True,stdout=subprocess.PIPE)
+        outlines = r.stdout.decode().splitlines()
+>       assert len(outlines) > 0
+E       assert 0 > 0
+E        +  where 0 = len([])
+
+../test_dcx.py:735: AssertionError
+----------------------------- Captured stderr call -----------------------------
+/usr/lib/python3.7/site-packages/matplotlib/figure.py:445: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
+  % get_backend())
+Ignoring line 5873 in mapping file 'psfonts.map': Unknown token '<DSSerif-Bold'
+Ignoring line 5875 in mapping file 'psfonts.map': Unknown token '<DSSerifUni-Bold'
+/usr/lib/python3.7/site-packages/matplotlib/figure.py:445: UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
+  % get_backend())
+Ignoring line 5873 in mapping file 'psfonts.map': Unknown token '<DSSerif-Bold'
+Ignoring line 5875 in mapping file 'psfonts.map': Unknown token '<DSSerifUni-Bold'
+______________________________ test_docx_to_rest _______________________________
+
+tmpdir = local('/tmp/pytest-of-roland/pytest-10/test_docx_to_rest0')
+
+    def test_docx_to_rest(
+            tmpdir #temporary directory for the -lurg converted rest file
+            ):
+        '''
+        This tests rstfromdocx, rstlisttable rstuntable rstreflow rstreimg.
+        '''
+        cwd = os.getcwd()
+        try:
+            with open(os.path.join(os.path.dirname(__file__),'fixtures', 'doc.rest'),encoding='utf-8') as f:
+                expected = f.read().replace('\\','/')
+            docxabs = os.path.abspath('test/fixtures/doc.docx')
+            os.chdir(tmpdir)
+>           main(docx=docxabs, listtable = True, untable = True, reflow = True, reimg = True)
+
+../test_fromdocx.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../rstdoc/fromdocx.py:266: in main
+    extract_media(adocx)
+../../rstdoc/fromdocx.py:105: in extract_media
+    zf = ZipFile(adocx)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <zipfile.ZipFile [closed]>
+file = '/home/roland/mine/rstdoc/test/fixtures/test/fixtures/doc.docx'
+mode = 'r', compression = 0, allowZip64 = True, compresslevel = None
+
+    def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True,
+                 compresslevel=None):
+        """Open the ZIP file with mode read 'r', write 'w', exclusive create 'x',
+            or append 'a'."""
+        if mode not in ('r', 'w', 'x', 'a'):
+            raise ValueError("ZipFile requires mode 'r', 'w', 'x', or 'a'")
+    
+        _check_compression(compression)
+    
+        self._allowZip64 = allowZip64
+        self._didModify = False
+        self.debug = 0  # Level of printing: 0 through 3
+        self.NameToInfo = {}    # Find file info given name
+        self.filelist = []      # List of ZipInfo instances for archive
+        self.compression = compression  # Method of compression
+        self.compresslevel = compresslevel
+        self.mode = mode
+        self.pwd = None
+        self._comment = b''
+    
+        # Check if we were passed a file-like object
+        if isinstance(file, os.PathLike):
+            file = os.fspath(file)
+        if isinstance(file, str):
+            # No, it's a filename
+            self._filePassed = 0
+            self.filename = file
+            modeDict = {'r' : 'rb', 'w': 'w+b', 'x': 'x+b', 'a' : 'r+b',
+                        'r+b': 'w+b', 'w+b': 'wb', 'x+b': 'xb'}
+            filemode = modeDict[mode]
+            while True:
+                try:
+>                   self.fp = io.open(file, filemode)
+E                   FileNotFoundError: [Errno 2] No such file or directory: '/home/roland/mine/rstdoc/test/fixtures/test/fixtures/doc.docx'
+
+/usr/lib/python3.7/zipfile.py:1182: FileNotFoundError
+
+----------- coverage: platform linux, python 3.7.0-final-0 -----------
+Name                                           Stmts   Miss  Cover   Missing
+----------------------------------------------------------------------------
+/home/roland/mine/rstdoc/rstdoc/__init__.py        0      0   100%
+/home/roland/mine/rstdoc/rstdoc/dcx.py          1840    363    80%   241-243, 247-249, 254-257, 262-263, 280, 313-314, 402, 507, 606, 616-618, 624, 669, 673-674, 682, 685, 718, 750-755, 810, 872, 978, 985, 1003, 1010-1012, 1030-1031, 1050, 1063, 1082-1083, 1113, 1125-1127, 1152-1153, 1185-1186, 1307-1309, 1459-1461, 1476-1477, 1487-1488, 1520, 1526, 1545-1546, 1552-1553, 1752-1753, 1759-1760, 1778, 1785, 1840, 1980-1981, 1985, 2009-2010, 2262, 2325-2333, 2336, 2351, 2355-2357, 2366-2370, 2389, 2394, 2396, 2432-2433, 2520, 2557-2559, 2610-2612, 2620-2621, 2640, 2691-2692, 2718, 2739-2741, 2822, 2873, 2885, 2956, 3037, 3063, 3074, 3095, 3107, 3167, 3264, 3307, 3325-3628, 4898-4900, 4907-4908, 4912-4913, 4961-4964, 5038-5039, 5049-5050, 5203-5204, 5211-5212, 5214-5215, 5219, 5231, 5240, 5255
+/home/roland/mine/rstdoc/rstdoc/fromdocx.py      160    129    19%   78-81, 85, 89-90, 94, 106-129, 134-137, 142-154, 159-175, 180-201, 206-208, 226-263, 267-298, 317-327, 331
+/home/roland/mine/rstdoc/rstdoc/listtable.py     103     28    73%   205-257, 261
+/home/roland/mine/rstdoc/rstdoc/reflow.py        149     33    78%   123-124, 305-367, 371
+/home/roland/mine/rstdoc/rstdoc/reimg.py          79     69    13%   84-122, 137-188, 192
+/home/roland/mine/rstdoc/rstdoc/retable.py       262     29    89%   237, 317-318, 424, 485-526, 530
+/home/roland/mine/rstdoc/rstdoc/untable.py       127     29    77%   85, 99-100, 120, 235-279, 283
+/home/roland/mine/rstdoc/rstdoc/wafw.py           86     54    37%   39-40, 47-55, 60-63, 70-84, 88-95, 98-107, 111-114, 117-128
+----------------------------------------------------------------------------
+TOTAL                                           2806    734    74%
 
 =============================== warnings summary ===============================
+/home/roland/mine/rstdoc/rstdoc/dcx.py:2551: DeprecationWarning: invalid escape sequence \s
+  '''
+
 /usr/lib/python3.7/site-packages/pygal/_compat.py:23: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated, and in 3.8 it will stop working
   from collections import Iterable
 
@@ -3449,5 +3587,7 @@ TOTAL                  2751    532    81%
 /usr/lib/python3.7/site-packages/defusedxml/ElementTree.py:68: DeprecationWarning: The html argument of XMLParser() is deprecated
   _XMLParser.__init__(self, html, target, encoding)
 
+source:180: DeprecationWarning: invalid escape sequence \s
+
 -- Docs: https://docs.pytest.org/en/latest/warnings.html
-================= 211 passed, 1692 warnings in 1261.16 seconds =================
+============ 5 failed, 212 passed, 1694 warnings in 1292.31 seconds ============

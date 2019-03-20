@@ -3206,8 +3206,8 @@ def _kw_from_path(dir):
     """use file of path up to ``.git`` as keywords
 
     >>> dir="/pro jects/me_about-this-1.rst"
-    >>> _kw_from_path(dir)
-    frozenset({'me', 'this', '1', 'about'})
+    >>> _kw_from_path(dir)==frozenset({'me', 'this', '1', 'about'})
+    True
 
     """
     fr = dir
@@ -3267,6 +3267,8 @@ def grep(
         for name in files:
             if any(name.endswith(ext) for ext in exts):
                 f = normjoin(root,name)
+                if not f.endswith('.py') and not f.endswith(_stpl) and exists(f+_stpl):
+                    continue
                 with open(f,encoding="utf-8") as fb:
                     lines=[l.strip() for l in fb.readlines()]
                     res = [(i,lines[i]) for i in rindices(regexp, lines)]

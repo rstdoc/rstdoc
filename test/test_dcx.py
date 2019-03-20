@@ -34,11 +34,11 @@ rstdcx, dcx.py
 '''
 
 import subprocess
-def run(x):
+def run(x,**kwargs):
     if 'win' in sys.platform:
-        return subprocess.run(x,shell=True)
+        return subprocess.run(x,shell=True,**kwargs)
     else:
-        return subprocess.run(x,shell=False)
+        return subprocess.run(x,shell=False,**kwargs)
 
 _lnkname=[
 ("""
@@ -722,7 +722,7 @@ def test_include_cmd(tmpworkdir,infile,outext):
 
 def test_pygrep():
     os.chdir(_a_fix(''))
-    r = subprocess.run(['rstdcx','--pygrep', 'inline'],shell=True,stdout=subprocess.PIPE)
+    r = run(['rstdcx','--pygrep', 'inline'],stdout=subprocess.PIPE)
     outlines = r.stdout.decode().splitlines()
     assert len(outlines) > 0
     for x in outlines:
@@ -730,8 +730,9 @@ def test_pygrep():
 
 def test_kw():
     os.chdir(_a_fix(''))
-    r = subprocess.run(['rstdcx','--kw', 'png'],shell=True,stdout=subprocess.PIPE)
+    r = run(['rstdcx','--kw', 'png'],stdout=subprocess.PIPE)
     outlines = r.stdout.decode().splitlines()
     assert len(outlines) > 0
     for x in outlines:
         assert 'png' in x
+
