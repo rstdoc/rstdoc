@@ -11,7 +11,7 @@ waf configure && waf --docs sphinx_html --tests
 
 #install
 pip uninstall rstdoc
-pip install pillow pyx pyfca pygal cairosvg numpy matplotlib sympy pint svgwrite
+pip install pillow pyx pyfca cairosvg numpy matplotlib sympy pint svgwrite
 pip install drawsvg stpl pypandoc docutils sphinx sphinx_bootstrap_theme
 pip install -e .
 #or
@@ -81,7 +81,7 @@ setup(name='rstdoc',
           ],
 
       install_requires=['cffi','cairocffi','cairosvg',
-                        'pillow', 'pyx', 'pyfca', 'pygal',
+                        'pillow', 'pyx', 'pyfca',
                         'numpy', 'matplotlib','sympy','pint','drawsvg',
                         'svgwrite', 'stpl', 'pypandoc', 'docutils',
                         'sphinx', 'sphinx_bootstrap_theme'],

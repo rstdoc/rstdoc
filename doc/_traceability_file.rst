@@ -28,9 +28,9 @@ Down: |tr3|, |tr6|, |tr8|, |tr11|, |tr14|, |tr15|, |tr16|, |tr17|
 
 :tr2:
 
-|rvd|, |scs|
+|r62|, |r9g|, |r9h|, |rbc|, |rj4|, |rpn|, |rstdcx|, |rvd|, |rwj|, |s45|, |sgt|
 
-Up: |tr3|
+Up: |tr3|, |tr6|, |tr11|
 
 Down: |tr0|
 
@@ -38,7 +38,7 @@ Down: |tr0|
 
 :tr3:
 
-|rvd|
+|rbc|
 
 Up: |tr1|
 
@@ -48,9 +48,9 @@ Down: |tr2|, |tr4|, |tr5|
 
 :tr4:
 
-|r62|, |r9g|, |r9h|, |rbc|, |rj4|, |rpn|, |rstdcx|, |rvd|, |rwj|, |s45|, |sgt|
+|rbc|, |s0t|
 
-Up: |tr3|, |tr6|, |tr11|
+Up: |tr3|
 
 Down: |tr0|
 
@@ -58,7 +58,7 @@ Down: |tr0|
 
 :tr5:
 
-|rvd|, |sim|
+|rbc|, |s10|
 
 Up: |tr3|
 
@@ -72,7 +72,7 @@ Down: |tr0|
 
 Up: |tr1|
 
-Down: |tr4|, |tr7|
+Down: |tr2|, |tr7|
 
 .. _`tr7`:
 
@@ -118,17 +118,17 @@ Down: |tr0|
 
 :tr11:
 
-|rbc|
+|rvd|
 
 Up: |tr1|
 
-Down: |tr4|, |tr12|, |tr13|
+Down: |tr2|, |tr12|, |tr13|
 
 .. _`tr12`:
 
 :tr12:
 
-|rbc|, |s0t|
+|rvd|, |scs|
 
 Up: |tr11|
 
@@ -138,7 +138,7 @@ Down: |tr0|
 
 :tr13:
 
-|rbc|, |s10|
+|rvd|, |sim|
 
 Up: |tr11|
 
@@ -148,7 +148,7 @@ Down: |tr0|
 
 :tr14:
 
-|son|, |test_lnkname|
+|dcx.PageBreakHack|, |dhy|, |rak|
 
 Up: |tr1|
 
@@ -158,7 +158,7 @@ Down: |tr0|
 
 :tr15:
 
-|rvl|, |sxr|
+|r90|, |seo|
 
 Up: |tr1|
 
@@ -168,7 +168,7 @@ Down: |tr0|
 
 :tr16:
 
-|dcx.PageBreakHack|, |dhy|, |rak|
+|rvl|, |sxr|
 
 Up: |tr1|
 
@@ -178,7 +178,7 @@ Down: |tr0|
 
 :tr17:
 
-|r90|, |seo|
+|son|, |test_lnkname|
 
 Up: |tr1|
 

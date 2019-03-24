@@ -103,7 +103,7 @@ and placed into ``./_images`` or ``../_images``.
   This needs `inkscape <https://inkscape.org/en/>`__.
 
 - ``.pyg`` contains python code that produces a graphic.
-  If the python code defines a ``save_to_png`` function,
+  If the python code defines a ``to_svg`` or a ``save_to_png`` function,
   then that is used, to create a png.
   Else the following is tried
 
@@ -111,7 +111,6 @@ and placed into ``./_images`` or ``../_images``.
     `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or
   - ``cairocffi.Surface`` from
     `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html>`__
-  - ``pygal.Graph`` from `pygal <https://pygal.org>`__
   - `matplotlib <https://matplotlib.org>`__.
     If ``matplotlib.pyplot.get_fignums()>1``
     the figures result in ``<name><fignum>.png``

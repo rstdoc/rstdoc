@@ -23,7 +23,6 @@ import matplotlib.pyplot as plt
 from collections import OrderedDict, defaultdict
 from hashlib import sha1 as sha
 from binascii import b2a_base64
-import pygal
 import pyx
 import stpl
 from docutils.core import publish_file, publish_string
@@ -150,7 +149,7 @@ and placed into ``./_images`` or ``../_images``.
   This needs `inkscape <https://inkscape.org/en/>`__.
 
 - ``.pyg`` contains python code that produces a graphic.
-  If the python code defines a ``save_to_png`` function,
+  If the python code defines a ``to_svg`` or a ``save_to_png`` function,
   then that is used, to create a png.
   Else the following is tried
 
@@ -158,7 +157,6 @@ and placed into ``./_images`` or ``../_images``.
     `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or
   - ``cairocffi.Surface`` from
     `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html>`__
-  - ``pygal.Graph`` from `pygal <https://pygal.org>`__
   - `matplotlib <https://matplotlib.org>`__.
     If ``matplotlib.pyplot.get_fignums()>1``
     the figures result in ``<name><fignum>.png``
@@ -1421,7 +1419,8 @@ def pygpng(
     Converts a .pyg file to a png file.
 
     ``.pyg`` contains python code that produces a graphic.
-    If the python code defines a ``save_to_png`` function, then that is used.
+    If the python code defines a ``to_svg`` or a ``save_to_png`` function,
+    then that is used.
     Else the following is tried
 
     - ``pyx.canvas.canvas`` from the
@@ -1430,8 +1429,6 @@ def pygpng(
       `svgwrite <https://svgwrite.readthedocs.io>`__ library or
     - ``cairocffi.Surface`` from `cairocffi \
       <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
-    - ``pygal.Graph`` from
-      `pygal <https://pygal.org>`__
     - `matplotlib <https://matplotlib.org>`__.
       If ``matplotlib.pyplot.get_fignums()>1``
       the figures result ``<name><fignum>.png``
@@ -1449,15 +1446,14 @@ def pygpng(
     eval(compile(pygcode, outfile, 'exec'), pygvars)
     if 'save_to_png' in pygvars:
         pygvars['save_to_png'](outfile)
+    elif 'to_svg' in pygvars:
+        _toolrunner.svg2png(bytestring=pygvars['to_svg'](),
+            write_to=outfile, dpi=dpi)
     else:
         for k, v in pygvars.items():
             if hasattr(v,'_repr_svg_'):
                 _toolrunner.svg2png(
                     bytestring=v._repr_svg_(), write_to=outfile, dpi=dpi)
-                break
-            elif isinstance(v, pygal.Graph):
-                _toolrunner.svg2png(bytestring=v.render(),
-                                    write_to=outfile, dpi=dpi)
                 break
             elif cairocffi and isinstance(v, cairocffi.Surface):
                 v.write_to_png(target=outfile)
@@ -1504,8 +1500,6 @@ def pygsvg(infile, *args, **kwargs):
       `svgwrite <https://svgwrite.readthedocs.io>`__ library or
     - ``cairocffi.SVGSurface`` from `cairocffi \
       <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
-    - ``pygal.Graph`` from
-      `pygal <https://pygal.org>`__
     - `matplotlib <https://matplotlib.org>`__.
 
     :param infile: a .pyg file name or list of lines
@@ -1522,8 +1516,6 @@ def pygsvg(infile, *args, **kwargs):
         for k, v in pygvars.items():
             if hasattr(v,'_repr_svg_'):
                 return onlysvg(v._repr_svg_())
-            elif isinstance(v, pygal.Graph):
-                return onlysvg(v.render().decode('utf-8'))
             elif cairocffi and isinstance(v, cairocffi.SVGSurface):
                 v.finish()
                 break #find io.BytesIO
@@ -4256,6 +4248,8 @@ example_tree = r'''
         ├ egpygal.pyg
             import pygal
             diagram=pygal.Bar()(1, 3, 3, 7)(1, 6, 6, 4)
+            def to_svg():
+                return diagram.render().decode('utf-8')
         ├ egother.pyg
             from PIL import Image, ImageDraw, ImageFont
             im = Image.new("RGBA",size=(50,50),color=(155,0,100))

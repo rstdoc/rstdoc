@@ -370,7 +370,8 @@ Converts an .eps file to a png file using inkscape.
 Converts a .pyg file to a png file.
 
 ``.pyg`` contains python code that produces a graphic.
-If the python code defines a ``save_to_png`` function, then that is used.
+If the python code defines a ``to_svg`` or a ``save_to_png`` function,
+then that is used.
 Else the following is tried
 
 - ``pyx.canvas.canvas`` from the
@@ -379,8 +380,6 @@ Else the following is tried
   `svgwrite <https://svgwrite.readthedocs.io>`__ library or
 - ``cairocffi.Surface`` from `cairocffi \
   <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
-- ``pygal.Graph`` from
-  `pygal <https://pygal.org>`__
 - `matplotlib <https://matplotlib.org>`__.
   If ``matplotlib.pyplot.get_fignums()>1``
   the figures result ``<name><fignum>.png``
@@ -414,8 +413,6 @@ the following is tried
   `svgwrite <https://svgwrite.readthedocs.io>`__ library or
 - ``cairocffi.SVGSurface`` from `cairocffi \
   <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
-- ``pygal.Graph`` from
-  `pygal <https://pygal.org>`__
 - `matplotlib <https://matplotlib.org>`__.
 
 :param infile: a .pyg file name or list of lines
@@ -971,6 +968,99 @@ Creates _links_xxx.rst`` files and a ``.tags``.
     >>> '_links_sphinx.rst' in ls('../doc')
     True
     >>> cd(olddir)
+
+
+.. _`dcx.grep`:
+
+:dcx.grep:
+
+.. code-block:: py
+
+   def grep(
+         regexp=rexkw, 
+         dir=None, 
+         exts=set(['.rst','.rest','.stpl','.tpl','.py'])):
+
+.. code-block:: py
+
+       if dir is None:
+           dir = os.getcwd()
+       regexp = re.compile(regexp)
+       for root, dirs, files in os.walk(dir):
+           for name in files:
+               if any(name.endswith(ext) for ext in exts):
+                   f = normjoin(root,name)
+                   if not f.endswith('.py') and not f.endswith(_stpl) and exists(f+_stpl):
+                       continue
+                   with open(f,encoding="utf-8") as fb:
+                       lines=[l.strip() for l in fb.readlines()]
+                       res = [(i,lines[i]) for i in rindices(regexp, lines)]
+                       for (i,l) in res:
+                           yield (f,i+1,l)
+
+.. {grep}
+
+Uses python re to find ``regexp`` and return 
+``[(file,1-based index,line),...]``
+in *dir* (default: os.getcwd()) for ``exts`` files
+
+:param regexp: default is a rst-commented keywords list
+:param dir: default is current dir
+:param exts: the extension of files searched
+
+>>> list(grep(dir=dirname(__file__))) [0][2]
+'.. {grep}'
+
+
+.. _`dcx.None`:
+
+:dcx.None:
+
+.. code-block:: py
+
+   def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
+
+.. code-block:: py
+
+       if fn_ln_kw is None:
+           fn_ln_kw = grep(**kwargs)
+       elif isinstance(fn_ln_kw,str): 
+           fn_ln_kw = grep(fn_ln_kw, **kwargs)
+       oldfn = None
+       qset = _kw_from_line(kws)
+       for i,(fn,ln,kw) in enumerate(fn_ln_kw):
+           #i,(fn,ln,kw) = next(enumerate(fn_ln_kw))
+           if fn != oldfn:
+               fnkw = _kw_from_path(fn)
+               oldfn = fn
+           kws = _kw_from_line(kw)|fnkw
+           if kws and qset<=kws:
+               yield i,[fn,ln,kw]
+
+Find keyword lines in ``fn_ln_kw`` list or using grep(),
+that contain the keywords in kws.
+
+Keyword line::
+  
+    .. {kw1,kw2}
+
+:param kws: string will be split by non-chars
+:param fn_ln_kw: list of (file, line, keywords) tuples 
+                 or ``regexp`` for grep()
+
+>>> list(yield_with_kw('a',[('a/b',1,'a b'),('c/d',1,'c d')]))
+[(0, ['a/b', 1, 'a b'])]
+>>> list(yield_with_kw('a c',[('a/b',1,'a b'),('c/d',1,'c d')]))
+[]
+>>> list(yield_with_kw('a',[('a/b',1,'a b'),('c/d',1,'a c d')]))
+[(0, ['a/b', 1, 'a b']), (1, ['c/d', 1, 'a c d'])]
+>>> kwargs={'dir':normjoin(dirname(__file__),'../test/fixtures')}
+>>> kws = 'svg'
+>>> len(list(yield_with_kw(kws,**kwargs)))
+6
+>>> kws = 'png'
+>>> len(list(yield_with_kw(kws,**kwargs)))
+7
 
 
 .. _`dcx.mktree`:
