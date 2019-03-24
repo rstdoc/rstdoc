@@ -1,5 +1,5 @@
 
-.. .. tp.rest
+.. .. ../doc/tp.rest
 
 
 .. |tkf| replace:: :ref:`Test Plan<tkf>`
@@ -9,11 +9,11 @@
 
 
 
-.. .. _testcoverage.rst
+.. .. ../doc/_testcoverage.rst
 
 
 
-.. .. _test_dcx_tests.rst
+.. .. ../doc/_test_dcx_tests.rst
 
 
 .. |test_lnkname| replace:: :ref:`test_lnkname<test_lnkname>`
@@ -44,7 +44,7 @@
 .. |test_include_cmd| replace:: :ref:`test_include_cmd<test_include_cmd>`
 
 
-.. .. _test_rst_table.rst
+.. .. ../doc/_test_rst_table.rst
 
 
 .. |testCreateTable| replace:: :ref:`testCreateTable<testCreateTable>`
@@ -62,7 +62,7 @@
 .. |testCreateFromData| replace:: :ref:`testCreateFromData<testCreateFromData>`
 
 
-.. .. sr.rest
+.. .. ../doc/sr.rest
 
 
 .. |son| replace:: :ref:`System Requirements<son>`
@@ -138,7 +138,7 @@
 .. |sil| replace:: :ref:`sil<sil>`
 
 
-.. .. rstdoc.rest
+.. .. ../doc/rstdoc.rest
 
 
 .. |or1| replace:: :ref:`rstdoc<or1>`
@@ -148,13 +148,13 @@
 
 
 
-.. .. _dcx.rst
+.. .. ../doc/_dcx.rst
 
 
 .. |rstdcx| replace:: :ref:`rstdcx<rstdcx>`
 
 
-.. .. _dcx_api.rst
+.. .. ../doc/_dcx_api.rst
 
 
 .. |dcx.DPI| replace:: :ref:`dcx.DPI<dcx.DPI>`
@@ -245,13 +245,13 @@
 .. |dcx.main| replace:: :ref:`dcx.main<dcx.main>`
 
 
-.. .. _fromdocx.rst
+.. .. ../doc/_fromdocx.rst
 
 
 .. |rstfromdocx| replace:: :ref:`rstfromdocx<rstfromdocx>`
 
 
-.. .. _fromdocx_api.rst
+.. .. ../doc/_fromdocx_api.rst
 
 
 .. |fromdocx.extract_media| replace:: :ref:`fromdocx.extract_media<fromdocx.extract_media>`
@@ -261,13 +261,13 @@
 .. |fromdocx.docx_rst_5| replace:: :ref:`fromdocx.docx_rst_5<fromdocx.docx_rst_5>`
 
 
-.. .. _listtable.rst
+.. .. ../doc/_listtable.rst
 
 
 .. |rstlisttable| replace:: :ref:`rstlisttable<rstlisttable>`
 
 
-.. .. _listtable_api.rst
+.. .. ../doc/_listtable_api.rst
 
 
 .. |listtable.row_to_listtable| replace:: :ref:`listtable.row_to_listtable<listtable.row_to_listtable>`
@@ -277,13 +277,13 @@
 .. |listtable.main| replace:: :ref:`listtable.main<listtable.main>`
 
 
-.. .. _untable.rst
+.. .. ../doc/_untable.rst
 
 
 .. |rstuntable| replace:: :ref:`rstuntable<rstuntable>`
 
 
-.. .. _untable_api.rst
+.. .. ../doc/_untable_api.rst
 
 
 .. |untable.paragraph23| replace:: :ref:`untable.paragraph23<untable.paragraph23>`
@@ -293,13 +293,13 @@
 .. |untable.main| replace:: :ref:`untable.main<untable.main>`
 
 
-.. .. _reflow.rst
+.. .. ../doc/_reflow.rst
 
 
 .. |rstreflow| replace:: :ref:`rstreflow<rstreflow>`
 
 
-.. .. _reflow_api.rst
+.. .. ../doc/_reflow_api.rst
 
 
 .. |reflow.reflowparagraph| replace:: :ref:`reflow.reflowparagraph<reflow.reflowparagraph>`
@@ -321,13 +321,13 @@
 .. |reflow.main| replace:: :ref:`reflow.main<reflow.main>`
 
 
-.. .. _reimg.rst
+.. .. ../doc/_reimg.rst
 
 
 .. |rstreimg| replace:: :ref:`rstreimg<rstreimg>`
 
 
-.. .. _reimg_api.rst
+.. .. ../doc/_reimg_api.rst
 
 
 .. |reimg.reimg| replace:: :ref:`reimg.reimg<reimg.reimg>`
@@ -335,13 +335,13 @@
 .. |reimg.main| replace:: :ref:`reimg.main<reimg.main>`
 
 
-.. .. _retable.rst
+.. .. ../doc/_retable.rst
 
 
 .. |rstretable| replace:: :ref:`rstretable<rstretable>`
 
 
-.. .. _retable_api.rst
+.. .. ../doc/_retable_api.rst
 
 
 .. |retable.title_some| replace:: :ref:`retable.title_some<retable.title_some>`
@@ -359,17 +359,17 @@
 .. |retable.main| replace:: :ref:`retable.main<retable.main>`
 
 
-.. .. readme.rest
+.. .. ../doc/readme.rest
 
 
 .. |m0d| replace:: :ref:`Overview<m0d>`
 
 
-.. .. files.rst
+.. .. ../doc/files.rst
 
 
 
-.. .. ra.rest.stpl
+.. .. ../doc/ra.rest.stpl
 
 
 .. |rwx| replace:: :ref:`Risk Analysis<rwx>`
@@ -429,7 +429,7 @@
 .. |rxj| replace:: :ref:`Math 1<rxj>`
 
 
-.. .. dd.rest
+.. .. ../doc/dd.rest
 
 
 .. |dcu| replace:: :ref:`Design Description<dcu>`
@@ -499,7 +499,7 @@
 .. |d1w| replace:: :ref:`d1w<d1w>`
 
 
-.. .. index.rest
+.. .. ../doc/index.rest
 
 
 .. |tr0| replace:: :ref:`tr0<tr0>`
