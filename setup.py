@@ -81,7 +81,7 @@ setup(name='rstdoc',
           ],
 
       install_requires=['cffi','cairocffi','cairosvg',
-                        'pillow', 'pyx', 'pyfca',
+                        'pillow', 'pyx', 'pyfca', 'pygal',
                         'numpy', 'matplotlib','sympy','pint','drawsvg',
                         'svgwrite', 'stpl', 'pypandoc', 'docutils',
                         'sphinx', 'sphinx_bootstrap_theme'],
