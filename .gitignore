@@ -12,6 +12,7 @@ tmp/
 .lock-*
 .tags
 tex2pdf.*
+test.xml
 
 ra.docx
 main.rest
