@@ -31,8 +31,15 @@ import sys
 #also change ing doc/conf.py
 __version__ = '1.7.1'
 
-sys.path.append('./rstdoc')
-from dcx import dorst
+try:
+    sys.path.append('./rstdoc')
+    from dcx import dorst
+except:
+    try:
+        from rstdoc.dcx import dorst
+    except:
+        def dorst(linelist):
+            return linelist
 
 def read(fname, separator='\n"""'):
     with open(os.path.join(os.path.dirname(__file__), fname),
