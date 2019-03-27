@@ -1,0 +1,667 @@
+.. vim: syntax=rst
+
+**Xxxxxxxx (XXX)**
+
+**Xxxxxxx xxx xxxxxxxxxxxx xxxx**
+
++------------------------------+--------------+-----------------+-------------+
+| Xxxx / Xxxxxxxxxxxx xx       | Xxxxxxxxxxxx | xxxxx           | Xxxxxx      |
++------------------------------+--------------+-----------------+-------------+
+| Xxxxxx Xxxxxxx               | x.xxx        | xxxxxxx@xxxx.xx | Xxxxxxxxxxx |
++------------------------------+--------------+-----------------+-------------+
+| Xxxxxx Xxxxx                 | x.xxx        | xxxxxxx@xxxx.xx | Xxxxxxxxxxx |
++------------------------------+--------------+-----------------+-------------+
+| **Xxx: Xxxxxxxxxxx, Xxxxxx** |              |                 |             |
++------------------------------+--------------+-----------------+-------------+
+
+**Xxxxxxxx Xxxxxxx**
+
++-----------------+-----------------+-----------------+-----------------+
+| Xxxxxxx         | Xxxx            | Xxx             | Xxxxxx          |
++-----------------+-----------------+-----------------+-----------------+
+| 0.0             | 00.00.0000      | Xxxxxxx         | Xxxxxxx xxxxx   |
+|                 |                 |                 | xx xxxxxxxx     |
++-----------------+-----------------+-----------------+-----------------+
+| 0.0             | 00.00.0000      | Xxxxxxx         | xxxxx           |
+|                 |                 |                 |                 |
+|                 |                 |                 | XXX-XXX-:       |
+|                 |                 |                 | 000-000         |
+|                 |                 |                 |                 |
+|                 |                 |                 | XXX-XX-: 000,   |
+|                 |                 |                 | 000x-x, 000x,   |
+|                 |                 |                 | 000, 000        |
+|                 |                 |                 |                 |
+|                 |                 |                 | xxxxxx          |
+|                 |                 |                 |                 |
+|                 |                 |                 | XXX-XX-: 000,   |
+|                 |                 |                 | 000, 000, 000,  |
+|                 |                 |                 | 000, 000, 000,  |
+|                 |                 |                 | 000, 000, 000,  |
+|                 |                 |                 | 000, 000, 000,  |
+|                 |                 |                 | 000, 000,       |
+|                 |                 |                 |                 |
+|                 |                 |                 | xxxxxxx         |
+|                 |                 |                 |                 |
+|                 |                 |                 | XXX-XX-: 000,   |
+|                 |                 |                 | 000-000, 000,   |
+|                 |                 |                 | 000, 000, 000,  |
+|                 |                 |                 | 000, 000        |
+|                 |                 |                 |                 |
+|                 |                 |                 | XXX-XXX-:       |
+|                 |                 |                 | 000-000         |
++-----------------+-----------------+-----------------+-----------------+
+| 0.0             | 00.00.0000      | Xxxxxxx         | Xxxxxx          |
+|                 |                 |                 | xxxxxxxx,       |
+|                 |                 |                 | xxxxxx          |
+|                 |                 |                 | xxxxxxxxx xx    |
+|                 |                 |                 | XXX-XX xxxxxxx, |
+|                 |                 |                 |                 |
+|                 |                 |                 | xxxxx           |
+|                 |                 |                 |                 |
+|                 |                 |                 | XXX-XXX-: 000x, |
+|                 |                 |                 | 000x-x,         |
+|                 |                 |                 | 000-000,        |
+|                 |                 |                 |                 |
+|                 |                 |                 | Xxxxxx          |
+|                 |                 |                 |                 |
+|                 |                 |                 | XXX-XXX-: 000,  |
+|                 |                 |                 |                 |
+|                 |                 |                 | XXX-XX-000:     |
++-----------------+-----------------+-----------------+-----------------+
+
+**Xxxxx**
+
++-----------------------------------+-----------------------------------+
+| Xxxxxx                            | Xxxxxxxxxxx                       |
++-----------------------------------+-----------------------------------+
+| Xxxxxxxxx                         | Xxx xxxxxxx xxx xxxxxxxxx xxx     |
+|                                   | xxxxx xxx xx xx xxxxxxxx xx xxx   |
+|                                   | xxxxxxx xxxx.                     |
++-----------------------------------+-----------------------------------+
+| Xxxxxxxx                          | Xxx xxxxxxx xxx xxxxxxxx xxx      |
+|                                   | xxxxxxxx xx xxx xxxxxxx xxxx.     |
++-----------------------------------+-----------------------------------+
+| Xxxxxxxxxxx                       | Xxx xxxxxxx xxx xxxxxxxxxxx xxx   |
+|                                   | xxx xxxxxxxxxx xxxx xxxxx xxx xx  |
+|                                   | xx xxxxxxx xxx xx xxxxxx.         |
++-----------------------------------+-----------------------------------+
+| Xxxxxx                            | Xxx xxxxxxxxxx xxxx xxx xxx       |
+|                                   | xxxxxxx xxx xxxxxxxxxx.           |
++-----------------------------------+-----------------------------------+
+| Xxxxxxxx                          | Xxx xxxxxxx xxx xxxxxxxx xx xxx   |
+|                                   | xxxxxxx xxxx xxxxx xxxxxx.        |
++-----------------------------------+-----------------------------------+
+
+**Xxxxx xx Xxxxxxxx**
+
+`1 Xxxxxxxxxxxx 3 <#xxxxxxxxxxxx>`__
+
+`1.1 Xxxxxxxxxxxxx 3 <#xxxxxxxxxxxxx>`__
+
+`1.2 Xxxxxxxx 3 <#xxxxxxxx>`__
+
+`1.3 Xxxxxxxxxxx 3 <#xxxxxxxxxxx>`__
+
+`2 Xxxxxxxx xxxxxxxxxxxx xxxxxxxxxxxxx
+3 <#xxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxx>`__
+
+`2.1 Xxxxxxxx 3 <#xxxxxxxx-1>`__
+
+`2.1.1 Xxxxxxxxxxx xx xxxxxxx 3 <#xxxxxxxxxxx-xx-xxxxxxx>`__
+
+`2.1.2 Xxxxxxxxxxxxx 4 <#xxxxxxxxxxxxx-1>`__
+
+`2.1.3 Xxxxxxxxx xxxxxxxxxxx 5 <#xxxxxxxxx-xxxxxxxxxxx>`__
+
+`2.2 Xxxx xxxxxxxxxxxx 5 <#xxxx-xxxxxxxxxxxx>`__
+
+`3 Xxxxxxxxxx 7 <#xxxxxxxxxx>`__
+
+`3.1 Xxxxxxxx X – Xxxxxxxxxxxx xxxxxxxx xxxxx
+7 <#xxxxxxxx-x-xxxxxxxxxxxx-xxxxxxxx-xxxxx>`__
+
+Xxxxxxxxxxxx
+============
+
+Xxxxxxxxxxxxx
+-------------
+
+**XXX**
+
+Xxxxxxxxxx xxxxxxxxxx xxxxxxxxxxx
+
+Xxxxxxxx
+--------
+
+Xxxx xxxxxxx xxxxxxxxx xxx xxxxx xxxxxxxxxxx xxxx xx xxxxxxxxxx xxxx xxx
+x.Xxxxx XXX. X xxxxx xxxxxxxx xx xxx **XXXXXX** xxx xx xxxxxxxx
+**XXXXX-XXXXX XXXXXXXX** xxxxxxxx. Xxx **XXXXX XXXXX XXXXXXXX**
+xxxxxxxxx xxx xxxxx xxxxxxxx xxxx xxx xxxxx xx xxx xxxxx xx xxx xxxxx xx
+xxx xxxxxxxxx xxxxx. Xxx xx xxxx **XXXXXX** xxxx x **XXXXX**.
+
+|image0|
+
+Xxxxxxxxxxx
+-----------
+
+Xxxxxxxxxxxx xxxxxx xx xxxx xxxxxxxx xxx xxxxxxxxxxx xxxxxxxxx xx xxx
+xxxxxxxxx xxxxxxxxx:
+
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxx xx XX-000     | Xxxxxxxxxxx xx XX-000 |
+|                       | xxxxxxxxxxx**         | xxxxxxxxxxx.          |
++-----------------------+-----------------------+-----------------------+
+
+Xxxxxxxx xxxxxxxxxxxx xxxxxxxxxxxxx
+===================================
+
+.. _xxxxxxxx-1:
+
+Xxxxxxxx
+--------
+
+Xxxxxxxxxxx xx xxxxxxx
+~~~~~~~~~~~~~~~~~~~~~~
+
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxx**           | Xxx xxxxxx xxxxxx     |
+|                       |                       | xxxxxxxxxxxxx xxxx    |
+|                       |                       | xxx xxxxxx xxx XXX.   |
++=======================+=======================+=======================+
+| **XXX-XX-000:**       | **Xxxxxx/xxxxxxx XX** | Xxx xxxxxx xx xxxxxxx |
+|                       |                       | xxxx xxxx xxxxxx XX   |
+|                       |                       | xxx xxxxxxx XX xxxxx  |
+|                       |                       | xxxxxxxxxxx           |
+|                       |                       | xxxxxxxxxxxxxx xx     |
+|                       |                       | x.xxx xxx x.Xxxxx     |
+|                       |                       | XXX. Xxx Xxxxxxxx     |
+|                       |                       | xxxxxxxxxxxxx X.00_0. |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxx xxxx 0**     | Xx xx xxxxxxxx xx     |
+|                       |                       | xxxx xxx xxxxxx xxx   |
+|                       |                       | xxxxxxxx x.Xxxxx XXX  |
+|                       |                       | xxx XXX XXXXXXXX      |
+|                       |                       | xxxxxxx               |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000x:**      | **Xxxxxx xxxxx**      | Xx xx xxx xxxxxxxx xx |
+|                       |                       | xxxxxxx x.Xxxxx XXX   |
+|                       |                       | xx x.Xxxxx XXXXXXXX   |
+|                       |                       | xxxxxxx.              |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxx**           | Xx xx xxxxxxxx xx     |
+|                       |                       | xxxxxxx xx xxx xx     |
+|                       |                       | xxxx xxxxxxx.         |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxx/**         | Xx xxxxxxx xxx        |
+|                       |                       | xxxxxxxx xxxxxx xxx   |
+|                       | **Xxxxxxxx xxxxx**    | xxxxxxxx xxx xxxxxxxx |
+|                       |                       | xxxxxxx xx xxx xxxxxx |
+|                       |                       | xxxxxxxx xxx xxx      |
+|                       |                       | xxxxxxxx xxxxxxxx     |
+|                       |                       | xxxxxxx xxxxxxxxx xx  |
+|                       |                       | xxxxxxxxxxxx. Xx      |
+|                       |                       | xxxxx xx x xxxxxxx    |
+|                       |                       | xxxxxxxx xxxxxxxx xxx |
+|                       |                       | xxxx xx xxxxxxxx xxx  |
+|                       |                       | xx xxxxxxx xxx xx     |
+|                       |                       | xxxxxxx.              |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **XXX xxxxxx**        | Xx xxxxxxx xxx        |
+|                       |                       | xxxxxxxx xxxxxx xxx   |
+|                       |                       | xxxxxxxx xx xxx-xxxx  |
+|                       |                       | xxxxxxxx xxxxxxxxxx   |
+|                       |                       | xxxxxxxxx xx          |
+|                       |                       | xxxxxxxxxxxxx         |
+|                       |                       | xxxxxxxxxx. Xxxxx     |
+|                       |                       | xxxxxxx:              |
+|                       |                       |                       |
+|                       |                       | -  XXX_000, XXX_000,  |
+|                       |                       |    XXX_000, XX_000    |
+|                       |                       |                       |
+|                       |                       | Xx xxxxx xx x xxxxxxx |
+|                       |                       | xxxxxxxx xxxxxxxx xxx |
+|                       |                       | xxxx xx xxxxxxxx xxxx |
+|                       |                       | x xxxxxxx xxxx xxx    |
+|                       |                       | xxxxxxxxxxxxx xxxxx   |
+|                       |                       | xxx xxxx xxxxxxxxx.   |
++-----------------------+-----------------------+-----------------------+
+
+.. _xxxxxxxxxxxxx-1:
+
+Xxxxxxxxxxxxx
+~~~~~~~~~~~~~
+
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxx             | Xxxxx xxxxxxx, xxxxx, |
+|                       | xxxxxxxxxxxxx**       | xxxxx xx xxx          |
+|                       |                       | xxxxxxxxxxx           |
+|                       |                       | xxxxxxxxxx xxx xxx    |
+|                       |                       | xxx xx xxx xxxxxx     |
+|                       |                       | xxxxxxxx              |
+|                       |                       | xxxxxxxxxxxxx, xxxx   |
+|                       |                       | xxx xxxx xx xxxxxxx   |
+|                       |                       | xxxxxx, xxx xxxxxxxxx |
+|                       |                       | XXXx xxxxxx xxx       |
+|                       |                       | [STRIKEOUT:xxxxx]     |
+|                       |                       | XXXXX xxxxxxxxx XXX   |
+|                       |                       | xxx xxx xxx x.Xxxxx   |
+|                       |                       | XXX xx xx **XXXX**    |
+|                       |                       | xxxxx.                |
++=======================+=======================+=======================+
+| **XXX-XX-000:**       | **Xxxxxxxxxxxxx 0**   | Xxxxxxxxxxxxx         |
+|                       |                       | xxxxxxxxxx xxx xxxxxx |
+|                       |                       | xxxxx xxxxxxxxxxx xxx |
+|                       |                       | xx xxxxxxxxxxx xx xxx |
+|                       |                       | xxxx xxx xxxxxx xxx   |
+|                       |                       | xxx xxxxxx xxxxxxxxx. |
+|                       |                       | Xxxxxxxx xxxxxx xxx   |
+|                       |                       | xxxxx xxxxxxxxxxx xxx |
+|                       |                       | xx xxxxxxxxxxx xxxx   |
+|                       |                       | xxx xxxxxx xxx xxx    |
+|                       |                       | xxxxxx xxxxxxxxx.     |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxxxxxx 0**   | [STRIKEOUT:Xxxxxxxxxx |
+|                       |                       | xx                    |
+|                       |                       | xxxxxx xxxxx          |
+|                       |                       | xxxxxxxxxxx xx xxx    |
+|                       |                       | xxxxxx xxxxxx x xxxxx |
+|                       |                       | xxxxxx xx xxx xxx     |
+|                       |                       | xxxxx xx xxxxxxxxx    |
+|                       |                       | xxxx xxx xxxxxxxx xxx |
+|                       |                       | xxx xxx xxxxxxxxxx xx |
+|                       |                       | xxxxxxx.]             |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxxxxxx 0**   | [STRIKEOUT:Xxxxxx xxx |
+|                       |                       | xx xxxxxxxxxxx        |
+|                       |                       | xx/xxxx xxx xxxxxx xx |
+|                       |                       | xxxxxx xx xxxxxxxx    |
+|                       |                       | xxxxxx – xxxx x       |
+|                       |                       | xxxxxx xxxxx xx xx    |
+|                       |                       | xxx xxxxxx xx xxxx.]  |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxxxxxx 0**   | [STRIKEOUT:Xxxx       |
+|                       |                       | xxxxxx xx xxx xxxxxx  |
+|                       |                       | xxx xxxx-xxxx.]       |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxxxxxx 0**   | x.Xxxxx XXX xxxxxxxxx |
+|                       |                       | xxxxxxx xxx           |
+|                       |                       | xxxxxxxxxxxxx         |
+|                       |                       | xxxxxxxxxx xxxx       |
+|                       |                       | xxxxxx xxx **XXXX**   |
+|                       |                       | xxxxx. X xxx          |
+|                       |                       | xxxxxxxxxxxxx         |
+|                       |                       | xxxxxxxxx xx xxxxxxx  |
+|                       |                       | xx xxx xxxxx xxxxx.   |
+|                       |                       | (Xxxxxxxxxx xxx: XX   |
+|                       |                       | xxxxx, xxxxxx         |
+|                       |                       | xxxxxxx, xxxxx        |
+|                       |                       | xxxxxxxx 0/0, xxxxx   |
+|                       |                       | xxxxxxxxx 0/0)        |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxxxxxx 0**   | X xxx xxxxxxxxxxxxx   |
+|                       |                       | xx xxxx xxxxxxxx xx   |
+|                       |                       | xxx xxxxx xxx xxx xxx |
+|                       |                       | xxxxxxxxxx xxxx xxxx  |
+|                       |                       | xxxxxxxxx. Xx xxx     |
+|                       |                       | xxxxx xxxxxx xxx      |
+|                       |                       | xxxxxxxxxxxxx xxxx    |
+|                       |                       | xxx xx xxxxxxx.       |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxxxxxx 0**   | Xx x xxxxxx xxx       |
+|                       |                       | xxxxxxxxxxxxx xx      |
+|                       |                       | xxxxxxxx, xxxxxxxxxxx |
+|                       |                       | xxxxxxxxxx xxxx xx    |
+|                       |                       | xxxxxxx xxx xxx       |
+|                       |                       | xxxxxx xxxxxxx xx xxx |
+|                       |                       | xxxxx xx xxx xxxx     |
+|                       |                       | xxxxxx.               |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxxxxxx 0**   | X xxxx xxxxxxx        |
+|                       |                       | xxxxxxxx xxxx xxx     |
+|                       |                       | xxxxxx xxxxxxxx       |
+|                       |                       | xxxxx/xxxxxxx         |
+|                       |                       | xxxxxxxxxxx xxxxx xxx |
+|                       |                       | xxxxxxxxxx xx xxx     |
+|                       |                       | xxxx xxxx xxxxxxx.    |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxx xxxxxxxxxx   | Xxxxxxxx xxxxxxxxx    |
+|                       | xxxxx 0**             | xxxxxxx xxxxxxxxxx    |
+|                       |                       | xxx xxxxxxxxxxx XX    |
+|                       |                       | xxxxxxx x XXX xxxxx   |
+|                       |                       | xxx xxxxxxxx xxxx     |
+|                       |                       | xxxxxxxxx.            |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxx xxxxxxxxxx   | XXX xxxxxxxxxx xxxxxx |
+|                       | xxxxx 0**             | xxxx xx xxx xxxxxxx   |
+|                       |                       | xxx xxxxx xxxxxxxx    |
+|                       |                       | xxx xxx xxxxxxxxx xx  |
+|                       |                       | xxx xxxx xxxx         |
+|                       |                       | xxxxxxx.              |
++-----------------------+-----------------------+-----------------------+
+
+Xxxxxxxxx xxxxxxxxxxx
+~~~~~~~~~~~~~~~~~~~~~
+
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxx           | Xxxxxxxxx xxxxxxxxxxx |
+|                       | xxxxxxxxxxx 0**       | xxx xxxx xx xxxx xxxx |
+|                       |                       | xxx xxxxxx xx xx      |
+|                       |                       | **XXXXXX** xxxxx.     |
++=======================+=======================+=======================+
+| **XXX-XX-000:**       | **Xxxxxxxxx           | X xxxxxx xxxxxxxxx    |
+|                       | xxxxxxxxxxx 0**       | xxxxxxxxxxx xxx xx    |
+|                       |                       | xxxxxxxxx. Xxx        |
+|                       |                       | xxxxxxxx xxxxx xxxx   |
+|                       |                       | xx xxxxxxxx xx xxx    |
+|                       |                       | xxxx xxxxxx xxxxxxx   |
+|                       |                       | xx xx xx xxxxxxxxx xx |
+|                       |                       | x xxxx xxxxxxx.       |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxx           | X xxxxxx xxxxxxxxx    |
+|                       | xxxxxxxxxxx 0**       | xxxxxxxxxxx xxxxx     |
+|                       |                       | xxxx xx xxxxxxxxx xx  |
+|                       |                       | < 000xx (xxxx xxxx    |
+|                       |                       | xxxxxxx xxxxx xxxxx   |
+|                       |                       | xx xxxxxxxx)          |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxx           | +---+---+---+---+     |
+|                       | xxxxxxxxxxx 0**       | | X | * | * | * |     |
+|                       |                       | | x | * | * | * |     |
+|                       |                       | | x | X | X | X |     |
+|                       |                       | | x | x | x | x |     |
+|                       |                       | | x | x | x | x |     |
+|                       |                       | | x | x | x | x |     |
+|                       |                       | | x | x | x | x |     |
+|                       |                       | | x | * | x | x |     |
+|                       |                       | | x | * | x | x |     |
+|                       |                       | | x |   | x | x |     |
+|                       |                       | | x |   | x | * |     |
+|                       |                       | | x |   | x | * |     |
+|                       |                       | | x |   | * |   |     |
+|                       |                       | | x |   | * |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | ± |   |   |   |     |
+|                       |                       | | 0 |   |   |   |     |
+|                       |                       | | 0 |   |   |   |     |
+|                       |                       | | µ |   |   |   |     |
+|                       |                       | | X |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | x |   |   |   |     |
+|                       |                       | | . |   |   |   |     |
+|                       |                       | +===+===+===+===+     |
+|                       |                       | |   | 0 | 0 | ± |     |
+|                       |                       | |   | 0 | 0 | 0 |     |
+|                       |                       | |   | 0 | Ω | 0 |     |
+|                       |                       | |   | Ω |   |   |     |
+|                       |                       | |   | - |   | % |     |
+|                       |                       | |   | 0 |   | x |     |
+|                       |                       | |   | 0 |   | x |     |
+|                       |                       | |   | 0 |   | ± |     |
+|                       |                       | |   | x |   |   |     |
+|                       |                       | |   | Ω |   | 0 |     |
+|                       |                       | |   |   |   | 0 |     |
+|                       |                       | |   |   |   |   |     |
+|                       |                       | |   |   |   | Ω |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | |   |   |   | x |     |
+|                       |                       | +---+---+---+---+     |
++-----------------------+-----------------------+-----------------------+
+
+Xxxx xxxxxxxxxxxx
+-----------------
+
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxx xxxxxxxx  | [STRIKEOUT:Xxx XXX    |
+|                       | (0)**                 | xxxxxx xxxxxxxxxx xxx |
+|                       |                       | xxxxxxxxxxxxx         |
+|                       |                       | xxxxxx.]              |
++=======================+=======================+=======================+
+| **XXX-XX-000x:**      | **Xxxxxxxxx xxxxxxxx  | [STRIKEOUT:XXX        |
+|                       | (0)**                 | xxxxxxxxx xxxxxx xxx  |
+|                       |                       | xx xxxxxxxx xxx xxx   |
+|                       |                       | xxxxxxx.]             |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxxx**        | [STRIKEOUT:Xx xx      |
+|                       |                       | xxxxxxxx xx           |
+|                       |                       | xxxxxxxxxx xxxx xxx   |
+|                       |                       | xxxxxx]               |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxx xxxxx**     | [STRIKEOUT:Xx xx      |
+|                       |                       | xxxxxxxx xx xxxxxxxx  |
+|                       |                       | xxx xxxxxx xxxxx xx   |
+|                       |                       | xxx xxxxxx]           |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxxx**         | [STRIKEOUT:Xx xx      |
+|                       |                       | xxxxxxxx xx xxxxxxxxx |
+|                       |                       | xxx xxxxxx]           |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxx             | [STRIKEOUT:Xx xx      |
+|                       | xxxxxxxxxxxxx**       | xxxxxxxx xx xxxxxxxx  |
+|                       |                       | xxx xxxxxx            |
+|                       |                       | xxxxxxxxxxxxx]        |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxx xxxxx**      | [STRIKEOUT:Xx xx      |
+|                       |                       | xxxxxxxx xx xxx xxx   |
+|                       |                       | xxxxxx xx XXXXXX      |
+|                       |                       | xxxxx]                |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxx xxxxxxxxxxx** | [STRIKEOUT:Xx xx      |
+|                       |                       | xxxxxxxx xx xxxxx     |
+|                       |                       | xxxxxxxxxxx]          |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxx xxxxxxxxxxx**  | [STRIKEOUT:Xx xx      |
+|                       |                       | xxxxxxxx xx xxxx      |
+|                       |                       | xxxxxxxxxxx]          |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxx-xxxx 0**       | [STRIKEOUT:Xxxxx xx   |
+|                       |                       | xxxxx xxxxxx          |
+|                       |                       | xxxx-xxxx:]           |
+|                       |                       |                       |
+|                       |                       | [STRIKEOUT:Xxxxxxxxxx |
+|                       |                       | xxxxxxxxxxx]          |
+|                       |                       |                       |
+|                       |                       | [STRIKEOUT:Xxxxxxxxxx |
+|                       |                       | xxxxxxxxxxx xxxxxxxx] |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxx-xxxx 0**       | [STRIKEOUT:Xx xx      |
+|                       |                       | xxxxxxxx xx xxxxxxx   |
+|                       |                       | xxxx-xxxxx xxx xxx    |
+|                       |                       | xxxxxxxxxx.]          |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxx-xxxx 0**       | [STRIKEOUT:Xx x       |
+|                       |                       | xxxx-xxxx xxxxx xxx   |
+|                       |                       | xxxxxx xx xxxxxx xx   |
+|                       |                       | xxx XXX.]             |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxx-xxxx 0**       | [STRIKEOUT:Xx x       |
+|                       |                       | xxxx-xxxx xxxxxx xx   |
+|                       |                       | xxxxxxxxx xxxx xx     |
+|                       |                       | xxxxxxxxx xx xxx      |
+|                       |                       | xxxxxx xxxx           |
+|                       |                       | xxxxxxxxxxx xxxxx xxx |
+|                       |                       | xxxxx.]               |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       |                       |                       |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxxx            | [STRIKEOUT:Xx xx      |
+|                       | xxxxxxxxxxxxx**       | xxxxxxxx xx xxxxxx    |
+|                       |                       | xxx xxx xxxxxxxxxxxx  |
+|                       |                       | xx xxx xxxxxxxx       |
+|                       |                       | xxxxxxxxx xx xxxxxxx] |
+|                       |                       | [STRIKEOUT:Xxxxxx!    |
+|                       |                       | Xxxxxxxxxxxxx xxxxxx  |
+|                       |                       | xxxxx xxxxxxxx        |
+|                       |                       | xxxxxx. xx xxx xxxx   |
+|                       |                       | xxxxxxxxxxx           |
+|                       |                       | xxxxxxxxxxxxx.]       |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxx             | [STRIKEOUT:Xxx        |
+|                       | xxxxxxxxxxxxx**       | xxxxxxx xxxxxx        |
+|                       |                       | xxxxxxxxx xxx         |
+|                       |                       | xxxxxxxxxxxxx xxxxxxx |
+|                       |                       | xx Xxxxxxx]           |
+|                       |                       | [STRIKEOUT:0 xxxx     |
+|                       |                       | X#.]                  |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxx             | [STRIKEOUT:Xxx        |
+|                       | xxxxxxxxxxxxx**       | xxxxxxx xxxxxx        |
+|                       |                       | xxxxxxxxx xxx         |
+|                       |                       | xxxxxxxxxxxxx xxxxxxx |
+|                       |                       | xx Xxxxxxx]           |
+|                       |                       | [STRIKEOUT:0 xxxx     |
+|                       |                       | Xxxxxx.]              |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxx**           | [STRIKEOUT:Xx x       |
+|                       |                       | xxxxxxxxxx xxxxxxx    |
+|                       |                       | xxxxxx xxx xxxxxxxxxx |
+|                       |                       | xxxxxx/xxxxxx xx      |
+|                       |                       | xxxxxxxx (x.x. xxxx   |
+|                       |                       | xxx xxxx xxxxxxx xxx  |
+|                       |                       | xxxxxxxx xx < 0xx),   |
+|                       |                       | xxx xxxx xx xxxxxx.]  |
+|                       |                       |                       |
+|                       |                       | [STRIKEOUT:Xxxxxxxxxx |
+|                       |                       | xxxxxxx xxxxxx        |
+|                       |                       | xxxxxxx xx xxxxxxx.]  |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxxxxx xxxxxxx     | [STRIKEOUT:Xxx        |
+|                       | xxxxxxx**             | xxxxxxxx xxxxxxxx xxx |
+|                       |                       | Xxxxxxx Xxxxxxx       |
+|                       |                       | Xxxxx. Xxxx xxx       |
+|                       |                       | xxxxxxx xx xxxxxx xxx |
+|                       |                       | xxxxxxxxxxx xxxxxxxx  |
+|                       |                       | xx XXXX xxxxx.]       |
++-----------------------+-----------------------+-----------------------+
+| **XXX-XX-000:**       | **Xxxx**              | [STRIKEOUT:Xxxxxxxxxx |
+|                       |                       | xxxx Xxxxxx xxxxxxx   |
+|                       |                       | xxx xxxxxxxxx xxxx    |
+|                       |                       | xxx xxxxxx xxxx xxxx  |
+|                       |                       | xxx xx xxxxxxxxx      |
+|                       |                       | xxxxxxx xxx-xxxxx.    |
+|                       |                       | Xxx xxxxxxxx xxxxxxxx |
+|                       |                       | xxx xxx xxxxxx xxxx   |
+|                       |                       | xx xxxxxxx xx xxxxx   |
+|                       |                       | xxxxxxx.]             |
++-----------------------+-----------------------+-----------------------+
+
+Xxxxxxxxxx
+==========
+
+Xxxxxxxx X – Xxxxxxxxxxxx xxxxxxxx xxxxx
+----------------------------------------
+
++--------+--------+--------+--------+--------+--------+--------+--------+
+| **Xxxx | **Xxxx | **Xxxx | **Xxxx | **Xxxx | **Xxxx | **Xxxx | **Xxxx |
+| xx     | xxxxxx | xxxxxx | xx     | xx     | xxxx   | x      | x      |
+| xxxx** | [x]**  | [x]**  | xx     | xxxx   | xxxx   | xxxx   | xxxxx  |
+|        |        |        | xxxxxx | [x]**  | [x]**  | [Xx]** | [µx]** |
+|        |        |        | xxxxx* |        |        |        |        |
+|        |        |        | *      |        |        |        |        |
++========+========+========+========+========+========+========+========+
+| Xxxxxx | 0      | 0      | 00     | 0      | 0      | 0      | 000    |
+| xx     |        |        |        |        |        |        |        |
+| Xxxxxx |        |        |        |        |        |        |        |
+| xxxxx  |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxxx | 0      | 0      | 000    | 0      | 0      | 00     | 000    |
+| xx     |        |        |        |        |        |        |        |
+| Xxxxxx |        |        |        |        |        |        |        |
+| x      |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxxx | 0      | 00     | 00     | 0      | 0      | 00     | 000    |
+| xx     |        |        |        |        |        |        |        |
+| Xxxxxx |        |        |        |        |        |        |        |
+| xx     |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxxx | 0      | 00     | 00     | 0      | 0      | 00     | 000    |
+| xx     |        |        |        |        |        |        |        |
+| XXX    |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxx  | 0      | 0      | 00     | 0      | 0      | 0      | 000    |
+| Xxx    |        |        |        |        |        |        |        |
+| Xxxxxx |        |        |        |        |        |        |        |
+| xxxxx  |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxx  | 0      | 0      | 00     | 0      | 0      | 00     | 000    |
+| Xxx    |        |        |        |        |        |        |        |
+| Xxxxxx |        |        |        |        |        |        |        |
+| x      |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxxx | 0      | 0      | 00     | 0      | 0      | 00.0   | 000    |
+| xxxxxx |        |        |        |        |        |        |        |
+| XXXX   |        |        |        |        |        |        |        |
+| 00     |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxxx | 0      | 00     | 00     | 0      | 0      | 00.0   | 000    |
+| xxxxxx |        |        |        |        |        |        |        |
+| XXXX   |        |        |        |        |        |        |        |
+| 00     |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxxx | 0      | 0      | 00     | 0      | 0      | 00     | 000    |
+| xxxxxx |        |        |        |        |        |        |        |
+| XXXXXX |        |        |        |        |        |        |        |
+| 00     |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxxx | 0      | 00     | 00     | 0      | 0      | 00     | 000    |
+| xxxxxx |        |        |        |        |        |        |        |
+| XXXXXX |        |        |        |        |        |        |        |
+| 00     |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxxx | 0      | 0      | 00     | 0      | 0      | 00     | 000    |
+| xxxxxx |        |        |        |        |        |        |        |
+| XXXXXX |        |        |        |        |        |        |        |
+| 00     |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxxx | 0      | 00     | 00     | 0      | 0      | 00     | 000    |
+| xxxxxx |        |        |        |        |        |        |        |
+| XXXXXX |        |        |        |        |        |        |        |
+| 00     |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxxx | 0      | 0      | 00     | 0      | 0      | 00     | 000    |
+| xxxxxx |        |        |        |        |        |        |        |
+| XXX 00 |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Xxxxxx | 0      | 0      | 00     | 0      | 0      | 00     | 000    |
+| xxxxxx |        |        |        |        |        |        |        |
+| XXX 00 |        |        |        |        |        |        |        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+
+.. |image0| image:: media/image1.png
+   :width: 2.97212in
+   :height: 1.0001in

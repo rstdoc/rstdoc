@@ -18,8 +18,8 @@ import re
 rstuntable
 ==========
 
-rstuntable: shell command
-untable: rstdoc module
+| rstuntable: shell command
+| untable: rstdoc module
 
 Convert tables of following format to paragraphs with an ID.
 The '-' in ID is removed and the ID is made lower case.

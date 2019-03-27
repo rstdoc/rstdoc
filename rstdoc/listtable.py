@@ -18,8 +18,8 @@ import re
 rstlisttable
 ============
 
-rstlisttable: shell command
-listable: rstdoc module
+| rstlisttable: shell command
+| listable: rstdoc module
 
 Convert RST grid tables to list-tables.
 

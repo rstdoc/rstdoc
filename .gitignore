@@ -23,6 +23,7 @@ _links_*
 !doc/_links_sphinx.rst
 
 test/fixtures/*
+!test/fixtures/doc
 !test/fixtures/default.txt
 !test/fixtures/doc.rest
 !test/fixtures/multiline-cells.txt

@@ -20,8 +20,8 @@ import re
 rstreflow
 =========
 
-rstreflow: shell command
-reflow: rstdoc module
+| rstreflow: shell command
+| reflow: rstdoc module
 
 Reflow tables and paragraphs in a rst document produced from a docx.
 
