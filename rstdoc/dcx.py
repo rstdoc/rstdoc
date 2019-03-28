@@ -272,12 +272,16 @@ _indent_text = lambda txt: '\n'.join(_indent+x for x in txt.splitlines())
 
 class _ToolRunner:
     def svg2png(self, *args, **kwargs):
-        if cairosvg:
+        try:
             cairosvg.svg2png(*args, **kwargs)
-        else:
-            print(
-              'Warning: You need cairocffi and cairosvg to convert svg to png'
-            )
+        except Exception as e:
+            print(e)
+            print('Trying inkscape...')
+            fn = normjoin(tempdir(),'svg.svg')
+            with open(fn,'w',encoding='utf-8') as f:
+                f.write(kwargs['bytestring'])
+            run_inkscape(fn, kwargs['write_to'],
+                dpi=kwargs.get('DPI', DPI))
 
     def run(self, *args, **kwargs):
         if 'outfile' in kwargs:
