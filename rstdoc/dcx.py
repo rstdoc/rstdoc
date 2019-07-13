@@ -1225,7 +1225,9 @@ def PageBreakHack(destination_path):
 
             <text:p text:style-name="PageBreak"/>
 
-    According to C066363e.pdf it should work.
+    According to 
+    `C066363e.pdf <https://standards.iso.org/ittf/PubliclyAvailableStandards/c066363_ISO_IEC_26300-1_2015.zip>`__
+    it should work.
 
     See ``utility.rst.tpl`` in the ``--stpl`` samples.
 
@@ -3256,6 +3258,7 @@ def grep(
     '.. {grep}'
 
     '''
+
     if dir is None:
         dir = os.getcwd()
     regexp = re.compile(regexp)
@@ -3277,7 +3280,7 @@ def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
     that contain the keywords in kws.
 
     Keyword line::
-      
+
         .. {kw1,kw2}
 
     :param kws: string will be split by non-chars
@@ -3299,6 +3302,7 @@ def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
     7
 
     '''
+
     if fn_ln_kw is None:
         fn_ln_kw = grep(**kwargs)
     elif isinstance(fn_ln_kw,str): 
