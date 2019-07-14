@@ -3,8 +3,8 @@
 rstfromdocx
 ===========
 
-rstfromdocx: shell command
-fromdocx: rstdoc module
+| rstfromdocx: shell command
+| fromdocx: rstdoc module
 
 Convert DOCX to RST in a subfolder of current dir, named after the DOCX file.
 It also creates ``conf.py``, ``index.py`` and ``Makefile``

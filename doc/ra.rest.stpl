@@ -792,7 +792,7 @@ with open(__file__, encoding='utf-8') as f:
     events = lns[ev1+13:ev2-1]
 
 eventstr = '\n'.join([x[3:] for x in events]).replace('|',r'\|').replace('* -','- -')
-eventdata = yaml.load(eventstr)
+eventdata = yaml.load(eventstr,Loader=yaml.FullLoader)
 
 r1 = sum([r(N(x[1]),N(x[3])) for x in eventdata])
 r2 = sum([r(N(x[1]),N(x[4])) for x in eventdata])

@@ -41,12 +41,12 @@ It is supposed to be used with a build tool.
   $ ./dcx.py --rest tmp #.rest files OR
   $ ./dcx.py --stpl tmp #.rest.stpl files
 
-- Only create .tags and _links_xxx.rst::
+- Only create .tags and ``_links_xxx.rst``::
 
   $ cd tmp/doc
   $ ./dcx.py
 
-- Create the docs (and .tags and _links_xxx.rst) with **make**::
+- Create the docs (and .tags and ``_links_xxx.rst``) with **make**::
 
   $ make html #OR
   $ make epub #OR
@@ -56,7 +56,7 @@ It is supposed to be used with a build tool.
 
   The latter two are done by Pandoc, the others by Sphinx.
 
-- Create the docs (and .tags and _links_xxx.rst) with
+- Create the docs (and .tags and ``_links_xxx.rst``) with
   `waf <https://github.com/waf-project/waf>`__:
 
   Instead of using ``make`` one can load ``dcx.py`` in

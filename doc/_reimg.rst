@@ -3,8 +3,8 @@
 rstreimg
 ========
 
-rstreimg: shell command
-reimg: rstdoc module
+| rstreimg: shell command
+| reimg: rstdoc module
 
 Reimg renames the images in the rst file and the files themselves.
 It uses part of the document name and a number as new names.

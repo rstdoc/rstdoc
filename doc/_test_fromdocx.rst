@@ -3,8 +3,8 @@ Conversion from docx
 ````````````````````
 
 
-.. _`test_docx_to_rest`:
+.. _`test_lurg`:
 
-:test_docx_to_rest:
+:test_lurg:
 
-This tests rstfromdocx, rstlisttable rstuntable rstreflow rstreimg.
+This tests rstlisttable, rstuntable, rstreflow, rstreimg.

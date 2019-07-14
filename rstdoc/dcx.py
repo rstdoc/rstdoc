@@ -165,7 +165,7 @@ and placed into ``./_images`` or ``../_images``.
   with ``pngembed()`` or ``dcx.svgembed()`` to embed in html output.
 
   ::
-  
+
      {{!svgembed("egpyx.pyg",outinfo)}}
      <%
      ansvg=svgembed('''
@@ -1225,7 +1225,7 @@ def PageBreakHack(destination_path):
 
             <text:p text:style-name="PageBreak"/>
 
-    According to 
+    According to
     `C066363e.pdf <https://standards.iso.org/ittf/PubliclyAvailableStandards/c066363_ISO_IEC_26300-1_2015.zip>`__
     it should work.
 
@@ -2859,9 +2859,9 @@ class RstFile:
         of ``lns`` of a restructureText file.
         For a .stpl file the linkname comes from the generated .rest file.
 
-        :lns: lines of the document
-        :doc: the rst document
-        :counters: if None, the starts with
+        :param lns: lines of the document
+        :param doc: the rst document
+        :param counters: if None, the starts with
             {".. figure":1,".. math":1,".. table":1,".. code":1}
         :fn_i_ln: (fn, i, ln) of the .stpl with all stpl includes sequenced
 
@@ -3240,13 +3240,13 @@ def _kw_from_line(ln):
     return frozenset(x for x in re.split(rexkwsplit,ln.lower()) if x)
 
 def grep(
-      regexp=rexkw, 
-      dir=None, 
+      regexp=rexkw,
+      dir=None,
       exts=set(['.rst','.rest','.stpl','.tpl','.py'])):
     '''
     .. {grep}
 
-    Uses python re to find ``regexp`` and return 
+    Uses python re to find ``regexp`` and return
     ``[(file,1-based index,line),...]``
     in *dir* (default: os.getcwd()) for ``exts`` files
 
@@ -3284,7 +3284,7 @@ def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
         .. {kw1,kw2}
 
     :param kws: string will be split by non-chars
-    :param fn_ln_kw: list of (file, line, keywords) tuples 
+    :param fn_ln_kw: list of (file, line, keywords) tuples
                      or ``regexp`` for grep()
 
     >>> list(yield_with_kw('a',[('a/b',1,'a b'),('c/d',1,'c d')]))
@@ -3305,7 +3305,7 @@ def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
 
     if fn_ln_kw is None:
         fn_ln_kw = grep(**kwargs)
-    elif isinstance(fn_ln_kw,str): 
+    elif isinstance(fn_ln_kw,str):
         fn_ln_kw = grep(fn_ln_kw, **kwargs)
     oldfn = None
     qset = _kw_from_line(kws)
@@ -4300,7 +4300,7 @@ example_tree = r'''
 example_stp_subtree = r'''
         ├ model.py
             """
-            Contains definitions used in 
+            Contains definitions used in
             - template files (``.rst.tpl`` or standalone ``.rest.stpl``)
             - test programs
             """
@@ -5068,11 +5068,11 @@ through Pandoc, Sphinx, Docutils (third parameter):
 
 - ``html``, ``docx``, ``pdf``, ... uses  Pandoc.
 
-- ``rst_html``, ``rst_pdf``, ...  uses 
+- ``rst_html``, ``rst_pdf``, ...  uses
   `rst2html <http://docutils.sourceforge.net/0.6/docs/user/tools.html>`__, ...
 
 - ``sphinx_html``, ``sphinx_pdf``, ...  uses Sphinx.
-  Sphinx provides a nice entry point via the 
+  Sphinx provides a nice entry point via the
   `sphinx bootstrap theme <https://github.com/ryan-roemer/sphinx-bootstrap-theme>`__.
 
 4th parameter onward become python defines usable in ``.stpl`` files.

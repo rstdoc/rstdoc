@@ -3,8 +3,8 @@
 rstretable
 ==========
 
-rstretable: shell command
-retable: rstdoc module
+| rstretable: shell command
+| retable: rstdoc module
 
 Transforms list tables to grid tables.
 

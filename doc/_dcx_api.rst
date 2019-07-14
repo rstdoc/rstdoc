@@ -220,7 +220,9 @@ with or without ``text:use-soft-page-breaks="true"``
 
         <text:p text:style-name="PageBreak"/>
 
-According to C066363e.pdf it should work.
+According to 
+`C066363e.pdf <https://standards.iso.org/ittf/PubliclyAvailableStandards/c066363_ISO_IEC_26300-1_2015.zip>`__
+it should work.
 
 See ``utility.rst.tpl`` in the ``--stpl`` samples.
 
@@ -981,23 +983,6 @@ Creates _links_xxx.rst`` files and a ``.tags``.
          dir=None, 
          exts=set(['.rst','.rest','.stpl','.tpl','.py'])):
 
-.. code-block:: py
-
-       if dir is None:
-           dir = os.getcwd()
-       regexp = re.compile(regexp)
-       for root, dirs, files in os.walk(dir):
-           for name in files:
-               if any(name.endswith(ext) for ext in exts):
-                   f = normjoin(root,name)
-                   if not f.endswith('.py') and not f.endswith(_stpl) and exists(f+_stpl):
-                       continue
-                   with open(f,encoding="utf-8") as fb:
-                       lines=[l.strip() for l in fb.readlines()]
-                       res = [(i,lines[i]) for i in rindices(regexp, lines)]
-                       for (i,l) in res:
-                           yield (f,i+1,l)
-
 .. {grep}
 
 Uses python re to find ``regexp`` and return 
@@ -1011,37 +996,15 @@ in *dir* (default: os.getcwd()) for ``exts`` files
 >>> list(grep(dir=dirname(__file__))) [0][2]
 '.. {grep}'
 
-
-.. _`dcx.None`:
-
-:dcx.None:
-
 .. code-block:: py
 
    def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
-
-.. code-block:: py
-
-       if fn_ln_kw is None:
-           fn_ln_kw = grep(**kwargs)
-       elif isinstance(fn_ln_kw,str): 
-           fn_ln_kw = grep(fn_ln_kw, **kwargs)
-       oldfn = None
-       qset = _kw_from_line(kws)
-       for i,(fn,ln,kw) in enumerate(fn_ln_kw):
-           #i,(fn,ln,kw) = next(enumerate(fn_ln_kw))
-           if fn != oldfn:
-               fnkw = _kw_from_path(fn)
-               oldfn = fn
-           kws = _kw_from_line(kw)|fnkw
-           if kws and qset<=kws:
-               yield i,[fn,ln,kw]
 
 Find keyword lines in ``fn_ln_kw`` list or using grep(),
 that contain the keywords in kws.
 
 Keyword line::
-  
+
     .. {kw1,kw2}
 
 :param kws: string will be split by non-chars
