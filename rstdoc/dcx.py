@@ -183,6 +183,7 @@ Conventions
 - Files
 
   - main docs end in ``.rest``
+    (add ``autocmd bufreadpre *.rest setlocal syntax=rst`` to vimrc)
   - ``.rst`` are included and ignored by Sphinx (see ``conf.py``).
   - ``.txt`` are literally included (use :literal: option).
   - templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately.
