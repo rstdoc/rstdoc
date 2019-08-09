@@ -238,20 +238,17 @@ are available to the ``gen_xxx(lns,**kw)`` functions (|dhy|).
 try:
     import svgwrite.drawing
 except:
-    print('Warning: no svgwrite')
     svgwrite = None
 
 try:
     import pyfca
 except:
-    print('Warning: no pyfca for traceability diagram')
     pyfca = None
 
 try:
     import cairocffi
     import cairosvg
 except:
-    print('Warning: no cairocffi')
     cairocffi = None
     cairosvg = None
 
