@@ -10,7 +10,7 @@
 
 |dcx.PageBreakHack|, |dhy|, |r1p|, |r62|, |r8d|, |r90|, |r9g|, |r9h|, |rak|, |rbc|, |rj4|, |roc|, |rpn|, |rstdcx|, |rvd|, |rvl|, |rwj|, |s0t|, |s10|, |s1g|, |s45|, |s8c|, |scs|, |seo|, |sgt|, |sim|, |son|, |sxr|, |test_lnkname|
 
-Up: |tr2|, |tr4|, |tr5|, |tr7|, |tr9|, |tr10|, |tr12|, |tr13|, |tr14|, |tr15|, |tr16|, |tr17|
+Up: |tr2|, |tr4|, |tr5|, |tr7|, |tr8|, |tr10|, |tr12|, |tr13|, |tr14|, |tr15|, |tr16|, |tr17|
 
 Down: 
 
@@ -22,15 +22,15 @@ Down:
 
 Up: 
 
-Down: |tr3|, |tr6|, |tr8|, |tr11|, |tr14|, |tr15|, |tr16|, |tr17|
+Down: |tr3|, |tr6|, |tr9|, |tr11|, |tr14|, |tr15|, |tr16|, |tr17|
 
 .. _`tr2`:
 
 :tr2:
 
-|rvd|, |scs|
+|r62|, |r9g|, |r9h|, |rbc|, |rj4|, |rpn|, |rstdcx|, |rvd|, |rwj|, |s45|, |sgt|
 
-Up: |tr3|
+Up: |tr3|, |tr6|, |tr9|
 
 Down: |tr0|
 
@@ -38,7 +38,7 @@ Down: |tr0|
 
 :tr3:
 
-|rvd|
+|rbc|
 
 Up: |tr1|
 
@@ -48,9 +48,9 @@ Down: |tr2|, |tr4|, |tr5|
 
 :tr4:
 
-|r62|, |r9g|, |r9h|, |rbc|, |rj4|, |rpn|, |rstdcx|, |rvd|, |rwj|, |s45|, |sgt|
+|rbc|, |s0t|
 
-Up: |tr3|, |tr6|, |tr11|
+Up: |tr3|
 
 Down: |tr0|
 
@@ -58,7 +58,7 @@ Down: |tr0|
 
 :tr5:
 
-|rvd|, |sim|
+|rbc|, |s10|
 
 Up: |tr3|
 
@@ -68,19 +68,19 @@ Down: |tr0|
 
 :tr6:
 
-|sgt|
+|rvd|
 
 Up: |tr1|
 
-Down: |tr4|, |tr7|
+Down: |tr2|, |tr7|, |tr8|
 
 .. _`tr7`:
 
 :tr7:
 
-|r1p|, |roc|, |sgt|
+|rvd|, |scs|
 
-Up: |tr6|, |tr8|
+Up: |tr6|
 
 Down: |tr0|
 
@@ -88,29 +88,29 @@ Down: |tr0|
 
 :tr8:
 
-|roc|
+|rvd|, |sim|
 
-Up: |tr1|
+Up: |tr6|
 
-Down: |tr7|, |tr9|, |tr10|
+Down: |tr0|
 
 .. _`tr9`:
 
 :tr9:
 
-|r8d|, |roc|, |s8c|
+|sgt|
 
-Up: |tr8|
+Up: |tr1|
 
-Down: |tr0|
+Down: |tr2|, |tr10|
 
 .. _`tr10`:
 
 :tr10:
 
-|roc|, |s1g|
+|r1p|, |roc|, |sgt|
 
-Up: |tr8|
+Up: |tr9|, |tr11|
 
 Down: |tr0|
 
@@ -118,17 +118,17 @@ Down: |tr0|
 
 :tr11:
 
-|rbc|
+|roc|
 
 Up: |tr1|
 
-Down: |tr4|, |tr12|, |tr13|
+Down: |tr10|, |tr12|, |tr13|
 
 .. _`tr12`:
 
 :tr12:
 
-|rbc|, |s0t|
+|r8d|, |roc|, |s8c|
 
 Up: |tr11|
 
@@ -138,7 +138,7 @@ Down: |tr0|
 
 :tr13:
 
-|rbc|, |s10|
+|roc|, |s1g|
 
 Up: |tr11|
 
@@ -158,7 +158,7 @@ Down: |tr0|
 
 :tr15:
 
-|r90|, |seo|
+|rvl|, |sxr|
 
 Up: |tr1|
 
@@ -178,7 +178,7 @@ Down: |tr0|
 
 :tr17:
 
-|rvl|, |sxr|
+|r90|, |seo|
 
 Up: |tr1|
 
