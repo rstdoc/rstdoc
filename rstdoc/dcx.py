@@ -1,5 +1,6 @@
 # !/usr/bin/env python
 # encoding: utf-8
+# vim: ts=4, sw=4
 
 # #### THIS GETS EXECUTED VIA GEN FILE #######
 # #lns=open(__file__).readlines()
@@ -2526,10 +2527,10 @@ def gen(
     Take the ``gen_[fun]`` functions
     enclosed by ``#def gen_[fun](lns,**kw)`` to create a new file.
 
-    :param source: either a list of lines of a path to the source code
+    :param source: either a list of lines or a path to the source code
     :param target: either save to this file
         or return the generated documentation
-    :param fun: use ``#gen_<fun>(lns,**kw):`` to extract the documtenation
+    :param fun: use ``#gen_<fun>(lns,**kw):`` to extract the documentation
     :param kw: kw arguments to the gen_<fun>() function
 
     ::
@@ -2559,9 +2560,14 @@ def gen(
     if '.' not in sys.path:
         sys.path.append('.')
     if fun:
+        # fun ='sdf'
         gen_regex = r'#\s*def gen_' + fun + r'(\w*(lns,\*\*kw):)*'
+        # re.compile(gen_regex).search('#def gen_sdf(lns,**kw):') #begin
+        # re.compile(gen_regex).search('#def gen_sdf') #end
     else:
         gen_regex = r'#\s*def gen(\w*(lns,\*\*kw):)*'
+        # re.compile(gen_regex).search('# def gen(lns,**kw):') #begin
+        # re.compile(gen_regex).search('# def gen') #end
     iblks = list(rindices(gen_regex, lns))
     py3 = [
         lns[k][lns[i].index('#') + 1:] for i, j in in2s(iblks)
@@ -2589,7 +2595,11 @@ def gen(
 
 def parsegenfile(genpth):
     '''
-    Parse the file ``genpth`` which has format ::
+    Parse the file ``genpth`` which is either 
+
+    - python code or
+
+    - has format ::
 
       sourcefile | targetfile | suffix | kw paramams or {}
 
@@ -2607,14 +2617,21 @@ def parsegenfile(genpth):
         sys.stderr.write("ERROR: {} cannot be opened\n".format(genpth))
         return
 
-    for ln in genfilelns:
-        if ln[0] != '#':
-            try:
-                f, t, d, a = [x.strip() for x in ln.split('|')]
-                kw = eval(a)
-                yield f, t, d, kw
-            except:
-                pass
+    try: #python code return [[from,to,fun,kw],...]?
+        genconfig= {'__file__':abspath(genpth)}
+        gencode = '\n'.join(genfilelns)
+        eval(compile(gencode, genpth, 'exec'), genconfig)
+        for f,t,d,kw in genconfig['from_to_fun_kw']:
+            yield f,t,d,kw # if python code last entry is not a string as blow
+    except:
+        for ln in genfilelns:
+          if ln[0] != '#':
+              try:
+                  f, t, d, a = [x.strip() for x in ln.split('|')]
+                  kw = eval(a)
+                  yield f, t, d, kw
+              except:
+                  pass
 
 
 def _flatten_stpl_includes_it(fn):
@@ -4290,9 +4307,14 @@ example_tree = r'''
             context.line_to(x3, y3)
             context.stroke()
         ├ gen
-            #from|to|gen_xxx|kwargs
-            ../__code__/some.h | _sometst.rst                | tstdoc | {}
-            ../__code__/some.h | ../build/__code__/some_tst.c | tst    | {}'''
+            ##from|to|gen_xxx|kwargs
+            #../__code__/some.h | _sometst.rst                | tstdoc | {}
+            #../__code__/some.h | ../build/__code__/some_tst.c | tst    | {}
+            #or
+            from_to_fun_kw = [ #fun and gen_fun() or gen()
+            ['../__code__/some.h','_sometst.rst','tstdoc',{}],
+            ['../__code__/some.h','../build/__code__/some_tst.c','tst',{}]
+            ]'''
 
 # replaces from '├ index.rest' to '├ egtikz.tikz'
 example_stp_subtree = r'''

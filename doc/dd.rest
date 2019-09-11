@@ -42,10 +42,10 @@ Place a target ID before paragraphs, figures, list-tables, code listings, maths:
     :dx8: <optionally key words here>
 
     ``:dx8:`` is a RST definition that will get special formatting in the generated document.
-    Else, ``dx8:`` would do, too. 
+    Else, ``dx8:`` would do, too.
     Omitting it, if the ID is not wanted in the generated document.
 
-    |dx8| is an example ID. 
+    |dx8| is an example ID.
 
     .. _`dz3`:
     
@@ -146,8 +146,8 @@ See |m0d| for their purpose.
 :dfy: |dt7|
 
 Included files use the extension ``.rst``.
-Include them with:: 
-  
+Include them with::
+
     .. include:: somefile.rst
 
 
@@ -164,13 +164,13 @@ Images can be generated from `tikz`_ files (``.tikz``) or templates of it (``.ti
 
 :dyn: |s8c|, |dv6|
 
-``.rest``, ``.rst``, ``.tikz`` files can be `SimpleTemplate`_ templates. 
+``.rest``, ``.rst``, ``.tikz`` files can be `SimpleTemplate`_ templates.
 
-Then they have the additional extension 
+Then they have the additional extension
 
 - ``.stpl``, if they can be expanded by themselves
 - ``.tpl``, if they are only used by other template files (``%include('some.rst.tpl')``).
-  ``.tpl`` files can have parameters, which are provided via ``%include('some.rst.tpl',aparam="test")`` 
+  ``.tpl`` files can have parameters, which are provided via ``%include('some.rst.tpl',aparam="test")``
   ``.tpl`` files can be in the same or the parent folder, without the need for a path in ``%include()``.
 
 In this documentation ``ra.rest.stpl`` includes ``utility.rst.tpl``.
@@ -184,24 +184,24 @@ Tools
 
 The tools are all open source and community driven.
 
-.. _`dmm`: 
+.. _`dmm`:
 
 :dmm: |scf|
 
 `Pandoc`_ is used to convert to HTML, PDF, DOCX, ODT
 
-.. _`dsn`: 
+.. _`dsn`:
 
 :dsn: |dav|, |san|
 
-A text `editor`_ is used for writing. 
+A text `editor`_ is used for writing.
 It should support `CTags`_'s ``.tags`` files
 
 .. _`d13`:
 
 :d13:  |sgt|, |s8c|
 
-`Python`_ is used 
+`Python`_ is used
 
 - for scripting and (|da0|)
 
@@ -219,11 +219,11 @@ Very table-like data is written in `yaml`_ or `json`_ (|dg8|).
 
 :dwm: |doe|, |san|, |sgt|, |s8c|
 
-`rstdoc`_'s `rstdcx`_ is used to 
+`rstdoc`_'s `rstdcx`_ is used to
 
-- create ``.tags`` and ``_links_xxx.rst`` files to support hypertext (|d03|) 
+- create ``.tags`` and ``_links_xxx.rst`` files to support hypertext (|d03|)
 - generated files from source code using the ``gen`` file (|dhy|)
-- expand template files ``.stpl`` (|dv6|) 
+- expand template files ``.stpl`` (|dv6|)
 - convert ``.tikz`` files to ``.png`` and place into ``./_images`` or ``../_images``
 
 .. _`dqf`:
@@ -244,9 +244,9 @@ with links to all the top level files (``.rest``) (|d1w|)
 
 :df3:  `Latex`_, |scf|
 
-`LaTex`_ to 
+`LaTex`_ to
 
-- convert `RST`_ directly to PDFs or 
+- convert `RST`_ directly to PDFs or
 - create graphics using `tikz`_
 
 Motivation
@@ -261,7 +261,7 @@ Light Markup
 
 `LaTex`_ and other `document markup languages`_ are not easy to learn (|s45|) and have not enough `constraints`_.
 
-The alternatives are `light markup`_ formats: 
+The alternatives are `light markup`_ formats:
 
 - |sgt|, |s8c|: It is easier to *generate parts of the documentation* with scripts from source code or source code comments.
   It allows mixing source code with documentation for better cohesion and less redundancy.
@@ -276,10 +276,10 @@ The alternatives are `light markup`_ formats:
   One can commit documentation changes together with the according source code changes.
   It allows to keep outdated information hidden in the `VCS`_ history and not lying around and messing up.
   It is easy to review documentation changes.
-  To make it even more easy one should try to have 
+  To make it even more easy one should try to have
 
   - one sentence per line
-  - one clause per line or 
+  - one clause per line or
   - one list item per line
 
 - |s0t|: It is easier to extract, which items link to which other ones, especially if the team agrees on facilitating conventions.
@@ -293,7 +293,7 @@ The alternatives are `light markup`_ formats:
 - |sed|: It is very readable.
 
 - |scf|: It can be translated to *several final formats*, e.g.
-  
+
   - HTML (`Pandoc`_, `Sphinx`_)
   - PDF (`Pandoc`_, `Sphinx`_)
   - ODT, DOCX (`Pandoc`_): `Sphinx`_ extension to `RST`_ cannot be converted to these formats.
@@ -317,7 +317,7 @@ RST
 
 :dbz: `RST`_
 
-There are many `light markup`_ formats. 
+There are many `light markup`_ formats.
 But especially restructuredText (`RST`_)
 
 - |s45|: has rich format support (e.g. table formats)
@@ -333,7 +333,7 @@ But especially restructuredText (`RST`_)
 http://rst.ninjs.org can be used to play with `RST`_.
 
 For the conversion from `RST`_ to `DOCX`_ currently the best tool is `Pandoc`_,
-`Pandoc`_ only takes pure `RST`_ and does not know 
+`Pandoc`_ only takes pure `RST`_ and does not know
 about the `Sphinx`_ extensions like ``:ref:``.
 
 Hypertext
@@ -360,7 +360,7 @@ use `RST`_'s replacement `substitutions`_::
     This is text that references |dx8|.
 
 As the `RST`_'s link format differs between HTML, PDF and DOCX,
-`rstdoc`_'s `rstdcx`_ generates separate files 
+`rstdoc`_'s `rstdcx`_ generates separate files
 with definitions for the replacement `substitutions`_:
 
 ``_links_docx.rst``::
@@ -403,7 +403,7 @@ There are a lot of `editors`_ that work well with RST, e.g. `Emacs`_.
 Vim
 ```
 
-| `vim_py3_rst <https://github.com/rpuntaie/vim_py3_rst>`__ 
+| `vim_py3_rst <https://github.com/rpuntaie/vim_py3_rst>`__
 | `vim-table-mode <https://github.com/dhruvasagar/vim-table-mode>`__
 | `riv.vim <https://github.com/gu-fan/riv.vim>`__
 
@@ -446,9 +446,9 @@ Build System
 
 `waf`_ (|dqf|) is a good choice as build system:
 
-- it is python
-- it is made part of the project, i.e. not an external dependency
-- it supports many computer languages
+- It is python
+- It is made part of the project, i.e. not an external dependency
+- It supports many computer languages
 - `rstdoc`_'s `dcx.py`_ is a `waf`_ plugin
 
 As a general automation tool to `doit`_ would be a good choice,
@@ -466,14 +466,24 @@ Generated documentation
 To generate documentation files from source code,
 `rstdoc`_'s `rstdcx`_
 
-- looks into a ``gen`` file, to see which source files lead to which target file
-- gets the ``def gen_xxx(lns,**kw)`` python function. ``xxx`` comes from the ``gen`` file, the rest must match exactly.
-- executes the ``def gen_xxx(lns,**kw)`` function with the lines of the source file and the ``kw`` from the ``gen`` file
-- saves the result in the target files
+- Looks into a ``gen`` file, to see which source files lead to which target file.
+  The ``gen`` file can be
+
+  - python code defining ``from_to_fun_kw = [[fromfile,tofile,fun,kw],...]`` or
+  - ``from|to|fun|kwargs`` lines
+
+  ``fun`` means ``gen_fun()`` (or just ``gen()`` if empty) that can be found commented ``#gen_fun`` in ``fromfile``.
+
+- Gets the ``# def gen_fun(lns,**kw)`` python function. ``fun`` comes from the ``gen`` file, the rest must match exactly.
+  ``# def gen_fun`` marks the end of the function.
+
+- Executes the ``def gen_fun(lns,**kw)`` function with the lines of the source file and the ``kw`` from the ``gen`` file
+
+- Saves the result in the target files
 
 In `waf`_'s ``wscript_build``, call ``gen_files()`` to initiate interpretation of the ``gen`` file.
 
-See the ``gen`` file of this documentation as an example. 
+See the ``gen`` file of this documentation as an example.
 
 Templating
 ----------
@@ -483,7 +493,7 @@ Templating
 :dv6: templating text
 
 Python has many template libraries. An important one is `Jinja2`_.
-But they are targeted especially to HTML and consider aspects (e.g. security), 
+But they are targeted especially to HTML and consider aspects (e.g. security),
 that are not of relevance for technical documentation.
 
 `bottle`_'s `SimpleTemplate`_ is inverted Python (text un-enclosed, code enclosed)
@@ -517,16 +527,16 @@ can become ``smpl.tikz.stpl``::
 
 :dhl: defines for code and documentation
 
-One can have 
+One can have
 
-- limits defined in a python file (specifications.py) and use them in 
+- limits defined in a python file (specifications.py) and use them in
 - a code file template (e.g. specifications.h.stpl)
 - and in a documentation file template (e.g. specifications.rest.stpl)
 
 Alternatively one can have
 
 - a code file with limits (e.g. specifications.h)
-- parse that code file in the python code 
+- parse that code file in the python code
   and use the values in the text of a documentation file template
   (all in e.g. specifications.rest.stpl)
 
@@ -534,19 +544,19 @@ Alternatively one can have
 
 :drz: mathematics
 
-One can use 
+One can use
 
-- python mathematics (e.g. `sympy`_) 
+- python mathematics (e.g. `sympy`_)
 - use it for actual calculations
 - expand the `formulas`_ in the text
 - use the calculated values in the text
 
-:: 
+::
 
     %from sympy.abc import *
     %from sympy import Eq, latex
     %pythagoras=Eq(c**2,a**2+b**2)
-    Pythagorean theorem 
+    Pythagorean theorem
 
     .. math:
     
@@ -556,7 +566,7 @@ One can use
 
 becomes::
 
-    Pythagorean theorem 
+    Pythagorean theorem
 
     .. math:
 
@@ -579,15 +589,15 @@ e.g. via and ``import``.
 
 If the data is more table-like:
 
-`yaml`_ is good for direct editing, because it is 
+`yaml`_ is good for direct editing, because it is
 
 - very non-verbose and
 - almost can be used directly as RST
 - changes can be best followed without too much syntax
 
-`json`_ is appropriate, if the data 
+`json`_ is appropriate, if the data
 
-- is generated 
+- is generated
 - needs to be read and possibly edited by humans
 - needs to be rendered on HTML via ``javascript``
 
@@ -597,7 +607,7 @@ that is unlikely to change throughout the development time.
 There are alternatives for XML's `XPath`_ in `yaml`_ and `json`_:
 
 - Python and `yaml`_: `dpath`_
-- `json`_: `jsonpath`_ 
+- `json`_: `jsonpath`_
 
 Project Site
 ------------
@@ -607,7 +617,7 @@ Project Site
 :d1w: project site
 
 A central HTML project site can be a central point of team coordination.
-One can have 
+One can have
 
 - an issue file
 - minutes file for meetings
@@ -617,7 +627,7 @@ One can have
 
 This keeps all the data together in
 
-- one format and 
+- one format and
 - one tool chain
 - one repository
 
