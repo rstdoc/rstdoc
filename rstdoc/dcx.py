@@ -3662,13 +3662,13 @@ example_tree = r'''
          top='.'
          out='build'
          def options(opt):
-           opt.load('dcx', tooldir='.')
+             opt.load('dcx', tooldir='.')
          def configure(cfg):
-           cfg.load('dcx', tooldir='.')
+             cfg.load('dcx', tooldir='.')
          def build(bld):
-           #defines bld.gen_files(), bld.gen_links(), bld.build_docs()
-           bld.load('dcx', tooldir='.')
-           bld.recurse('doc')
+             #defines bld.gen_files(), bld.gen_links(), bld.build_docs()
+             bld.load('dcx', tooldir='.')
+             bld.recurse('doc')
        docutils.conf
          [general]
          halt_level: severe
