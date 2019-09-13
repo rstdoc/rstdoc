@@ -158,7 +158,7 @@ Down: |tr0|
 
 :tr15:
 
-|son|, |test_lnkname|
+|rvl|, |sxr|
 
 Up: |tr1|
 
@@ -168,7 +168,7 @@ Down: |tr0|
 
 :tr16:
 
-|rvl|, |sxr|
+|son|, |test_lnkname|
 
 Up: |tr1|
 

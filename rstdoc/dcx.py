@@ -38,7 +38,8 @@ import subprocess as sp
 import atexit
 import contextlib
 import shutil
-import os
+import os, os.path
+from pathlib import Path
 import io
 import re
 import sys
@@ -3180,8 +3181,9 @@ class Fldrs(OrderedDict):
         return super().__str__()
 
     def scandirs(self):
-        for p, ds, fs in os.walk(self.scanroot):
-            if not p.endswith(_images):
+        #self.scanroot='.'
+        for p, ds, fs in reversed(list(os.walk(self.scanroot))):
+            if _images not in Path(p).parts:
                 directory = normjoin(p)
                 fldr = Fldr(directory)
                 fldr.scandir(fs)
@@ -3215,7 +3217,7 @@ def links_and_tags(adir):
     for fldr in fldrs.values():
         fldr.create_links_and_tags(fldrs.scanroot)
 
-def _kw_from_path(dir):
+def _kw_from_path(dir,rexkwsplit=rexkwsplit):
     """use file of path up to ``.git`` as keywords
 
     >>> dir="/pro jects/me_about-this-1.rst"
@@ -3241,7 +3243,7 @@ def _kw_from_path(dir):
     res = re.split(rexkwsplit,fpth)
     return frozenset(res)
 
-def _kw_from_line(ln):
+def _kw_from_line(ln,rexkwsplit=rexkwsplit):
     """make  a frozenset out of keyword line
 
     >>> ln='.. {kw1,kw2-kw3.kw4}'
@@ -3257,7 +3259,9 @@ def _kw_from_line(ln):
 def grep(
       regexp=rexkw,
       dir=None,
-      exts=set(['.rst','.rest','.stpl','.tpl','.py'])):
+      exts=set(['.rst','.rest','.stpl','.tpl','.py']),
+      rexkwsplit=rexkwsplit
+):
     '''
     .. {grep}
 
@@ -3265,9 +3269,10 @@ def grep(
     ``[(file,1-based index,line),...]``
     in *dir* (default: os.getcwd()) for ``exts`` files
 
-    :param regexp: default is a rst-commented keywords list
+    :param regexp: default is '^\s*\.\. {'
     :param dir: default is current dir
     :param exts: the extension of files searched
+    :param rexkwsplit: defaults to '[\W_]+'
 
     >>> list(grep(dir=dirname(__file__))) [0][2]
     '.. {grep}'
@@ -3298,6 +3303,8 @@ def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
 
         .. {kw1,kw2}
 
+    This is due to ``dcx.rexkw``, which you can change.
+
     :param kws: string will be split by non-chars
     :param fn_ln_kw: list of (file, line, keywords) tuples
                      or ``regexp`` for grep()
@@ -3320,16 +3327,17 @@ def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
 
     if fn_ln_kw is None:
         fn_ln_kw = grep(**kwargs)
-    elif isinstance(fn_ln_kw,str):
+    elif isinstance(fn_ln_kw,str) or isinstance(fn_ln_kw,re.Pattern):
         fn_ln_kw = grep(fn_ln_kw, **kwargs)
+    arexkwsplit=kwargs.get('rexkwsplit',rexkwsplit)
     oldfn = None
-    qset = _kw_from_line(kws)
+    qset = _kw_from_line(kws,rexkwsplit=arexkwsplit)
     for i,(fn,ln,kw) in enumerate(fn_ln_kw):
         #i,(fn,ln,kw) = next(enumerate(fn_ln_kw))
         if fn != oldfn:
-            fnkw = _kw_from_path(fn)
+            fnkw = _kw_from_path(fn,rexkwsplit=arexkwsplit)
             oldfn = fn
-        kws = _kw_from_line(kw)|fnkw
+        kws = _kw_from_line(kw,rexkwsplit=arexkwsplit)|fnkw
         if kws and qset<=kws:
             yield i,[fn,ln,kw]
 
@@ -5046,6 +5054,15 @@ def index_dir(root):
 
     '''
 
+    # do all stpl's upfront. ``create_links_and_tags()`` needs them
+    for f in reversed(sorted([str(x) for x in Path(root).rglob('*.stpl')])):
+        dpth = normjoin(root, f)
+        if isfile(dpth):
+            outpth = stem(dpth)
+            try:
+                dostpl(dpth, outpth)
+            except Exception as err:
+                print('Error expanding %s: %s' % (dpth, str(err)))
     # link, gen and tags per directory
     fldrs = Fldrs(root)
     fldrs.scandirs()
@@ -5062,16 +5079,6 @@ def index_dir(root):
             except Exception as err:
                 print('Generating files in %s seems not meant to be done: %s' %
                       (genpth, str(err)))
-        # we need to do the templates here, because ``create_links_and_tags()`` needs them
-        for f in os.listdir(directory):
-            if f.endswith(_stpl):
-                dpth = normjoin(directory, f)
-                if isfile(dpth):
-                    outpth = stem(dpth)
-                    try:
-                        dostpl(dpth, outpth)
-                    except Exception as err:
-                        print('Error expanding %s: %s' % (dpth, str(err)))
         fldr.create_links_and_tags(root)
 
 
