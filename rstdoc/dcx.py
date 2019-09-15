@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 # encoding: utf-8
-# vim: ts=4, sw=4
+# vim: ts=4 sw=4
 
 # #### THIS GETS EXECUTED VIA GEN FILE #######
 # #lns=open(__file__).readlines()
@@ -213,10 +213,10 @@ Conventions
 - If you want an overview of the linking (traceability),
   add ``.. include:: _traceability_file.rst``
   to ``index.rest`` or another ``.rest`` file.
-  It is there in the generated samples to include it in tests.
-  You might want to remove that line, if you start with the samples.
+  It is there in the generated example project, to include it in tests.
+  You might want to remove that line, if you start with the example project.
 
-See the example created with ``--rest`` or ``--stpl``
+See the example project created with ``--rest`` or ``--stpl``
 at the end of this file and the sources of the documentation of
 `rstdoc <https://github.com/rpuntaie/rstdoc>`__.
 
@@ -1229,7 +1229,7 @@ def PageBreakHack(destination_path):
     `C066363e.pdf <https://standards.iso.org/ittf/PubliclyAvailableStandards/c066363_ISO_IEC_26300-1_2015.zip>`__
     it should work.
 
-    See ``utility.rst.tpl`` in the ``--stpl`` samples.
+    See ``utility.rst.tpl`` in the ``--stpl`` created example project tree.
 
     '''
 
@@ -1615,7 +1615,7 @@ def dostpl(
 
     :param infile: a .stpl file name or list of lines
     :param outfile: if not provided the expanded is returned
-    :param lookup: lookup paths must be relative to infile
+    :param lookup: lookup paths can be absolute or relative to infile
 
     ::
 
@@ -1628,10 +1628,12 @@ def dostpl(
     if not lookup:
         lookup = ['.', '..'] + g_include
     if isinstance(infile, str):
-        lookup = [abspath(normjoin(dirname(infile), x)) for x in lookup]
+        lookup = [abspath(normjoin(dirname(infile), x)) for x in lookup if not Path(x).is_absolute()
+                  ]+[x for x in lookup if Path(x).is_absolute()]
         filename = abspath(infile)
     else:
-        lookup = [abspath(x) for x in lookup]
+        lookup = [abspath(x) for x in lookup if not Path(x).is_absolute()
+                  ]+[x for x in lookup if Path(x).is_absolute()]
         try:
             filename = abspath(outfile)
         except:
@@ -1844,15 +1846,15 @@ def dorst(
             if not links_done:
                 sysout.write('\n')
                 try:
-                    filenoext = stem(outfile)
+                    reststem = stem(outfile)
                 except:
-                    filenoext = ''
+                    reststem = ''
                 for tgt in RstFile.make_tgts(filelines, infile,
                                              make_counters(), fn_i_ln):
                     sysout.write(
                         tgt.create_link(
                             outinfo.replace('rest', 'html'),
-                            filenoext, tool))
+                            reststem, tool))
 
         if rsttool:
             config = conf_py(dirname(infile))
@@ -1892,7 +1894,8 @@ graphic_extensions = {_svg, _tikz, _tex, _dot, _uml, _eps, _pyg}
 def convert(
         infile,
         outfile=io.StringIO,
-        outinfo=None
+        outinfo=None,
+        **kwargs
         ):
     r'''
     Converts any of the known files.
@@ -2011,9 +2014,8 @@ def convert(
         if thisconverter == dorst:
             infile = thisconverter(infile, out_(), outinfo, fn_i_ln)
         else:
-            kwargs = {}
             if thisconverter == dostpl:
-                kwargs = {'outinfo': outinfo}
+                kwargs['outinfo'] = outinfo
                 # save infile for dorst() in outinfo as "infile/outinfo"
                 if fextnext in converters and converters[fextnext] == dorst:
                     if isinstance(infile, str):
@@ -2773,7 +2775,7 @@ class Tgt:
         """Tgt.
 
         Creates a link.
-        If bouth linktype and reststem are empty,
+        If both linktype and reststem are empty,
         then this is an internal link.
 
         :param linktype: file extension:
@@ -2945,7 +2947,8 @@ class RstFile:
 class Fldr(OrderedDict):
     def __init__(
             self,
-            folder
+            folder,
+            linkroot
             ):
         """
         Represents a directory.
@@ -2953,6 +2956,7 @@ class Fldr(OrderedDict):
         It is an ordered list of {rst file: RstFile object}.
 
         :self.folder: is the directory path
+        :self.linkroot: is the directory relative to which links are made
         :self.allfiles: set of all files in the directory
         :self.alltgts: set of all targets in the directory
         :self.allsubsts: set of all substitutions in the directory
@@ -2961,6 +2965,7 @@ class Fldr(OrderedDict):
         """
 
         self.folder = folder
+        self.linkroot = linkroot
         self.allfiles = set()
         self.alltgts = set()
         self.allsubsts = set()
@@ -2969,7 +2974,7 @@ class Fldr(OrderedDict):
     def __str__(self):
         return str(list(sorted(self.keys())))
 
-    def scandir(
+    def scanfiles(
             self,
             fs
             ):
@@ -2994,19 +2999,18 @@ class Fldr(OrderedDict):
             fullpth = normjoin(self.folder, afs).replace("\\", "/")
             if is_rest(afs):
                 if afs.startswith('index.rest'):
-                    sphinx_index = (afs, fullpth)
+                    sphinx_index = afs
                     continue
                 fullpth_nostpl = fullpth.replace(_stpl, '')
                 if fullpth_nostpl in sofar:
                     continue
                 sofar.add(fullpth_nostpl)
-                self.add_rest(afs, fullpth)
+                self.add_rest(afs)
         if sphinx_index:
-            self.add_rest(*sphinx_index)
+            self.add_rest(sphinx_index)
 
     def add_rest(self,
                  restfile,
-                 fullpth,
                  exclude_paths_substrings=['_links_', _traceability_file]):
         """Fldr.
 
@@ -3050,18 +3054,19 @@ class Fldr(OrderedDict):
             else:
                 continue
             lnks = list(RstFile.make_lnks(lns))
-            rstfile = RstFile(base(reststem), doc, tgts, lnks, len(lns))
+            relp = relpath(reststem,start=self.linkroot)
+            rstfile = RstFile(relp, doc, tgts, lnks, len(lns))
             self[doc] = rstfile
             self.alltgts |= set([t.target for t in rstfile.tgts])
             self.allsubsts |= set(RstFile.substs(lns))
 
     def create_links_and_tags(self, scanroot):
-        """Fldrs.
+        """Fldr.
 
         Creates links_xxx.rst and .tags files
         for a directory at scanroot/directory
 
-        The target IDs are grouped.
+        The target IDs are grouped using target_id_group().
         To every group a color is associated. See ``conf.py``.
         This is used to color an FCA lattice diagram
         in "_traceability_file.rst".
@@ -3166,12 +3171,14 @@ class Fldrs(OrderedDict):
             ):
         """
         Represents a directory hierarchy below ``scanroot``.
-        The paths are relative to ``scanroot``.
 
         :param scanroot: root path to start scanning
             for independent doc directories
 
-        It is a dict ordere by insertion of {directory: Fldr objects}
+        .tags: Paths are relative to ``scanroot``.
+
+        _links_xxx.rst: Paths are relative to the first directory with a ``.rest``.
+        Place e.g. index.rest in a folder above, to link between folders.
 
         """
 
@@ -3181,21 +3188,26 @@ class Fldrs(OrderedDict):
         return super().__str__()
 
     def scandirs(self):
-        #self.scanroot='.'
-        for p, ds, fs in reversed(list(os.walk(self.scanroot))):
-            if _images not in Path(p).parts:
-                directory = normjoin(p)
-                fldr = Fldr(directory)
-                fldr.scandir(fs)
+        #_images, .git, ... excluded
+        notexcluded = lambda d: not d.startswith('_') and not (len(d)>1 and d[0]=='.' and d[1]!='.')
+        linkroot = None
+        for p, ds, fs in os.walk(self.scanroot):
+            ds[:] = [d for d in ds if notexcluded(d)]
+            if notexcluded(base(p)):
+                njp = normjoin(p)
+                fldr = Fldr(njp,linkroot or njp)
+                fldr.scanfiles(fs)
                 if len(fldr):
-                    self[directory] = fldr
+                    self[njp] = fldr
+                    if not linkroot or not njp.startswith(linkroot):
+                        linkroot = njp
 
 
-def links_and_tags(adir):
+def links_and_tags(scanroot):
     '''
     Creates _links_xxx.rst`` files and a ``.tags``.
 
-    :param adir: directory for which to create links and tags
+    :param scanroot: directory for which to create links and tags
 
     ::
 
@@ -3212,7 +3224,7 @@ def links_and_tags(adir):
 
     '''
 
-    fldrs = Fldrs(adir)
+    fldrs = Fldrs(scanroot)
     fldrs.scandirs()
     for fldr in fldrs.values():
         fldr.create_links_and_tags(fldrs.scanroot)
@@ -3761,6 +3773,7 @@ example_tree = r'''
              \end{document}
              """
              DPI = 600
+             # |targetid| refs are grouped by the first letter (determining whether r(iskanalysis), s(pecification), d(esign) or t(est))
              target_id_group = lambda targetid: targetid[0]
              target_id_color={"ra":("r","lightblue"), "sr":("s","red"),
                 "dd":("d","yellow"), "tp":("t","green")}
@@ -4322,7 +4335,8 @@ example_tree = r'''
             from_to_fun_kw = [ #fun and gen_fun() or gen()
             ['../__code__/some.h','_sometst.rst','tstdoc',{}],
             ['../__code__/some.h','../build/__code__/some_tst.c','tst',{}]
-            ]'''
+            ]
+            '''
 
 # replaces from '├ index.rest' to '├ egtikz.tikz'
 example_stp_subtree = r'''
