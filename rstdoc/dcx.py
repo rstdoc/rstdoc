@@ -300,6 +300,7 @@ def opn(filename):
 
 
 isfile = os.path.isfile
+isdir = os.path.isdir
 
 
 def abspath(x):
@@ -351,7 +352,7 @@ def ls(x='.'):
 
 def rmrf(x):
     try:
-        if os.path.isdir(x):
+        if isdir(x):
             shutil.rmtree(x)
         else:
             os.remove(x)
@@ -879,8 +880,12 @@ def in_temp_if_list(
                 outfile = abspath(outfile)
             atmpdir = tempdir()
             content = _joinlines(infile).encode('utf-8')
+            infnfromoutinfo,outi = dir_base(outinfo)
             if outfile and isinstance(outfile, str):
                 infn = stem(base(outfile))
+            elif infnfromoutinfo:
+                kwargs['outinfo'] = outi
+                infn = infnfromoutinfo
             else:
                 infn = sha(content).hexdigest()
             if suf0:
@@ -5268,9 +5273,9 @@ to define variables that can be used in templates."""
         outfile = args['outfile']
         infiles = [args['infile']]
         outfiles = [args['outfile']]
-        notexistsout = outfile and outfile!='-' and not os.path.exists(outfile)
+        notexistsout = outfile and outfile!='-' and not exists(outfile)
         imgfiles = []
-        if os.path.isdir(args['infile']):
+        if isdir(args['infile']):
             index_dir(args['infile'])
             if outfile is None:
                 return
@@ -5283,7 +5288,7 @@ to define variables that can be used in templates."""
             fdo = bout.find('.')
             if notexistsout and not (fdo>0 and fdo<len(bout)-1):
                 mkdir(outfile)
-        if outinfo and outfile and os.path.isdir(outfile):
+        if outinfo and outfile and isdir(outfile):
             if outinfo.startswith('sphinx'):
                 onlyindex = [x for x in infiles if x.find('index.')>=0];
                 if len(onlyindex)>0:
