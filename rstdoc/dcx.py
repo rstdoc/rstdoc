@@ -294,6 +294,8 @@ _toolrunner = _ToolRunner()
 def opnwrite(filename):
     return open(filename, 'w', encoding='utf-8', newline='\n')
 
+def opnappend(filename):
+    return open(filename, 'a', encoding='utf-8', newline='\n')
 
 def opn(filename):
     return open(filename, encoding='utf-8')
@@ -315,7 +317,6 @@ def relpath(x, start=None):
         return os.path.relpath(x, start=start).replace('\\', '/')
     except ValueError:
         return abspath(x)
-
 
 def dirname(x):
     return os.path.dirname(x).replace('\\', '/')
@@ -439,7 +440,6 @@ rexkw = re.compile(r'^\s*\.\. {')
 rexkwsplit = re.compile(r'[\W_]+')
 
 _rstlinkfixer = re.compile('#[^>]+>')
-
 
 def _rst_id_fixer(matchobj):
     return matchobj.group(0).replace(' ', '-').replace('_', '-')
@@ -1676,16 +1676,20 @@ def dorst(
     :param infile: a .rest, .rst, .txt file name or list of lines
 
     :param outfile: None and '-' mean standard out.
+
         If io.StringIO, then the lines are returned.
         For .rest ``|xxx|`` substitutions for reST link targets
         in infile are appended if no ``_links_sphinx.rst`` there
 
-    :param outinfo: specifies the tool to use
-        ``html``, ``docx``, ``odt``,... via pandoc if output
-        ``sphinx_html``,... via sphinx
-        ``rst_html``,... via rst2xxx frontend tools
-        ``[infile/][substitution.]docx[.]`` substitutions
-        stands for the file used in substitutions if no ``_links_sphinx.rst``
+    :param outinfo: specifies the tool to use.
+
+        - ``html``, ``docx``, ``odt``,... via pandoc
+        - ``sphinx_html``,... via sphinx
+        - ``rst_html``,... via rst2xxx frontend tools
+
+        General format of outinfo: ``[infile/][tfisubst.]docx[.]``,
+        tfisubst is target file used in substitutions.
+
         The infile is used, if the actual infile are lines.
         The final dot tells to stop after substitutions.
 
@@ -1751,6 +1755,7 @@ def dorst(
     rsttool = rst_tools[tool]
     dinfo, binfo = None, None
     if outinfo:
+        #in/file/outinfo
         dinfo, binfo = dir_base(outinfo)
         outinfo = binfo
     if not isinstance(outfile, str) and outinfo in rst_tools:
@@ -1781,11 +1786,14 @@ def dorst(
         if outfile is None or outfile == '-':
             if not outinfo:
                 outinfo = 'rest'
+            # outinfo='docx.'
             if outinfo.strip('.').find('.') < 0:
                 outfile = stem(base(infile))+'.' + \
-                    outinfo.strip('.')  # infile.rest - docx
-            else:
-                outfile = outinfo.strip('.')  # - - otherfile.docx
+                    outinfo.strip('.')
+            #=> outfile=infile.docx
+            #equivalent to input params: infile.rest - docx
+            else: # - - otherfile.docx
+                outfile = outinfo.strip('.')
             if any(outinfo.endswith(x) for x in ['docx', 'odt', 'pdf']):
                 sysout = None  # create a file in these cases
             else:
@@ -1832,13 +1840,21 @@ def dorst(
         if sysout:
             sysout.write(_indented_default_role_math(filelines))
             links_done = False
+            rexincludelinks = re.compile(r'^\.\. include:: (.*)(_links_sphinx.rst)')
             for x in filelines:
-                if x.startswith('.. include:: _links_sphinx.rst'):
+                #x = '.. include:: _links_sphinx.rst' #1
+                #x = '.. include:: ../_links_sphinx.rst' #2
+                lim = rexincludelinks.match(x)
+                if lim:
+                    limg0 = lim.groups()[0]
                     if tool == 'sphinx':
                         links_done = True
                     else:
-                        linksfilename = normjoin(
-                            dirname(infile), '_links_' + outinfo + '.rst')
+                        #infile='a/b/c'
+                        #outinfo='docx'
+                        linksfilename = normjoin(dirname(infile), limg0, '_links_' + outinfo + '.rst')
+                        #a/b/_links_docx.rst #1
+                        #a/_links_docx.rst #2
                         if exists(linksfilename):
                             with opn(linksfilename) as f:
                                 if tool == 'rst' and outinfo == 'html':
@@ -2394,12 +2410,12 @@ class Traceability:
         return len(self.fcaobjsets) == 0
 
     # returns the rst lines of _traceability_file
-    def create_traceability_file(self, directory):
+    def create_traceability_file(self, folder):
         if not pyfca:
             return []
         if not self.fcaobjsets:
             return []
-        config = conf_py(directory)
+        config = conf_py(folder)
         target_id_group = config['target_id_group']
         target_id_color = config['target_id_color']
 
@@ -2432,12 +2448,12 @@ class Traceability:
                          n.index, reflist(n.intent, ''), reflist(n.up),
                          reflist(n.down)) for n in fca.nodes]
         tlines = ''.join(fcanodes).splitlines(keepends=True)
-        imgpath, there = here_or_updir(directory, _images)
+        imgpath, there = here_or_updir(folder, _images)
         if not there:
-            imgpath = normjoin(directory, _images)
+            imgpath = normjoin(folder, _images)
             mkdir(imgpath)
         trcpath = normjoin(
-            relpath(imgpath, start=directory), _traceability_file)
+            relpath(imgpath, start=folder), _traceability_file)
         # fig_traceability_file target
         tlines.extend([
             '.. _`fig' + _traceability_file + '`:\n', '\n',
@@ -2452,7 +2468,7 @@ class Traceability:
                 [fnm + " " + clr for fnm, (_, clr) in target_id_color.items()])
             tlines.extend([': ' + legend, '\n'])
         tlines.append('\n')
-        with opnwrite(normjoin(directory, _traceability_file + _rst)) as f:
+        with opnwrite(normjoin(folder, _traceability_file + _rst)) as f:
             f.write('.. raw:: html\n\n')
             f.write('    <object data="' + _traceability_file + _svg +
                     '" type="image/svg+xml"></object>\n')
@@ -2465,7 +2481,7 @@ class Traceability:
                     + legend + '</p>\n\n')
             f.writelines(tlines)
         ld = pyfca.LatticeDiagram(fca, 4 * 297, 4 * 210)
-        tracesvg = abspath(normjoin(directory, _traceability_file + _svg))
+        tracesvg = abspath(normjoin(folder, _traceability_file + _svg))
 
         def ttgt():
             return self.tracehtmltarget.endswith(_rest) and stem(
@@ -2949,11 +2965,13 @@ class RstFile:
                 yield asub.group(1)
 
 
+g_links_types = "sphinx latex html pdf docx odt".split()
 class Fldr(OrderedDict):
     def __init__(
             self,
             folder,
-            linkroot
+            linkroot,
+            scanroot
             ):
         """
         Represents a directory.
@@ -2962,6 +2980,7 @@ class Fldr(OrderedDict):
 
         :self.folder: is the directory path
         :self.linkroot: is the directory relative to which links are made
+        :self.scanroot: is the directory where the scan began
         :self.allfiles: set of all files in the directory
         :self.alltgts: set of all targets in the directory
         :self.allsubsts: set of all substitutions in the directory
@@ -2971,6 +2990,7 @@ class Fldr(OrderedDict):
 
         self.folder = folder
         self.linkroot = linkroot
+        self.scanroot = scanroot
         self.allfiles = set()
         self.alltgts = set()
         self.allsubsts = set()
@@ -3065,11 +3085,10 @@ class Fldr(OrderedDict):
             self.alltgts |= set([t.target for t in rstfile.tgts])
             self.allsubsts |= set(RstFile.substs(lns))
 
-    def create_links_and_tags(self, scanroot):
+    def create_links_and_tags(self):
         """Fldr.
 
-        Creates links_xxx.rst and .tags files
-        for a directory at scanroot/directory
+        Appends to links_xxx.rst and .tags in linkroot for files in this folder.
 
         The target IDs are grouped using target_id_group().
         To every group a color is associated. See ``conf.py``.
@@ -3080,24 +3099,22 @@ class Fldr(OrderedDict):
         """
 
         tagentries = []
-        upcnt = 0
+        lnkrelfolder = ''
         if self.folder.strip():
-            relfolder = relpath(self.folder, start=scanroot)
-            if '/' in relfolder:
-                upcnt = len(relfolder.split('/'))
-        links_types = "sphinx latex html pdf docx odt".split()
-        linkfiles = [(linktype, []) for linktype in links_types]
+            lnkrelfolder = relpath(self.linkroot, start=self.folder)
+        tagrelfolder = relpath(self.linkroot, start=self.scanroot)
+        linkfiles = [(linktype, []) for linktype in g_links_types]
 
         def add_tgt(tgt, reststem):
             for linktype, linklines in linkfiles:
                 linklines.append(
                     tgt.create_link(
-                        linktype, reststem,
+                        linktype, normjoin(lnkrelfolder,reststem),
                         linktype if linktype == 'sphinx' else 'pandoc'))
             if isabs(tgt.tagentry[0]):
-                tgt.tagentry = (relpath(tgt.tagentry[0], start=scanroot),
+                tgt.tagentry = (relpath(tgt.tagentry[0], start=self.scanroot),
                                 tgt.tagentry[1])
-            tgt.tagentry = ("../" * upcnt + tgt.tagentry[0], tgt.tagentry[1])
+            tgt.tagentry = (normjoin(tagrelfolder,tgt.tagentry[0]), tgt.tagentry[1])
             tagentries.append(tgt.create_tag())
 
         def add_links_comments(comment):
@@ -3121,7 +3138,7 @@ class Fldr(OrderedDict):
                 ojlnk[1] = None
             if ojlnk[1] is None:  # remaining links in prevtgt up to this tgt
                 for j, lnk in iterlnks:
-                    if j > lnidx:  # links upcnt to this target
+                    if j > lnidx:  # links up to to this target
                         ojlnk[:] = j, lnk
                         break
                     else:
@@ -3152,7 +3169,7 @@ class Fldr(OrderedDict):
                                              _traceability_instance.counters):
                     add_tgt(tgt, _traceability_instance.tracehtmltarget)
         for linktype, linklines in linkfiles:
-            with opnwrite(normjoin(self.folder,
+            with opnappend(normjoin(self.linkroot,
                                    '_links_%s.rst' % linktype)) as f:
                 f.write('\n'.join(linklines))
         ctags_python = ""
@@ -3162,9 +3179,9 @@ class Fldr(OrderedDict):
                     'ctags', '-R', '--sort=0', '--fields=+n',
                     '--languages=python', '--python-kinds=-i', '-f', '-', '*'
                 ],
-                cwd=self.folder)
+                cwd=self.scanroot)
         finally:
-            with opnwrite(normjoin(self.folder, '.tags')) as f:
+            with opnappend(normjoin(self.scanroot, '.tags')) as f:
                 f.write(ctags_python)
                 f.write('\n'.join(tagentries))
 
@@ -3200,13 +3217,17 @@ class Fldrs(OrderedDict):
             ds[:] = [d for d in ds if notexcluded(d)]
             if notexcluded(base(p)):
                 njp = normjoin(p)
-                fldr = Fldr(njp,linkroot or njp)
+                fldr = Fldr(njp,linkroot or njp,self.scanroot)
                 fldr.scanfiles(fs)
                 if len(fldr):
                     self[njp] = fldr
                     if not linkroot or not njp.startswith(linkroot):
                         linkroot = njp
-
+                        for linktype in g_links_types:
+                            with opnwrite(normjoin(linkroot,
+                                   '_links_%s.rst' % linktype)) as f:
+                                f.write('.. .. .. %s'%linkroot)
+                            rmrf(normjoin(linkroot, '.tags'))
 
 def links_and_tags(scanroot):
     '''
@@ -3232,7 +3253,7 @@ def links_and_tags(scanroot):
     fldrs = Fldrs(scanroot)
     fldrs.scandirs()
     for fldr in fldrs.values():
-        fldr.create_links_and_tags(fldrs.scanroot)
+        fldr.create_links_and_tags()
 
 def _kw_from_path(dir,rexkwsplit=rexkwsplit):
     """use file of path up to ``.git`` as keywords
@@ -3364,21 +3385,6 @@ def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
 try:
     from waflib import TaskGen, Task
 
-    @lru_cache()
-    def _ant_glob_stpl(bldpath, *stardotext):
-        res = []
-        already = set([])
-        for an_ext in stardotext:
-            stplsfirst = bldpath.ant_glob(an_ext + _stpl)
-            for anode in stplsfirst:
-                already.add(stem(anode.name))
-                res.append(anode)
-            nonstpls = bldpath.ant_glob(an_ext)
-            for anode in nonstpls:
-                if anode.name not in already:
-                    res.append(anode)
-        return res
-
     gensrc = {}
 
     @TaskGen.feature('gen_files')
@@ -3389,13 +3395,15 @@ try:
         rootpth = self.bld.path.abspath()
         if rootpth not in sys.path:
             sys.path.append(rootpth)
-        genpth = self.path.make_node('gen').abspath()
-        if exists(genpth):
-            for f, t, fun, kw in parsegenfile(genpth):
-                gensrc[t] = f
-                frm = self.path.find_resource(f)
-                twd = self.path.make_node(t)
-                self.create_task('GENTSK', frm, twd, fun=fun, kw=kw)
+        for gen in self.path.ant_glob("**/gen"):
+            genpth = gen.abspath()
+            relgen = relpath(gen.parent.abspath(),start=self.path.abspath())
+            if gen.exists():
+                for f, t, fun, kw in parsegenfile(genpth):
+                    gensrc[normjoin(relgen,t)] = normjoin(relgen,f)
+                    frm = gen.parent.find_resource(f)
+                    twd = gen.parent.make_node(t)
+                    self.create_task('GENTSK', frm, twd, fun=fun, kw=kw)
 
     class GENTSK(Task.Task):
         def run(self):
@@ -3404,7 +3412,7 @@ try:
             twd.parent.mkdir()
             gen(frm.abspath(), twd.abspath(), fun=self.fun, **self.kw)
 
-    def get_docs(bld):
+    def get_docs_param(bld):
         docs = [x.lower() for x in bld.options.docs]
         if not docs:
             docs = [x.lower() for x in bld.env.docs]
@@ -3449,9 +3457,9 @@ try:
     @TaskGen.feature('gen_links')
     @TaskGen.after('gen_files')
     def gen_links(self):
-        docs = get_docs(self.bld)
+        docs = get_docs_param(self.bld)
         if docs:
-            for so in self.path.ant_glob('*.stpl'):
+            for so in self.path.ant_glob('**/*.stpl'):
                 tsk = Namespace()
                 tsk.inputs = (so, )
                 tsk.env = self.env
@@ -3547,34 +3555,34 @@ try:
 
     @TaskGen.extension(_rest)
     def docs_taskgen(self, node):
-        docs = get_docs(self.bld)
+        docs = get_docs_param(self.bld)
         d = get_files_in_doc(self.path, node)
 
         def rstscan():
             return d
+
+        def out_node(doctgt,doctype):
+            relnode = relpath(stem(node.abspath())+'.'+doctype,start=self.path.abspath())
+            return self.path.find_or_declare(normjoin(doctgt,relnode))
 
         if node.name != "index.rest":
             for doctgt in docs:
                 if doctgt.startswith('sphinx_'):
                     continue
                 doctype = _suffix(doctgt)
-                out_node = node.parent.find_or_declare("{0}/{1}.{2}".format(
-                    doctgt, stem(node.name), doctype))
                 self.create_task(
                     'NonSphinxTask', [node],
-                    out_node,
+                    out_node(doctgt,doctype),
                     scan=rstscan,
                     doctgt=doctgt)
         else:
             for doctgt in docs:
                 if not doctgt.startswith('sphinx_'):
                     continue
-                doctype = doctgt.split('_')[1]
-                out_node = node.parent.find_or_declare("{0}/{1}.{2}".format(
-                    doctgt, stem(node.name), doctype.replace('latex', 'tex')))
+                doctype = doctgt.split('_')[1].replace('latex','tex')
                 self.create_task(
                     'SphinxTask', [node],
-                    out_node,
+                    out_node(doctgt,doctype),
                     scan=rstscan,
                     doctype=doctype,
                     config_py_try=(self.path.abspath(),
@@ -3652,19 +3660,14 @@ or any other of http://www.sphinx-doc.org/en/master/usage/builders"""
             global g_config
             if exists(normjoin(bld.srcnode.abspath(), 'conf.py')):
                 g_config = conf_py(bld.srcnode.abspath())
-            docs = get_docs(bld)
+            docs = get_docs_param(bld)
             if docs:
                 bld.gen_files()
-                bld.gen_links()
-                for anext in '*.tikz *.svg *.dot *.uml *.pyg *.eps'.split():
-                    for anextf in _ant_glob_stpl(bld.path, anext):
-                        bld(name='build ' + anext, source=anextf)
+                bld.gen_links() #does all stpl upfront
+                for anext in 'tikz svg dot uml pyg eps'.split():
+                    bld(name='build ' + anext, source=bld.path.ant_glob('**/*.'+anext))
                 bld.add_group()
-                bld(name='build all rest',
-                    source=[
-                        x for x in _ant_glob_stpl(bld.path, '*.rest', '*.rst')
-                        if not x.name.endswith(_rst)
-                    ])
+                bld(name='build all rest', source=bld.path.ant_glob('**/*.rest'))
                 bld.add_group()
 
         bld.build_docs = build_docs
@@ -5098,7 +5101,7 @@ def index_dir(root):
             except Exception as err:
                 print('Generating files in %s seems not meant to be done: %s' %
                       (genpth, str(err)))
-        fldr.create_links_and_tags(root)
+        fldr.create_links_and_tags()
 
 
 description = (
