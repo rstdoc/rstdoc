@@ -333,7 +333,7 @@ def test_dcx_alone_samples(rstinit):
         assert exists("doc/_links_pdf.rst")
         assert exists("doc/_links_docx.rst")
         assert exists("doc/_links_odt.rst")
-        assert exists("doc/.tags")
+        assert exists(".tags")
     elif 'tmp_stpl' in rstinit:
         assert exists("doc/dd.rest")
         assert exists("doc/dd_included.rst")
@@ -353,7 +353,7 @@ def test_dcx_alone_samples(rstinit):
         assert exists("doc/_links_pdf.rst")
         assert exists("doc/_links_docx.rst")
         assert exists("doc/_links_odt.rst")
-        assert exists("doc/.tags")
+        assert exists(".tags")
 
 @pytest.mark.parametrize('cmd_result',[
  ('rstdcx dd.rest.stpl - rest',['default-role:: math',r'<dd.html#'])
@@ -618,7 +618,7 @@ def test_waf_samples(wafbuild):
 │     ├─footnotehyper-sphinx.sty
 │     ├─make.bat
 │     ├─python.ist
-│     ├─index.tex
+│     ├─index.latex
 │     ├─sphinxhighlight.sty
 │     ├─sphinxhowto.cls
 │     ├─sphinxmanual.cls
@@ -650,10 +650,12 @@ def test_waf_samples(wafbuild):
 ├─{}
 │  └─some_tst.c
 └─config.log""".format(tmp_xxx)
+    print(expected)
     for x in tree3(wafbuild[0]).splitlines():
         if not any(e in x for e in
-        '.doctrees .sty .js .inv .xdy .cls latexmk .ist'.split()):
-            assert expected.find(x.strip('└─├ '))>=0
+        'lock wafpickle c4che cache build doctrees footnote LICR .sty .js .inv .xdy .cls latexmk .ist'.split()):
+            xchk=x.strip('└─├ ')
+            assert expected.find(xchk)>=0, "%s not found"%xchk
 
 def test_docparts_after():
     '''

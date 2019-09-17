@@ -867,6 +867,7 @@ def in_temp_if_list(
     @wraps(f)
     def intmpiflister(*args, **kwargs):
         infile, outfile, args = _unioe(args)
+        outinfo = None
         try:
             suf0, suf1 = suffix.split('.', 1)
         except: #noqa
@@ -880,7 +881,7 @@ def in_temp_if_list(
                 outfile = abspath(outfile)
             atmpdir = tempdir()
             content = _joinlines(infile).encode('utf-8')
-            infnfromoutinfo,outi = dir_base(outinfo)
+            infnfromoutinfo,outi = outinfo and dir_base(outinfo) or (None,None)
             if outfile and isinstance(outfile, str):
                 infn = stem(base(outfile))
             elif infnfromoutinfo:
@@ -3102,7 +3103,6 @@ class Fldr(OrderedDict):
         lnkrelfolder = ''
         if self.folder.strip():
             lnkrelfolder = relpath(self.linkroot, start=self.folder)
-        tagrelfolder = relpath(self.linkroot, start=self.scanroot)
         linkfiles = [(linktype, []) for linktype in g_links_types]
 
         def add_tgt(tgt, reststem):
@@ -3114,7 +3114,7 @@ class Fldr(OrderedDict):
             if isabs(tgt.tagentry[0]):
                 tgt.tagentry = (relpath(tgt.tagentry[0], start=self.scanroot),
                                 tgt.tagentry[1])
-            tgt.tagentry = (normjoin(tagrelfolder,tgt.tagentry[0]), tgt.tagentry[1])
+            tgt.tagentry = (tgt.tagentry[0], tgt.tagentry[1])
             tagentries.append(tgt.create_tag())
 
         def add_links_comments(comment):
@@ -3579,7 +3579,8 @@ try:
             for doctgt in docs:
                 if not doctgt.startswith('sphinx_'):
                     continue
-                doctype = doctgt.split('_')[1].replace('latex','tex')
+                #doctype = doctgt.split('_')[1].replace('latex','tex')
+                doctype = _suffix(doctgt.replace('_tex','_latex'))
                 self.create_task(
                     'SphinxTask', [node],
                     out_node(doctgt,doctype),
