@@ -48,40 +48,40 @@ Place a target ID before paragraphs, figures, list-tables, code listings, maths:
     |dx8| is an example ID.
 
     .. _`dz3`:
-    
+
     .. figure:: _images/smpl.png
        :name:
-    
+
        |dz3|: Caption here.
-    
+
     Reference via |dz3|.
-    
+
     .. _`dta`:
-    
+
     |dta|: Table legend
-    
+
     .. list-table::
        :name:
        :widths: 20 80
        :header-rows: 1
-    
+
        * - Bit
          - ...
-    
+
     .. _`dyi`:
-    
+
     |dyi|: Listing showing struct.
-    
+
     .. code-block:: cpp
        :name:
-    
+
        struct xxx{
           int yyy; //yyy for zzz
        }
-    
+
     .. _`d9x`:
-    
-    .. math:: 
+
+    .. math::
        :name:
 
 If headers are referenced across files, add an ID before them, too::
@@ -559,7 +559,7 @@ One can use
     Pythagorean theorem
 
     .. math:
-    
+
         {{latex(pythagoras)}}
 
     is very important.

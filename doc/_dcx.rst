@@ -119,7 +119,7 @@ and placed into ``./_images`` or ``../_images``.
   with ``pngembed()`` or ``dcx.svgembed()`` to embed in html output.
 
   ::
-  
+
      {{!svgembed("egpyx.pyg",outinfo)}}
      <%
      ansvg=svgembed('''
@@ -137,6 +137,7 @@ Conventions
 - Files
 
   - main docs end in ``.rest``
+    (add ``autocmd bufreadpre *.rest setlocal syntax=rst`` to vimrc)
   - ``.rst`` are included and ignored by Sphinx (see ``conf.py``).
   - ``.txt`` are literally included (use :literal: option).
   - templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately.
@@ -164,10 +165,10 @@ Conventions
 - If you want an overview of the linking (traceability),
   add ``.. include:: _traceability_file.rst``
   to ``index.rest`` or another ``.rest`` file.
-  It is there in the generated samples to include it in tests.
-  You might want to remove that line, if you start with the samples.
+  It is there in the generated example project, to include it in tests.
+  You might want to remove that line, if you start with the example project.
 
-See the example created with ``--rest`` or ``--stpl``
+See the example project created with ``--rest`` or ``--stpl``
 at the end of this file and the sources of the documentation of
 `rstdoc <https://github.com/rpuntaie/rstdoc>`__.
 
@@ -182,11 +183,11 @@ through Pandoc, Sphinx, Docutils (third parameter):
 
 - ``html``, ``docx``, ``pdf``, ... uses  Pandoc.
 
-- ``rst_html``, ``rst_pdf``, ...  uses 
+- ``rst_html``, ``rst_pdf``, ...  uses
   `rst2html <http://docutils.sourceforge.net/0.6/docs/user/tools.html>`__, ...
 
 - ``sphinx_html``, ``sphinx_pdf``, ...  uses Sphinx.
-  Sphinx provides a nice entry point via the 
+  Sphinx provides a nice entry point via the
   `sphinx bootstrap theme <https://github.com/ryan-roemer/sphinx-bootstrap-theme>`__.
 
 4th parameter onward become python defines usable in ``.stpl`` files.

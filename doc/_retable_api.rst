@@ -46,11 +46,11 @@ The table is delimited by emtpy lines starting from (row,col).
 
 Create a rst table from data
 
-Example:
+Example::
 
->>> lns=[['one','two','three'],[1,2,3]]
->>> create_rst_table(lns)
-'+-----+-----+-------+\n| one | two | three |\n+-----+-----+-------+\n| 1   | 2   | 3     |\n+-----+-----+-------+'
+    >>> lns=[['one','two','three'],[1,2,3]]
+    >>> create_rst_table(lns)
+    '+-----+-----+-------+\n| one | two | three |\n+-----+-----+-------+\n| 1   | 2   | 3     |\n+-----+-----+-------+'
 
 :param data: list of list of data
 

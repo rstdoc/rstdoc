@@ -7,26 +7,26 @@ Overview
 ========
 
 Github does not support ``include``.
-You can find a rendered version on 
+You can find a rendered version on
 `readthedocs <https://rstdoc.readthedocs.io/en/latest/>`__.
 
 Purpose
 =======
 
-The ``doc`` folder 
+The ``doc`` folder
 
 - motivates to use light markup text, specifically
   `restructuredText <http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html>`__,
   over DOCX or ODT for documentation of software projects
 
-- is an example documentation using 
+- is an example documentation using
   `rstdoc <https://rstdoc.readthedocs.io/en/latest/>`__,
   a wrapper around
   `Sphinx <http://www.sphinx-doc.org/en/stable/>`__
   and
   `Pandoc <https://pandoc.org/>`__
 
-For your project documenation a ``readme`` 
+For your project documenation a ``readme``
 
 - gives an overview of the documents: `Files`_
 

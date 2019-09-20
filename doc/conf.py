@@ -30,7 +30,7 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if not on_rtd:
 
     latex_engine = 'xelatex'
-    
+
     #You can postprocess pngs. Here an example. default: png_post_processor = None
     def png_post_processor(filename):
         from PIL import Image, ImageChops
@@ -45,7 +45,7 @@ if not on_rtd:
         im = trim(im)
         im.save(filename)
         return filename
-    
+
     #remove the following, if you don't change them, because they are default anyway
     latex_elements = {'preamble':r"""
     \usepackage{pgfplots}
@@ -56,7 +56,7 @@ if not on_rtd:
     \usetikzlibrary{arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections}
     """
     }
-    
+
     #new in rstdcx/dcx/py
     tex_wrap = r"""
     \documentclass[12pt,tikz]{standalone}

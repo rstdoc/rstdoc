@@ -57,7 +57,7 @@ The tools shall be
 
 The documentation items shall be marked by flat and unordered IDs.
 
-Use these IDs to jump to documentation items inside the editor 
+Use these IDs to jump to documentation items inside the editor
 via a keyboard shortcut or a mouse click: hypertext.
 
 Support hyperlinks in the formats the documentation can be converted to.
@@ -66,7 +66,7 @@ Support hyperlinks in the formats the documentation can be converted to.
 
 :stq: |rvd|
 
-Full text search over all files 
+Full text search over all files
 with regular expressions shall be available from inside the editor for
 
 - source code and
@@ -82,7 +82,7 @@ The documentation is easy to read and write in a text editor.
 
 .. _`s45`:
 
-:s45: |rpn| 
+:s45: |rpn|
 
 Support formatting::
 
@@ -94,10 +94,10 @@ Support formatting::
 The formatting
 
 - is not obtrusive (|r9g|)
-- shall be intuitive 
+- shall be intuitive
 - does not need much learning
 
-Table-like data is stored as text using a format that is 
+Table-like data is stored as text using a format that is
 
 - not too verbose
 - easily accessible by scripting (|sgt|)
@@ -106,14 +106,14 @@ Table-like data is stored as text using a format that is
 
 :sgt: |roc|, |r1p|
 
-Make it easy to automatically generate parts of documentation 
+Make it easy to automatically generate parts of documentation
 
 - from source code
 - from data
 
-Data shall be usable 
+Data shall be usable
 
-- in source code 
+- in source code
 - in documentation
 
 .. _`s0t`:
@@ -186,7 +186,7 @@ where to put and how to find which information.
 
 :seo: |r90|
 
-The developer 
+The developer
 
 - only works and cares about the text sources of documentation
 - does not spend time in fixing formatting issues of a generated format
