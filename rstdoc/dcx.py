@@ -39,11 +39,17 @@ import atexit
 import contextlib
 import shutil
 import os, os.path
-from pathlib import Path
 import io
 import re
 import sys
 import codecs
+import numpy as np
+try:
+    from rstdoc.retable import title_some
+except:
+    title_some = """=-^"'`._~+:;,"""
+
+g_scanroot = "."
 
 """
 .. _`rstdcx`:
@@ -86,8 +92,9 @@ It is supposed to be used with a build tool.
   This copies ``dcx.py`` into the example tree
   to be independent from possible future changes::
 
-  $ ./dcx.py --rest tmp #.rest files OR
-  $ ./dcx.py --stpl tmp #.rest.stpl files
+  $ ./dcx.py --rest repo #repo/doc/{sy,ra,sr,dd,tp}.rest files OR
+  $ ./dcx.py --stpl repo #repo/doc/{sy,ra,sr,dd,tp}.rest.stpl files
+  $ ./dcx.py --ipdt repo #repo/pdt/AAA/{i,p,d,t}.rest.stpl files
 
 - Only create .tags and ``_links_xxx.rst``::
 
@@ -185,7 +192,6 @@ Conventions
 - Files
 
   - main docs end in ``.rest``
-    (add ``autocmd bufreadpre *.rest setlocal syntax=rst`` to vimrc)
   - ``.rst`` are included and ignored by Sphinx (see ``conf.py``).
   - ``.txt`` are literally included (use :literal: option).
   - templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately.
@@ -436,7 +442,18 @@ rexlnks = re.compile(r'(?:^|[^a-zA-Z`])\|(\w+)\|(?:$|[^a-zA-Z`])')
 reximg = re.compile(r'(?:image|figure):: ((?:\.|/|\\|\w).*)')
 rerstinclude = re.compile(r'\.\. include::\s*([\./\w\\].*)')
 restplinclude = re.compile(r"""%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*""")
-rexkw = re.compile(r'^\s*\.\. {')
+
+#rexkw = re.compile(r'^\s*%?\s*{*_+[0-Z]+_*\(')
+#rexkw = re.compile(r'^\s*\.\. {')
+#... combined:
+rexkw = re.compile(r'^\s*(\.\. {|%?\s*{*_+[0-Z]+_*\()')
+#rexkw.search("{{_A30('kw1 kw2')}}")
+#rexkw.search("{{_U00___('kw1 kw2')}}")
+#rexkw.search(" % __0A0('kw1 kw2')")
+#rexkw.search(" % __123_('kw1 kw2')")
+#rexkw.search("   .. {kw1 kw2}")
+#rexkw.search(" %  .. {kw1 kw2}") #NO
+#rexkw.search(" % fun('kw1 kw2')") #NO
 rexkwsplit = re.compile(r'[\W_]+')
 
 _rstlinkfixer = re.compile('#[^>]+>')
@@ -707,11 +724,11 @@ def png_post_process_if_any(f):
         if isinstance(infile, str):
             config = conf_py(dirname(infile))
             pp = config.get('png_post_processor', None)
-            if pp:
-                pngfile = f(infile, outfile, *args, **kwargs)
+            pngfile = f(infile, outfile, *args, **kwargs)
+            if pp and exists(pngfile):
                 return pp(pngfile)
             else:
-                return f(infile, outfile, *args, **kwargs)
+                return pngfile
         return f(infile, outfile, *args, **kwargs)
 
     return png_post_processor
@@ -1634,12 +1651,12 @@ def dostpl(
     if not lookup:
         lookup = ['.', '..'] + g_include
     if isinstance(infile, str):
-        lookup = [abspath(normjoin(dirname(infile), x)) for x in lookup if not Path(x).is_absolute()
-                  ]+[x for x in lookup if Path(x).is_absolute()]
+        lookup = [abspath(normjoin(dirname(infile), x)) for x in lookup if not isabs(x)
+                  ]+[x for x in lookup if isabs(x)]
         filename = abspath(infile)
     else:
-        lookup = [abspath(x) for x in lookup if not Path(x).is_absolute()
-                  ]+[x for x in lookup if Path(x).is_absolute()]
+        lookup = [abspath(x) for x in lookup if not isabs(x)
+                  ]+[x for x in lookup if isabs(x)]
         try:
             filename = abspath(outfile)
         except:
@@ -2499,8 +2516,9 @@ class Traceability:
 
         ld.svg(
             target=ttgt() + '.html#' + tr, drawnode=_drawnode).saveas(tracesvg)
-        tracepng = abspath(normjoin(imgpath, _traceability_file + '.png'))
-        svgpng(tracesvg, tracepng)
+        if exists(tracesvg):
+            tracepng = abspath(normjoin(imgpath, _traceability_file + '.png'))
+            svgpng(tracesvg, tracepng)
         return tlines
 
 
@@ -2981,7 +2999,7 @@ class Fldr(OrderedDict):
             self,
             folder,
             linkroot,
-            scanroot
+            scanroot = g_scanroot
             ):
         """
         Represents a directory.
@@ -3198,7 +3216,7 @@ class Fldr(OrderedDict):
 class Fldrs(OrderedDict):
     def __init__(
             self,
-            scanroot='.'
+            scanroot=g_scanroot
             ):
         """
         Represents a directory hierarchy below ``scanroot``.
@@ -3206,9 +3224,9 @@ class Fldrs(OrderedDict):
         :param scanroot: root path to start scanning
             for independent doc directories
 
-        .tags: Paths are relative to ``scanroot``.
+        .tags: paths are relative to ``scanroot``.
 
-        _links_xxx.rst: Paths are relative to the first directory with a ``.rest``.
+        _links_xxx.rst: paths are relative to the first directory with a ``.rest``.
         Place e.g. index.rest in a folder above, to link between folders.
 
         """
@@ -3238,7 +3256,9 @@ class Fldrs(OrderedDict):
                                 f.write('.. .. .. %s'%linkroot)
                             rmrf(normjoin(self.scanroot, '.tags'))
 
-def links_and_tags(scanroot):
+def links_and_tags(
+    scanroot = g_scanroot
+    ):
     '''
     Creates _links_xxx.rst`` files and a ``.tags``.
 
@@ -3397,6 +3417,199 @@ def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
             yield i,[fn,ln,kw]
 
 
+# ==============> pdt
+
+class Counter:
+    def __init__(self, before_first=0):
+        '''Counter.
+
+        Counter object.
+
+        :param before_first: first-1 value
+
+        ::
+
+            >>> myc = Counter()
+            >>> myc()
+            1
+            >>> myc()
+            2
+
+        '''
+
+        self.cnt = before_first
+    def __call__(self):
+        self.cnt += 1
+        return self.cnt
+
+class PdtItem(Counter):
+    """Used in pdtAAA
+
+    ``PdtItem`` numbers items in a ``pdt`` document.
+
+    :param AAA: A ``pdt`` is identified by a base36 number (AAA).
+    :param level: level=0 is a content item with separate ID = AAABB,
+                  level>0 are headers: AAA text
+
+    ::
+
+        >>> pdt=PdtItem('032')
+        >>> pdt()
+        '\n03201:'
+        >>> pdt('kw1 kw2','kw3')
+        '\n03202: **kw1 kw2 kw3**'
+        >>> hdr2=PdtItem('032',level=2)
+        >>> hdr2('header text')
+        '\n032 header text\n---------------'
+
+    """
+    def __init__(self, AAA
+                 ,level=0
+                 ):
+        super().__init__()
+        self.AAA = AAA
+        self.level = level
+    def __call__(self, *args):
+        super().__call__()
+        if self.level==0:
+            BB = np.base_repr(self.cnt,36)
+            Id = "{}{:0>2}".format(self.AAA,BB)
+            if args:
+                lines = ['\n{}: **{}**'.format(Id,' '.join(args))]
+            else:
+                lines = ['\n{}:'.format(Id)]
+        else:
+            c = title_some[self.level-1]
+            assert args, "a header cannot be empty"
+            lin = ' '.join([self.AAA]+list(args))
+            lenlin = len(lin)
+            lines = ['',lin,c*lenlin]
+        return "\n".join(lines)
+
+def _pdtok(fid):
+    assert fid.upper() == fid
+    assert len(fid) == 3
+    assert int(fid,base=36) < 36**3
+
+def _pdtid(pdtfile):
+    """
+    ``_pdtid`` takes the path of the current file and extracts an ID from it.
+
+    ::
+
+        >>> _pdtid('/a/b/3A2/0sA.rest.stpl')
+        '3A2'
+        >>> _pdtid('/a/b/3A2/0SA.rest.stpl')
+        '0SA'
+        >>> _pdtid('/a/b/3A2/AS-A.rest.stpl')
+        '3A2'
+
+    """
+    fid = base(pdtfile)
+    while True:
+        fido = fid
+        fid = stem(fid)
+        if fid == fido:
+            break
+    try:
+        _pdtok(fid)
+    except:
+        fid = stem(stem(base(dirname(pdtfile))))
+        _pdtok(fid)
+    return fid
+
+def pdtAAA(pdtfile,dct):
+    '''
+    ``pdtAAA`` is for use in an ``.stpl`` document::
+
+        % pdtAAA(__file__,globals())
+
+    See the example generated with::
+
+        rstdoc --ipdt
+
+    :param pdtfile: file path of pdt
+    :param dct: dict to take up the generated defines
+
+    ``pdtAAA`` defines (now A, B are base36 letter):
+
+    - ``_AAA`` returns next item number as AAABB. Use: ``{{_AAA('kw1')}}``
+    - ``_AAA_``, ``_AAA__``, ``_AAA___``, ... returns header. Use: ``{{_AAA_('header')}}``
+    - ``__AAA``, same as ``_AAA``, but use: ``%__AAA('kw1')``
+    - ``__AAA_``, ``__AAA__``, ``__AAA___``, ... Use: ``%__AAA_('header')``
+
+    ::
+
+        >>> dct={}
+        >>> pdtAAA("a/b/003.rest.stpl",dct)
+        >>> dct['_003_']('x y')
+        '\n003 x y\n======='
+        >>> pdtAAA("a/b/003/d.rest.stpl",dct)
+        >>> dct['_003_']('x y')
+        '\nd003 x y\n========'
+
+
+    A ``pdt` is a project enhancement cycle with its own documentation.
+    ``pdt`` stands for
+
+    - plan: why
+    - do: specification
+    - test: tests according specification
+
+    Additionally there should be an
+
+    - inform: non-technical purpose for or from external people.
+
+    There can also be *only* the ``inform`` document, if the ``pdt`` item is only informative.
+
+    The repo can look like this (preferred)::
+
+        project repo
+            pdt
+                ...
+                AAA
+                    i.rest.stpl
+                    p.rest.stpl
+                    d.rest.stpl
+                    t.rest.stpl
+
+    or::
+
+        project repo
+            pdt
+                ...
+                AAA.rst.stpl
+
+    In the first case, a generated ``UID`` starts with ``xAAA``,
+    where x is the first letter of the file name below a ``AAA`` dir.
+    This is useful to trace related items by their plan-do-test-aspect.
+
+    Further reading: `pdt <https://github.com/rpuntaie/blog/blob/master/pdt.rest>`__
+
+    '''
+
+    try:
+        AAA = _pdtid(pdtfile)
+        pdtfn = base(pdtfile)
+        dct['AAA']=AAA
+        if not pdtfn.startswith(AAA):
+            dct['xAAA']=pdtfn[0]+AAA
+        else:
+            dct['xAAA']=AAA
+        dct['PdtItem']=PdtItem
+        dfns = "\n".join("_{0}"+"_"*i+"=PdtItem(xAAA,"+str(i)+")" for i in range(10))
+        if '_printlist' in dct: #define __AAA for direct output
+            dfns += "\n"
+            dfns += "\n".join("__{0}"+"_"*i+"=lambda *args: _printlist([_{0}"+"_"*i+"(*args),'\\n'])" for i in range(10))
+        eval(compile(dfns.format(AAA), "<pdtAAA>", "exec"),dct)
+    except:
+        if not pdtfile.endswith('index.rest.stpl'):
+            print("Maybe OK: pdt id (3,upper,base36) not found in path ", pdtfile)
+
+
+
+
+
 # ==============> for building with WAF
 
 try:
@@ -3418,16 +3631,18 @@ try:
             if gen.exists():
                 for f, t, fun, kw in parsegenfile(genpth):
                     gensrc[normjoin(relgen,t)] = normjoin(relgen,f)
-                    frm = gen.parent.find_resource(f)
-                    twd = gen.parent.make_node(t)
-                    self.create_task('GENTSK', frm, twd, fun=fun, kw=kw)
+                    genfrom = gen.parent.find_resource(f)
+                    assert genfrom, "%s rel to %s not found"%(f,genpth)
+                    gento = gen.parent.make_node(t)
+                    assert gento, "%s rel to %s not found"%(t,genpth)
+                    self.create_task('GENTSK', genfrom, gento, fun=fun, kw=kw)
 
     class GENTSK(Task.Task):
         def run(self):
-            frm = self.inputs[0]
-            twd = self.outputs[0]
-            twd.parent.mkdir()
-            gen(frm.abspath(), twd.abspath(), fun=self.fun, **self.kw)
+            genfrom = self.inputs[0]
+            gento = self.outputs[0]
+            gento.parent.mkdir()
+            gen(genfrom.abspath(), gento.abspath(), fun=self.fun, **self.kw)
 
     def get_docs_param(bld):
         docs = [x.lower() for x in bld.options.docs]
@@ -3517,7 +3732,10 @@ try:
     def gen_ext_tsk(self, node,
                     ext):  # into _images or ../_images in source path
         srcfldr = node.parent.get_src()
-        _imgpath, _ = here_or_updir(srcfldr.abspath(), _images)
+        _imgpath, there = here_or_updir(srcfldr.abspath(), _images)
+        if not there:
+            _imgpath = normjoin(srcfldr.abspath(), _images)
+            mkdir(_imgpath)
         imgpath = relpath(_imgpath, start=srcfldr.abspath())
         outnode = srcfldr.make_node(
             normjoin(imgpath,
@@ -3654,8 +3872,30 @@ or any other of http://www.sphinx-doc.org/en/master/usage/builders"""
                 cfg.env[x] = cfg.find_program(x)
             except cfg.errors.ConfigurationError:
                 cfg.to_log(x + ' was not found (ignoring)')
-        config = conf_py(cfg.path.abspath())
+        root=cfg.path.abspath()
+        config = conf_py(root)
         cfg.env['DPI'] = str(config.get('DPI', DPI))
+        #VERSION
+        try: # repo?
+            from git import Repo
+            repo = Repo(root)
+            tags = repo.tags
+            # tags =>
+            taglast = tags and tags[-1].name or '0.0.0'
+            tagint = int(taglast.replace('.',''),10)
+            # tagint=932 #
+            tagfix = tagint%10
+            tagminor = tagint//10 % 10
+            tagmajor = tagint//100 % 10
+            tagnew = f'{tagmajor}.{tagminor}.{tagfix+1}' # tagnew == '9.3.3' #
+            cfg.env['VERSION'] = tagnew
+        except: # no repo
+            try:
+                # VERSION file must exist when no git repo available
+                cfg.env['VERSION'] = next(filter(
+                    lambda x:x.strip(),opn(normjoin(root,'VERSION')).readlines()))
+            except FileNotFoundError:
+                cfg.env['VERSION'] = '0.0.0'
 
     def build(bld):
         bld.src2bld = lambda f: bld(
@@ -3674,6 +3914,7 @@ or any other of http://www.sphinx-doc.org/en/master/usage/builders"""
         # to compile stpl only, else do without rule
         bld.stpl = lambda tsk: render_stpl(tsk, bld)
 
+        #call this in root to have .tags there
         def build_docs():
             global g_config
             if exists(normjoin(bld.srcnode.abspath(), 'conf.py')):
@@ -3700,13 +3941,13 @@ except:
 # pandoc --print-default-template=latex
 # then modified in format and not to use figure labels
 # this is for mktree(): first line of file content must not be empty!
-example_tree = r'''
+example_rest_tree = r'''
        build/
-       dcx.py << file:///__file__
-       reference.tex << file:///__tex_ref__
-       reference.docx << file:///__docx_ref__
-       reference.odt << file:///__odt_ref__
-       wafw.py << file:///__wafw__
+       dcx.py << file://__dcx__
+       reference.tex << file://__tex_ref__
+       reference.docx << file://__docx_ref__
+       reference.odt << file://__odt_ref__
+       wafw.py << file://__wafw__
        waf
          #!/usr/bin/env sh
          shift
@@ -3719,7 +3960,7 @@ example_tree = r'''
          @%PYEXE% -x "%~dp0wafw.py" %*
          @exit /b %ERRORLEVEL%
        wscript
-         #vim: syntax=python
+         #vim: ft=python
          from waflib import Logs
          Logs.colors_lst['BLUE']='\x1b[01;36m'
          top='.'
@@ -3774,6 +4015,7 @@ example_tree = r'''
                      bbox = diff.getbbox()
                      if bbox:
                          return im.crop(bbox)
+                     return im
                  im = Image.open(filename)
                  im = trim(im)
                  im.save(filename)
@@ -4300,7 +4542,7 @@ example_tree = r'''
             Class09 -- Class10
             @enduml
         ├ egplt.pyg
-            #vim: syntax=python
+            #vim: ft=python
             import matplotlib.pyplot as plt
             import numpy as np
             x = np.random.randn(1000)
@@ -4363,7 +4605,7 @@ example_tree = r'''
             ]'''
 
 # replaces from '├ index.rest' to '├ egtikz.tikz'
-example_stp_subtree = r'''
+example_stpl_subtree = r'''
         ├ model.py
             """
             Contains definitions used in
@@ -4427,7 +4669,7 @@ example_stp_subtree = r'''
             %end
         ├ index.rest
             .. encoding: utf-8
-            .. vim: syntax=rst
+            .. vim: ft=rst
 
             ============
             Project Name
@@ -4454,7 +4696,7 @@ example_stp_subtree = r'''
 
         ├ sy.rest.stpl
             .. encoding: utf-8
-            .. vim: syntax=rst
+            .. vim: ft=rst
 
             % globals().update(include('utility.rst.tpl'))
             % SY=lambda short,alist0=[0]:II('SY',alist0,short)
@@ -4476,7 +4718,7 @@ example_stp_subtree = r'''
             .. include:: _links_sphinx.rst
         ├ ra.rest.stpl
             .. encoding: utf-8
-            .. vim: syntax=rst
+            .. vim: ft=rst
 
             % globals().update(include('utility.rst.tpl'))
             % RA=lambda short,alist0=[0]:II('RA',alist0,short)
@@ -4528,7 +4770,7 @@ example_stp_subtree = r'''
             .. include:: _links_sphinx.rst
         ├ sr.rest.stpl
             .. encoding: utf-8
-            .. vim: syntax=rst
+            .. vim: ft=rst
 
             % globals().update(include('utility.rst.tpl'))
             % SR=lambda short,alist0=[0]:II('SR',alist0,short)
@@ -4589,7 +4831,7 @@ example_stp_subtree = r'''
             .. include:: _links_sphinx.rst
         ├ dd.rest.stpl
             .. encoding: utf-8
-            .. vim: syntax=rst
+            .. vim: ft=rst
 
             % globals().update(include('utility.rst.tpl'))
             % DD=lambda short,alist0=[0]:II('DD',alist0,short)
@@ -4655,7 +4897,7 @@ example_stp_subtree = r'''
 
         ├ dd_included.rst.stpl
             .. encoding: utf-8
-            .. vim: syntax=rst
+            .. vim: ft=rst
 
             .. _`dd_code`:
 
@@ -4678,7 +4920,7 @@ example_stp_subtree = r'''
 
         ├ dd_tables.rst
             .. encoding: utf-8
-            .. vim: syntax=rst
+            .. vim: ft=rst
 
             .. _`dd_table`:
 
@@ -4713,7 +4955,7 @@ example_stp_subtree = r'''
 
         ├ dd_math.tpl
             .. encoding: utf-8
-            .. vim: syntax=rst
+            .. vim: ft=rst
 
             .. _`dd_math`:
 
@@ -4747,7 +4989,7 @@ example_stp_subtree = r'''
 
         ├ dd_diagrams.tpl
             .. encoding: utf-8
-            .. vim: syntax=rst
+            .. vim: ft=rst
 
             .. _`dd_diagrams`:
 
@@ -4849,7 +5091,7 @@ example_stp_subtree = r'''
 
         ├ tp.rest.stpl
             .. encoding: utf-8
-            .. vim: syntax=rst
+            .. vim: ft=rst
 
             % globals().update(include('utility.rst.tpl'))
             % TP=lambda short,alist0=[0]:II('TP',alist0,short)
@@ -4901,6 +5143,665 @@ example_stp_subtree = r'''
             .. include:: _links_sphinx.rst'''
 
 
+example_ipdt_tree = r'''
+       wafw.py << file://__wafw__
+       waf
+         #!/usr/bin/env sh
+         shift
+         ./wafw.py "$@"
+       waf.bat
+         @setlocal
+         @set PYEXE=python
+         @where %PYEXE% 1>NUL 2>NUL
+         @if %ERRORLEVEL% neq 0 set PYEXE=py
+         @%PYEXE% -x "%~dp0wafw.py" %*
+         @exit /b %ERRORLEVEL%
+       wscript
+         #vim: syntax=python
+         from waflib import Logs
+         Logs.colors_lst['BLUE']='\x1b[01;36m'
+         top='.'
+         out='build'
+         def options(opt):
+             opt.load('rstdoc.dcx')
+         def configure(cfg):
+             cfg.load('rstdoc.dcx')
+         def build(bld):
+             bld.load('rstdoc.dcx')
+             bld.recurse('pdt')
+       c
+       └ some.h
+           /*
+           #def gen_tst(lns,**kw):
+           #  return [l.split('@')[1] for l in rlines(r'^\s*@',lns)]
+           #def gen_tst
+           #def gen_tstdoc(lns,**kw):
+           #  return ['#) '+l.split('**')[1] for l in rlines(r'^/\*\*',lns)]
+           #def gen_tstdoc
+           
+           @//generated from some.h
+           @#include <assert.h>
+           @#include "some.h"
+           @int main()
+           @{
+           */
+           
+           /**Test add1()
+           @assert(add1(1)==2);
+           */
+           int add1(int a)
+           {
+             return a+1;
+           }
+           
+           /**Test add2()
+           @assert(add2(1)==3);
+           */
+           int add2(int a)
+           {
+             return a+2;
+           }
+           
+           /*
+           @}
+           */
+       pdt
+         ├ conf.py
+             project = 'PDT'
+             author = project+' Project Team'
+             copyright = '2019, '+author
+             version = '0.0.0'
+             release = version
+             try:
+                 import sphinx_bootstrap_theme
+                 html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+                 html_theme = 'bootstrap'
+             except:
+                 pass
+             #these are enforced by rstdoc, but keep them for sphinx-build
+             numfig = 0
+             smartquotes = 0
+             source_suffix = '.rest'
+             templates_path = []
+             language = None
+             highlight_language = "none"
+             default_role = 'math'
+             pygments_style = 'sphinx'
+             exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+             master_doc = 'index'
+             html_extra_path=[] #relative to conf.py
+             import os
+             on_rtd = os.environ.get('READTHEDOCS') == 'True'
+             if not on_rtd:
+                 latex_engine = 'xelatex'
+                 #You can postprocess pngs.default: png_post_processor = None
+                 def png_post_processor(filename):
+                     from PIL import Image, ImageChops
+                     def trim(im):
+                         bg = Image.new(im.mode, im.size, im.getpixel((0, 0)))
+                         diff = ImageChops.difference(im, bg)
+                         diff = ImageChops.add(diff, diff, 2.0, -100)
+                         bbox = diff.getbbox()
+                         if bbox:
+                             return im.crop(bbox)
+                         return im
+                     im = Image.open(filename)
+                     im = trim(im)
+                     im.save(filename)
+                     return filename
+                 #the following are default and can be omitted
+                 latex_elements = {'preamble':r"""
+                 \usepackage{pgfplots}
+                 \usepackage{unicode-math}
+                 \usepackage{tikz}
+                 \usepackage{caption}
+                 \captionsetup[figure]{labelformat=empty}
+                 \usetikzlibrary{arrows,snakes,backgrounds,patterns,matrix,shapes,fit,calc,shadows,plotmarks,intersections}
+                 """
+                 }
+                 #new in rstdcx/dcx/py
+                 tex_wrap = r"""
+                 \documentclass[12pt,tikz]{standalone}
+                 \usepackage{amsmath}
+                 """+latex_elements['preamble']+r"""
+                 \pagestyle{empty}
+                 \begin{document}
+                 %s
+                 \end{document}
+                 """
+                 DPI = 600
+                 target_id_color={"inform":("i","lightblue"), "plan":("p","red"),
+                    "do":("d","yellow"), "test":("t","green")}
+                 pandoc_doc_optref={'latex': '--template ../reference.tex',
+                                  'html': {},#each can also be dict of file:template
+                                  'pdf': '--template ../reference.tex',
+                                  'docx': '--reference-doc ../reference.docx',
+                                  'odt': '--reference-doc ../reference.odt'
+                                  }
+                 _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine',
+                    'xelatex','-V','titlepage','-V','papersize=a4',
+                    '-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
+                 pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,
+                    'docx':[],'odt':[],
+                    'html':['--mathml','--highlight-style','pygments']}
+                 rst_opts = { #http://docutils.sourceforge.net/docs/user/config.html
+                             'strip_comments':True
+                             ,'report_level':3
+                             ,'raw_enabled':True
+                             }
+                 def name_from_directive(directive,count):
+                     return directive[0].upper() + directive[1:] + ' ' + str(count)
+         ├ docutils.conf
+             [general]
+             halt_level: severe
+             report_level: error
+         ├ 000
+            ├ d.rest.stpl
+                .. vim: ft=rst
+                
+                .. _`000`:
+                
+                % globals().update(include('pdt.rst.tpl',
+                % Title="pdt do"
+                % ))
+                
+                
+                .. _`000tree`:
+                %__000('tree')
+                
+                - ``pdt`` documents the development
+                - ``doc`` documents the SW
+                
+                
+                .. _`000treefigure`:
+                
+                .. figure:: _images/tree.png
+                   :name:
+                   :width: 50%
+                
+                   |000treefigure|: Example project tree.
+                
+                
+                %epilog()
+            ├ gen
+                # vim: ft=python
+                from al.prj import builddir
+                from os.path import relpath, dirname
+                from_to_fun_kw = [ #fun and gen_fun() or gen()
+                ['../../c/some.h','_sometst.rst','tstdoc',{}],
+                ['../../c/some.h',relpath(builddir/'c/test_some.c',dirname(__file__)),'tst',{}]
+                ]
+            ├ i.rest.stpl
+                .. vim: ft=rst
+                
+                .. _`000`:
+                
+                % globals().update(include('pdt.rst.tpl',
+                % Title="pdt inform"
+                % ))
+                
+                .. _`000inform`:
+                %__000('inform')
+                
+                Purpose for non-technical people.
+                
+                .. include:: _traceability_file.rst
+                
+                %epilog()
+            ├ p.rest.stpl
+                .. vim: ft=rst
+                
+                .. _`000`:
+                
+                % globals().update(include('pdt.rst.tpl',
+                % Title="pdt plan"
+                % ))
+                
+                
+                .. _`000grouping`:
+                %__000_('Grouping')############################################################
+                
+                .. _`000headers`:
+                %__000('headers')
+                
+                Headers are groupings of content items,
+                Headers are needed if you want to reference a whole group from somewhere else.
+                
+                .. _`000subproject`:
+                %__000('sub-project')
+                
+                For a sub-project prefer a new ``pdt`` over headers.
+                
+                
+                %epilog()
+            ├ t.rest.stpl
+                .. vim: ft=rst
+                
+                .. _`000`:
+                
+                % globals().update(include('pdt.rst.tpl',
+                % Title="pdt test"
+                % ))
+                
+                
+                .. _`000testitem`:
+                %__000('test item')
+                
+                Link *plan* and *do* items tested here, e.g.
+                
+                - |000headers| fits to |000tree|
+                
+                .. _`000codegeneratedtestitems`:
+                %__000('code generated test items')
+                
+                .. include:: _sometst.rst
+                
+                %epilog()
+                
+                
+            └ tree.pyg
+                # vim: ft=python ts=4
+                import drawSvg
+                d = drawSvg.Drawing(400, 800, origin=(0,0))
+                draw = lambda what,*args,**kwargs: d.append(getattr(drawSvg,what)(*args,**kwargs))
+                for e in "Image Text Rectangle Circle ArcLine Path Lines Line Arc".split():
+                    eval(compile("{}=lambda *args, **kwargs: draw('{}',*args,**kwargs)".format(e.lower(),e),"tree","exec"),globals())
+                p=dict(fill='red', stroke_width=2, stroke='black')
+                th=20
+                y=[d.height]
+                dx,dy=2*th,-2*th
+                x=lambda : len(y)*dx
+                indent=lambda: y.append(0)
+                def back(n=1):
+                    yy = sum(y[:-n])
+                    y[-n-1]+=sum(y[-n:])
+                    del y[-n:]
+                    line(x(),yy,x(),sum(y),**p)
+                def entry(t):
+                    yy = sum(y)
+                    line(x(),yy,x(),yy+dy,**p)
+                    y[-1]=y[-1]+dy
+                    yy += dy
+                    line(x(),yy,x()+dx,yy,**p)
+                    text(t,th,x()+dx,yy)
+                entry("sw")
+                indent()
+                entry("pdt")
+                indent()
+                entry("000")
+                indent()
+                entry("{i,p,d,t}.rest.stpl")
+                back()
+                entry("001")
+                indent()
+                entry("{i,p,d,t}.rest.stpl")
+                back(2)
+                entry('doc')
+                indent()
+                entry('sw_{x,y,z}.rest.stpl')
+                back()
+                entry('c')
+                indent()
+                entry('sw_{x,y,z}.c')
+                back()
+                entry('python')
+                indent()
+                entry('sw')
+                indent()
+                entry('__init__.py')
+                back(2)
+                entry('test')
+                indent()
+                entry('test_{x,y,z}.py')
+                back()
+                entry('waf')
+                entry('wscript')
+         ├ 001
+            __imgs__
+            ├ i.rest.stpl
+                .. vim: ft=rst
+                
+                .. _`001`:
+                
+                %globals().update(include('pdt.rst.tpl',
+                %Title="Information on Diagrams",
+                %Type="inform"
+                %))
+                
+                .. _`001figure`:
+                %__001('figure')
+                
+                .. _`001fig1`:
+                
+                .. figure:: _images/egtikz.png
+                   :name:
+                   :width: 50%
+                
+                   |001fig1|: Caption here.
+                   Reference this via ``|001fig1|``.
+                
+                .. _`001rstinclude`:
+                %__001('rst include')
+                
+                .. include:: i_included.rst
+                
+                .. _`001stplincludetpl`:
+                %__001('stpl include (tpl)')
+                
+                %include('i_diagrams.tpl',_001=_001)
+                
+                Following definitions here, as
+                Pandoc does accept
+                `definitions in included files <https://github.com/jgm/pandoc/issues/4160>`__.
+                
+                .. |eps1| image:: _images/egeps1.png
+                .. |eps| image:: _images/egeps.png
+                
+                
+                %epilog()
+                
+            ├ i_diagrams.tpl
+                .. vim: ft=rst
+                
+                .. _`001diagrams`:
+                
+                %__001('diagrams')
+                
+                .. _`exampletikz1`:
+                
+                .. figure:: _images/egtikz1.png
+                   :name:
+                   :width: 30%
+                
+                   |exampletikz1|: Create from egtikz1.tikz
+                
+                ``.tikz``, ``.svg``, ``.dot``,  ``.uml``, ``.eps`` or ``.stpl``
+                thereof and ``.pyg``, are converted to ``.png``.
+                
+                .. _`examplesvg`:
+                
+                .. figure:: _images/egsvg.png
+                   :name:
+                
+                   |examplesvg|: Created from egsvg.svg.stpl
+                
+                .. _`exampledot`:
+                
+                .. figure:: _images/egdot.png
+                   :name:
+                
+                   |exampledot|: Created from egdot.dot.stpl
+                
+                .. _`exampleuml`:
+                
+                .. figure:: _images/eguml.png
+                   :name:
+                
+                   |exampleuml|: Created from eguml.uml
+                
+                .. _`exampleplt`:
+                
+                .. figure:: _images/egplt.png
+                   :name:
+                   :width: 30%
+                
+                   |exampleplt|: Created from egplt.pyg
+                
+                .. _`examplepyx`:
+                
+                .. figure:: _images/egpyx.png
+                   :name:
+                
+                   |examplepyx|: Created from egpyx.pyg
+                
+                .. _`examplecairo`:
+                
+                .. figure:: _images/egcairo.png
+                   :name:
+                
+                   |examplecairo|: Created from egcairo.pyg
+                
+                .. _`examplepygal`:
+                
+                .. figure:: _images/egpygal.png
+                   :name:
+                   :width: 30%
+                
+                   |examplepygal|: Created from egpygal.pyg
+                
+                .. _`exampleother`:
+                
+                .. figure:: _images/egother.png
+                   :name:
+                
+                   |exampleother|: Created from egother.pyg
+                
+                .. _`exampleeps1`:
+                
+                .. figure:: _images/egeps1.png
+                   :name:
+                
+                   |exampleeps1|: Created from egeps1.eps
+                
+                .. _`exampleeps`:
+                
+                .. figure:: _images/egeps.png
+                   :name:
+                
+                   |exampleeps|: Created from egeps.eps
+                
+                %if False:
+                .. _`target_more_than_in_rest`:
+                
+                   It is OK to have more targets in the .stpl file.
+                %end
+                
+                Make a reference to |exampletikz1|.
+                
+            ├ i_included.rst
+                .. vim: ft=rst
+                
+                
+                
+                .. _`001code`:
+                
+                |001code|: Listing showing struct.
+                
+                .. code-block:: cpp
+                   :name:
+                
+                   struct xxx{
+                      int yyy; //yyy for zzz
+                   }
+                
+                .. _`001table`:
+                
+                i00101: **table**
+                
+                Include normal ``.rst``.
+                
+                .. include:: i_tables.rst
+                
+                .. _`001math`:
+                
+                i00102: **math**
+                
+                Again include the stpl way.
+                
+                .. vim: ft=rst
+                
+                .. _`001math1`:
+                
+                .. math::
+                   :name:
+                
+                   V = \frac{K}{r^2}
+                
+                ``:math:`` is the default inline role: `mc^2`
+                
+                
+            ├ i_included.rst.stpl
+                .. vim: ft=rst
+                
+                %globals().update(include('pdt.rst.tpl'))
+                
+                .. _`001code`:
+                
+                |001code|: Listing showing struct.
+                
+                .. code-block:: cpp
+                   :name:
+                
+                   struct xxx{
+                      int yyy; //yyy for zzz
+                   }
+                
+                .. _`001table`:
+                %__001('table')
+                
+                Include normal ``.rst``.
+                
+                .. include:: i_tables.rst
+                
+                .. _`001math`:
+                %__001('math')
+                
+                Again include the stpl way.
+                
+                %include('i_math.tpl')
+                
+            ├ i_math.tpl
+                .. vim: ft=rst
+                
+                .. _`001math1`:
+                
+                .. math::
+                   :name:
+                
+                   V = \frac{K}{r^2}
+                
+                ``:math:`` is the default inline role: `mc^2`
+                
+            └ i_table.rst
+                .. vim: ft=rst
+                
+                .. _`001table1`:
+                
+                |001table1|: Table legend
+                
+                .. table::
+                   :name:
+                
+                   +--------+--------+
+                   | A      | B      |
+                   +========+========+
+                   | |eps1| | |eps|  |
+                   +--------+--------+
+                
+                .. _`001table2`:
+                
+                |001table2|: Table legend
+                
+                .. list-table::
+                   :name:
+                   :widths: 20 80
+                   :header-rows: 1
+                
+                   * - Bit
+                     - Function
+                
+                   * - 0
+                     - xxx
+                
+                Reference |001table1| or |001table2| does not show
+                ``001table1`` or ``001table2``.
+         ├ index.rest.stpl
+             .. vim: ft=rst
+             
+             %globals().update(include('pdt.rst.tpl'
+             %,Title="rstdoc - pdt example"
+             %,Type="inform"
+             %))
+             
+             .. toctree::
+             
+             %from pathlib import Path
+             %thisdir=Path(__file__).parent
+             %stem = lambda x:os.path.splitext(x)[0].replace('\\', '/')
+             %for x in sorted(y for y in thisdir.rglob("*.rest.stpl") if not y.name.startswith('index.rest')):
+                {{stem(x.relative_to(thisdir))}}
+             %end
+         ├ pdt.rst.tpl
+             % #expect Title and optionally
+             % setdefault('Contact','roland.puntaier@gmail.com')
+             % setdefault('Type','pdt')
+             % setdefault('Status','draft')
+             % assert Type in "pdt inform".split(), "Wrong PDT Type"
+             % assert Status in "draft final replaced deferred rejected withdrawn".split(), "Wrong PDT Status"
+             %
+             % #see pdtAAA (__file__ is the main stpl file)
+             % from rstdoc.dcx import pdtAAA, exists, dirname
+             % pdtAAA(__file__,globals())
+             %
+             %if defined('Title'):
+             {{'#'*len(Title)}}
+             {{Title}}
+             {{'#'*len(Title)}}
+             
+             % if defined('xAAA'):
+             % if xAAA == AAA or xAAA[0] == 'i':
+             :PDT: {{AAA}}
+             :Contact: {{!Contact}}
+             :Type: {{!Type}}
+             :Status: {{Status}}
+             % end
+             
+             % if xAAA != AAA and xAAA[0] == 'i':
+             ***********
+             Information
+             ***********
+             %end
+             %end #defined('xAAA')
+             %end #defined('Title')
+             %def pagebreak():
+             .. raw:: openxml
+             
+                 <w:p>
+                   <w:r>
+                     <w:br w:type="page"/>
+                   </w:r>
+                 </w:p>
+             
+             .. raw:: html
+             
+                 <p style="page-break-before: always;">&nbsp;</p>
+             
+             .. raw:: latex
+             
+                 \pagebreak
+             
+             .. for docutils
+             .. raw:: odt
+             
+                 <text:p text:style-name="PageBreak"/>
+             
+             .. for pandoc
+             .. raw:: opendocument
+             
+                 <text:p text:style-name="PageBreak"/>
+             
+             %end
+             %def epilog():
+             % if exists('_links_sphinx.rst'):
+             .. include:: _links_sphinx.rst
+             % else:
+             .. include:: ../_links_sphinx.rst
+             % end
+             %end
+             %end
+         └ wscript_build
+             bld.build_docs()'''
+
 def mktree(tree):
     '''
 
@@ -4916,7 +5817,7 @@ def mktree(tree):
 
     - ``/`` or ``\\`` to make a directory leaf
 
-    - ``<<`` to copy file from internet using ``http://`` or locally using ``file:://``
+    - ``<<`` to copy file from internet using ``http://`` or locally using ``file://``
 
     - use indented lines as file content
 
@@ -5003,13 +5904,13 @@ def tree(
     ::
 
         >>> path = dirname(__file__)
-        >>> tree(path,False,max_depth=1).startswith('├─')
+        >>> tree(path,False,max_depth=1).startswith('├')
         True
 
     '''
 
     subprefix = ['│  ', '   ']
-    entryprefix = ['├─', '└─']
+    entryprefix = ['├ ', '└ '] #├─ └─ not understood by mktree
 
     def _tree(path, prefix):
         for p, ds, fs in os.walk(path):
@@ -5037,49 +5938,56 @@ def tree(
 
 
 def initroot(
-        rootfldr,
-        sampletype
+        rootfldr
+        ,sampletype
         ):
     '''
-    Creates a sample tree in the file system
-    based on the ``example_tree`` and the ``example_stp_subtree`` in dcx.py.
+    Creates a sample tree in the file system.
 
-    rootfldr: directory name that becomes root of the sample tree
-    sampletype: either 'stpl' for the templated sample tree, or 'rest'
+    :param rootfldr: directory name that becomes root of the sample tree
+    :param sampletype: either 'ipdt' or 'stpl' for templated sample trees, or 'rest'
+
+    See ``example_rest_tree`` and ``example_stpl_subtree`` and ``example_ipdt_tree`` in dcx.py.
 
     '''
-
-    # rootfldr, sampletype = 'tmp', 'rest'
-    stpltype = sampletype == 'stpl'
     thisfile = __file__.replace('\\', '/')
     tex_ref = normjoin(dirname(thisfile), 'reference.tex')
     docx_ref = normjoin(dirname(thisfile), 'reference.docx')
     odt_ref = normjoin(dirname(thisfile), 'reference.odt')
     wafw = normjoin(dirname(thisfile), 'wafw.py')
+    if sampletype == 'ipdt':
+        imglines = example_rest_tree.splitlines()
+        imglines = imglines[
+            list(rindices('├ egtikz.tikz',imglines))[0]:
+            list(rindices('├ gen',imglines))[0]]
+        imglines = [' '*4+x for x in imglines]
+        example_tree = example_ipdt_tree.replace('__imgs__',('\n'.join(imglines)+'\n').lstrip())
+    else:
+        example_tree=example_rest_tree
     inittree = [
         l for l in example_tree.replace(
-            '__file__', thisfile).replace(
+            '__dcx__', thisfile).replace(
             '__tex_ref__', tex_ref).replace(
             '__docx_ref__', docx_ref).replace(
             '__odt_ref__', odt_ref).replace(
             '__wafw__', wafw).replace(
             '__code__', rootfldr).splitlines()
     ]
-    if stpltype:
-
+    if sampletype == 'stpl':
         def _replace_lines(origlns, start, stop, insertlns):
             return origlns[:list(rindices(start, origlns))
                            [0]] + insertlns + origlns[list(
                                rindices(stop, origlns))[0]:]
-
         inittree = _replace_lines(inittree, '├ index.rest', '├ egtikz.tikz',
-                                  example_stp_subtree.splitlines())
+                                  example_stpl_subtree.splitlines())
     mkdir(rootfldr)
     with new_cwd(rootfldr):
         mktree(inittree)
 
 
-def index_dir(root):
+def index_dir(
+    root=g_scanroot
+    ):
     '''
     Index a directory.
 
@@ -5093,6 +6001,7 @@ def index_dir(root):
     '''
 
     # do all stpl's upfront. ``create_links_and_tags()`` needs them
+    from pathlib import Path
     for f in reversed(sorted([str(x) for x in Path(root).rglob('*.stpl')])):
         dpth = normjoin(root, f)
         if isfile(dpth):
@@ -5148,7 +6057,11 @@ Any of the files can be a SimpleTemplate template (xxx.yyy.stpl).
 
 Configuration is in ``conf.py`` or ``../conf.py``.
 
-Examples with the files generated with the ``--stpl tmp``:
+``rstdoc --ipdt|--stpl|--rest`` create sample project trees.
+
+``ipdt`` is for a project with more inform-plan-do-test enhancement cycles.
+
+Examples usages with the files generated by ``rstdoc --stpl tmp``:
 
 .. code-block:: sh
 
@@ -5220,12 +6133,17 @@ def main(**args):
             '--rest',
             dest='restroot',
             action='store',
-            help='Create a sample directory structure with .rest files.')
+            help='Create a sample directory with `<arg>/doc/{sy,ra,sr,dd,tp}.rest` files.')
         parser.add_argument(
             '--stpl',
             dest='stplroot',
             action='store',
-            help='Create a sample directory structure with .rest.stpl files.')
+            help='Create a sample directory with `<arg>/doc/{sy,ra,sr,dd,tp}.rest.stpl` files.')
+        parser.add_argument(
+            '--ipdt',
+            dest='ipdtroot',
+            action='store',
+            help='Create a sample directory with `<arg>/pdt/AAA/{i,p,d,t}.rest.stpl` for inform-plan-do-test cycles (A is base 36).')
         parser.add_argument(
             '--pygrep',
             dest='pygrep',
@@ -5276,6 +6194,8 @@ to define variables that can be used in templates."""
         initroot(args['stplroot'], 'stpl')
     elif 'restroot' in args and args['restroot']:
         initroot(args['restroot'], 'rest')
+    elif 'ipdtroot' in args and args['ipdtroot']:
+        initroot(args['ipdtroot'], 'ipdt')
     elif 'pygrep' in args and args['pygrep']:
         for f,i,l in grep(args['pygrep']):
             print('"{}":{} {}'.format(f,i,l))
@@ -5318,7 +6238,7 @@ to define variables that can be used in templates."""
         for i,o in zip(infiles,outfiles):
             convert(i,o,outinfo)
     else:
-        index_dir('.')
+        index_dir(g_scanroot)
 
 if __name__ == '__main__':
     main()
