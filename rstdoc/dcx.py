@@ -221,7 +221,7 @@ Conventions
   to ``index.rest`` or another ``.rest`` parallel to it.
   It is there in the generated example project, to include it in tests.
   You might want to remove that line, if you start with the example project.
-  ``_traceability_file.{svg,png,rst}`` are all in the same folder.
+  ``_traceability_file.{svg,png,rst}`` are all in the same directory.
 
 See the example project created with ``--rest`` or ``--stpl``
 at the end of this file and the sources of the documentation of
@@ -456,15 +456,21 @@ rexkw = re.compile(r'^\s*(\.\. {|%?\s*{*_+[0-Z]+_*\()')
 #rexkw.search(" % fun('kw1 kw2')") #NO
 rexkwsplit = re.compile(r'[\W_]+')
 
-_rstlinkfixer = re.compile('#[^>]+>')
+rextrace_target_id=re.compile("^[^-_]\w+$")
+#rextrace_target_id.match("_000")#NO
+#rextrace_target_id.match("-000")#NO
+#rextrace_target_id.match("sd 00")#NO
+#rextrace_target_id.match("a-d-00")#NO
+#rextrace_target_id.match("A_d_00")
+#rextrace_target_id.match("sD00")
+#rextrace_target_id.match("000")
 
+#https://sourceforge.net/p/docutils/bugs/378/ addressed doubly
+_rstlinkfixer = re.compile('#[^>]+>')
 def _rst_id_fixer(matchobj):
     return matchobj.group(0).replace(' ', '-').replace('_', '-')
-
-
 def _rst_id_fix(linktxt):
     return _rstlinkfixer.sub(_rst_id_fixer, linktxt, re.MULTILINE)
-
 
 @lru_cache()
 def here_or_updir(fldr, file):
@@ -586,6 +592,7 @@ config_defaults = {
     'tex_wrap': tex_wrap,
     'target_id_group': target_id_group,
     'target_id_color': target_id_color,
+    'rextrace_target_id': rextrace_target_id,
     'pandoc_doc_optref': pandoc_doc_optref,
     'pandoc_opts': pandoc_opts,
     'rst_opts': rst_opts,
@@ -2082,7 +2089,7 @@ def convert(
 
 '''
 Same as |dcx.convert|,
-but creates temporary folder for a list of lines infile argument.
+but creates temporary dir for a list of lines infile argument.
 
 ::
 
@@ -2445,6 +2452,7 @@ class Traceability:
         config = conf_py(linkroot)
         target_id_group = config['target_id_group']
         target_id_color = config['target_id_color']
+        rextrace_target_id = re.compile(config['rextrace_target_id'])
 
         def _drawnode(canvas, node, parent, center, radius):
             fillcolors = []
@@ -2459,7 +2467,8 @@ class Traceability:
                     canvas.circle(
                         center, rr, fill=fillcolors[i], stroke='black'))
 
-        fca = pyfca.Lattice(self.fcaobjsets, lambda x: x)
+        fca = pyfca.Lattice(self.fcaobjsets,
+                            lambda x: set(xe for xe in x if rextrace_target_id.match(xe)))
         tr = 'tr'
 
         # |trXX|, |trYY|, ...
@@ -3172,11 +3181,7 @@ class Fldr(OrderedDict):
                             # unknowntgts.append(lnk)
             if _traceability_instance:
                 if prevtgt and linksto:
-                    _traceability_instance.appendobject(
-                        set([
-                            x for x in linksto
-                            if not x.startswith('-') and not x.startswith('_')
-                        ] + [prevtgt.target]))
+                    _traceability_instance.appendobject(linksto+[prevtgt.target])
             if linksto:
                 linksto = '.. .. ' + ','.join(linksto) + '\n\n'
                 add_links_comments(linksto)
@@ -3184,11 +3189,11 @@ class Fldr(OrderedDict):
         for rstfile in self.values():
             add_links_comments('\n.. .. {0}\n\n'.format(rstfile.doc))
             rstfile.add_links_and_tags(add_tgt, add_linksto)
-        if _traceability_instance:
-            tlns = _traceability_instance.create_traceability_file(self.linkroot)
+        if _traceability_instance and self.linkroot==self.folder:
+            tlines = _traceability_instance.create_traceability_file(self.linkroot)
             trcrst = normjoin(self.linkroot, _traceability_file + _rst)
-            if tlns:
-                for tgt in RstFile.make_tgts(tlns, trcrst,
+            if tlines:
+                for tgt in RstFile.make_tgts(tlines, trcrst,
                                              _traceability_instance.counters):
                     add_tgt(tgt, _traceability_instance.tracehtmltarget)
         for linktype, linklines in linkfiles:
@@ -3277,7 +3282,8 @@ def links_and_tags(
 
     fldrs = Fldrs(scanroot)
     fldrs.scandirs()
-    for fldr in fldrs.values():
+    #reversed to do create_traceability_file at the end
+    for folder,fldr in reversed(fldrs.items()):
         fldr.create_links_and_tags()
 
 def _kw_from_path(dir,rexkwsplit=rexkwsplit):
@@ -3489,20 +3495,20 @@ def _pdtok(fid):
     assert len(fid) == 3
     assert int(fid,base=36) < 36**3
 
-def _pdtid(pdtfile):
-    """
-    ``_pdtid`` takes the path of the current file and extracts an ID from it.
+def pdtid(pdtfile):
+    '''
+    ``pdtid`` takes the path of the current file and extracts an ID from it.
 
     ::
 
-        >>> _pdtid('/a/b/3A2/0sA.rest.stpl')
+        >>> pdtid('/a/b/3A2/0sA.rest.stpl')
         '3A2'
-        >>> _pdtid('/a/b/3A2/0SA.rest.stpl')
+        >>> pdtid('/a/b/3A2/0SA.rest.stpl')
         '0SA'
-        >>> _pdtid('/a/b/3A2/AS-A.rest.stpl')
+        >>> pdtid('/a/b/3A2/AS-A.rest.stpl')
         '3A2'
 
-    """
+    '''
     fid = base(pdtfile)
     while True:
         fido = fid
@@ -3516,7 +3522,7 @@ def _pdtid(pdtfile):
         _pdtok(fid)
     return fid
 
-def pdtAAA(pdtfile,dct):
+def pdtAAA(pdtfile,dct,pdtid=pdtid):
     '''
     ``pdtAAA`` is for use in an ``.stpl`` document::
 
@@ -3528,28 +3534,7 @@ def pdtAAA(pdtfile,dct):
 
     :param pdtfile: file path of pdt
     :param dct: dict to take up the generated defines
-
-    ``pdtAAA`` defines (now A, B are base36 letter):
-
-    - ``_AAA`` returns next item number as AAABB. Use: ``{{_AAA('kw1')}}``
-    - ``_AAA_``, ``_AAA__``, ``_AAA___``, ... returns header. Use: ``{{_AAA_('header')}}``
-    - ``__AAA``, same as ``_AAA``, but use: ``%__AAA('kw1')``
-    - ``__AAA_``, ``__AAA__``, ``__AAA___``, ... Use: ``%__AAA_('header')``
-
-    ::
-
-        >>> dct={}
-        >>> pdtAAA("a/b/003.rest.stpl",dct)
-        >>> dct['_003']('x y').strip()
-        '00301: **x y**'
-        >>> dct['_003_']('x y')
-        '\\n003 x y\\n======='
-        >>> pdtAAA("a/b/003/d.rest.stpl",dct)
-        >>> dct['_003']('x y').strip()
-        'd00301: **x y**'
-        >>> dct['_003_']('x y')
-        '\\nd003 x y\\n========'
-
+    :param pdtid: function returning the ID for the ``pdt`` cycle
 
     A ``pdt` is a project enhancement cycle with its own documentation.
     ``pdt`` stands for
@@ -3582,31 +3567,62 @@ def pdtAAA(pdtfile,dct):
                 ...
                 AAA.rst.stpl
 
-    In the first case, a generated ``UID`` starts with ``xAAA``,
-    where x is the first letter of the file name below a ``AAA`` dir.
+    In the first case, the ``UID`` starts with ``{i,p,d,t}AAA``.
     This is useful to trace related items by their plan-do-test-aspect.
 
     Further reading: `pdt <https://github.com/rpuntaie/blog/blob/master/pdt.rest>`__
 
+    ``pdtAAA`` makes these Python defines:
+
+    - ``_[x]AAA`` returns next item number as AAABB. Use: ``{{_[x]AAA('kw1')}}``
+    - ``_[x]AAA_``, ``_[x]AAA__``, ``_[x]AAA___``, ... returns headers. Use: ``{{_[x]AAA_('header text')}}``
+    - ``__[x]AAA``, same as ``_[x]AAA``, but use: ``%__[x]AAA('kw1')``
+    - ``__[x]AAA_``, ``__[x]AAA__``, ``__[x]AAA___``, ... Use: ``%__[x]AAA_('header text')``
+
+    A, B are base36 letters and x is the initial of the file
+
+    ::
+
+        >>> dct={}
+        >>> pdtfile = "a/b/003.rest.stpl"
+        >>> pdtAAA(pdtfile,dct)
+        >>> dct['_003']('x y').strip()
+        '00301: **x y**'
+        >>> dct['_003_']('x y')
+        '\\n003 x y\\n======='
+        >>> pdtfile="a/b/003/d.rest.stpl"
+        >>> pdtAAA(pdtfile,dct)
+        >>> dct['_003']('x y').strip()
+        '00301: **x y**'
+        >>> dct['_d003']('x y').strip()
+        'd00301: **x y**'
+        >>> dct['_003_']('x y')
+        '\\n003 x y\\n======='
+        >>> dct['_d003_']('x y')
+        '\\nd003 x y\\n========'
+
     '''
 
     try:
-        AAA = _pdtid(pdtfile)
-        pdtfn = base(pdtfile)
-        dct['AAA']=AAA
-        if not pdtfn.startswith(AAA):
-            dct['xAAA']=pdtfn[0]+AAA
-        else:
-            dct['xAAA']=AAA
-        dct['PdtItem']=PdtItem
-        dfns = "\n".join("_{0}"+"_"*i+"=PdtItem(xAAA,"+str(i)+")" for i in range(10))
-        if '_printlist' in dct: #define __AAA for direct output
-            dfns += "\n"
-            dfns += "\n".join("__{0}"+"_"*i+"=lambda *args: _printlist([_{0}"+"_"*i+"(*args),'\\n'])" for i in range(10))
-        eval(compile(dfns.format(AAA), "<pdtAAA>", "exec"),dct)
+        AAA = pdtid(pdtfile)
     except:
         if not pdtfile.endswith('index.rest.stpl'):
             print("Maybe OK: pdt id (3,upper,base36) not found in path ", pdtfile)
+        return
+    pdtfn = base(pdtfile)
+    x = ''
+    dct['AAA']=AAA
+    if not pdtfn.startswith(AAA):
+        x = pdtfn[0]
+        dct[x+'AAA']=x+AAA
+    dct['PdtItem']=PdtItem
+    dfns = "\n".join("_{0}"+"_"*i+"=PdtItem('{0}',"+str(i)+")" for i in range(10))
+    if '_printlist' in dct: #define __AAA for direct output
+        dfns += "\n"
+        dfns += "\n".join("__{0}"+"_"*i+"=lambda *args: _printlist([_{0}"+"_"*i+"(*args),'\\n'])" for i in range(10))
+    eval(compile(dfns.format(AAA), "<pdtAAA>", "exec"),dct)
+    if x:
+        eval(compile(dfns.format(x+AAA), "<pdtAAA>", "exec"),dct)
 
 
 
@@ -5278,6 +5294,8 @@ example_ipdt_tree = r'''
                  \end{document}
                  """
                  DPI = 600
+                 #rst-internal target IDs to include in trace
+                 rextrace_target_id="^[ipdt][0-9A-Z]{3}[a-z]+$"
                  target_id_color={"inform":("i","lightblue"), "plan":("p","red"),
                     "do":("d","yellow"), "test":("t","green")}
                  pandoc_doc_optref={'latex': '--template ../reference.tex',
@@ -5304,33 +5322,6 @@ example_ipdt_tree = r'''
              halt_level: severe
              report_level: error
          ├ 000
-            ├ d.rest.stpl
-                .. vim: ft=rst
-                
-                .. _`d000`:
-                
-                % globals().update(include('pdt.rst.tpl',
-                % Title="pdt do"
-                % ))
-                
-                
-                .. _`000tree`:
-                %__000('tree')
-                
-                - ``pdt`` documents the development
-                - ``doc`` documents the SW
-                
-                
-                .. _`000treefigure`:
-                
-                .. figure:: _images/tree.png
-                   :name:
-                   :width: 50%
-                
-                   |000treefigure|: Example project tree.
-                
-                
-                %epilog()
             ├ gen
                 # vim: ft=python
                 from os.path import relpath, dirname
@@ -5347,10 +5338,11 @@ example_ipdt_tree = r'''
                 % Title="pdt inform"
                 % ))
                 
-                .. _`000inform`:
-                %__000('inform')
+                .. _`i000inform`:
+                %__i000('inform')
                 
-                Purpose for non-technical people.
+                Purpose is non-technical, from or for externals.
+                The purpose here is to be an example.
                 
                 %epilog()
             ├ p.rest.stpl
@@ -5363,20 +5355,57 @@ example_ipdt_tree = r'''
                 % ))
                 
                 
-                .. _`000grouping`:
-                %__000_('Grouping')############################################################
+                .. _`p000grouping`:
+                %__p000_('Grouping')############################################################
                 
-                .. _`000headers`:
-                %__000('headers')
+                .. _`p000headers`:
+                %__p000('headers')
+                |i000inform|
                 
                 Headers are groupings of content items,
-                Headers are needed if you want to reference a whole group from somewhere else.
+                but are not as important as content items.
                 
-                .. _`000subproject`:
-                %__000('sub-project')
+                .. _`p000subproject`:
+                %__p000('sub-project')
+                |i000inform|
                 
                 For a sub-project prefer a new ``pdt`` over headers.
                 
+                
+                %epilog()
+            ├ d.rest.stpl
+                .. vim: ft=rst
+                
+                .. _`d000`:
+                
+                % globals().update(include('pdt.rst.tpl',
+                % Title="pdt do"
+                % ))
+                
+                
+                .. _`d000repo`:
+                %__d000('repo')
+                |p000headers|
+                
+                The refs in this example do not make semantic sense, but
+
+                - ``pdt`` documents the development
+                - ``doc`` documents the SW
+                
+                .. _`000repofigure`:
+                
+                .. figure:: _images/repo.png
+                   :name:
+                   :width: 50%
+                
+                   |000repofigure|: Example project repo.
+                
+                .. _`d000notrace`:
+                %__d000('notrace')
+                |p000subproject|
+
+                The figure target above does not start with 'd'.
+                ``rextrace_target_id`` is set to ignore such targets.
                 
                 %epilog()
             ├ t.rest.stpl
@@ -5389,28 +5418,34 @@ example_ipdt_tree = r'''
                 % ))
                 
                 
-                .. _`000testitem`:
-                %__000('test item')
+                .. _`t000testitem1`:
+                %__t000('test item 1')
                 
                 Link *plan* and *do* items tested here, e.g.
                 
-                - |000headers| fits to |000tree|
+                - |p000headers| fits to |d000repo|
+
+                .. _`t000testitem2`:
+                %__t000('test item 2')
+                |d000notrace|
+
+                Tests manually.
                 
-                .. _`000codegeneratedtestitems`:
-                %__000('code generated test items')
+                .. _`t000codegeneratedtestitems`:
+                %__t000('code generated test items')
                 
                 .. include:: _sometst.rst
                 
                 %epilog()
                 
                 
-            └ tree.pyg
+            └ repo.pyg
                 # vim: ft=python ts=4
                 import drawSvg
                 d = drawSvg.Drawing(400, 800, origin=(0,0))
                 draw = lambda what,*args,**kwargs: d.append(getattr(drawSvg,what)(*args,**kwargs))
                 for e in "Image Text Rectangle Circle ArcLine Path Lines Line Arc".split():
-                    eval(compile("{}=lambda *args, **kwargs: draw('{}',*args,**kwargs)".format(e.lower(),e),"tree","exec"),globals())
+                    eval(compile("{}=lambda *args, **kwargs: draw('{}',*args,**kwargs)".format(e.lower(),e),"repo","exec"),globals())
                 p=dict(fill='red', stroke_width=2, stroke='black')
                 th=20
                 y=[d.height]
@@ -5473,8 +5508,11 @@ example_ipdt_tree = r'''
                 %Type="inform"
                 %))
                 
-                .. _`001figure`:
-                %__001('figure')
+                .. _`i001figure`:
+                %__i001('figure')
+                
+                An item is not included in the traceabilty diagram unless with links to other items.
+                Ref to |i000inform| to test inclusion.
                 
                 .. _`001fig1`:
                 
@@ -5485,15 +5523,17 @@ example_ipdt_tree = r'''
                    |001fig1|: Caption here.
                    Reference this via ``|001fig1|``.
                 
-                .. _`001rstinclude`:
-                %__001('rst include')
+                .. _`i001rstinclude`:
+                %__i001('rst include')
+                |i000inform|
                 
                 .. include:: i_included.rst
                 
-                .. _`001stplincludetpl`:
-                %__001('stpl include (tpl)')
+                .. _`i001stplincludetpl`:
+                %__i001('stpl include (tpl)')
+                |i000inform|
                 
-                %include('i_diagrams.tpl',_001=_001)
+                %include('i_diagrams.tpl',_i001=_i001)
                 
                 Following definitions here, as
                 Pandoc does accept
@@ -5508,9 +5548,9 @@ example_ipdt_tree = r'''
             ├ i_diagrams.tpl
                 .. vim: ft=rst
                 
-                .. _`001diagrams`:
-                
-                %__001('diagrams')
+                .. _`i001diagrams`:
+                %__i001('diagrams')
+                |i000inform|
                 
                 .. _`exampletikz1`:
                 
@@ -5608,9 +5648,9 @@ example_ipdt_tree = r'''
                 
                 
                 
-                .. _`001code`:
+                .. _`i001code`:
                 
-                |001code|: Listing showing struct.
+                |i001code|: Listing showing struct.
                 
                 .. code-block:: cpp
                    :name:
@@ -5619,7 +5659,7 @@ example_ipdt_tree = r'''
                       int yyy; //yyy for zzz
                    }
                 
-                .. _`001table`:
+                .. _`i001table`:
                 
                 i00101: **table**
                 
@@ -5627,7 +5667,7 @@ example_ipdt_tree = r'''
                 
                 .. include:: i_tables.rst
                 
-                .. _`001math`:
+                .. _`i001math`:
                 
                 i00102: **math**
                 
@@ -5635,7 +5675,7 @@ example_ipdt_tree = r'''
                 
                 .. vim: ft=rst
                 
-                .. _`001math1`:
+                .. _`i001math1`:
                 
                 .. math::
                    :name:
@@ -5650,9 +5690,9 @@ example_ipdt_tree = r'''
                 
                 %globals().update(include('pdt.rst.tpl'))
                 
-                .. _`001code`:
+                .. _`i001code`:
                 
-                |001code|: Listing showing struct.
+                |i001code|: Listing showing struct.
                 
                 .. code-block:: cpp
                    :name:
@@ -5661,15 +5701,17 @@ example_ipdt_tree = r'''
                       int yyy; //yyy for zzz
                    }
                 
-                .. _`001table`:
+                .. _`i001table`:
                 %__001('table')
+                |i000inform|
                 
                 Include normal ``.rst``.
                 
                 .. include:: i_tables.rst
                 
-                .. _`001math`:
-                %__001('math')
+                .. _`i001math`:
+                %__i001('math')
+                |i000inform|
                 
                 Again include the stpl way.
                 
@@ -5678,7 +5720,7 @@ example_ipdt_tree = r'''
             ├ i_math.tpl
                 .. vim: ft=rst
                 
-                .. _`001math1`:
+                .. _`i001math1`:
                 
                 .. math::
                    :name:
@@ -5690,9 +5732,9 @@ example_ipdt_tree = r'''
             └ i_tables.rst
                 .. vim: ft=rst
                 
-                .. _`001table1`:
+                .. _`i001table1`:
                 
-                |001table1|: Table legend
+                |i001table1|: Table legend
                 
                 .. table::
                    :name:
@@ -5703,9 +5745,9 @@ example_ipdt_tree = r'''
                    | |eps1| | |eps|  |
                    +--------+--------+
                 
-                .. _`001table2`:
+                .. _`i001table2`:
                 
-                |001table2|: Table legend
+                |i001table2|: Table legend
                 
                 .. list-table::
                    :name:
@@ -5718,8 +5760,8 @@ example_ipdt_tree = r'''
                    * - 0
                      - xxx
                 
-                Reference |001table1| or |001table2| does not show
-                ``001table1`` or ``001table2``.
+                Reference |i001table1| or |i001table2| does not show
+                ``i001table1`` or ``i001table2``.
          ├ index.rest.stpl
              .. vim: ft=rst
              
@@ -5759,20 +5801,12 @@ example_ipdt_tree = r'''
              {{Title}}
              {{'#'*len(Title)}}
              
-             % if defined('xAAA'):
-             % if xAAA == AAA or xAAA[0] == 'i':
+             % if defined('iAAA'):
              :PDT: {{AAA}}
              :Contact: {{!Contact}}
              :Type: {{!Type}}
              :Status: {{Status}}
              % end
-             
-             % if xAAA != AAA and xAAA[0] == 'i':
-             ***********
-             Information
-             ***********
-             %end
-             %end #defined('xAAA')
              %end #defined('Title')
              %def pagebreak():
              .. raw:: openxml
@@ -6014,6 +6048,7 @@ def index_dir(
 
     # do all stpl's upfront. ``create_links_and_tags()`` needs them
     from pathlib import Path
+    # reversed evaluates deeper stpls first
     for f in reversed(sorted([str(x) for x in Path(root).rglob('*.stpl')])):
         dpth = normjoin(root, f)
         if isfile(dpth):
@@ -6025,14 +6060,15 @@ def index_dir(
     # link, gen and tags per directory
     fldrs = Fldrs(root)
     fldrs.scandirs()
-    for directory, fldr in fldrs.items():
+    #reversed to do create_traceability_file at the end
+    for folder, fldr in reversed(fldrs.items()):
         # generated files need to be there to be indexed
-        genpth = normjoin(directory, 'gen')
+        genpth = normjoin(folder, 'gen')
         if exists(genpth):
             try:
                 for f, t, d, kw in parsegenfile(genpth):
-                    gen(normjoin(directory, f),
-                        target=normjoin(directory, t),
+                    gen(normjoin(folder, f),
+                        target=normjoin(folder, t),
                         fun=d,
                         **kw)
             except Exception as err:
@@ -6108,7 +6144,7 @@ Examples usages with the files generated by ``rstdoc --stpl tmp``:
     rstdcx index.rest ../build/index.html sphinx_html   # via Sphinx the output directory must be different
 
     #convert the graphics and place the into _images or ../_images
-    #if no _images directory exists they will placed into the same folder
+    #if no _images directory exists they will be placed into the same directory
     rstdcx egcairo.pyg
     rstdcx egdot.dot.stpl
     rstdcx egeps.eps

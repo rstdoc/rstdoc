@@ -244,8 +244,8 @@ def test_init(rstinit):
 │  │  ├ gen
 │  │  ├ i.rest.stpl
 │  │  ├ p.rest.stpl
-│  │  ├ t.rest.stpl
-│  │  └ tree.pyg
+│  │  ├ repo.pyg
+│  │  └ t.rest.stpl
 │  ├ 001
 │  │  ├ egcairo.pyg
 │  │  ├ egdot.dot.stpl
@@ -678,7 +678,7 @@ def test_waf_samples(wafbuild):
    │  ├ egtikz.png
    │  ├ egtikz1.png
    │  ├ eguml.png
-   │  └ tree.png
+   │  └ repo.png
    ├ genindex.html
    ├ index.html
    ├ _traceability_file.svg
@@ -702,7 +702,7 @@ def test_waf_samples(wafbuild):
    ├ eguml.png
    ├ index.tex
    ├ make.bat
-   └ tree.png"""
+   └ repo.png"""
         realout = tree3(target)
         for x in expected.splitlines():
             xchk=x.strip('└│├ ')
