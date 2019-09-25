@@ -133,7 +133,7 @@ It is supposed to be used with a build tool.
 
 The following image language files should be parallel to the ``.rest`` files.
 They are automatically converted to ``.png``
-and placed into ``./_images`` or ``../_images``.
+and placed into ``./_images``, or ``../_images``, if only that exists.
 
 - ``.tikz`` or ``.tikz.stpl``.
   This needs LaTex.
@@ -218,9 +218,10 @@ Conventions
 
 - If you want an overview of the linking (traceability),
   add ``.. include:: _traceability_file.rst``
-  to ``index.rest`` or another ``.rest`` file.
+  to ``index.rest`` or another ``.rest`` parallel to it.
   It is there in the generated example project, to include it in tests.
   You might want to remove that line, if you start with the example project.
+  ``_traceability_file.{svg,png,rst}`` are all in the same folder.
 
 See the example project created with ``--rest`` or ``--stpl``
 at the end of this file and the sources of the documentation of
@@ -281,8 +282,7 @@ class _ToolRunner:
         try:
             cairosvg.svg2png(*args, **kwargs)
         except Exception as e:
-            print(e)
-            print('Trying inkscape...')
+            print('Trying inkscape for ',kwargs['write_to'])
             fn = normjoin(tempdir(),'svg.svg')
             with open(fn,'w',encoding='utf-8') as f:
                 f.write(kwargs['bytestring'])
@@ -964,7 +964,7 @@ def rst_sphinx(
 
     :param infile: .txt, .rst, .rest filename (normally index.rest)
     :param outfile: the path to the target file (not target directory)
-    :param outtype: html,... or any other sphinx writer
+    :param outtype: html, latex,... or any other sphinx writer
     :param config: keys from config_defaults
 
     ::
@@ -2437,12 +2437,12 @@ class Traceability:
         return len(self.fcaobjsets) == 0
 
     # returns the rst lines of _traceability_file
-    def create_traceability_file(self, folder):
+    def create_traceability_file(self, linkroot):
         if not pyfca:
             return []
         if not self.fcaobjsets:
             return []
-        config = conf_py(folder)
+        config = conf_py(linkroot)
         target_id_group = config['target_id_group']
         target_id_color = config['target_id_color']
 
@@ -2475,16 +2475,10 @@ class Traceability:
                          n.index, reflist(n.intent, ''), reflist(n.up),
                          reflist(n.down)) for n in fca.nodes]
         tlines = ''.join(fcanodes).splitlines(keepends=True)
-        imgpath, there = here_or_updir(folder, _images)
-        if not there:
-            imgpath = normjoin(folder, _images)
-            mkdir(imgpath)
-        trcpath = normjoin(
-            relpath(imgpath, start=folder), _traceability_file)
         # fig_traceability_file target
         tlines.extend([
             '.. _`fig' + _traceability_file + '`:\n', '\n',
-            '.. figure:: ' + trcpath + '.png\n', '   :name:\n', '\n',
+            '.. figure:: ' + _traceability_file + '.png\n', '   :name:\n', '\n',
             '   |fig' + _traceability_file + '|: `FCA <%s>`__ %s' % (
                 "https://en.wikipedia.org/wiki/Formal_concept_analysis",
                 "diagram of dependencies"
@@ -2495,7 +2489,7 @@ class Traceability:
                 [fnm + " " + clr for fnm, (_, clr) in target_id_color.items()])
             tlines.extend([': ' + legend, '\n'])
         tlines.append('\n')
-        with opnwrite(normjoin(folder, _traceability_file + _rst)) as f:
+        with opnwrite(normjoin(linkroot, _traceability_file + _rst)) as f:
             f.write('.. raw:: html\n\n')
             f.write('    <object data="' + _traceability_file + _svg +
                     '" type="image/svg+xml"></object>\n')
@@ -2508,7 +2502,8 @@ class Traceability:
                     + legend + '</p>\n\n')
             f.writelines(tlines)
         ld = pyfca.LatticeDiagram(fca, 4 * 297, 4 * 210)
-        tracesvg = abspath(normjoin(folder, _traceability_file + _svg))
+
+        tracesvg = abspath(normjoin(linkroot, _traceability_file + _svg))
 
         def ttgt():
             return self.tracehtmltarget.endswith(_rest) and stem(
@@ -2517,7 +2512,7 @@ class Traceability:
         ld.svg(
             target=ttgt() + '.html#' + tr, drawnode=_drawnode).saveas(tracesvg)
         if exists(tracesvg):
-            tracepng = abspath(normjoin(imgpath, _traceability_file + '.png'))
+            tracepng = abspath(normjoin(linkroot, _traceability_file + _png))
             svgpng(tracesvg, tracepng)
         return tlines
 
@@ -2847,10 +2842,11 @@ class Tgt:
         else:
             if linktype == 'odt':
                 # https://github.com/jgm/pandoc/issues/3524
-                tgte = ".. |{0}| replace:: `{1} <../{2}#{3}>`__\n".format(
+                tgte = ".. |{0}| replace:: `{1} <file:../{2}#{3}>`__\n".format(
                     self.target, self.lnkname, targetfile, id)
             else:
-                tgte = ".. |{0}| replace:: `{1} <{2}#{3}>`__\n".format(
+                # https://sourceforge.net/p/docutils/bugs/378/
+                tgte = ".. |{0}| replace:: `{1} <file:{2}#{3}>`__\n".format(
                     self.target, self.lnkname, targetfile, id)
         if tool == 'rst' and linktype == 'html':
             return _rst_id_fix(tgte)
@@ -2927,7 +2923,7 @@ class RstFile:
         For a .stpl file the linkname comes from the generated .rest file.
 
         :param lns: lines of the document
-        :param doc: the rst document
+        :param doc: the rst/rest document for tags
         :param counters: if None, the starts with
             {".. figure":1,".. math":1,".. table":1,".. code":1}
         :fn_i_ln: (fn, i, ln) of the .stpl with all stpl includes sequenced
@@ -3189,8 +3185,8 @@ class Fldr(OrderedDict):
             add_links_comments('\n.. .. {0}\n\n'.format(rstfile.doc))
             rstfile.add_links_and_tags(add_tgt, add_linksto)
         if _traceability_instance:
-            tlns = _traceability_instance.create_traceability_file(self.folder)
-            trcrst = normjoin(self.folder, _traceability_file + _rst)
+            tlns = _traceability_instance.create_traceability_file(self.linkroot)
+            trcrst = normjoin(self.linkroot, _traceability_file + _rst)
             if tlns:
                 for tgt in RstFile.make_tgts(tlns, trcrst,
                                              _traceability_instance.counters):
@@ -3443,29 +3439,31 @@ class Counter:
         return self.cnt
 
 class PdtItem(Counter):
-    """Used in pdtAAA
-
-    ``PdtItem`` numbers items in a ``pdt`` document.
-
-    :param AAA: A ``pdt`` is identified by a base36 number (AAA).
-    :param level: level=0 is a content item with separate ID = AAABB,
-                  level>0 are headers: AAA text
-
-    ::
-
-        >>> pdt=PdtItem('032')
-        >>> pdt()
-        '\n03201:'
-        >>> pdt('kw1 kw2','kw3')
-        '\n03202: **kw1 kw2 kw3**'
-        >>> hdr2=PdtItem('032',level=2)
-        >>> hdr2('header text')
-        '\n032 header text\n---------------'
-
-    """
     def __init__(self, AAA
                  ,level=0
                  ):
+        """
+        Used in pdtAAA
+
+        ``PdtItem`` numbers items in a ``pdt`` document.
+
+        :param AAA: A ``pdt`` is identified by a base36 number (AAA).
+        :param level: level=0 is a content item with separate ID = AAABB,
+                      level>0 are headers: AAA text
+
+        ::
+
+            >>> pdt=PdtItem('032')
+            >>> pdt()
+            '\\n03201:'
+            >>> pdt('kw1 kw2','kw3')
+            '\\n03202: **kw1 kw2 kw3**'
+            >>> hdr2=PdtItem('032',level=2)
+            >>> hdr2('header text')
+            '\\n032 header text\\n---------------'
+
+        """
+
         super().__init__()
         self.AAA = AAA
         self.level = level
@@ -3542,11 +3540,15 @@ def pdtAAA(pdtfile,dct):
 
         >>> dct={}
         >>> pdtAAA("a/b/003.rest.stpl",dct)
+        >>> dct['_003']('x y').strip()
+        '00301: **x y**'
         >>> dct['_003_']('x y')
-        '\n003 x y\n======='
+        '\\n003 x y\\n======='
         >>> pdtAAA("a/b/003/d.rest.stpl",dct)
+        >>> dct['_003']('x y').strip()
+        'd00301: **x y**'
         >>> dct['_003_']('x y')
-        '\nd003 x y\n========'
+        '\\nd003 x y\\n========'
 
 
     A ``pdt` is a project enhancement cycle with its own documentation.
@@ -3619,15 +3621,15 @@ try:
 
     @TaskGen.feature('gen_files')
     @TaskGen.before('process_rule')
-    def gen_files(self):
+    def gen_files_now(tskgen):
         global gensrc
         gensrc = {}
-        rootpth = self.bld.path.abspath()
+        rootpth = tskgen.bld.path.abspath()
         if rootpth not in sys.path:
             sys.path.append(rootpth)
-        for gen in self.path.ant_glob("**/gen"):
+        for gen in tskgen.path.ant_glob("**/gen"):
             genpth = gen.abspath()
-            relgen = relpath(gen.parent.abspath(),start=self.path.abspath())
+            relgen = relpath(gen.parent.abspath(),start=tskgen.path.abspath())
             if gen.exists():
                 for f, t, fun, kw in parsegenfile(genpth):
                     gensrc[normjoin(relgen,t)] = normjoin(relgen,f)
@@ -3635,7 +3637,7 @@ try:
                     assert genfrom, "%s rel to %s not found"%(f,genpth)
                     gento = gen.parent.make_node(t)
                     assert gento, "%s rel to %s not found"%(t,genpth)
-                    self.create_task('GENTSK', genfrom, gento, fun=fun, kw=kw)
+                    tskgen.create_task('GENTSK', genfrom, gento, fun=fun, kw=kw)
 
     class GENTSK(Task.Task):
         def run(self):
@@ -3688,16 +3690,27 @@ try:
 
     @TaskGen.feature('gen_links')
     @TaskGen.after('gen_files')
-    def gen_links(self):
-        docs = get_docs_param(self.bld)
+    def gen_links_now(tskgen):
+        docs = get_docs_param(tskgen.bld)
         if docs:
-            for so in self.path.ant_glob('**/*.stpl'):
+            for so in tskgen.path.ant_glob('**/*.stpl'):
                 tsk = Namespace()
                 tsk.inputs = (so, )
-                tsk.env = self.env
-                tsk.generator = self
-                render_stpl(tsk, self.bld)
-            links_and_tags(self.path.abspath())
+                tsk.env = tskgen.env
+                tsk.generator = tskgen
+                render_stpl(tsk, tskgen.bld)
+            links_and_tags(tskgen.path.abspath())
+
+    @TaskGen.feature('gen_docs')
+    @TaskGen.after('gen_links')
+    def gen_docs_now(tskgen):
+        docs = get_docs_param(tskgen.bld)
+        if docs:
+            bldpth=relpath(tskgen.bld.bldnode.abspath(),start=tskgen.path.abspath())
+            for anext in 'tikz svg dot uml pyg eps'.split():
+                source=tskgen.path.ant_glob('**/*.'+anext,excl=bldpth+"/**")
+                tskgen.bld(name='build '+anext, source=[x for x in source if _traceability_file not in x.abspath()])
+            tskgen.bld(name='build all rest', source=tskgen.path.ant_glob('**/*.rest',excl=bldpth+"/**"))
 
     def render_stpl(tsk, bld):
         bldpath = bld.path.get_bld().abspath()
@@ -3721,15 +3734,15 @@ try:
             render_stpl(self, self.generator.bld)
 
     @TaskGen.extension(_stpl)
-    def stpl_taskgen(self, node):  # expand into same directory
+    def stpl_taskgen(tskgen, node):  # expand into same directory
         nn = node.parent.make_node(stem(node.name))
-        self.create_task('STPL', node, nn)
+        tskgen.create_task('STPL', node, nn)
         try:
-            self.get_hook(nn)(self, nn)
+            tskgen.get_hook(nn)(tskgen, nn)
         except:
             pass
 
-    def gen_ext_tsk(self, node,
+    def gen_ext_tsk(tskgen, node,
                     ext):  # into _images or ../_images in source path
         srcfldr = node.parent.get_src()
         _imgpath, there = here_or_updir(srcfldr.abspath(), _images)
@@ -3740,72 +3753,73 @@ try:
         outnode = srcfldr.make_node(
             normjoin(imgpath,
                      stem(node.name) + '.png'))
-        self.create_task(ext[1:].upper(), node, outnode)
+        tskgen.create_task(ext[1:].upper(), node, outnode)
 
     @TaskGen.extension(_tikz)
-    def tikz_to_png_taskgen(self, node):
-        gen_ext_tsk(self, node, _tikz)
+    def tikz_to_png_taskgen(tskgen, node):
+        gen_ext_tsk(tskgen, node, _tikz)
 
     class TIKZ(Task.Task):
         def run(self):
             tikzpng(self.inputs[0].abspath(), self.outputs[0].abspath())
 
     @TaskGen.extension(_svg)
-    def svg_to_png_taskgen(self, node):
-        gen_ext_tsk(self, node, _svg)
+    def svg_to_png_taskgen(tskgen, node):
+        gen_ext_tsk(tskgen, node, _svg)
 
     class SVG(Task.Task):
         def run(self):
             svgpng(self.inputs[0].abspath(), self.outputs[0].abspath())
 
     @TaskGen.extension('.dot')
-    def dot_to_png_taskgen(self, node):
-        gen_ext_tsk(self, node, '.dot')
+    def dot_to_png_taskgen(tskgen, node):
+        gen_ext_tsk(tskgen, node, '.dot')
 
     class DOT(Task.Task):
         run_str = "${dot} -Tpng ${SRC} -o${TGT}"
 
     @TaskGen.extension('.uml')
-    def uml_to_png_taskgen(self, node):
-        gen_ext_tsk(self, node, '.uml')
+    def uml_to_png_taskgen(tskgen, node):
+        gen_ext_tsk(tskgen, node, '.uml')
 
     class UML(Task.Task):
         run_str = "${plantuml} ${SRC} -o${TGT[0].parent.abspath()}"
 
     @TaskGen.extension('.eps')
-    def eps_to_png_taskgen(self, node):
-        gen_ext_tsk(self, node, '.eps')
+    def eps_to_png_taskgen(tskgen, node):
+        gen_ext_tsk(tskgen, node, '.eps')
 
     class EPS(Task.Task):
         run_str = ("${inkscape} -z --export-dpi=${DPI} --export-area-drawing" +
                    " --export-background-opacity=0 ${SRC} --export-png=${TGT}")
 
     @TaskGen.extension('.pyg')
-    def pyg_to_png_taskgen(self, node):
-        gen_ext_tsk(self, node, '.pyg')
+    def pyg_to_png_taskgen(tskgen, node):
+        gen_ext_tsk(tskgen, node, '.pyg')
 
     class PYG(Task.Task):
         def run(self):
             pygpng(self.inputs[0].abspath(), self.outputs[0].abspath())
 
     @TaskGen.extension(_rest)
-    def docs_taskgen(self, node):
-        docs = get_docs_param(self.bld)
-        d = get_files_in_doc(self.path, node)
+    def docs_taskgen(tskgen, node):
+        docs = get_docs_param(tskgen.bld)
+        d = get_files_in_doc(tskgen.path, node)
 
         def rstscan():
             return d
 
         def out_node(doctgt,doctype):
-            relnode = relpath(stem(node.abspath())+'.'+doctype,start=self.path.abspath())
-            return self.path.find_or_declare(normjoin(doctgt,relnode))
+            relnode = relpath(stem(node.abspath())+'.'+doctype,start=tskgen.path.abspath())
+            bldpath = tskgen.path.get_bld()
+            return bldpath.find_or_declare(normjoin(doctgt,relnode))
 
         if node.name != "index.rest":
             for doctgt in docs:
                 if doctgt.startswith('sphinx_'):
                     continue
                 doctype = _suffix(doctgt)
-                self.create_task(
+                tskgen.create_task(
                     'NonSphinxTask', [node],
                     out_node(doctgt,doctype),
                     scan=rstscan,
@@ -3814,15 +3828,14 @@ try:
             for doctgt in docs:
                 if not doctgt.startswith('sphinx_'):
                     continue
-                #doctype = doctgt.split('_')[1].replace('latex','tex')
                 doctype = _suffix(doctgt.replace('_tex','_latex'))
-                self.create_task(
+                tskgen.create_task(
                     'SphinxTask', [node],
-                    out_node(doctgt,doctype),
+                    out_node(doctgt,doctype.replace('latex','tex')),
                     scan=rstscan,
                     doctype=doctype,
-                    config_py_try=(self.path.abspath(),
-                                   self.bld.path.get_src().abspath()))
+                    config_py_try=(tskgen.path.abspath(),
+                                   tskgen.bld.path.get_src().abspath()))
 
     class NonSphinxTask(Task.Task):
         def run(self):
@@ -3903,32 +3916,30 @@ or any other of http://www.sphinx-doc.org/en/master/usage/builders"""
 
         def gen_files():
             bld(name="process gen file", features="gen_files")
-
         bld.gen_files = gen_files
 
         def gen_links():
             bld(name="create links and .tags", features="gen_links")
-
         bld.gen_links = gen_links
+
+        def gen_docs():
+            bld(name="create docs", features="gen_docs")
+        bld.gen_docs = gen_docs
+
         # use like bld(rule=bld.stpl, source='x.h.stpl')
         # to compile stpl only, else do without rule
         bld.stpl = lambda tsk: render_stpl(tsk, bld)
 
-        #call this in root to have .tags there
-        def build_docs():
-            global g_config
-            if exists(normjoin(bld.srcnode.abspath(), 'conf.py')):
-                g_config = conf_py(bld.srcnode.abspath())
-            docs = get_docs_param(bld)
-            if docs:
-                bld.gen_files()
-                bld.gen_links() #does all stpl upfront
-                for anext in 'tikz svg dot uml pyg eps'.split():
-                    bld(name='build ' + anext, source=bld.path.ant_glob('**/*.'+anext))
-                bld.add_group()
-                bld(name='build all rest', source=bld.path.ant_glob('**/*.rest'))
-                bld.add_group()
+        global g_config
+        if exists(normjoin(bld.srcnode.abspath(), 'conf.py')):
+            g_config = conf_py(bld.srcnode.abspath())
 
+        def build_docs():
+            bld.gen_files()
+            bld.gen_links()
+            bld.gen_docs()
+            bld.add_group()
+        #call bld.build_docs in root wscript to have .tags there
         bld.build_docs = build_docs
 
 except:
@@ -3970,9 +3981,8 @@ example_rest_tree = r'''
          def configure(cfg):
              cfg.load('dcx', tooldir='.')
          def build(bld):
-             #defines bld.gen_files(), bld.gen_links(), bld.build_docs()
              bld.load('dcx', tooldir='.')
-             bld.recurse('doc')
+             bld.build_docs()
        docutils.conf
          [general]
          halt_level: severe
@@ -4000,7 +4010,7 @@ example_rest_tree = r'''
          pygments_style = 'sphinx'
          exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
          master_doc = 'index'
-         html_extra_path=["doc/_traceability_file.svg"] #relative to conf.py
+         html_extra_path=['doc/_traceability_file.svg'] #relative to conf.py
          import os
          on_rtd = os.environ.get('READTHEDOCS') == 'True'
          if not on_rtd:
@@ -4181,8 +4191,6 @@ example_rest_tree = r'''
              */
        doc
         ├ _images/
-        ├ wscript_build
-            bld.build_docs()
         ├ index.rest
             ============
             Project Name
@@ -5157,7 +5165,7 @@ example_ipdt_tree = r'''
          @%PYEXE% -x "%~dp0wafw.py" %*
          @exit /b %ERRORLEVEL%
        wscript
-         #vim: syntax=python
+         #vim: ft=python
          from waflib import Logs
          Logs.colors_lst['BLUE']='\x1b[01;36m'
          top='.'
@@ -5168,7 +5176,7 @@ example_ipdt_tree = r'''
              cfg.load('rstdoc.dcx')
          def build(bld):
              bld.load('rstdoc.dcx')
-             bld.recurse('pdt')
+             bld.build_docs()
        c
        └ some.h
            /*
@@ -5229,7 +5237,7 @@ example_ipdt_tree = r'''
              pygments_style = 'sphinx'
              exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
              master_doc = 'index'
-             html_extra_path=[] #relative to conf.py
+             html_extra_path=['_traceability_file.svg'] #relative to conf.py
              import os
              on_rtd = os.environ.get('READTHEDOCS') == 'True'
              if not on_rtd:
@@ -5299,7 +5307,7 @@ example_ipdt_tree = r'''
             ├ d.rest.stpl
                 .. vim: ft=rst
                 
-                .. _`000`:
+                .. _`d000`:
                 
                 % globals().update(include('pdt.rst.tpl',
                 % Title="pdt do"
@@ -5325,16 +5333,15 @@ example_ipdt_tree = r'''
                 %epilog()
             ├ gen
                 # vim: ft=python
-                from al.prj import builddir
                 from os.path import relpath, dirname
                 from_to_fun_kw = [ #fun and gen_fun() or gen()
                 ['../../c/some.h','_sometst.rst','tstdoc',{}],
-                ['../../c/some.h',relpath(builddir/'c/test_some.c',dirname(__file__)),'tst',{}]
+                ['../../c/some.h','../../build/c/some_tst.c','tst',{}]
                 ]
             ├ i.rest.stpl
                 .. vim: ft=rst
                 
-                .. _`000`:
+                .. _`i000`:
                 
                 % globals().update(include('pdt.rst.tpl',
                 % Title="pdt inform"
@@ -5345,13 +5352,11 @@ example_ipdt_tree = r'''
                 
                 Purpose for non-technical people.
                 
-                .. include:: _traceability_file.rst
-                
                 %epilog()
             ├ p.rest.stpl
                 .. vim: ft=rst
                 
-                .. _`000`:
+                .. _`p000`:
                 
                 % globals().update(include('pdt.rst.tpl',
                 % Title="pdt plan"
@@ -5377,7 +5382,7 @@ example_ipdt_tree = r'''
             ├ t.rest.stpl
                 .. vim: ft=rst
                 
-                .. _`000`:
+                .. _`t000`:
                 
                 % globals().update(include('pdt.rst.tpl',
                 % Title="pdt test"
@@ -5461,7 +5466,7 @@ example_ipdt_tree = r'''
             ├ i.rest.stpl
                 .. vim: ft=rst
                 
-                .. _`001`:
+                .. _`i001`:
                 
                 %globals().update(include('pdt.rst.tpl',
                 %Title="Information on Diagrams",
@@ -5682,7 +5687,7 @@ example_ipdt_tree = r'''
                 
                 ``:math:`` is the default inline role: `mc^2`
                 
-            └ i_table.rst
+            └ i_tables.rst
                 .. vim: ft=rst
                 
                 .. _`001table1`:
@@ -5731,6 +5736,12 @@ example_ipdt_tree = r'''
              %for x in sorted(y for y in thisdir.rglob("*.rest.stpl") if not y.name.startswith('index.rest')):
                 {{stem(x.relative_to(thisdir))}}
              %end
+
+             .. REMOVE THIS IF NO LINKING OVERVIEW WANTED
+             .. include:: _traceability_file.rst
+
+             .. include:: _links_sphinx.rst
+
          ├ pdt.rst.tpl
              % #expect Title and optionally
              % setdefault('Contact','roland.puntaier@gmail.com')
@@ -5798,9 +5809,7 @@ example_ipdt_tree = r'''
              .. include:: ../_links_sphinx.rst
              % end
              %end
-             %end
-         └ wscript_build
-             bld.build_docs()'''
+             %end'''
 
 def mktree(tree):
     '''
@@ -5979,7 +5988,10 @@ def initroot(
                            [0]] + insertlns + origlns[list(
                                rindices(stop, origlns))[0]:]
         inittree = _replace_lines(inittree, '├ index.rest', '├ egtikz.tikz',
-                                  example_stpl_subtree.splitlines())
+                                  example_stpl_subtree.lstrip('\n').splitlines())
+        #for i,x in enumerate(inittree):
+        #   if not x.strip():
+        #       print(i,inittree[i-1])
     mkdir(rootfldr)
     with new_cwd(rootfldr):
         mktree(inittree)

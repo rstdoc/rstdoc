@@ -13,7 +13,7 @@ from .reimg import main as reimg
 from .reflow import main as reflow
 from .untable import main as untable
 from .listtable import main as listtable
-from .dcx import example_tree, rindices
+from .dcx import example_rest_tree, rindices
 from pathlib import Path
 import time
 import re
@@ -138,8 +138,8 @@ def _docxrest(adocx):
 
 
 def _write_confpy(adocx):
-    # Takes the conf.py from the ``example_tree`` in ``rstdoc.dcx``.
-    confpy = re.split(r'\s*.\s*Makefile', example_tree.split('conf.py')[1])[0]
+    # Takes the conf.py from the ``example_rest_tree`` in ``rstdoc.dcx``.
+    confpy = re.split(r'\s*.\s*Makefile', example_rest_tree.split('conf.py')[1])[0]
     pn = _prj_name(adocx)
     confpy = confpy.replace('docxsample', pn).replace('2017',
                                                       time.strftime('%Y'))
@@ -176,8 +176,8 @@ def _write_index(adocx):
 
 
 def _write_makefile(adocx):
-    # Takes the Makefile from the ``example_tree`` in ``rstdoc.dcx``.
-    mf = re.split(r'\s\s+__code__', re.split('\s\sMakefile', example_tree)[1])[0]
+    # Takes the Makefile from the ``example_rest_tree`` in ``rstdoc.dcx``.
+    mf = re.split(r'\s\s+__code__', re.split('\s\sMakefile', example_rest_tree)[1])[0]
     lns = mf.splitlines(True)
     s = re.search(r'\w', lns[1]).span(0)[0]
     lns = [l[s:] for l in lns]

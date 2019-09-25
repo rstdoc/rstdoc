@@ -119,7 +119,7 @@ Run Sphinx on infile.
 
 :param infile: .txt, .rst, .rest filename (normally index.rest)
 :param outfile: the path to the target file (not target directory)
-:param outtype: html,... or any other sphinx writer
+:param outtype: html, latex,... or any other sphinx writer
 :param config: keys from config_defaults
 
 ::
@@ -958,19 +958,21 @@ of ``lns`` of a restructureText file.
 For a .stpl file the linkname comes from the generated .rest file.
 
 :param lns: lines of the document
-:param doc: the rst document
+:param doc: the rst/rest document for tags
 :param counters: if None, the starts with
     {".. figure":1,".. math":1,".. table":1,".. code":1}
 :fn_i_ln: (fn, i, ln) of the .stpl with all stpl includes sequenced
 
 
-.. _`dcx.links_and_tags`:
+.. _`dcx.scanroot`:
 
-:dcx.links_and_tags:
+:dcx.scanroot:
 
 .. code-block:: py
 
-   def links_and_tags(scanroot):
+   def links_and_tags(
+       scanroot = g_scanroot
+       ):
 
 Creates _links_xxx.rst`` files and a ``.tags``.
 
@@ -1053,6 +1055,104 @@ This is due to ``dcx.rexkw``, which you can change.
     7
 
 
+.. _`dcx.Counter.__init__`:
+
+:dcx.Counter.__init__:
+
+.. code-block:: py
+
+   class Counter:
+       def __init__(self, before_first=0):
+
+
+Counter object.
+
+:param before_first: first-1 value
+
+::
+
+    >>> myc = Counter()
+    >>> myc()
+    1
+    >>> myc()
+    2
+
+
+.. _`dcx.pdtAAA`:
+
+:dcx.pdtAAA:
+
+.. code-block:: py
+
+   def pdtAAA(pdtfile,dct):
+
+``pdtAAA`` is for use in an ``.stpl`` document::
+
+    % pdtAAA(__file__,globals())
+
+See the example generated with::
+
+    rstdoc --ipdt
+
+:param pdtfile: file path of pdt
+:param dct: dict to take up the generated defines
+
+``pdtAAA`` defines (now A, B are base36 letter):
+
+- ``_AAA`` returns next item number as AAABB. Use: ``{{_AAA('kw1')}}``
+- ``_AAA_``, ``_AAA__``, ``_AAA___``, ... returns header. Use: ``{{_AAA_('header')}}``
+- ``__AAA``, same as ``_AAA``, but use: ``%__AAA('kw1')``
+- ``__AAA_``, ``__AAA__``, ``__AAA___``, ... Use: ``%__AAA_('header')``
+
+::
+
+    >>> dct={}
+    >>> pdtAAA("a/b/003.rest.stpl",dct)
+    >>> dct['_003_']('x y')
+    '\\n003 x y\\n======='
+    >>> pdtAAA("a/b/003/d.rest.stpl",dct)
+    >>> dct['_003_']('x y')
+    '\\nd003 x y\\n========'
+
+
+A ``pdt` is a project enhancement cycle with its own documentation.
+``pdt`` stands for
+
+- plan: why
+- do: specification
+- test: tests according specification
+
+Additionally there should be an
+
+- inform: non-technical purpose for or from external people.
+
+There can also be *only* the ``inform`` document, if the ``pdt`` item is only informative.
+
+The repo can look like this (preferred)::
+
+    project repo
+        pdt
+            ...
+            AAA
+                i.rest.stpl
+                p.rest.stpl
+                d.rest.stpl
+                t.rest.stpl
+
+or::
+
+    project repo
+        pdt
+            ...
+            AAA.rst.stpl
+
+In the first case, a generated ``UID`` starts with ``xAAA``,
+where x is the first letter of the file name below a ``AAA`` dir.
+This is useful to trace related items by their plan-do-test-aspect.
+
+Further reading: `pdt <https://github.com/rpuntaie/blog/blob/master/pdt.rest>`__
+
+
 .. _`dcx.mktree`:
 
 :dcx.mktree:
@@ -1074,7 +1174,7 @@ Leafs:
 
 - ``/`` or ``\\`` to make a directory leaf
 
-- ``<<`` to copy file from internet using ``http://`` or locally using ``file:://``
+- ``<<`` to copy file from internet using ``http://`` or locally using ``file://``
 
 - use indented lines as file content
 
@@ -1122,7 +1222,7 @@ Like the linux tree tool, but optionally with content of files
 ::
 
     >>> path = dirname(__file__)
-    >>> tree(path,False,max_depth=1).startswith('├─')
+    >>> tree(path,False,max_depth=1).startswith('├')
     True
 
 
@@ -1133,15 +1233,55 @@ Like the linux tree tool, but optionally with content of files
 .. code-block:: py
 
    def initroot(
-           rootfldr,
-           sampletype
+           rootfldr
+           ,sampletype
            ):
 
-Creates a sample tree in the file system
-based on the ``example_tree`` and the ``example_stp_subtree`` in dcx.py.
+.. code-block:: py
 
-rootfldr: directory name that becomes root of the sample tree
-sampletype: either 'stpl' for the templated sample tree, or 'rest'
+       thisfile = __file__.replace('\\', '/')
+       tex_ref = normjoin(dirname(thisfile), 'reference.tex')
+       docx_ref = normjoin(dirname(thisfile), 'reference.docx')
+       odt_ref = normjoin(dirname(thisfile), 'reference.odt')
+       wafw = normjoin(dirname(thisfile), 'wafw.py')
+       if sampletype == 'ipdt':
+           imglines = example_rest_tree.splitlines()
+           imglines = imglines[
+               list(rindices('├ egtikz.tikz',imglines))[0]:
+               list(rindices('├ gen',imglines))[0]]
+           imglines = [' '*4+x for x in imglines]
+           example_tree = example_ipdt_tree.replace('__imgs__',('\n'.join(imglines)+'\n').lstrip())
+       else:
+           example_tree=example_rest_tree
+       inittree = [
+           l for l in example_tree.replace(
+               '__dcx__', thisfile).replace(
+               '__tex_ref__', tex_ref).replace(
+               '__docx_ref__', docx_ref).replace(
+               '__odt_ref__', odt_ref).replace(
+               '__wafw__', wafw).replace(
+               '__code__', rootfldr).splitlines()
+       ]
+       if sampletype == 'stpl':
+           def _replace_lines(origlns, start, stop, insertlns):
+               return origlns[:list(rindices(start, origlns))
+                              [0]] + insertlns + origlns[list(
+                                  rindices(stop, origlns))[0]:]
+           inittree = _replace_lines(inittree, '├ index.rest', '├ egtikz.tikz',
+                                     example_stpl_subtree.lstrip('\n').splitlines())
+           #for i,x in enumerate(inittree):
+           #   if not x.strip():
+           #       print(i,inittree[i-1])
+       mkdir(rootfldr)
+       with new_cwd(rootfldr):
+           mktree(inittree)
+
+Creates a sample tree in the file system.
+
+:param rootfldr: directory name that becomes root of the sample tree
+:param sampletype: either 'ipdt' or 'stpl' for templated sample trees, or 'rest'
+
+See ``example_rest_tree`` and ``example_stpl_subtree`` and ``example_ipdt_tree`` in dcx.py.
 
 
 .. _`dcx.index_dir`:
@@ -1150,7 +1290,9 @@ sampletype: either 'stpl' for the templated sample tree, or 'rest'
 
 .. code-block:: py
 
-   def index_dir(root):
+   def index_dir(
+       root=g_scanroot
+       ):
 
 Index a directory.
 

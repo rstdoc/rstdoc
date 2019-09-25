@@ -10,7 +10,7 @@
 
 |dcx.PageBreakHack|, |dhy|, |r1p|, |r62|, |r8d|, |r90|, |r9g|, |r9h|, |rak|, |rbc|, |rj4|, |roc|, |rpn|, |rstdcx|, |rvd|, |rvl|, |rwj|, |s0t|, |s10|, |s1g|, |s45|, |s8c|, |scs|, |seo|, |sgt|, |sim|, |son|, |sxr|, |test_lnkname|
 
-Up: |tr2|, |tr4|, |tr5|, |tr7|, |tr8|, |tr10|, |tr12|, |tr13|, |tr14|, |tr15|, |tr16|, |tr17|
+Up: |tr2|, |tr4|, |tr5|, |tr7|, |tr9|, |tr10|, |tr12|, |tr13|, |tr14|, |tr15|, |tr16|, |tr17|
 
 Down: 
 
@@ -22,15 +22,15 @@ Down:
 
 Up: 
 
-Down: |tr3|, |tr6|, |tr9|, |tr11|, |tr14|, |tr15|, |tr16|, |tr17|
+Down: |tr3|, |tr6|, |tr8|, |tr11|, |tr14|, |tr15|, |tr16|, |tr17|
 
 .. _`tr2`:
 
 :tr2:
 
-|r62|, |r9g|, |r9h|, |rbc|, |rj4|, |rpn|, |rstdcx|, |rvd|, |rwj|, |s45|, |sgt|
+|r1p|, |roc|, |sgt|
 
-Up: |tr3|, |tr6|, |tr9|
+Up: |tr3|, |tr6|
 
 Down: |tr0|
 
@@ -38,7 +38,7 @@ Down: |tr0|
 
 :tr3:
 
-|rbc|
+|roc|
 
 Up: |tr1|
 
@@ -48,7 +48,7 @@ Down: |tr2|, |tr4|, |tr5|
 
 :tr4:
 
-|rbc|, |s0t|
+|r8d|, |roc|, |s8c|
 
 Up: |tr3|
 
@@ -58,7 +58,7 @@ Down: |tr0|
 
 :tr5:
 
-|rbc|, |s10|
+|roc|, |s1g|
 
 Up: |tr3|
 
@@ -68,19 +68,19 @@ Down: |tr0|
 
 :tr6:
 
-|rvd|
+|sgt|
 
 Up: |tr1|
 
-Down: |tr2|, |tr7|, |tr8|
+Down: |tr2|, |tr7|
 
 .. _`tr7`:
 
 :tr7:
 
-|rvd|, |scs|
+|r62|, |r9g|, |r9h|, |rbc|, |rj4|, |rpn|, |rstdcx|, |rvd|, |rwj|, |s45|, |sgt|
 
-Up: |tr6|
+Up: |tr6|, |tr8|, |tr11|
 
 Down: |tr0|
 
@@ -88,29 +88,29 @@ Down: |tr0|
 
 :tr8:
 
-|rvd|, |sim|
+|rbc|
 
-Up: |tr6|
+Up: |tr1|
 
-Down: |tr0|
+Down: |tr7|, |tr9|, |tr10|
 
 .. _`tr9`:
 
 :tr9:
 
-|sgt|
+|rbc|, |s0t|
 
-Up: |tr1|
+Up: |tr8|
 
-Down: |tr2|, |tr10|
+Down: |tr0|
 
 .. _`tr10`:
 
 :tr10:
 
-|r1p|, |roc|, |sgt|
+|rbc|, |s10|
 
-Up: |tr9|, |tr11|
+Up: |tr8|
 
 Down: |tr0|
 
@@ -118,17 +118,17 @@ Down: |tr0|
 
 :tr11:
 
-|roc|
+|rvd|
 
 Up: |tr1|
 
-Down: |tr10|, |tr12|, |tr13|
+Down: |tr7|, |tr12|, |tr13|
 
 .. _`tr12`:
 
 :tr12:
 
-|r8d|, |roc|, |s8c|
+|rvd|, |scs|
 
 Up: |tr11|
 
@@ -138,7 +138,7 @@ Down: |tr0|
 
 :tr13:
 
-|roc|, |s1g|
+|rvd|, |sim|
 
 Up: |tr11|
 
@@ -168,7 +168,7 @@ Down: |tr0|
 
 :tr16:
 
-|r90|, |seo|
+|rvl|, |sxr|
 
 Up: |tr1|
 
@@ -178,7 +178,7 @@ Down: |tr0|
 
 :tr17:
 
-|rvl|, |sxr|
+|r90|, |seo|
 
 Up: |tr1|
 
@@ -186,7 +186,7 @@ Down: |tr0|
 
 .. _`fig_traceability_file`:
 
-.. figure:: _images/_traceability_file.png
+.. figure:: _traceability_file.png
    :name:
 
    |fig_traceability_file|: `FCA <https://en.wikipedia.org/wiki/Formal_concept_analysis>`__ diagram of dependencies: ra lightblue, sr red, dd yellow, tp green
