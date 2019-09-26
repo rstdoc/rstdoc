@@ -434,8 +434,18 @@ rextgt = re.compile(
 # because rexlinksto starts with \w
 rexsubtgt = re.compile(
     r'(?:^|^[^\.\%\w]*\s|^\s*\(?\w+[\)\.]\s)\.\. \|(\w[^\|]*)\|\s\w+::')
+
 rextitle = re.compile(r'^([!"#$%&\'()*+,\-./:;<=>?@[\]^_`{|}~])\1+$')
+#rextitle.match('===')
+#rextitle.match('==')
+#rextitle.match('=')#NO
+
 rexitem = re.compile(r'^\s*:?\**(\w[^:\*]*)\**:\s*.*$')
+#rexitem.match(":linkname: words").groups()[0]
+#rexitem.match("linkname: words").groups()[0]
+#rexitem.match("a linkname: words").groups()[0]
+#rexitem.match("``a`` linkname: words")#NO
+
 rexoneword = re.compile(r'^\s*(\w+)\s*$')
 rexname = re.compile(r'^\s*:name:\s*(\w.*)*$')
 rexlnks = re.compile(r'(?:^|[^a-zA-Z`])\|(\w+)\|(?:$|[^a-zA-Z`])')
@@ -2769,14 +2779,17 @@ class Tgt:
         Determines the link name for this target.
         It searches the following lines for either
 
-        :param lns: the rest linese
-        :param counters: the counters for the directives (see make_counters())
-
         - a title
         - ``:name:`` immediately below a directive
           (a counter is used if no name is given)
         - a ``:xxx:`` or ``xxx:`` or
         - a single word ``xxx``
+
+        The link name must not contain formatting,
+        e.g. "``link name``:" is not possible.
+
+        :param lns: the rest lines
+        :param counters: the counters for the directives (see make_counters())
 
         """
         lenlns = len(lns)
@@ -2808,7 +2821,6 @@ class Tgt:
                 elif lnkname:
                     lnkname = lnkname.strip()
                     break
-            # lnj=":linkname: words"
             itm = rexitem.match(lnj)
             if itm:
                 lnkname, = itm.groups()
