@@ -3582,7 +3582,7 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid):
     In the first case, the ``UID`` starts with ``{i,p,d,t}AAA``.
     This is useful to trace related items by their plan-do-test-aspect.
 
-    Further reading: `pdt <https://github.com/rpuntaie/blog/blob/master/pdt.rest>`__
+    Further reading: `pdt <https://github.com/rpuntaie/pdt>`__
 
     ``pdtAAA`` makes these Python defines:
 
@@ -5355,6 +5355,8 @@ example_ipdt_tree = r'''
                 
                 Purpose is non-technical, from or for externals.
                 The purpose here is to be an example.
+               
+                plan-do-test: `pdt <https://github.com/rpuntaie/pdt>`__.
                 
                 %epilog()
             ├ p.rest.stpl

@@ -679,7 +679,7 @@ Examples::
    convert_in_tempdir = in_temp_if_list(infile_cwd(convert))
 
 Same as |dcx.convert|,
-but creates temporary folder for a list of lines infile argument.
+but creates temporary dir for a list of lines infile argument.
 
 ::
 
@@ -1078,13 +1078,48 @@ Counter object.
     2
 
 
+.. _`dcx.pdtid`:
+
+:dcx.pdtid:
+
+.. code-block:: py
+
+   def pdtid(pdtfile):
+
+.. code-block:: py
+
+       fid = base(pdtfile)
+       while True:
+           fido = fid
+           fid = stem(fid)
+           if fid == fido:
+               break
+       try:
+           _pdtok(fid)
+       except:
+           fid = stem(stem(base(dirname(pdtfile))))
+           _pdtok(fid)
+       return fid
+
+``pdtid`` takes the path of the current file and extracts an ID from it.
+
+::
+
+    >>> pdtid('/a/b/3A2/0sA.rest.stpl')
+    '3A2'
+    >>> pdtid('/a/b/3A2/0SA.rest.stpl')
+    '0SA'
+    >>> pdtid('/a/b/3A2/AS-A.rest.stpl')
+    '3A2'
+
+
 .. _`dcx.pdtAAA`:
 
 :dcx.pdtAAA:
 
 .. code-block:: py
 
-   def pdtAAA(pdtfile,dct):
+   def pdtAAA(pdtfile,dct,pdtid=pdtid):
 
 ``pdtAAA`` is for use in an ``.stpl`` document::
 
@@ -1096,24 +1131,7 @@ See the example generated with::
 
 :param pdtfile: file path of pdt
 :param dct: dict to take up the generated defines
-
-``pdtAAA`` defines (now A, B are base36 letter):
-
-- ``_AAA`` returns next item number as AAABB. Use: ``{{_AAA('kw1')}}``
-- ``_AAA_``, ``_AAA__``, ``_AAA___``, ... returns header. Use: ``{{_AAA_('header')}}``
-- ``__AAA``, same as ``_AAA``, but use: ``%__AAA('kw1')``
-- ``__AAA_``, ``__AAA__``, ``__AAA___``, ... Use: ``%__AAA_('header')``
-
-::
-
-    >>> dct={}
-    >>> pdtAAA("a/b/003.rest.stpl",dct)
-    >>> dct['_003_']('x y')
-    '\\n003 x y\\n======='
-    >>> pdtAAA("a/b/003/d.rest.stpl",dct)
-    >>> dct['_003_']('x y')
-    '\\nd003 x y\\n========'
-
+:param pdtid: function returning the ID for the ``pdt`` cycle
 
 A ``pdt` is a project enhancement cycle with its own documentation.
 ``pdt`` stands for
@@ -1146,11 +1164,39 @@ or::
             ...
             AAA.rst.stpl
 
-In the first case, a generated ``UID`` starts with ``xAAA``,
-where x is the first letter of the file name below a ``AAA`` dir.
+In the first case, the ``UID`` starts with ``{i,p,d,t}AAA``.
 This is useful to trace related items by their plan-do-test-aspect.
 
-Further reading: `pdt <https://github.com/rpuntaie/blog/blob/master/pdt.rest>`__
+Further reading: `pdt <https://github.com/rpuntaie/pdt>`__
+
+``pdtAAA`` makes these Python defines:
+
+- ``_[x]AAA`` returns next item number as AAABB. Use: ``{{_[x]AAA('kw1')}}``
+- ``_[x]AAA_``, ``_[x]AAA__``, ``_[x]AAA___``, ... returns headers. Use: ``{{_[x]AAA_('header text')}}``
+- ``__[x]AAA``, same as ``_[x]AAA``, but use: ``%__[x]AAA('kw1')``
+- ``__[x]AAA_``, ``__[x]AAA__``, ``__[x]AAA___``, ... Use: ``%__[x]AAA_('header text')``
+
+A, B are base36 letters and x is the initial of the file
+
+::
+
+    >>> dct={}
+    >>> pdtfile = "a/b/003.rest.stpl"
+    >>> pdtAAA(pdtfile,dct)
+    >>> dct['_003']('x y').strip()
+    '00301: **x y**'
+    >>> dct['_003_']('x y')
+    '\\n003 x y\\n======='
+    >>> pdtfile="a/b/003/d.rest.stpl"
+    >>> pdtAAA(pdtfile,dct)
+    >>> dct['_003']('x y').strip()
+    '00301: **x y**'
+    >>> dct['_d003']('x y').strip()
+    'd00301: **x y**'
+    >>> dct['_003_']('x y')
+    '\\n003 x y\\n======='
+    >>> dct['_d003_']('x y')
+    '\\nd003 x y\\n========'
 
 
 .. _`dcx.mktree`:
