@@ -3561,16 +3561,16 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid):
 
     There can also be *only* the ``inform`` document, if the ``pdt`` item is only informative.
 
-    The repo can look like this (preferred)::
+    The repo looks like this (preferred)::
 
         project repo
             pdt
                 ...
                 AAA
-                    i.rest.stpl
-                    p.rest.stpl
-                    d.rest.stpl
-                    t.rest.stpl
+                    i*.rest.stpl
+                    p*.rest.stpl
+                    d*.rest.stpl
+                    t*.rest.stpl
 
     or::
 
@@ -3591,7 +3591,8 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid):
     - ``__[x]AAA``, same as ``_[x]AAA``, but use: ``%__[x]AAA('kw1')``
     - ``__[x]AAA_``, ``__[x]AAA__``, ``__[x]AAA___``, ... Use: ``%__[x]AAA_('header text')``
 
-    A, B are base36 letters and x is the initial of the file
+    A, B are base36 letters and x is the initial of the file.
+    The generated macros do not work for indented text, as they produce line breaks in RST text.
 
     ::
 
@@ -3627,6 +3628,7 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid):
     if not pdtfn.startswith(AAA):
         x = pdtfn[0]
         dct[x+'AAA']=x+AAA
+        dct['xAAA']=x+AAA
     dct['PdtItem']=PdtItem
     dfns = "\n".join("_{0}"+"_"*i+"=PdtItem('{0}',"+str(i)+")" for i in range(10))
     if '_printlist' in dct: #define __AAA for direct output
@@ -5784,18 +5786,29 @@ example_ipdt_tree = r'''
              %,Type="inform"
              %))
              
-             .. toctree::
-             
              %from pathlib import Path
              %thisdir=Path(__file__).parent
              %stem = lambda x:os.path.splitext(x)[0].replace('\\', '/')
-             %for x in sorted(y for y in thisdir.rglob("*.rest.stpl") if not y.name.startswith('index.rest')):
-                {{stem(x.relative_to(thisdir))}}
-             %end
-
+             %from os.path import dirname, basename
+             
+             .. toctree::
+             
+             %for x in sorted(set(y.parent for y in thisdir.rglob("*.rest.stpl") if not y.name.startswith('index.rest'))):
+             %  fs = dict((f.name[0],f) for f in Path(x).rglob("*.rest.stpl"))
+             %  for i in "ipdt":
+             %     if i in fs:
+                   {{stem(fs[i].relative_to(thisdir))}}
+             %         del fs[i]
+             %     end
+             %  end
+             %  for i in fs:
+                   {{stem(fs[i].relative_to(thisdir))}}
+             %  end
+             %  end
+             
              .. REMOVE THIS IF NO LINKING OVERVIEW WANTED
              .. include:: _traceability_file.rst
-
+             
              .. include:: _links_sphinx.rst
 
          ├ pdt.rst.tpl
@@ -5812,16 +5825,16 @@ example_ipdt_tree = r'''
              %
              %if defined('Title'):
              {{'#'*len(Title)}}
-             {{Title}}
+             {{AAA+" - " if defined('AAA') else ''}}{{Title}}
              {{'#'*len(Title)}}
+             %end
              
-             % if defined('iAAA'):
+             %if defined('iAAA'):
              :PDT: {{AAA}}
              :Contact: {{!Contact}}
              :Type: {{!Type}}
              :Status: {{Status}}
-             % end
-             %end #defined('Title')
+             %end
              %def pagebreak():
              .. raw:: openxml
              
@@ -5856,8 +5869,7 @@ example_ipdt_tree = r'''
              % else:
              .. include:: ../_links_sphinx.rst
              % end
-             %end
-             %end'''
+             %end #epilog'''
 
 def mktree(tree):
     '''
