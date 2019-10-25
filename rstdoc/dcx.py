@@ -475,7 +475,7 @@ rextrace_target_id=re.compile("^[^-_]\w+$")
 #rextrace_target_id.match("sD00")
 #rextrace_target_id.match("000")
 
-#https://sourceforge.net/p/docutils/bugs/378/ addressed doubly
+#https://sourceforge.net/p/docutils/mailman/message/36453416/
 _rstlinkfixer = re.compile('#[^>]+>')
 def _rst_id_fixer(matchobj):
     return matchobj.group(0).replace(' ', '-').replace('_', '-')
@@ -5356,8 +5356,10 @@ example_ipdt_tree = r'''
                 %__i000('inform')
                 
                 Purpose is non-technical, from or for externals.
-                The purpose here is to be an example.
-               
+                
+                The purpose of the ``__i000`` python function is to count the entries.
+                If you don't care about counted items, you can use normal RST, or provide your own ``__i000``.
+                
                 plan-do-test: `pdt <https://github.com/rpuntaie/pdt>`__.
                 
                 %epilog()
@@ -5401,10 +5403,8 @@ example_ipdt_tree = r'''
                 
                 .. _`d000repo`:
                 %__d000('repo')
-                |p000headers|
+                |p000headers| is an example of a link to another item.
                 
-                The refs in this example do not make semantic sense, but
-
                 - ``pdt`` documents the development
                 - ``doc`` documents the SW
                 
@@ -5437,7 +5437,7 @@ example_ipdt_tree = r'''
                 .. _`t000testitem1`:
                 %__t000('test item 1')
                 
-                Link *plan* and *do* items tested here, e.g.
+                Link *plan* and *do* items that are tested here, e.g.
                 
                 - |p000headers| fits to |d000repo|
 
