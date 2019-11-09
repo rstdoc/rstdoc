@@ -103,6 +103,7 @@ It is supposed to be used with a build tool.
   $ ./dcx.py --rest repo #repo/doc/{sy,ra,sr,dd,tp}.rest files OR
   $ ./dcx.py --stpl repo #repo/doc/{sy,ra,sr,dd,tp}.rest.stpl files
   $ ./dcx.py --ipdt repo #repo/pdt/AAA/{i,p,d,t}.rest.stpl files
+  $ ./dcx.py --over repo #.rest all over
 
 - Only create .tags and ``_links_xxx.rst``::
 
@@ -1671,7 +1672,7 @@ def dostpl(
 
     The whole ``rstdoc.dcx`` namespace is forwarded to the template code.
 
-    ``.stpl`` provides full python power:
+    ``.stpl`` is unrestrained python:
 
     - e.g. one can create temporary images,
       which are then included in the final .docx of .odt
@@ -5903,6 +5904,323 @@ example_ipdt_tree = r'''
              % end
              %end #epilog'''
 
+example_over_tree = r'''
+  wafw.py << file://__wafw__
+  waf
+    #!/usr/bin/env sh
+    shift
+    ./wafw.py "$@"
+  waf.bat
+    @setlocal
+    @set PYEXE=python
+    @where %PYEXE% 1>NUL 2>NUL
+    @if %ERRORLEVEL% neq 0 set PYEXE=py
+    @%PYEXE% -x "%~dp0wafw.py" %*
+    @exit /b %ERRORLEVEL%
+  wscript
+    #vim: ft=python
+    from waflib import Logs
+    Logs.colors_lst['BLUE']='\x1b[01;36m'
+    top='.'
+    out='build'
+    def options(opt):
+        opt.load('rstdoc.dcx')
+    def configure(cfg):
+        cfg.load('rstdoc.dcx')
+    def build(bld):
+        bld.load('rstdoc.dcx')
+        bld.build_docs()
+  org
+    ├ process
+    │  └ SOP
+    │      └ purchase.rest
+    │             Purchase
+    │             ========
+    │
+    │             .. _`sop_purchase`:
+    │
+    │             :sop_purchase:
+    │
+    │             A contributor places a link under the purchase folder.
+    │
+    │
+    │             .. include:: /_links_sphinx.rst
+    ├ discussion
+    │  └ topic1.rest
+    │     Topic1
+    │     ======
+    │
+    │     .. _`topic_merge_delay`:
+    │
+    │     :topic_merge_delay:
+    │
+    │     Can someone take over review of |000|, as I'm busy with ...
+    │
+    │     .. include:: /_links_sphinx.rst
+    ├ mediation
+    │  └ conflict1.rest
+    │     Conflict1
+    │     =========
+    │
+    │     .. _`conflict_000`:
+    │
+    │     :conflict_000:
+    │
+    │     Conflicting view on |000| between ...
+    │
+    │     .. include:: /_links_sphinx.rst
+    ├ contributor
+        └ c1
+           ├ assigned
+           │   └ /pdt/000
+           ├ log
+           │   └ 2019.rest
+           │       2019
+           │       ====
+           │
+           │       .. _`c1_20191101`
+           │
+           │       |issue1|
+           │
+           │       .. _`c1_20191102`
+           │
+           │       |issue1|
+           │       It was necessary to refactor ...
+           │
+           │       .. include:: /_links_sphinx.rst
+           └ responsibility
+               └ /dev/sw/fw
+  doc
+    ├ index.rest
+    │    Documentation
+    │    =============
+    │
+    │    .. toc::
+    │
+    │       tutorial.rest
+    │
+    │    .. include:: /_links_sphinx.rst
+    └ tutorial.rest
+    │    Tutorial
+    │    ========
+    │
+    │    Example API usage
+    │
+    │    .. include:: /_links_sphinx.rst
+  pdt
+    └ 000
+        ├ info.rest
+        │   .. _`000`:
+        │
+        │   Feature Info
+        │   ============
+        │
+        │   .. _`i000a`:
+        │
+        │   :i000a: info
+        │
+        │   .. include:: /_links_sphinx.rst
+        ├ plan.rest
+        │   Feature Plan
+        │   ============
+        │
+        │   .. _`p000a`:
+        │
+        │   :p000a: plan
+        │
+        │   .. include:: /_links_sphinx.rst
+        ├ do.rest
+        │   Feature Spec
+        │   ============
+        │
+        │   .. _`d000a`:
+        │
+        │   :d000a: spec
+        │
+        │   .. include:: /_links_sphinx.rst
+        └ test.rest
+        │   Feature Test
+        │   ============
+        │
+        │   .. _`t000a`:
+        │
+        │   :t000a: test
+        │
+        │   .. include:: /_links_sphinx.rst
+  dev
+    ├ cots
+    │   └ supplier.db.py
+    │       import econ
+            sup = econ.supplier
+            sup('supXYZ','url')
+    │   └ cots.db.py
+    │       import econ
+    │       from dev.cots.supplier.db import sup
+            cots=econ.cots
+    │       cots('ATmega328','/dev/cots/ATmega328',sup[0],'72328')
+    │   └ ATmega328
+    │       └ ATmega328.data.py
+    ├ issues
+    │  └ issue1.rest
+    │      Issue1 Title
+    │      ============
+    │
+    │      .. _`issue1`:
+    │
+    │      :issue1:
+    │
+    │      SW does not link to device, if ...
+    │
+    │      .. include:: /_links_sphinx.rst
+    │  └ issue2.rest
+    │      Issue2 Title
+    │      ============
+    │
+    │      .. _`issue2`:
+    │
+    │      :issue2:
+    │
+    │      Test xyz fails.
+    │
+    │      .. include:: /_links_sphinx.rst
+    ├ hw
+    │  ├ casing
+    │  │   ├ plan.rest
+    │          .. _`case001`:
+    │
+    │          :case001:
+    │
+    │          According |d000a| ...
+    │
+    │          .. include:: /_links_sphinx.rst
+    │  │   ├ scad/
+    │  │   └ test
+    │  │       └ stability.rest
+    │              Casing Stability Tests
+    │              ======================
+    │
+    │              .. _`fall_test`:
+    │
+    │              :fall_test:
+    │
+    │              The casing is pushed from a table.
+    │
+    │              .. include:: /_links_sphinx.rst
+    │  ├ pcb1
+    │  │   ├ plan.rest
+    │          PCB1 Implementation
+    │          ===================
+    │
+    │          .. _`pcb1_000`:
+    │
+    │          :pcb1_000:
+    │
+               Overview of functional units of pcb1.
+    │
+    │          .. include:: /_links_sphinx.rst
+    │  │   ├ pcb1.sch
+    │  │   └ test/
+    │  └ test/
+    ├ sw
+    │  ├ fw
+    │  │   ├ plan.rest
+    │          Firmware
+    │          ========
+    │
+    │          .. _`fw_000`:
+    │
+    │          :fw_000:
+    │
+    │          To satisfy |000| these steps need to be taken.
+    │
+    │          .. include:: /_links_sphinx.rst
+    │  │   ├ controller1/
+    │  │       └ C
+    │  │         └ init.c
+                    // just an example
+    │  │   ├ test/
+    │  ├ android/
+    │  │   ├ plan.rest
+    │          Android App
+    │          ===========
+    │
+    │          .. _`appplan`:
+    │
+    │          :appplan:
+    │
+    │          Implementation plan satisfying |000|.
+    │
+    │          .. include:: /_links_sphinx.rst
+    │  │   ├ app/
+    │  │   ├ testapp/
+    │  └ test/
+    └ test/
+  contribution.rest
+     Contributing
+     ============
+
+     .. _`how_to_contribute`:
+
+     :how_to_contribute:
+
+     - |general_goal|
+     - pdt about plans
+
+     .. _`unassigned_issues`:
+
+     :unassigned_issues:
+
+     These issues are still unassigned and need new contributors.
+
+     |issue2|
+
+     .. include:: /_links_sphinx.rst
+  /readme.rest ← readme.rst
+  readme.rest
+     Project Entry Point
+     ===================
+
+     .. _`general_goal`:
+
+     :general_goal:
+
+     Overview of goal and links to further information.
+
+     .. include:: /_links_sphinx.rst
+  index.rest
+     .. toctree::
+
+     .. vim: ft=rst
+
+     ############
+     Example Tree
+     ############
+
+     .. toctree::
+
+           readme.rest
+           contribution.rest
+           org/discussion/topic1.rest
+           org/mediation/conflict1.rest
+           org/process/SOP/purchase.rest
+           org/contributor/c1/log/2019.rest
+           pdt/000/info.rest
+           pdt/000/do.rest
+           pdt/000/plan.rest
+           pdt/000/test.rest
+           doc/tutorial.rest
+           dev/hw/casing/plan.rest
+           dev/hw/casing/test/stability.rest
+           dev/hw/pcb1/plan.rest
+           dev/sw/android/plan.rest
+           dev/sw/fw/plan.rest
+           dev/issues/issue1.rest
+           dev/issues/issue2.rest
+
+     .. include:: /_links_sphinx.rst
+
+'''
+
 def mktree(treelist,rootdir=None):
     '''
 
@@ -6086,9 +6404,9 @@ def initroot(
     Creates a sample tree in the file system.
 
     :param rootfldr: directory name that becomes root of the sample tree
-    :param sampletype: either 'ipdt' or 'stpl' for templated sample trees, or 'rest'
+    :param sampletype: either 'ipdt' or 'stpl' for templated sample trees, or 'rest' or 'over' for non-templated
 
-    See ``example_rest_tree`` and ``example_stpl_subtree`` and ``example_ipdt_tree`` in dcx.py.
+    See ``example_rest_tree``, ``example_stpl_subtree``, ``example_ipdt_tree``, ``example_over_tree`` in dcx.py.
 
     '''
     thisfile = __file__.replace('\\', '/')
@@ -6103,6 +6421,8 @@ def initroot(
             list(rindices('├ gen',imglines))[0]]
         imglines = [' '*4+x for x in imglines]
         example_tree = example_ipdt_tree.replace('__imgs__',('\n'.join(imglines)+'\n').lstrip())
+    elif sampletype == 'over':
+        example_tree=example_over_tree
     else:
         example_tree=example_rest_tree
     inittree = [
@@ -6121,9 +6441,6 @@ def initroot(
                                rindices(stop, origlns))[0]:]
         inittree = _replace_lines(inittree, '├ index.rest', '├ egtikz.tikz',
                                   example_stpl_subtree.lstrip('\n').splitlines())
-        #for i,x in enumerate(inittree):
-        #   if not x.strip():
-        #       print(i,inittree[i-1])
     mkdir(rootfldr)
     with new_cwd(rootfldr):
         mktree(inittree)
@@ -6208,9 +6525,12 @@ Any of the files can be a SimpleTemplate template (xxx.yyy.stpl).
 
 Configuration is in ``conf.py`` or ``../conf.py``.
 
-``rstdoc --ipdt|--stpl|--rest`` create sample project trees.
+``rstdoc --stpl|--rest|--ipdt|-over`` create sample project trees.
 
-``ipdt`` is for a project with more inform-plan-do-test enhancement cycles.
+``--stpl`` with ``.rest.stpl`` template files,
+``--rest`` with only a doc folder with ``.rest`` files,
+``--ipdt`` with inform-plan-do-test enhancement cycles
+``--over`` with ``.rest`` files all over the project tree including symbolic links
 
 Examples usages with the files generated by ``rstdoc --stpl tmp``:
 
@@ -6296,6 +6616,11 @@ def main(**args):
             action='store',
             help='Create a sample directory with `<arg>/pdt/AAA/{i,p,d,t}.rest.stpl` for inform-plan-do-test cycles (A is base 36).')
         parser.add_argument(
+            '--over',
+            dest='overroot',
+            action='store',
+            help='Create a sample directory with `.rest` files all over the project tree.')
+        parser.add_argument(
             '--pygrep',
             dest='pygrep',
             action='store',
@@ -6347,6 +6672,8 @@ to define variables that can be used in templates."""
         initroot(args['restroot'], 'rest')
     elif 'ipdtroot' in args and args['ipdtroot']:
         initroot(args['ipdtroot'], 'ipdt')
+    elif 'overroot' in args and args['overroot']:
+        initroot(args['overroot'], 'over')
     elif 'pygrep' in args and args['pygrep']:
         for f,i,l in grep(args['pygrep']):
             print('"{}":{} {}'.format(f,i,l))

@@ -185,7 +185,7 @@ def tmpworkdir(tmpdir):
     yield tmpdir
     os.chdir(cwd)
 
-@pytest.yield_fixture(params=['rest','stpl','ipdt'])
+@pytest.yield_fixture(params=['rest','stpl','ipdt','over'])
 def rstinit(request,tmpworkdir):
     smpl='tmp_%s'%request.param
     r=run(['rstdcx','--'+request.param,smpl])
@@ -226,6 +226,8 @@ def test_rstincluded(rstinit):
         assert list(rstincluded('i.rest.stpl',(r'./pdt/001',))) == [
                 'i.rest.stpl', 'i_included.rst.stpl', 'i_tables.rst',
                 'i_math.tpl', 'i_diagrams.tpl']
+    elif 'tmp_over' in rstinit:
+        assert True
 
 def test_init(rstinit):
     '''
@@ -352,6 +354,74 @@ def test_init(rstinit):
 ├ waf.bat
 ├ wafw.py
 └ wscript"""
+    elif 'tmp_over' in rstinit:
+        assert tree('.')=="""\
+├ dev
+│  ├ cots
+│  │  ├ ATmega328
+│  │  │  └ ATmega328.data.py
+│  │  ├ cots.db.py
+│  │  └ supplier.db.py
+│  ├ hw
+│  │  ├ casing
+│  │  │  ├ scad
+│  │  │  ├ test
+│  │  │  │  └ stability.rest
+│  │  │  └ plan.rest
+│  │  ├ pcb1
+│  │  │  ├ test
+│  │  │  ├ pcb1.sch
+│  │  │  └ plan.rest
+│  │  └ test
+│  ├ issues
+│  │  ├ issue1.rest
+│  │  └ issue2.rest
+│  ├ sw
+│  │  ├ android
+│  │  │  ├ app
+│  │  │  ├ testapp
+│  │  │  └ plan.rest
+│  │  ├ fw
+│  │  │  ├ controller1
+│  │  │  │  └ C
+│  │  │  │     └ init.c
+│  │  │  ├ test
+│  │  │  └ plan.rest
+│  │  └ test
+│  └ test
+├ doc
+│  ├ index.rest
+│  └ tutorial.rest
+├ org
+│  ├ contributor
+│  │  └ c1
+│  │     ├ assigned
+│  │     │  └ /pdt/000 ← 000
+│  │     ├ log
+│  │     │  └ 2019.rest
+│  │     └ responsibility
+│  │        └ /dev/sw/fw ← fw
+│  ├ discussion
+│  │  └ topic1.rest
+│  ├ mediation
+│  │  └ conflict1.rest
+│  └ process
+│     └ SOP
+│        └ purchase.rest
+├ pdt
+│  └ 000
+│     ├ do.rest
+│     ├ info.rest
+│     ├ plan.rest
+│     └ test.rest
+├ contribution.rest
+├ index.rest
+├ readme.rest
+├ /readme.rest ← readme.rst
+├ waf
+├ waf.bat
+├ wafw.py
+└ wscript"""
 
 def test_dcx_alone_samples(rstinit):
     '''
@@ -359,12 +429,14 @@ def test_dcx_alone_samples(rstinit):
 
     '''
 
-    if 'tmp_ipdt' in rstinit: #has no separate dcx.py
+    if 'tmp_ipdt' in rstinit or 'tmp_over' in rstinit: #has no separate dcx.py
         r=run(['rstdoc'])
     else:
         r=run(['python','dcx.py'])
     assert r.returncode == 0
-    if 'tmp_ipdt' in rstinit:
+    if 'tmp_over' in rstinit:
+        assert exists(".tags")
+    elif 'tmp_ipdt' in rstinit:
         assert exists("build/c/some_tst.c")
         assert exists("pdt/000/i.rest")
         assert exists("pdt/000/p.rest")
@@ -441,7 +513,7 @@ def test_dcx_in_out(rstinit,cmd_result):
     with in-file or standard in to standard out.
 
     '''
-    if 'tmp_ipdt' in rstinit:
+    if 'tmp_ipdt' in rstinit or 'tmp_over' in rstinit:
         return
     cmd,result = cmd_result
     os.chdir('doc')
@@ -489,7 +561,7 @@ def test_dcx_out_file(rstinit,cmd_exists_not_exists):
     with in-file and out-file and out type parameter.
 
     '''
-    if 'tmp_ipdt' in rstinit:
+    if 'tmp_ipdt' in rstinit or 'tmp_over' in rstinit:
         return
     cmd,result,notexists = cmd_exists_not_exists
     tcmd = []
@@ -512,7 +584,7 @@ def test_dcx_out_file(rstinit,cmd_exists_not_exists):
 @pytest.yield_fixture(params=['docx','pdf','html'])
 def makebuild(request,rstinit):
     oldd = os.getcwd()
-    if 'tmp_ipdt' not in rstinit:
+    if 'tmp_ipdt' not in rstinit and 'tmp_over' not in rstinit:
         r=run(['make',request.param])
         assert r.returncode == 0
         os.chdir('build')
@@ -528,7 +600,7 @@ def test_make_samples(makebuild):
     '''
 
     dr,target = makebuild
-    if 'tmp_ipdt' in dr:
+    if 'tmp_ipdt' in dr or 'tmp_over' in dr:
         return
     elif 'tmp_rest' in dr:
         expected_no_html="""\
@@ -643,7 +715,38 @@ def test_waf_samples(wafbuild):
             extra += '\n│     ├ _traceability_file.svg'
     else:
         extra = ''
-    if 'tmp_ipdt' in drw:
+    if 'tmp_over' in drw:
+        expected_non_sphinx="""\
+├ dev
+│  ├ hw
+│  │  ├ casing
+│  │  └ pcb1
+│  ├ issues
+│  │  ├ issue1.{0}
+│  │  └ issue2.{0}
+│  └ sw
+│     ├ android
+│     └ fw
+├ doc
+│  └ tutorial.{0}
+├ org
+│  ├ contributor
+│  │  └ c1
+│  ├ discussion
+│  │  └ topic1.{0}
+│  ├ mediation
+│  │  └ conflict1.{0}
+│  └ process
+│     └ SOP
+├ pdt
+│  └ 000
+│     ├ do.{0}
+│     ├ info.{0}
+│     ├ plan.{0}
+│     └ test.{0}
+├ contribution.{0}
+└ readme.{0}"""
+    elif 'tmp_ipdt' in drw:
         expected_non_sphinx="""\
 └ pdt
    ├ 000

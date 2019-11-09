@@ -41,6 +41,7 @@ It is supposed to be used with a build tool.
   $ ./dcx.py --rest repo #repo/doc/{sy,ra,sr,dd,tp}.rest files OR
   $ ./dcx.py --stpl repo #repo/doc/{sy,ra,sr,dd,tp}.rest.stpl files
   $ ./dcx.py --ipdt repo #repo/pdt/AAA/{i,p,d,t}.rest.stpl files
+  $ ./dcx.py --over repo #.rest.stpl all over
 
 - Only create .tags and ``_links_xxx.rst``::
 
