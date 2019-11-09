@@ -65,8 +65,8 @@ from restructuredText (RST, reST) using either
 - Docutils
   `configurable <http://docutils.sourceforge.net/docs/user/config.html>`__
 
-``rstdoc`` installs the ``rstdcx`` command line tool that calls ``dcx.py``.
-It
+``rstdoc`` and ``rstdcx`` command line tools call ``dcx.py``.
+which
 
 - processes ``gen`` files (see examples produced by --rest)
 
@@ -76,6 +76,14 @@ It
 
 - creates links files like
   ``_links_pdf.rst``, ``_links_docx.rst``, ``_links_sphinx.rst``
+  in link roots, which are folders where the first ``.rest`` is encoutered
+  during depth-first traversal.
+  Non-overlapping link root paths produce separately linked file sets.
+
+  ``.. include:: /_links_sphinx.rst``, with the one initial ``/``
+  instead of a relative or absolute path,
+  will automatically search upward for the ``_link_xxx.rst`` file
+  (``_sphinx`` is replaced by what is needed by the wanted target).
 
 - forwards known files to either Pandoc, Sphinx or Docutils
 
@@ -309,7 +317,7 @@ def opn(filename):
 
 isfile = os.path.isfile
 isdir = os.path.isdir
-
+islink = os.path.islink
 
 def abspath(x):
     return os.path.abspath(x).replace('\\', '/')
@@ -791,6 +799,22 @@ def startfile(filepath):
     elif os.name == 'posix':  # For Linux, Mac, etc.
         sp.call(('xdg-open', filepath))
 
+def up_dir(match,start=None):
+    '''
+    Find a parent path producing a match on one of its entries.
+
+    >>> up_dir(lambda x: False).replace('\\','/').strip('/').find('/')
+    -1
+    '''
+
+    if start is None:
+        start = os.getcwd()
+    if any(match(x) for x in os.listdir(start)):
+        return start
+    parent = os.path.dirname(start)
+    if start == parent:
+        return start
+    return up_dir(match,start=parent)
 
 def tempdir():
     '''
@@ -1888,15 +1912,24 @@ def dorst(
             for x in filelines:
                 #x = '.. include:: _links_sphinx.rst' #1
                 #x = '.. include:: ../_links_sphinx.rst' #2
+                #x = '.. include:: /_links_sphinx.rst' #3
                 lim = rexincludelinks.match(x)
                 if lim:
-                    limg0 = lim.groups()[0]
+                    limg0 = normjoin(lim.groups()[0])
                     if tool == 'sphinx':
                         links_done = True
                     else:
                         #infile='a/b/c'
                         #outinfo='docx'
-                        linksfilename = normjoin(dirname(infile), limg0, '_links_' + outinfo + '.rst')
+                        if limg0.startswith('/'):
+                            if limg0 == '/': #find linkroot
+                                linkroot = up_dir(lambda x: x.startswith('_links_') or x=='.git',
+                                                  dirname(infile))
+                                linksfilename = normjoin(linkroot, '_links_' + outinfo + '.rst')
+                            else:
+                                linksfilename = normjoin(limg0, '_links_' + outinfo + '.rst')
+                        else:
+                            linksfilename = normjoin(dirname(infile), limg0, '_links_' + outinfo + '.rst')
                         #a/b/_links_docx.rst #1
                         #a/_links_docx.rst #2
                         if exists(linksfilename):
@@ -3159,7 +3192,8 @@ class Fldr(OrderedDict):
                 tgt.tagentry = (relpath(tgt.tagentry[0], start=self.scanroot),
                                 tgt.tagentry[1])
             tgt.tagentry = (tgt.tagentry[0], tgt.tagentry[1])
-            tagentries.append(tgt.create_tag())
+            newtag = tgt.create_tag()
+            tagentries.append(newtag)
 
         def add_links_comments(comment):
             for _, linklines in linkfiles:
@@ -3222,8 +3256,8 @@ class Fldr(OrderedDict):
                 cwd=self.scanroot)
         finally:
             with opnappend(normjoin(self.scanroot, '.tags')) as f:
-                f.write(ctags_python)
-                f.write('\n'.join(tagentries))
+                if ctags_python: f.write(ctags_python)
+                if tagentries: f.write('\n'.join(tagentries)+'\n')
 
 
 class Fldrs(OrderedDict):
@@ -3261,7 +3295,7 @@ class Fldrs(OrderedDict):
                 fldr.scanfiles(fs)
                 if len(fldr):
                     self[njp] = fldr
-                    if not linkroot or not njp.startswith(linkroot):
+                    if not linkroot or not abspath(njp).startswith(abspath(linkroot)):
                         linkroot = njp
                         for linktype in g_links_types:
                             with opnwrite(normjoin(linkroot,
@@ -3923,14 +3957,12 @@ or any other of http://www.sphinx-doc.org/en/master/usage/builders"""
             from git import Repo
             repo = Repo(root)
             tags = repo.tags
-            # tags =>
             taglast = tags and tags[-1].name or '0.0.0'
             tagint = int(taglast.replace('.',''),10)
-            # tagint=932 #
             tagfix = tagint%10
             tagminor = tagint//10 % 10
             tagmajor = tagint//100 % 10
-            tagnew = f'{tagmajor}.{tagminor}.{tagfix+1}' # tagnew == '9.3.3' #
+            tagnew = f'{tagmajor}.{tagminor}.{tagfix+1}'
             cfg.env['VERSION'] = tagnew
         except: # no repo
             try:
@@ -5419,7 +5451,7 @@ example_ipdt_tree = r'''
                 .. _`d000notrace`:
                 %__d000('notrace')
                 |p000subproject|
-
+                
                 The figure target above does not start with 'd'.
                 ``rextrace_target_id`` is set to ignore such targets.
                 
@@ -5440,11 +5472,11 @@ example_ipdt_tree = r'''
                 Link *plan* and *do* items that are tested here, e.g.
                 
                 - |p000headers| fits to |d000repo|
-
+                
                 .. _`t000testitem2`:
                 %__t000('test item 2')
                 |d000notrace|
-
+                
                 Tests manually.
                 
                 .. _`t000codegeneratedtestitems`:
@@ -5788,13 +5820,13 @@ example_ipdt_tree = r'''
              
              %from pathlib import Path
              %thisdir=Path(__file__).parent
-             %stem = lambda x:os.path.splitext(x)[0].replace('\\', '/')
+             %stem = lambda x:os.path.splitext(x)[0].replace('\\\\', '/')
              %from os.path import dirname, basename
              
              .. toctree::
              
-             %for x in sorted(set(y.parent for y in thisdir.rglob("*.rest.stpl") if not y.name.startswith('index.rest'))):
-             %  fs = dict((f.name[0],f) for f in Path(x).rglob("*.rest.stpl"))
+             %for x in sorted(set(y.parent for y in thisdir.rglob("*.rest*") if not y.name.startswith('index.rest'))):
+             %  fs = dict((f.name[0],f) for f in Path(x).rglob("*.rest*"))
              %  for i in "ipdt":
              %     if i in fs:
                    {{stem(fs[i].relative_to(thisdir))}}
@@ -5810,7 +5842,7 @@ example_ipdt_tree = r'''
              .. include:: _traceability_file.rst
              
              .. include:: _links_sphinx.rst
-
+             
          ├ pdt.rst.tpl
              % #expect Title and optionally
              % setdefault('Contact','roland.puntaier@gmail.com')
@@ -5871,12 +5903,12 @@ example_ipdt_tree = r'''
              % end
              %end #epilog'''
 
-def mktree(tree):
+def mktree(treelist,rootdir=None):
     '''
 
     Build a directory tree from a string as returned by the tree tool.
 
-    :param tree: tree string as list of lines
+    :param treelist: tree string as list of lines
 
     The level is determined by the identation.
 
@@ -5884,7 +5916,10 @@ def mktree(tree):
 
     Leafs:
 
-    - ``/`` or ``\\`` to make a directory leaf
+    - ending in ``/`` or ``\\`` to make a directory leaf
+
+    - starting with ``/`` to make a symlink to the file (``/path/relative/to/cwd``).
+      Append ``←othername`` if link has another name.
 
     - ``<<`` to copy file from internet using ``http://`` or locally using ``file://``
 
@@ -5892,36 +5927,57 @@ def mktree(tree):
 
     Example::
 
-        >>> tree="""
+        >>> treelist="""
         ...          a
+        ...          ├/b/e/f.txt
         ...          ├aa.txt
         ...            this is aa
         ...          └u.txt<<http://docutils.sourceforge.net/docs/user/rst/quickstart.txt
         ...          b
         ...          ├c
         ...          │└d/
+        ...          ├u
+        ...          │└/b/e
         ...          ├e
         ...          │└f.txt
+        ...          │└/b/e/f.txt ← lnf.txt
         ...          └g.txt
         ...            this is g
         ...       """.splitlines()
-        >>> #mktree(tree)
+        >>> #mktree(treelist)
 
     '''
 
-    for treestart, t in enumerate(tree):
+    if not rootdir:
+        rootdir = cwd()
+    for treestart, t in enumerate(treelist):
         try:
             ct = re.search(r'[^\s├│└]', t).span()[0]
             break
         except:
             continue
-    t1 = [t[ct:] for t in tree[treestart:]]
+    t1 = [t[ct:] for t in treelist[treestart:]]
     entry_re = re.compile(r'^(\w[^ </\\]*)(\s*<<\s*|\s*[\\/]\s*)*(\w.*)*')
-    it1 = list(rindices(entry_re, t1))
+    entry_ = re.compile(r'^(/?\w[^ </\\]*)(\s*<<\s*|\s*[\\/]\s*)*(\w.*)*')
+    it1 = list(rindices(entry_, t1))
     lt1 = len(t1)
     it1.append(lt1)
     for c, f in intervals(it1):
-        ef, ed, eg = entry_re.match(t1[c]).groups()
+        file_entry = t1[c]
+        try:
+            ef, ed, eg = entry_re.match(file_entry).groups()
+        except:
+            lnsrc = rootdir+file_entry
+            lndst = base(lnsrc)
+            try:
+                _,lndst = lndst.split('←')
+                lnsrc,_ = lnsrc.split('←')
+            except: pass
+            lnsrc = relpath(lnsrc.strip(),start=cwd())
+            try:
+                os.symlink(lnsrc,lndst.strip())
+            except: pass
+            continue
         if ef:
             if c < f - 1:
                 p1 = t1[c + 1].find('└') + 1
@@ -5930,7 +5986,7 @@ def mktree(tree):
                 if ix >= 0 and ix <= len(ef):
                     mkdir(ef)
                     with new_cwd(ef):
-                        mktree(t1[c + 1:f])
+                        mktree(t1[c + 1:f],rootdir)
                 else:
                     t0 = t1[c + 1:f]
                     try:
@@ -5954,11 +6010,13 @@ def mktree(tree):
 
 
 def tree(
-         path,
-         with_content=False,
-         with_files=True,
-         with_dot_files=True,
-         max_depth=100
+         path
+         ,with_content=False
+         ,with_files=True
+         ,with_dot_files=True
+         ,max_depth=100
+         ,entryprefix = ['├ ', '└ '] #├─ └─ not understood by mktree
+         ,subprefix = ['│  ', '   ']
          ):
     '''
     Inverse of mktree.
@@ -5969,6 +6027,8 @@ def tree(
     :param with_files: else only directories are listed
     :param with_dot_files: also include files starting with .
     :param max_depth: max directory depth to list
+    :param entryprefix: prefix for entries
+    :param subprefix: prefix for sub-entries
 
     ::
 
@@ -5978,8 +6038,7 @@ def tree(
 
     '''
 
-    subprefix = ['│  ', '   ']
-    entryprefix = ['├ ', '└ '] #├─ └─ not understood by mktree
+    rootdir = path
 
     def _tree(path, prefix):
         for p, ds, fs in os.walk(path):
@@ -5989,21 +6048,34 @@ def tree(
             if len(prefix) / 3 >= max_depth:
                 return
             for i, d in enumerate(sorted(ds)):
-                yield prefix + entryprefix[i == lends + lenfs - 1] + d
-                yield from _tree(
-                    normjoin(p, d), prefix + subprefix[i == lends + lenfs - 1])
+                ie = lends + lenfs - 1
+                pd = normjoin(p, d)
+                if islink(pd):
+                    linkto = normjoin(p,os.readlink(pd))
+                    print(linkto,rootdir)
+                    linkto = relpath(linkto,start=rootdir)
+                    yield prefix + entryprefix[i == ie] + '/'+linkto+' ← '+d
+                    continue
+                yield prefix + entryprefix[i == ie] + d
+                yield from _tree(pd, prefix + subprefix[i == ie])
             del ds[:]
             if with_files:
                 for i, f in enumerate(sorted(fs)):
+                    pf = normjoin(p, f)
                     if with_dot_files or not f.startswith('.'):
+                        if islink(pf):
+                            linkto = normjoin(p,os.readlink(pf))
+                            print(linkto,rootdir)
+                            linkto = relpath(linkto,start=rootdir)
+                            yield prefix + entryprefix[i == lenfs - 1] + '/'+linkto+' ← '+f
+                            continue
                         yield prefix + entryprefix[i == lenfs - 1] + f
                         if with_content:
-                            pf = normjoin(p, f)
                             lns = _read_lines(pf)
                             for ln in lns:
                                 yield prefix + subprefix[1] + ln
 
-    return '\n'.join(_tree(path, ''))
+    return '\n'.join(_tree(rootdir, ''))
 
 
 def initroot(
@@ -6114,9 +6186,9 @@ Without parameters: creates ``|substitution|`` links and .tags ctags for reST ta
 With two or three parameters: process file or dir to out file or dir
 through Pandoc, Sphinx, Docutils (third parameter):
 
-- ``html``, ``docx``, ``pdf``, ... uses  Pandoc.
+- ``html``, ``docx``, ``odt``, ``pdf``, ... uses  Pandoc.
 
-- ``rst_html``, ``rst_pdf``, ...  uses
+- ``rst_html``, ``rst_odt``, ``rst_pdf``, ...  uses
   `rst2html <http://docutils.sourceforge.net/0.6/docs/user/tools.html>`__, ...
 
 - ``sphinx_html``, ``sphinx_pdf``, ...  uses Sphinx.
@@ -6124,6 +6196,11 @@ through Pandoc, Sphinx, Docutils (third parameter):
   `sphinx bootstrap theme <https://github.com/ryan-roemer/sphinx-bootstrap-theme>`__.
 
 4th parameter onward become python defines usable in ``.stpl`` files.
+
+Pdf output needs latex. Else you can make odt or docx and use
+
+- win: ``swriter.exe --headless --convert-to pdf Untitled1.odt``
+- linux: ``lowriter --headless --convert-to pdf Untitled1.odt``
 
 Inkscape (.eps, .svg), Dot (.dot), Planuml (.uml), latex (.tex,.tikz)
 are converted to .png into ``./_images`` or ``../_images``.
