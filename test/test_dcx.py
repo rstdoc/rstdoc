@@ -25,6 +25,7 @@ sys.path = ['test/mocks'] + sys.path
 import pytest
 import re
 from rstdoc.dcx import *
+import time
 
 '''
 
@@ -395,12 +396,9 @@ def test_init(rstinit):
 ├ org
 │  ├ contributor
 │  │  └ c1
-│  │     ├ assigned
-│  │     │  └ /pdt/000 ← 000
 │  │     ├ log
 │  │     │  └ 2019.rest
-│  │     └ responsibility
-│  │        └ /dev/sw/fw ← fw
+│  │     └ assigned.rest
 │  ├ discussion
 │  │  └ topic1.rest
 │  ├ mediation
@@ -410,14 +408,13 @@ def test_init(rstinit):
 │        └ purchase.rest
 ├ pdt
 │  └ 000
-│     ├ do.rest
-│     ├ info.rest
-│     ├ plan.rest
-│     └ test.rest
+│     ├ d.rest
+│     ├ io.rest
+│     ├ p.rest
+│     └ t.rest
 ├ contribution.rest
 ├ index.rest
 ├ readme.rest
-├ /readme.rest ← readme.rst
 ├ waf
 ├ waf.bat
 ├ wafw.py
@@ -591,7 +588,9 @@ def makebuild(request,rstinit):
     yield (os.getcwd(),request.param)
     os.chdir(oldd)
 
-tree3 = lambda x: tree(x,with_dot_files=False,max_depth=3)
+def tree3(x):
+    tres = tree(x,with_dot_files=False,max_depth=3)
+    return tres
 
 def test_make_samples(makebuild):
     '''

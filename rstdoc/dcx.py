@@ -777,8 +777,8 @@ def new_cwd(apth):
 
     '''
 
-    prev_cwd = cwd()
     _cdlock.acquire()
+    prev_cwd = cwd()
     cd(apth)
     try:
         yield
@@ -804,7 +804,7 @@ def up_dir(match,start=None):
     '''
     Find a parent path producing a match on one of its entries.
 
-    >>> up_dir(lambda x: False).replace('\\','/').strip('/').find('/')
+    >>> up_dir(lambda x: False).replace('\\\\','/').strip('/').find('/')
     -1
     '''
 
@@ -1149,7 +1149,10 @@ def _copy_images_for(infile, outfile, with_trace):
                 except:
                     pass
 
-
+'''
+One can append paths to ``rstdoc.dcx.g_include`` for stpl expansion
+or finding other files.
+'''
 g_include = []
 
 @infile_cwd
@@ -1710,6 +1713,7 @@ def dostpl(
     variables.update({'__file__': filename})
     if 'outinfo' not in variables and outfile:
         _, variables['outinfo'] = stem_ext(outfile)
+    stpl.TEMPLATES.clear()
     st = stpl.template(
         infile,
         template_settings={'escape_func': lambda x: x},
@@ -3675,8 +3679,6 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid):
 
 
 
-
-
 # ==============> for building with WAF
 
 try:
@@ -4017,11 +4019,11 @@ except:
 # this is for mktree(): first line of file content must not be empty!
 example_rest_tree = r'''
        build/
-       dcx.py << file://__dcx__
-       reference.tex << file://__tex_ref__
-       reference.docx << file://__docx_ref__
-       reference.odt << file://__odt_ref__
-       wafw.py << file://__wafw__
+       dcx.py << file:///__dcx__
+       reference.tex << file:///__tex_ref__
+       reference.docx << file:///__docx_ref__
+       reference.odt << file:///__odt_ref__
+       wafw.py << file:///__wafw__
        waf
          #!/usr/bin/env sh
          shift
@@ -4640,11 +4642,9 @@ example_rest_tree = r'''
             draw.text((20, 20), "123")
             save_to_png = lambda out_file: im.save(out_file, "PNG")
         ├ egeps.eps
-            1 0 0 setrgbcolor
             newpath 6 2 36 54 rectstroke
             showpage
         ├ egeps1.eps
-            0 0 1 setrgbcolor
             newpath 6 2 36 54 rectstroke
             showpage
         ├ egcairo.pyg
@@ -5215,7 +5215,7 @@ example_stpl_subtree = r'''
 
 
 example_ipdt_tree = r'''
-       wafw.py << file://__wafw__
+       wafw.py << file:///__wafw__
        waf
          #!/usr/bin/env sh
          shift
@@ -5897,15 +5897,11 @@ example_ipdt_tree = r'''
              
              %end
              %def epilog():
-             % if exists('_links_sphinx.rst'):
-             .. include:: _links_sphinx.rst
-             % else:
-             .. include:: ../_links_sphinx.rst
-             % end
+             .. include:: /_links_sphinx.rst
              %end #epilog'''
 
 example_over_tree = r'''
-  wafw.py << file://__wafw__
+  wafw.py << file:///__wafw__
   waf
     #!/usr/bin/env sh
     shift
@@ -5971,25 +5967,30 @@ example_over_tree = r'''
     │     .. include:: /_links_sphinx.rst
     ├ contributor
         └ c1
-           ├ assigned
-           │   └ /pdt/000
+           ├ assigned.rest
+           │    Assigned for c1
+           │    ===============
+           │
+           │    Planning and coordinating |000|
+           │
+           │    Implementation of |fw_000|
+           │
+           │    .. include:: /_links_sphinx.rst
            ├ log
-           │   └ 2019.rest
-           │       2019
-           │       ====
-           │
-           │       .. _`c1_20191101`
-           │
-           │       |issue1|
-           │
-           │       .. _`c1_20191102`
-           │
-           │       |issue1|
-           │       It was necessary to refactor ...
-           │
-           │       .. include:: /_links_sphinx.rst
-           └ responsibility
-               └ /dev/sw/fw
+               └ 2019.rest
+                   2019
+                   ====
+            
+                   .. _`c1_20191101`
+            
+                   |issue1|
+            
+                   .. _`c1_20191102`
+            
+                   |issue1|
+                   It was necessary to refactor ...
+            
+                   .. include:: /_links_sphinx.rst
   doc
     ├ index.rest
     │    Documentation
@@ -6175,7 +6176,6 @@ example_over_tree = r'''
      |issue2|
 
      .. include:: /_links_sphinx.rst
-  /readme.rest ← readme.rst
   readme.rest
      Project Entry Point
      ===================
@@ -6203,6 +6203,7 @@ example_over_tree = r'''
            org/discussion/topic1.rest
            org/mediation/conflict1.rest
            org/process/SOP/purchase.rest
+           org/contributor/c1/assigned.rest
            org/contributor/c1/log/2019.rest
            pdt/000/info.rest
            pdt/000/do.rest
@@ -6237,9 +6238,9 @@ def mktree(treelist,rootdir=None):
     - ending in ``/`` or ``\\`` to make a directory leaf
 
     - starting with ``/`` to make a symlink to the file (``/path/relative/to/cwd``).
-      Append ``←othername`` if link has another name.
+      Append ``<- othername`` if link has another name.
 
-    - ``<<`` to copy file from internet using ``http://`` or locally using ``file://``
+    - ``<<`` to copy file from internet using ``http://`` or locally using ``file:///``
 
     - use indented lines as file content
 
@@ -6258,7 +6259,6 @@ def mktree(treelist,rootdir=None):
         ...          │└/b/e
         ...          ├e
         ...          │└f.txt
-        ...          │└/b/e/f.txt ← lnf.txt
         ...          └g.txt
         ...            this is g
         ...       """.splitlines()
@@ -6288,8 +6288,8 @@ def mktree(treelist,rootdir=None):
             lnsrc = rootdir+file_entry
             lndst = base(lnsrc)
             try:
-                _,lndst = lndst.split('←')
-                lnsrc,_ = lnsrc.split('←')
+                _,lndst = lndst.split('<-')
+                lnsrc,_ = lnsrc.split('<-')
             except: pass
             lnsrc = relpath(lnsrc.strip(),start=cwd())
             try:
@@ -6372,7 +6372,7 @@ def tree(
                     linkto = normjoin(p,os.readlink(pd))
                     print(linkto,rootdir)
                     linkto = relpath(linkto,start=rootdir)
-                    yield prefix + entryprefix[i == ie] + '/'+linkto+' ← '+d
+                    yield prefix + entryprefix[i == ie] + '/'+linkto+' <- '+d
                     continue
                 yield prefix + entryprefix[i == ie] + d
                 yield from _tree(pd, prefix + subprefix[i == ie])
@@ -6385,7 +6385,7 @@ def tree(
                             linkto = normjoin(p,os.readlink(pf))
                             print(linkto,rootdir)
                             linkto = relpath(linkto,start=rootdir)
-                            yield prefix + entryprefix[i == lenfs - 1] + '/'+linkto+' ← '+f
+                            yield prefix + entryprefix[i == lenfs - 1] + '/'+linkto+' <- '+f
                             continue
                         yield prefix + entryprefix[i == lenfs - 1] + f
                         if with_content:
