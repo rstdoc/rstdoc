@@ -73,6 +73,19 @@ Use as::
 Extends the Python startfile to non-Windows platforms
 
 
+.. _`dcx.up_dir`:
+
+:dcx.up_dir:
+
+.. code-block:: py
+
+   def up_dir(match,start=None):
+
+Find a parent path producing a match on one of its entries.
+
+>>> up_dir(lambda x: False).replace('\\\\','/').strip('/').find('/')
+-1
+
 .. _`dcx.tempdir`:
 
 :dcx.tempdir:
@@ -148,6 +161,17 @@ Run Sphinx on infile.
 
     >>> cd(olddir)
 
+
+.. _`dcx.g_include`:
+
+:dcx.g_include:
+
+.. code-block:: py
+
+   g_include = []
+
+One can append paths to ``rstdoc.dcx.g_include`` for stpl expansion
+or finding other files.
 
 .. _`dcx.rst_pandoc`:
 
@@ -467,7 +491,7 @@ Expands an `.stpl <https://bottlepy.org/docs/dev/stpl.html>`__ file.
 
 The whole ``rstdoc.dcx`` namespace is forwarded to the template code.
 
-``.stpl`` provides full python power:
+``.stpl`` is unrestrained python:
 
 - e.g. one can create temporary images,
   which are then included in the final .docx of .odt
@@ -1028,11 +1052,15 @@ in *dir* (default: os.getcwd()) for ``exts`` files
 Find keyword lines in ``fn_ln_kw`` list or using grep(),
 that contain the keywords in kws.
 
-Keyword line::
+Keyword line are either of::
 
     .. {kw1,kw2}
+    {{_ID3('kw1 kw2')}}
+    %__ID3('kw1 kw2')
+    :ID3: kw1 kw2
 
 This is due to ``dcx.rexkw``, which you can change.
+See also ``dcx.grep()`` for the keyword parameters.
 
 :param kws: string will be split by non-chars
 :param fn_ln_kw: list of (file, line, keywords) tuples
@@ -1078,41 +1106,6 @@ Counter object.
     2
 
 
-.. _`dcx.pdtid`:
-
-:dcx.pdtid:
-
-.. code-block:: py
-
-   def pdtid(pdtfile):
-
-.. code-block:: py
-
-       fid = base(pdtfile)
-       while True:
-           fido = fid
-           fid = stem(fid)
-           if fid == fido:
-               break
-       try:
-           _pdtok(fid)
-       except:
-           fid = stem(stem(base(dirname(pdtfile))))
-           _pdtok(fid)
-       return fid
-
-``pdtid`` takes the path of the current file and extracts an ID from it.
-
-::
-
-    >>> pdtid('/a/b/3A2/0sA.rest.stpl')
-    '3A2'
-    >>> pdtid('/a/b/3A2/0SA.rest.stpl')
-    '0SA'
-    >>> pdtid('/a/b/3A2/AS-A.rest.stpl')
-    '3A2'
-
-
 .. _`dcx.pdtAAA`:
 
 :dcx.pdtAAA:
@@ -1133,7 +1126,7 @@ See the example generated with::
 :param dct: dict to take up the generated defines
 :param pdtid: function returning the ID for the ``pdt`` cycle
 
-A ``pdt` is a project enhancement cycle with its own documentation.
+A ``pdt`` is a project enhancement cycle with its own documentation.
 ``pdt`` stands for
 
 - plan: why
@@ -1146,16 +1139,16 @@ Additionally there should be an
 
 There can also be *only* the ``inform`` document, if the ``pdt`` item is only informative.
 
-The repo can look like this (preferred)::
+The repo looks like this (preferred)::
 
     project repo
         pdt
             ...
             AAA
-                i.rest.stpl
-                p.rest.stpl
-                d.rest.stpl
-                t.rest.stpl
+                i*.rest.stpl
+                p*.rest.stpl
+                d*.rest.stpl
+                t*.rest.stpl
 
 or::
 
@@ -1176,7 +1169,8 @@ Further reading: `pdt <https://github.com/rpuntaie/pdt>`__
 - ``__[x]AAA``, same as ``_[x]AAA``, but use: ``%__[x]AAA('kw1')``
 - ``__[x]AAA_``, ``__[x]AAA__``, ``__[x]AAA___``, ... Use: ``%__[x]AAA_('header text')``
 
-A, B are base36 letters and x is the initial of the file
+A, B are base36 letters and x is the initial of the file.
+The generated macros do not work for indented text, as they produce line breaks in RST text.
 
 ::
 
@@ -1205,12 +1199,11 @@ A, B are base36 letters and x is the initial of the file
 
 .. code-block:: py
 
-   def mktree(tree):
-
+   def mktree(treelist,rootdir=None):
 
 Build a directory tree from a string as returned by the tree tool.
 
-:param tree: tree string as list of lines
+:param treelist: tree string as list of lines
 
 The level is determined by the identation.
 
@@ -1218,42 +1211,50 @@ This is not thread-safe.
 
 Leafs:
 
-- ``/`` or ``\\`` to make a directory leaf
+- ending in ``/`` or ``\\`` to make a directory leaf
 
-- ``<<`` to copy file from internet using ``http://`` or locally using ``file://``
+- starting with ``/`` to make a symlink to the file (``/path/relative/to/cwd``).
+  Append ``<- othername`` if link has another name.
+
+- ``<<`` to copy file from internet using ``http://`` or locally using ``file:///``
 
 - use indented lines as file content
 
 Example::
 
-    >>> tree="""
+    >>> treelist="""
     ...          a
+    ...          ├/b/e/f.txt
     ...          ├aa.txt
     ...            this is aa
     ...          └u.txt<<http://docutils.sourceforge.net/docs/user/rst/quickstart.txt
     ...          b
     ...          ├c
     ...          │└d/
+    ...          ├u
+    ...          │└/b/e
     ...          ├e
     ...          │└f.txt
     ...          └g.txt
     ...            this is g
     ...       """.splitlines()
-    >>> #mktree(tree)
+    >>> #mktree(treelist)
 
 
-.. _`dcx.tree`:
+.. _`dcx.subprefix`:
 
-:dcx.tree:
+:dcx.subprefix:
 
 .. code-block:: py
 
    def tree(
-            path,
-            with_content=False,
-            with_files=True,
-            with_dot_files=True,
-            max_depth=100
+            path
+            ,with_content=False
+            ,with_files=True
+            ,with_dot_files=True
+            ,max_depth=100
+            ,entryprefix = ['├ ', '└ '] #├─ └─ not understood by mktree
+            ,subprefix = ['│  ', '   ']
             ):
 
 Inverse of mktree.
@@ -1264,6 +1265,8 @@ Like the linux tree tool, but optionally with content of files
 :param with_files: else only directories are listed
 :param with_dot_files: also include files starting with .
 :param max_depth: max directory depth to list
+:param entryprefix: prefix for entries
+:param subprefix: prefix for sub-entries
 
 ::
 
@@ -1283,51 +1286,12 @@ Like the linux tree tool, but optionally with content of files
            ,sampletype
            ):
 
-.. code-block:: py
-
-       thisfile = __file__.replace('\\', '/')
-       tex_ref = normjoin(dirname(thisfile), 'reference.tex')
-       docx_ref = normjoin(dirname(thisfile), 'reference.docx')
-       odt_ref = normjoin(dirname(thisfile), 'reference.odt')
-       wafw = normjoin(dirname(thisfile), 'wafw.py')
-       if sampletype == 'ipdt':
-           imglines = example_rest_tree.splitlines()
-           imglines = imglines[
-               list(rindices('├ egtikz.tikz',imglines))[0]:
-               list(rindices('├ gen',imglines))[0]]
-           imglines = [' '*4+x for x in imglines]
-           example_tree = example_ipdt_tree.replace('__imgs__',('\n'.join(imglines)+'\n').lstrip())
-       else:
-           example_tree=example_rest_tree
-       inittree = [
-           l for l in example_tree.replace(
-               '__dcx__', thisfile).replace(
-               '__tex_ref__', tex_ref).replace(
-               '__docx_ref__', docx_ref).replace(
-               '__odt_ref__', odt_ref).replace(
-               '__wafw__', wafw).replace(
-               '__code__', rootfldr).splitlines()
-       ]
-       if sampletype == 'stpl':
-           def _replace_lines(origlns, start, stop, insertlns):
-               return origlns[:list(rindices(start, origlns))
-                              [0]] + insertlns + origlns[list(
-                                  rindices(stop, origlns))[0]:]
-           inittree = _replace_lines(inittree, '├ index.rest', '├ egtikz.tikz',
-                                     example_stpl_subtree.lstrip('\n').splitlines())
-           #for i,x in enumerate(inittree):
-           #   if not x.strip():
-           #       print(i,inittree[i-1])
-       mkdir(rootfldr)
-       with new_cwd(rootfldr):
-           mktree(inittree)
-
 Creates a sample tree in the file system.
 
 :param rootfldr: directory name that becomes root of the sample tree
-:param sampletype: either 'ipdt' or 'stpl' for templated sample trees, or 'rest'
+:param sampletype: either 'ipdt' or 'stpl' for templated sample trees, or 'rest' or 'over' for non-templated
 
-See ``example_rest_tree`` and ``example_stpl_subtree`` and ``example_ipdt_tree`` in dcx.py.
+See ``example_rest_tree``, ``example_stpl_subtree``, ``example_ipdt_tree``, ``example_over_tree`` in dcx.py.
 
 
 .. _`dcx.index_dir`:

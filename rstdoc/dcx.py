@@ -465,11 +465,15 @@ restplinclude = re.compile(r"""%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*""")
 #rexkw = re.compile(r'^\s*%?\s*{*_+[0-Z]+_*\(')
 #rexkw = re.compile(r'^\s*\.\. {')
 #... combined:
-rexkw = re.compile(r'^\s*(\.\. {|%?\s*{*_+[0-Z]+_*\()')
+rexkw = re.compile(r'^\s*(\.\. {|%?\s*{*_+[0-Z]+_*\()|^\s*:[0-Z]+:\s')
 #rexkw.search("{{_A30('kw1 kw2')}}")
 #rexkw.search("{{_U00___('kw1 kw2')}}")
 #rexkw.search(" % __0A0('kw1 kw2')")
 #rexkw.search(" % __123_('kw1 kw2')")
+#rexkw.search(":A30: kw1 kw2")
+#rexkw.search(" :U00: kw1 kw2")
+#rexkw.search("\t:123: kw1 kw2")
+#rexkw.search("   .. {kw1 kw2}")
 #rexkw.search("   .. {kw1 kw2}")
 #rexkw.search(" %  .. {kw1 kw2}") #NO
 #rexkw.search(" % fun('kw1 kw2')") #NO
@@ -3425,11 +3429,15 @@ def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
     Find keyword lines in ``fn_ln_kw`` list or using grep(),
     that contain the keywords in kws.
 
-    Keyword line::
+    Keyword line are either of::
 
         .. {kw1,kw2}
+        {{_ID3('kw1 kw2')}}
+        %__ID3('kw1 kw2')
+        :ID3: kw1 kw2
 
     This is due to ``dcx.rexkw``, which you can change.
+    See also ``dcx.grep()`` for the keyword parameters.
 
     :param kws: string will be split by non-chars
     :param fn_ln_kw: list of (file, line, keywords) tuples
@@ -3547,7 +3555,7 @@ def _pdtok(fid):
     assert int(fid,base=36) < 36**3
 
 def pdtid(pdtfile):
-    '''
+    """
     ``pdtid`` takes the path of the current file and extracts an ID from it.
 
     ::
@@ -3559,7 +3567,8 @@ def pdtid(pdtfile):
         >>> pdtid('/a/b/3A2/AS-A.rest.stpl')
         '3A2'
 
-    '''
+    """
+
     fid = base(pdtfile)
     while True:
         fido = fid
@@ -3587,7 +3596,7 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid):
     :param dct: dict to take up the generated defines
     :param pdtid: function returning the ID for the ``pdt`` cycle
 
-    A ``pdt` is a project enhancement cycle with its own documentation.
+    A ``pdt`` is a project enhancement cycle with its own documentation.
     ``pdt`` stands for
 
     - plan: why
@@ -6177,13 +6186,10 @@ example_over_tree = r'''
            dev/issues/issue1.rest
            dev/issues/issue2.rest
 
-     .. include:: /_links_sphinx.rst
-
-'''
+     .. include:: /_links_sphinx.rst'''
 
 def mktree(treelist,rootdir=None):
     '''
-
     Build a directory tree from a string as returned by the tree tool.
 
     :param treelist: tree string as list of lines
@@ -6368,6 +6374,7 @@ def initroot(
     See ``example_rest_tree``, ``example_stpl_subtree``, ``example_ipdt_tree``, ``example_over_tree`` in dcx.py.
 
     '''
+
     thisfile = __file__.replace('\\', '/')
     tex_ref = normjoin(dirname(thisfile), 'reference.tex')
     docx_ref = normjoin(dirname(thisfile), 'reference.docx')

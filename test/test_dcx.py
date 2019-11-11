@@ -253,7 +253,6 @@ def test_init(rstinit):
 │  │  ├ egcairo.pyg
 │  │  ├ egdot.dot.stpl
 │  │  ├ egeps.eps
-│  │  ├ egeps1.eps
 │  │  ├ egother.pyg
 │  │  ├ egplt.pyg
 │  │  ├ egpygal.pyg
@@ -289,7 +288,6 @@ def test_init(rstinit):
 │  ├ egcairo.pyg
 │  ├ egdot.dot.stpl
 │  ├ egeps.eps
-│  ├ egeps1.eps
 │  ├ egother.pyg
 │  ├ egplt.pyg
 │  ├ egpygal.pyg
@@ -328,7 +326,6 @@ def test_init(rstinit):
 │  ├ egcairo.pyg
 │  ├ egdot.dot.stpl
 │  ├ egeps.eps
-│  ├ egeps1.eps
 │  ├ egother.pyg
 │  ├ egplt.pyg
 │  ├ egpygal.pyg
@@ -534,7 +531,6 @@ def test_dcx_in_out(rstinit,cmd_result):
 ,(['egcairo.pyg'],['_images/egcairo.png'],[])
 ,(['egdot.dot.stpl'],['_images/egdot.png'],['egdot.dot'])
 ,(['egeps.eps'],['_images/egeps.png'],[])
-,(['egeps1.eps'],['_images/egeps1.png'],[])
 ,(['egother.pyg'],['_images/egother.png'],[])
 ,(['egplt.pyg'],['_images/egplt.png'],[])
 ,(['egpygal.pyg'],['_images/egpygal.png'],[])
@@ -766,7 +762,6 @@ def test_waf_samples(wafbuild):
    │  ├ egcairo.png
    │  ├ egdot.png
    │  ├ egeps.png
-   │  ├ egeps1.png
    │  ├ egother.png
    │  ├ egplt.png
    │  ├ egpygal.png
@@ -788,7 +783,6 @@ def test_waf_samples(wafbuild):
    ├ egcairo.png
    ├ egdot.png
    ├ egeps.png
-   ├ egeps1.png
    ├ egother.png
    ├ egplt.png
    ├ egpygal.png
@@ -835,7 +829,6 @@ def test_waf_samples(wafbuild):
 │     ├ egcairo.png
 │     ├ egdot.png
 │     ├ egeps.png
-│     ├ egeps1.png
 │     ├ egother.png
 │     ├ egplt.png
 │     ├ egpygal.png
