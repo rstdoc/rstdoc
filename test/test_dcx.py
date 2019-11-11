@@ -358,11 +358,6 @@ def test_init(rstinit):
     elif 'tmp_over' in rstinit:
         assert tree('.')=="""\
 ├ dev
-│  ├ cots
-│  │  ├ ATmega328
-│  │  │  └ ATmega328.data.py
-│  │  ├ cots.db.py
-│  │  └ supplier.db.py
 │  ├ hw
 │  │  ├ casing
 │  │  │  ├ scad
@@ -408,10 +403,10 @@ def test_init(rstinit):
 │        └ purchase.rest
 ├ pdt
 │  └ 000
-│     ├ d.rest
-│     ├ io.rest
-│     ├ p.rest
-│     └ t.rest
+│     ├ do.rest
+│     ├ info.rest
+│     ├ plan.rest
+│     └ test.rest
 ├ contribution.rest
 ├ index.rest
 ├ readme.rest
