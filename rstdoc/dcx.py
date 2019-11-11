@@ -5801,7 +5801,7 @@ example_ipdt_tree = r'''
              
              %from pathlib import Path
              %thisdir=Path(__file__).parent
-             %stem = lambda x:os.path.splitext(x)[0].replace('\\\\', '/')
+             %stem = lambda x:os.path.splitext(x)[0].replace('\\', '/')
              %from os.path import dirname, basename
              
              .. toctree::
