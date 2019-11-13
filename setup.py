@@ -29,7 +29,7 @@ import os
 import sys
 
 #also change ing doc/conf.py
-__version__ = '1.7.3'
+__version__ = '1.7.4'
 
 try:
     sys.path.append('./rstdoc')

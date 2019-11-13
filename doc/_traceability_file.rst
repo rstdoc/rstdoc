@@ -10,7 +10,7 @@
 
 |dhy|, |r1p|, |r62|, |r8d|, |r90|, |r9g|, |r9h|, |rak|, |rbc|, |rj4|, |roc|, |rpn|, |rstdcx|, |rvd|, |rvl|, |rwj|, |s0t|, |s10|, |s1g|, |s45|, |s8c|, |scs|, |seo|, |sgt|, |sim|, |son|, |sxr|, |test_lnkname|
 
-Up: |tr2|, |tr4|, |tr5|, |tr7|, |tr9|, |tr10|, |tr12|, |tr13|, |tr14|, |tr15|, |tr16|, |tr17|
+Up: |tr2|, |tr4|, |tr5|, |tr7|, |tr8|, |tr10|, |tr12|, |tr13|, |tr14|, |tr15|, |tr16|, |tr17|
 
 Down: 
 
@@ -22,15 +22,15 @@ Down:
 
 Up: 
 
-Down: |tr3|, |tr6|, |tr8|, |tr11|, |tr14|, |tr15|, |tr16|, |tr17|
+Down: |tr3|, |tr6|, |tr9|, |tr11|, |tr14|, |tr15|, |tr16|, |tr17|
 
 .. _`tr2`:
 
 :tr2:
 
-|r1p|, |roc|, |sgt|
+|r62|, |r9g|, |r9h|, |rbc|, |rj4|, |rpn|, |rstdcx|, |rvd|, |rwj|, |s45|, |sgt|
 
-Up: |tr3|, |tr6|
+Up: |tr3|, |tr6|, |tr9|
 
 Down: |tr0|
 
@@ -38,7 +38,7 @@ Down: |tr0|
 
 :tr3:
 
-|roc|
+|rbc|
 
 Up: |tr1|
 
@@ -48,7 +48,7 @@ Down: |tr2|, |tr4|, |tr5|
 
 :tr4:
 
-|r8d|, |roc|, |s8c|
+|rbc|, |s0t|
 
 Up: |tr3|
 
@@ -58,7 +58,7 @@ Down: |tr0|
 
 :tr5:
 
-|roc|, |s1g|
+|rbc|, |s10|
 
 Up: |tr3|
 
@@ -68,19 +68,19 @@ Down: |tr0|
 
 :tr6:
 
-|sgt|
+|rvd|
 
 Up: |tr1|
 
-Down: |tr2|, |tr7|
+Down: |tr2|, |tr7|, |tr8|
 
 .. _`tr7`:
 
 :tr7:
 
-|r62|, |r9g|, |r9h|, |rbc|, |rj4|, |rpn|, |rstdcx|, |rvd|, |rwj|, |s45|, |sgt|
+|rvd|, |scs|
 
-Up: |tr6|, |tr8|, |tr11|
+Up: |tr6|
 
 Down: |tr0|
 
@@ -88,29 +88,29 @@ Down: |tr0|
 
 :tr8:
 
-|rbc|
+|rvd|, |sim|
 
-Up: |tr1|
+Up: |tr6|
 
-Down: |tr7|, |tr9|, |tr10|
+Down: |tr0|
 
 .. _`tr9`:
 
 :tr9:
 
-|rbc|, |s0t|
+|sgt|
 
-Up: |tr8|
+Up: |tr1|
 
-Down: |tr0|
+Down: |tr2|, |tr10|
 
 .. _`tr10`:
 
 :tr10:
 
-|rbc|, |s10|
+|r1p|, |roc|, |sgt|
 
-Up: |tr8|
+Up: |tr9|, |tr11|
 
 Down: |tr0|
 
@@ -118,17 +118,17 @@ Down: |tr0|
 
 :tr11:
 
-|rvd|
+|roc|
 
 Up: |tr1|
 
-Down: |tr7|, |tr12|, |tr13|
+Down: |tr10|, |tr12|, |tr13|
 
 .. _`tr12`:
 
 :tr12:
 
-|rvd|, |scs|
+|r8d|, |roc|, |s8c|
 
 Up: |tr11|
 
@@ -138,7 +138,7 @@ Down: |tr0|
 
 :tr13:
 
-|rvd|, |sim|
+|roc|, |s1g|
 
 Up: |tr11|
 
@@ -148,7 +148,7 @@ Down: |tr0|
 
 :tr14:
 
-|son|, |test_lnkname|
+|dhy|, |rak|
 
 Up: |tr1|
 
@@ -158,7 +158,7 @@ Down: |tr0|
 
 :tr15:
 
-|rvl|, |sxr|
+|r90|, |seo|
 
 Up: |tr1|
 
@@ -168,7 +168,7 @@ Down: |tr0|
 
 :tr16:
 
-|r90|, |seo|
+|son|, |test_lnkname|
 
 Up: |tr1|
 
@@ -178,7 +178,7 @@ Down: |tr0|
 
 :tr17:
 
-|dhy|, |rak|
+|rvl|, |sxr|
 
 Up: |tr1|
 

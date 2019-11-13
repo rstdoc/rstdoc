@@ -49,8 +49,6 @@ try:
 except:
     title_some = """=-^"'`._~+:;,"""
 
-g_scanroot = "."
-
 """
 .. _`rstdcx`:
 
@@ -82,7 +80,7 @@ which
 
   ``.. include:: /_links_sphinx.rst``, with the one initial ``/``
   instead of a relative or absolute path,
-  will automatically search upward for the ``_link_xxx.rst`` file
+  will automatically search upward for the ``_links_xxx.rst`` file
   (``_sphinx`` is replaced by what is needed by the wanted target).
 
 - forwards known files to either Pandoc, Sphinx or Docutils
@@ -200,10 +198,12 @@ Conventions
 
 - Files
 
-  - main docs end in ``.rest``
-  - ``.rst`` are included and ignored by Sphinx (see ``conf.py``).
+  - Main docs end in ``.rest``, while ``.rst`` files are used for ``.. include::`` and ignored by Sphinx.
+    This can be reversed by setting ``source_suffix='.rst'`` in ``conf.py`` at the project root.
+    If ``source_suffix`` is not defined,
+    a successful grep for ``.. include:: _links_sphinx.rest`` also reverses the convention.
   - ``.txt`` are literally included (use :literal: option).
-  - templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately.
+  - Templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately.
   - ``some.rst.tpl`` are template included
     Template lookup is done in
     ``.`` and ``..`` with respect to the current file.
@@ -412,6 +412,39 @@ _rest = '.rest'
 _rst = '.rst'
 _txt = '.txt'
 
+def _set_rstrest(a_rest):
+    global _rest
+    global _rst
+    assert isinstance(a_rest,str)
+    _rest = a_rest
+    _rst = '.rest' if _rest=='.rst' else '.rst'
+
+def _get_rstrest(config=None):
+    if config is None:
+        config = conf_py(cwd())
+    if 'source_suffix' not in config:
+        try:
+            next(grep('\.\. include:: .*_links_sphinx.rest'))
+            _set_rstrest('.rest')
+            if '__file__' in config:
+                with opnappend(config['__file__']) as f:
+                    f.write('\nsource_suffix = "%s"'%_rest)
+            else:
+                conf_file = up_dir(lambda x: x=='.git')
+                if conf_file:
+                    conf_file = normjoin(conf_file,'conf.py')
+                    if not exists(conf_file):
+                        config['__file__'] = conf_file
+                        with opnwrite(conf_file) as f:
+                            f.write('\nsource_suffix = "%s"'%_rest)
+            return _rest
+        except:
+            pass
+    else:
+        _set_rstrest(config['source_suffix'])
+        return _rest
+    _set_rstrest('.rest')
+    return _rest
 
 def is_rest(x):
     return x.endswith(_rest) or x.endswith(_rest + _stpl)
@@ -524,6 +557,7 @@ sphinx_config_keys = """
     html_theme_path
     latex_elements
     html_extra_path
+    source_suffix
     """.split()
 
 latex_elements = {
@@ -625,7 +659,6 @@ config_defaults = {
 sphinx_enforced = {
     'numfig': 0,
     'smartquotes': 0,
-    'source_suffix': '.rest',
     'templates_path': [],
     'language': None,
     'highlight_language': "none",
@@ -654,8 +687,9 @@ def conf_py(fldr):
     config.update(config_defaults)
     if g_config:
         config.update(g_config)
-    confpypath, there = here_or_updir(fldr, 'conf.py')
-    if there:
+    confpydir = up_dir(lambda x:x=='conf.py',start=abspath(fldr))
+    if confpydir:
+        confpypath = normjoin(confpydir,'conf.py')
         with opn(confpypath) as f:
             config['__file__'] = abspath(confpypath)
             eval(compile(f.read(), abspath(confpypath), 'exec'), config)
@@ -668,7 +702,6 @@ def conf_py(fldr):
                 break
     config.update(sphinx_enforced)
     return config
-
 
 def _fillwith(u, v):
     return [x or v for x in u]
@@ -807,9 +840,15 @@ def startfile(filepath):
 def up_dir(match,start=None):
     '''
     Find a parent path producing a match on one of its entries.
+    Without a match an empty string is returned.
 
-    >>> up_dir(lambda x: False).replace('\\\\','/').strip('/').find('/')
-    -1
+    :param match: a function returning a bool on a directory entry
+    :param start: absolute path or None
+    :return: directory with a match on one of its entries
+
+    >>> up_dir(lambda x: False)
+    ''
+
     '''
 
     if start is None:
@@ -818,7 +857,10 @@ def up_dir(match,start=None):
         return start
     parent = os.path.dirname(start)
     if start == parent:
-        return start
+        rootres = start.replace('\\','/').strip('/').replace(':','')
+        if len(rootres)==1 and sys.platform=='win32':
+            rootres = ''
+        return rootres
     return up_dir(match,start=parent)
 
 def tempdir():
@@ -921,8 +963,8 @@ def in_temp_if_list(
     - includes ``normoutfile``
 
     If outfile is None, outfile is derived from suffix,
-    which can be `rest.stpl`, `png.svg`;
-    If suffix is `.svg`, ...,
+    which can be ``rest.stpl``, ``png.svg``;
+    If suffix is ``.svg``, ...,
     png is assumed and will be placed into ``_images``.
 
     """
@@ -1008,7 +1050,7 @@ def rst_sphinx(
     '''
     Run Sphinx on infile.
 
-    :param infile: .txt, .rst, .rest filename (normally index.rest)
+    :param infile: .txt, .rst, .rest filename
     :param outfile: the path to the target file (not target directory)
     :param outtype: html, latex,... or any other sphinx writer
     :param config: keys from config_defaults
@@ -1062,6 +1104,7 @@ def rst_sphinx(
         for k, v in cfgt.items() if k in sphinx_config_keys
         and 'latex' not in k and k != 'html_extra_path'
     })
+    cfg.setdefault('source_suffix','.rest')
     if not outtype or outtype=='html':
         if outne == '.html':
             if infn.startswith('index.'):
@@ -1110,7 +1153,7 @@ def rst_sphinx(
     cmd(sphinxcmd, outfile=outfn)
     if outtype == 'html':
         #undo duplication via temp file's see: rest_rest
-        rmrf(normjoin(outdr,cfg['master_doc']+'.rest.html'))
+        rmrf(normjoin(outdr,cfg['master_doc']+_rest+'.html'))
     if 'latex' in outtype:
         texfile = next(x for x in os.listdir(outdr) if x.endswith('.tex'))
         os.rename(normjoin(outdr, texfile), outfn)
@@ -1210,7 +1253,7 @@ def rst_pandoc(
 def _indented_default_role_math(filelines):
     """
 
-    .. `x`:
+    .. _`x`:
 
     xlabel:
 
@@ -1739,14 +1782,14 @@ def dorst(
         ):
     r'''
     Default interpreted text role is set to math.
-    The link lines are added to the .rest file or .rest lines
+    The link lines are added to the rest file or rst lines
 
     :param infile: a .rest, .rst, .txt file name or list of lines
 
     :param outfile: None and '-' mean standard out.
 
         If io.StringIO, then the lines are returned.
-        For .rest ``|xxx|`` substitutions for reST link targets
+        ``|xxx|`` substitutions for reST link targets
         in infile are appended if no ``_links_sphinx.rst`` there
 
     :param outinfo: specifies the tool to use.
@@ -1917,7 +1960,7 @@ def dorst(
         if sysout:
             sysout.write(_indented_default_role_math(filelines))
             links_done = False
-            rexincludelinks = re.compile(r'^\.\. include:: (.*)(_links_sphinx.rst)')
+            rexincludelinks = re.compile(r'^\.\. include:: (.*)(_links_sphinx'+_rst+')')
             for x in filelines:
                 #x = '.. include:: _links_sphinx.rst' #1
                 #x = '.. include:: ../_links_sphinx.rst' #2
@@ -1933,12 +1976,12 @@ def dorst(
                         if limg0.startswith('/'):
                             if limg0 == '/': #find linkroot
                                 linkroot = up_dir(lambda x: x.startswith('_links_') or x=='.git',
-                                                  dirname(infile))
-                                linksfilename = normjoin(linkroot, '_links_' + outinfo + '.rst')
+                                                  abspath(dirname(infile)))
+                                linksfilename = normjoin(linkroot, '_links_' + outinfo + _rst)
                             else:
-                                linksfilename = normjoin(limg0, '_links_' + outinfo + '.rst')
+                                linksfilename = normjoin(limg0, '_links_' + outinfo + _rst)
                         else:
-                            linksfilename = normjoin(dirname(infile), limg0, '_links_' + outinfo + '.rst')
+                            linksfilename = normjoin(dirname(infile), limg0, '_links_' + outinfo + _rst)
                         #a/b/_links_docx.rst #1
                         #a/_links_docx.rst #2
                         if exists(linksfilename):
@@ -2155,7 +2198,7 @@ but creates temporary dir for a list of lines infile argument.
     >>> tmpfile = convert_in_tempdir("""
     ... This is re{{'st'.upper()}}
     ...
-    ... .. `xx`:
+    ... .. _`xx`:
     ...
     ... xx:
     ...     text
@@ -2391,7 +2434,7 @@ def rstincluded(
 
     :param fn: file name without path
     :param paths: paths where to look for fn
-    :param withimg: also yield image files, not just other rst files
+    :param withimg: also yield image files, not just other RST files
     :param withrest: rest files are not supposed to be included
 
     ::
@@ -2745,7 +2788,7 @@ def parsegenfile(genpth):
 def _flatten_stpl_includes_it(fn):
     """
     This flattens the .stpl includes
-    to have all targets align to those in the .rest file.
+    to have all targets align to those in the RST file.
     Targets must be *explicit* in all ``.stpl`` and ``.tpl``,
     i.e. they must not be created by stpl code.
     This is needed to make the .tags jump to the original
@@ -2927,7 +2970,7 @@ class RstFile:
 
         Contains the targets for a ``.rst`` or ``.rest`` file.
 
-        :param reststem: .rest file this doc belongs to (without extension)
+        :param reststem: rest file this doc belongs to (without extension)
         :param doc: doc belonging to reststem,
             either included or itself (.rest, .rst, .stpl)
         :param tgts: list of Tgt objects yielded by |dcx.RstFile.make_tgts|.
@@ -2983,7 +3026,7 @@ class RstFile:
 
         Yields ``((line index, tag address), target, link name)``
         of ``lns`` of a restructureText file.
-        For a .stpl file the linkname comes from the generated .rest file.
+        For a .stpl file the linkname comes from the generated RST file.
 
         :param lns: lines of the document
         :param doc: the rst/rest document for tags
@@ -3058,12 +3101,12 @@ class Fldr(OrderedDict):
             self,
             folder,
             linkroot,
-            scanroot = g_scanroot
+            scanroot='.'
             ):
         """
         Represents a directory.
 
-        It is an ordered list of {rst file: RstFile object}.
+        It is an ordered list of {rest file: RstFile object}.
 
         :self.folder: is the directory path
         :self.linkroot: is the directory relative to which links are made
@@ -3110,7 +3153,7 @@ class Fldr(OrderedDict):
         for afs in reversed(sorted(fs)):
             fullpth = normjoin(self.folder, afs).replace("\\", "/")
             if is_rest(afs):
-                if afs.startswith('index.rest'):
+                if afs.startswith('index'+_rest):
                     sphinx_index = afs
                     continue
                 fullpth_nostpl = fullpth.replace(_stpl, '')
@@ -3143,6 +3186,7 @@ class Fldr(OrderedDict):
                 continue
             pths.append(pth)
 
+        assert pths, "No file for "+restfile+" due to excluded " + str(exclude_paths_substrings)
         reststem = pths[0]
         reststem = stem(stem(reststem))
         if reststem not in self.rest_counters:
@@ -3253,7 +3297,7 @@ class Fldr(OrderedDict):
                     add_tgt(tgt, _traceability_instance.tracehtmltarget)
         for linktype, linklines in linkfiles:
             with opnappend(normjoin(self.linkroot,
-                                   '_links_%s.rst' % linktype)) as f:
+                                   '_links_'+linktype+_rst)) as f:
                 f.write('\n'.join(linklines))
         ctags_python = ""
         try:
@@ -3272,7 +3316,7 @@ class Fldr(OrderedDict):
 class Fldrs(OrderedDict):
     def __init__(
             self,
-            scanroot=g_scanroot
+            scanroot='.'
             ):
         """
         Represents a directory hierarchy below ``scanroot``.
@@ -3308,15 +3352,15 @@ class Fldrs(OrderedDict):
                         linkroot = njp
                         for linktype in g_links_types:
                             with opnwrite(normjoin(linkroot,
-                                   '_links_%s.rst' % linktype)) as f:
+                                   '_links_'+linktype+_rst)) as f:
                                 f.write('.. .. .. %s'%linkroot)
                             rmrf(normjoin(self.scanroot, '.tags'))
 
 def links_and_tags(
-    scanroot = g_scanroot
+    scanroot='.'
     ):
     '''
-    Creates _links_xxx.rst`` files and a ``.tags``.
+    Creates ``_links_xxx.rst`` files and a ``.tags``.
 
     :param scanroot: directory for which to create links and tags
 
@@ -3667,7 +3711,7 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid):
     try:
         AAA = pdtid(pdtfile)
     except:
-        if not pdtfile.endswith('index.rest.stpl'):
+        if not pdtfile.endswith('index'+_rest+'.stpl'):
             print("Maybe OK: pdt id (3,upper,base36) not found in path ", pdtfile)
         return
     pdtfn = base(pdtfile)
@@ -3786,7 +3830,7 @@ try:
             for anext in 'tikz svg dot uml pyg eps'.split():
                 source=tskgen.path.ant_glob('**/*.'+anext,excl=bldpth+"/**")
                 tskgen.bld(name='build '+anext, source=[x for x in source if _traceability_file not in x.abspath()])
-            tskgen.bld(name='build all rest', source=tskgen.path.ant_glob('**/*.rest',excl=bldpth+"/**"))
+            tskgen.bld(name='build all rest', source=tskgen.path.ant_glob('**/*'+_rest,excl=bldpth+"/**"))
 
     def render_stpl(tsk, bld):
         bldpath = bld.path.get_bld().abspath()
@@ -3877,7 +3921,7 @@ try:
         def run(self):
             pygpng(self.inputs[0].abspath(), self.outputs[0].abspath())
 
-    @TaskGen.extension(_rest)
+    @TaskGen.extension(_get_rstrest())
     def docs_taskgen(tskgen, node):
         docs = get_docs_param(tskgen.bld)
         d = get_files_in_doc(tskgen.path, node)
@@ -3890,7 +3934,7 @@ try:
             bldpath = tskgen.path.get_bld()
             return bldpath.find_or_declare(normjoin(doctgt,relnode))
 
-        if node.name != "index.rest":
+        if node.name != "index"+_rest:
             for doctgt in docs:
                 if doctgt.startswith('sphinx_'):
                     continue
@@ -3964,6 +4008,8 @@ or any other of http://www.sphinx-doc.org/en/master/usage/builders"""
         root=cfg.path.abspath()
         config = conf_py(root)
         cfg.env['DPI'] = str(config.get('DPI', DPI))
+        cfg.env['rstrest'] = _get_rstrest()
+        assert isinstance(cfg.env['rstrest'],str)
         #VERSION
         try: # repo?
             from git import Repo
@@ -3985,6 +4031,8 @@ or any other of http://www.sphinx-doc.org/en/master/usage/builders"""
                 cfg.env['VERSION'] = '0.0.0'
 
     def build(bld):
+        _set_rstrest(bld.env['rstrest'])
+
         bld.src2bld = lambda f: bld(
             features='subst', source=f, target=f, is_copy=True)
 
@@ -6360,7 +6408,6 @@ def tree(
 
     return '\n'.join(_tree(rootdir, ''))
 
-
 def initroot(
         rootfldr
         ,sampletype
@@ -6374,6 +6421,16 @@ def initroot(
     See ``example_rest_tree``, ``example_stpl_subtree``, ``example_ipdt_tree``, ``example_over_tree`` in dcx.py.
 
     '''
+
+    def _replace_rstrest(instr):
+        if _rest == '.rst':
+            #>instr='x.rst y.rest z.rst'
+            instr = instr.replace('.rst','.rrrr')
+            instr = instr.replace('.rest','.rst')
+            instr = instr.replace('.rrrr','.rest')
+            #>instr == 'x.rest y.rst z.rest'
+        return instr
+
 
     thisfile = __file__.replace('\\', '/')
     tex_ref = normjoin(dirname(thisfile), 'reference.tex')
@@ -6391,6 +6448,7 @@ def initroot(
         example_tree=example_over_tree
     else:
         example_tree=example_rest_tree
+    example_tree = _replace_rstrest(example_tree)
     inittree = [
         l for l in example_tree.replace(
             '__dcx__', thisfile).replace(
@@ -6406,14 +6464,13 @@ def initroot(
                            [0]] + insertlns + origlns[list(
                                rindices(stop, origlns))[0]:]
         inittree = _replace_lines(inittree, '├ index.rest', '├ egtikz.tikz',
-                                  example_stpl_subtree.lstrip('\n').splitlines())
+                                  _replace_rstrest(example_stpl_subtree).lstrip('\n').splitlines())
     mkdir(rootfldr)
     with new_cwd(rootfldr):
         mktree(inittree)
 
-
 def index_dir(
-    root=g_scanroot
+    root='.'
     ):
     '''
     Index a directory.
@@ -6566,6 +6623,12 @@ def main(**args):
         parser = argparse.ArgumentParser(description=description,
                           formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument(
+            '--rstrest',
+            dest='rstrest',
+            action='store_true',
+            default=False,
+            help='For the sample projects, make .rst main files and .rest included, reversing default.')
+        parser.add_argument(
             '--rest',
             dest='restroot',
             action='store',
@@ -6631,13 +6694,18 @@ to define variables that can be used in templates."""
         code = '\n'.join(args['code'])
         eval(compile(code, '<string>', 'exec'), globals())
 
+    _chk_rstrest = lambda :'stplroot' in args and args['rstrest'] and _set_rstrest('.rst')
     if 'stplroot' in args and args['stplroot']:
+        _chk_rstrest()
         initroot(args['stplroot'], 'stpl')
     elif 'restroot' in args and args['restroot']:
+        _chk_rstrest()
         initroot(args['restroot'], 'rest')
     elif 'ipdtroot' in args and args['ipdtroot']:
+        _chk_rstrest()
         initroot(args['ipdtroot'], 'ipdt')
     elif 'overroot' in args and args['overroot']:
+        _chk_rstrest()
         initroot(args['overroot'], 'over')
     elif 'pygrep' in args and args['pygrep']:
         for f,i,l in grep(args['pygrep']):
@@ -6681,7 +6749,14 @@ to define variables that can be used in templates."""
         for i,o in zip(infiles,outfiles):
             convert(i,o,outinfo)
     else:
-        index_dir(g_scanroot)
+        myroot = up_dir(lambda x: x=='.git')
+        if myroot:
+            with new_cwd(myroot):
+                _get_rstrest()
+                index_dir()
+                return
+        _get_rstrest()
+        index_dir()
 
 if __name__ == '__main__':
     main()

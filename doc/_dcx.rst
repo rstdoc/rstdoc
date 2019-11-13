@@ -28,7 +28,7 @@ which
 
   ``.. include:: /_links_sphinx.rst``, with the one initial ``/``
   instead of a relative or absolute path,
-  will automatically search upward for the ``_link_xxx.rst`` file
+  will automatically search upward for the ``_links_xxx.rst`` file
   (``_sphinx`` is replaced by what is needed by the wanted target).
 
 - forwards known files to either Pandoc, Sphinx or Docutils
