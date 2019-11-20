@@ -44,6 +44,12 @@ import re
 import sys
 import codecs
 import numpy as np
+
+try:
+    import txdir
+except:
+    txdir = None
+
 try:
     from rstdoc.retable import title_some
 except:
@@ -480,13 +486,13 @@ rexsubtgt = re.compile(
 rextitle = re.compile(r'^([!"#$%&\'()*+,\-./:;<=>?@[\]^_`{|}~])\1+$')
 #rextitle.match('===')
 #rextitle.match('==')
-#rextitle.match('=')#NO
+#rextitle.match('=') #NO
 
 rexitem = re.compile(r'^\s*:?\**(\w[^:\*]*)\**:\s*.*$')
 #rexitem.match(":linkname: words").groups()[0]
 #rexitem.match("linkname: words").groups()[0]
 #rexitem.match("a linkname: words").groups()[0]
-#rexitem.match("``a`` linkname: words")#NO
+#rexitem.match("``a`` linkname: words") #NO
 
 rexoneword = re.compile(r'^\s*(\w+)\s*$')
 rexname = re.compile(r'^\s*:name:\s*(\w.*)*$')
@@ -513,10 +519,10 @@ rexkw = re.compile(r'^\s*(\.\. {|%?\s*{*_+[0-Z]+_*\()|^\s*:[0-Z]+:\s')
 rexkwsplit = re.compile(r'[\W_]+')
 
 rextrace_target_id=re.compile("^[^-_]\w+$")
-#rextrace_target_id.match("_000")#NO
-#rextrace_target_id.match("-000")#NO
-#rextrace_target_id.match("sd 00")#NO
-#rextrace_target_id.match("a-d-00")#NO
+#rextrace_target_id.match("_000") #NO
+#rextrace_target_id.match("-000") #NO
+#rextrace_target_id.match("sd 00") #NO
+#rextrace_target_id.match("a-d-00") #NO
 #rextrace_target_id.match("A_d_00")
 #rextrace_target_id.match("sD00")
 #rextrace_target_id.match("000")
@@ -5444,7 +5450,7 @@ example_ipdt_tree = r'''
                 
                 
                 .. _`p000grouping`:
-                %__p000_('Grouping')############################################################
+                %__p000_('Grouping') ############################################################
                 
                 .. _`p000headers`:
                 %__p000('headers')
@@ -6236,177 +6242,6 @@ example_over_tree = r'''
 
      .. include:: /_links_sphinx.rst'''
 
-def mktree(treelist,rootdir=None):
-    '''
-    Build a directory tree from a string as returned by the tree tool.
-
-    :param treelist: tree string as list of lines
-
-    The level is determined by the identation.
-
-    This is not thread-safe.
-
-    Leafs:
-
-    - ending in ``/`` or ``\\`` to make a directory leaf
-
-    - starting with ``/`` to make a symlink to the file (``/path/relative/to/cwd``).
-      Append ``<- othername`` if link has another name.
-
-    - ``<<`` to copy file from internet using ``http://`` or locally using ``file:///``
-
-    - use indented lines as file content
-
-    Example::
-
-        >>> treelist="""
-        ...          a
-        ...          ├/b/e/f.txt
-        ...          ├aa.txt
-        ...            this is aa
-        ...          └u.txt<<http://docutils.sourceforge.net/docs/user/rst/quickstart.txt
-        ...          b
-        ...          ├c
-        ...          │└d/
-        ...          ├u
-        ...          │└/b/e
-        ...          ├e
-        ...          │└f.txt
-        ...          └g.txt
-        ...            this is g
-        ...       """.splitlines()
-        >>> #mktree(treelist)
-
-    '''
-
-    if not rootdir:
-        rootdir = cwd()
-    for treestart, t in enumerate(treelist):
-        try:
-            ct = re.search(r'[^\s├│└]', t).span()[0]
-            break
-        except:
-            continue
-    t1 = [t[ct:] for t in treelist[treestart:]]
-    entry_re = re.compile(r'^(\w[^ </\\]*)(\s*<<\s*|\s*[\\/]\s*)*(\w.*)*')
-    entry_ = re.compile(r'^(/?\w[^ </\\]*)(\s*<<\s*|\s*[\\/]\s*)*(\w.*)*')
-    it1 = list(rindices(entry_, t1))
-    lt1 = len(t1)
-    it1.append(lt1)
-    for c, f in intervals(it1):
-        file_entry = t1[c]
-        try:
-            ef, ed, eg = entry_re.match(file_entry).groups()
-        except:
-            lnsrc = rootdir+file_entry
-            lndst = base(lnsrc)
-            try:
-                _,lndst = lndst.split('<-')
-                lnsrc,_ = lnsrc.split('<-')
-            except: pass
-            lnsrc = relpath(lnsrc.strip(),start=cwd())
-            try:
-                os.symlink(lnsrc,lndst.strip())
-            except: pass
-            continue
-        if ef:
-            if c < f - 1:
-                p1 = t1[c + 1].find('└') + 1
-                p2 = t1[c + 1].find('├') + 1
-                ix = (p1 >= 0 and p1 or p2) - 1
-                if ix >= 0 and ix <= len(ef):
-                    mkdir(ef)
-                    with new_cwd(ef):
-                        mktree(t1[c + 1:f],rootdir)
-                else:
-                    t0 = t1[c + 1:f]
-                    try:
-                        ct = re.search(r'[^\s│]', t0[0]).span()[0]
-                    except:
-                        print(c, f, '\n'.join(t0[:10]))
-                        print("FIRST LINE OF FILE CONTENT MUST NOT BE EMPTY!")
-                    tt = [t[ct:] + '\n' for t in t0]
-                    with opnwrite(ef) as fh:
-                        fh.writelines(tt)
-            elif eg:
-                try:
-                    request.urlretrieve(eg, ef)
-                except Exception as err:
-                    print("Error ", err)
-            elif ed and (('\\' in ed) or ('/' in ed)):
-                mkdir(ef)
-            else:
-                with opnwrite(ef) as f:
-                    f.write('')
-
-
-def tree(
-         path
-         ,with_content=False
-         ,with_files=True
-         ,with_dot_files=True
-         ,max_depth=100
-         ,entryprefix = ['├ ', '└ '] #├─ └─ not understood by mktree
-         ,subprefix = ['│  ', '   ']
-         ):
-    '''
-    Inverse of mktree.
-    Like the linux tree tool, but optionally with content of files
-
-    :param path: path of which to create the tree string
-    :param with_content: use this only if all the files are text
-    :param with_files: else only directories are listed
-    :param with_dot_files: also include files starting with .
-    :param max_depth: max directory depth to list
-    :param entryprefix: prefix for entries
-    :param subprefix: prefix for sub-entries
-
-    ::
-
-        >>> path = dirname(__file__)
-        >>> tree(path,False,max_depth=1).startswith('├')
-        True
-
-    '''
-
-    rootdir = path
-
-    def _tree(path, prefix):
-        for p, ds, fs in os.walk(path):
-            # p, ds, fs = path, [], os.listdir()
-            lends = len(ds)
-            lenfs = len(fs)
-            if len(prefix) / 3 >= max_depth:
-                return
-            for i, d in enumerate(sorted(ds)):
-                ie = lends + lenfs - 1
-                pd = normjoin(p, d)
-                if islink(pd):
-                    linkto = normjoin(p,os.readlink(pd))
-                    print(linkto,rootdir)
-                    linkto = relpath(linkto,start=rootdir)
-                    yield prefix + entryprefix[i == ie] + '/'+linkto+' <- '+d
-                    continue
-                yield prefix + entryprefix[i == ie] + d
-                yield from _tree(pd, prefix + subprefix[i == ie])
-            del ds[:]
-            if with_files:
-                for i, f in enumerate(sorted(fs)):
-                    pf = normjoin(p, f)
-                    if with_dot_files or not f.startswith('.'):
-                        if islink(pf):
-                            linkto = normjoin(p,os.readlink(pf))
-                            print(linkto,rootdir)
-                            linkto = relpath(linkto,start=rootdir)
-                            yield prefix + entryprefix[i == lenfs - 1] + '/'+linkto+' <- '+f
-                            continue
-                        yield prefix + entryprefix[i == lenfs - 1] + f
-                        if with_content:
-                            lns = _read_lines(pf)
-                            for ln in lns:
-                                yield prefix + subprefix[1] + ln
-
-    return '\n'.join(_tree(rootdir, ''))
 
 def initroot(
         rootfldr
@@ -6422,6 +6257,9 @@ def initroot(
 
     '''
 
+    if txdir is None:
+        return
+
     def _replace_rstrest(instr):
         if _rest == '.rst':
             #>instr='x.rst y.rest z.rst'
@@ -6431,12 +6269,12 @@ def initroot(
             #>instr == 'x.rest y.rst z.rest'
         return instr
 
-
     thisfile = __file__.replace('\\', '/')
-    tex_ref = normjoin(dirname(thisfile), 'reference.tex')
-    docx_ref = normjoin(dirname(thisfile), 'reference.docx')
-    odt_ref = normjoin(dirname(thisfile), 'reference.odt')
-    wafw = normjoin(dirname(thisfile), 'wafw.py')
+    thisdir = dirname(thisfile)
+    tex_ref = normjoin(thisdir, 'reference.tex')
+    docx_ref = normjoin(thisdir, 'reference.docx')
+    odt_ref = normjoin(thisdir, 'reference.odt')
+    wafw = normjoin(thisdir, 'wafw.py')
     if sampletype == 'ipdt':
         imglines = example_rest_tree.splitlines()
         imglines = imglines[
@@ -6467,7 +6305,7 @@ def initroot(
                                   _replace_rstrest(example_stpl_subtree).lstrip('\n').splitlines())
     mkdir(rootfldr)
     with new_cwd(rootfldr):
-        mktree(inittree)
+        txdir.view_to_tree(inittree)
 
 def index_dir(
     root='.'
@@ -6698,16 +6536,21 @@ to define variables that can be used in templates."""
     if 'stplroot' in args and args['stplroot']:
         _chk_rstrest()
         initroot(args['stplroot'], 'stpl')
+        return
     elif 'restroot' in args and args['restroot']:
         _chk_rstrest()
         initroot(args['restroot'], 'rest')
+        return
     elif 'ipdtroot' in args and args['ipdtroot']:
         _chk_rstrest()
         initroot(args['ipdtroot'], 'ipdt')
+        return
     elif 'overroot' in args and args['overroot']:
         _chk_rstrest()
         initroot(args['overroot'], 'over')
-    elif 'pygrep' in args and args['pygrep']:
+        return
+
+    if 'pygrep' in args and args['pygrep']:
         for f,i,l in grep(args['pygrep']):
             print('"{}":{} {}'.format(f,i,l))
     elif 'kw' in args and args['kw']:

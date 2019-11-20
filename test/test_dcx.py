@@ -25,7 +25,14 @@ sys.path = ['test/mocks'] + sys.path
 import pytest
 import re
 from rstdoc.dcx import *
+from txdir import tree_to_view
 import time
+
+def ttv(*a,**ka):
+    res = '\n'.join(tree_to_view(*a,with_content=False,**ka))
+    res = res.replace('├─ ','├ ').replace('└─ ','└ ').replace('│  ','│ ').replace('   ','  ')
+
+    return res
 
 '''
 
@@ -238,74 +245,74 @@ def test_init(rstinit):
     '''
 
     if 'tmp_ipdt' in rstinit:
-        assert tree('.')=="""\
-├ c
-│  └ some.h
-├ pdt
-│  ├ 000
-│  │  ├ d.rest.stpl
-│  │  ├ gen
-│  │  ├ i.rest.stpl
-│  │  ├ p.rest.stpl
-│  │  ├ repo.pyg
-│  │  └ t.rest.stpl
-│  ├ 001
-│  │  ├ egcairo.pyg
-│  │  ├ egdot.dot.stpl
-│  │  ├ egeps.eps
-│  │  ├ egother.pyg
-│  │  ├ egplt.pyg
-│  │  ├ egpygal.pyg
-│  │  ├ egpyx.pyg
-│  │  ├ egsvg.svg.stpl
-│  │  ├ egtikz.tikz
-│  │  ├ egtikz1.tikz
-│  │  ├ eguml.uml
-│  │  ├ i.rest.stpl
-│  │  ├ i_diagrams.tpl
-│  │  ├ i_included.rst
-│  │  ├ i_included.rst.stpl
-│  │  ├ i_math.tpl
-│  │  └ i_tables.rst
-│  ├ conf.py
-│  ├ docutils.conf
-│  ├ index.rest.stpl
-│  └ pdt.rst.tpl
+        assert set(ttv('.').splitlines())==set("""\
+├ c/
+│ └ some.h
+├ pdt/
+│ ├ 000/
+│ │ ├ d.rest.stpl
+│ │ ├ gen
+│ │ ├ i.rest.stpl
+│ │ ├ p.rest.stpl
+│ │ ├ repo.pyg
+│ │ └ t.rest.stpl
+│ ├ 001/
+│ │ ├ egcairo.pyg
+│ │ ├ egdot.dot.stpl
+│ │ ├ egeps.eps
+│ │ ├ egother.pyg
+│ │ ├ egplt.pyg
+│ │ ├ egpygal.pyg
+│ │ ├ egpyx.pyg
+│ │ ├ egsvg.svg.stpl
+│ │ ├ egtikz.tikz
+│ │ ├ egtikz1.tikz
+│ │ ├ eguml.uml
+│ │ ├ i.rest.stpl
+│ │ ├ i_diagrams.tpl
+│ │ ├ i_included.rst
+│ │ ├ i_included.rst.stpl
+│ │ ├ i_math.tpl
+│ │ └ i_tables.rst
+│ ├ conf.py
+│ ├ docutils.conf
+│ ├ index.rest.stpl
+│ └ pdt.rst.tpl
 ├ waf
 ├ waf.bat
 ├ wafw.py
-└ wscript"""
+└ wscript""".splitlines())
     elif 'tmp_stpl' in rstinit:
-        assert tree('.')=="""\
-├ build
-├ doc
-│  ├ _images
-│  ├ dd.rest.stpl
-│  ├ dd_diagrams.tpl
-│  ├ dd_included.rst.stpl
-│  ├ dd_math.tpl
-│  ├ dd_tables.rst
-│  ├ egcairo.pyg
-│  ├ egdot.dot.stpl
-│  ├ egeps.eps
-│  ├ egother.pyg
-│  ├ egplt.pyg
-│  ├ egpygal.pyg
-│  ├ egpyx.pyg
-│  ├ egsvg.svg.stpl
-│  ├ egtikz.tikz
-│  ├ egtikz1.tikz
-│  ├ eguml.uml
-│  ├ gen
-│  ├ index.rest
-│  ├ model.py
-│  ├ ra.rest.stpl
-│  ├ sr.rest.stpl
-│  ├ sy.rest.stpl
-│  ├ tp.rest.stpl
-│  └ utility.rst.tpl
-├ tmp_stpl
-│  └ some.h
+        assert set(ttv('.').splitlines())==set("""\
+├ build/
+├ doc/
+│ ├ _images/
+│ ├ dd.rest.stpl
+│ ├ dd_diagrams.tpl
+│ ├ dd_included.rst.stpl
+│ ├ dd_math.tpl
+│ ├ dd_tables.rst
+│ ├ egcairo.pyg
+│ ├ egdot.dot.stpl
+│ ├ egeps.eps
+│ ├ egother.pyg
+│ ├ egplt.pyg
+│ ├ egpygal.pyg
+│ ├ egpyx.pyg
+│ ├ egsvg.svg.stpl
+│ ├ egtikz.tikz
+│ ├ egtikz1.tikz
+│ ├ eguml.uml
+│ ├ gen
+│ ├ index.rest
+│ ├ model.py
+│ ├ ra.rest.stpl
+│ ├ sr.rest.stpl
+│ ├ sy.rest.stpl
+│ ├ tp.rest.stpl
+│ └ utility.rst.tpl
+├ tmp_stpl/
+│ └ some.h
 ├ Makefile
 ├ conf.py
 ├ dcx.py
@@ -316,101 +323,101 @@ def test_init(rstinit):
 ├ waf
 ├ waf.bat
 ├ wafw.py
-└ wscript"""
+└ wscript""".splitlines())
     elif 'tmp_rest' in rstinit:
-        assert tree('.')=="""\
-├ build
-├ doc
-│  ├ _images
-│  ├ dd.rest
-│  ├ egcairo.pyg
-│  ├ egdot.dot.stpl
-│  ├ egeps.eps
-│  ├ egother.pyg
-│  ├ egplt.pyg
-│  ├ egpygal.pyg
-│  ├ egpyx.pyg
-│  ├ egsvg.svg.stpl
-│  ├ egtikz.tikz
-│  ├ egtikz1.tikz
-│  ├ eguml.uml
-│  ├ gen
-│  ├ index.rest
-│  ├ ra.rest
-│  ├ sr.rest
-│  └ tp.rest
-├ tmp_rest
-│  └ some.h
+        assert set(ttv('.').splitlines())==set("""\
 ├ Makefile
+├ build/
 ├ conf.py
 ├ dcx.py
+├ doc/
+│ ├ _images/
+│ ├ dd.rest
+│ ├ egcairo.pyg
+│ ├ egdot.dot.stpl
+│ ├ egeps.eps
+│ ├ egother.pyg
+│ ├ egplt.pyg
+│ ├ egpygal.pyg
+│ ├ egpyx.pyg
+│ ├ egsvg.svg.stpl
+│ ├ egtikz.tikz
+│ ├ egtikz1.tikz
+│ ├ eguml.uml
+│ ├ gen
+│ ├ index.rest
+│ ├ ra.rest
+│ ├ sr.rest
+│ └ tp.rest
 ├ docutils.conf
 ├ reference.docx
 ├ reference.odt
 ├ reference.tex
+├ tmp_rest/
+│ └ some.h
 ├ waf
 ├ waf.bat
 ├ wafw.py
-└ wscript"""
+└ wscript""".splitlines())
     elif 'tmp_over' in rstinit:
-        assert tree('.')=="""\
-├ dev
-│  ├ hw
-│  │  ├ casing
-│  │  │  ├ scad
-│  │  │  ├ test
-│  │  │  │  └ stability.rest
-│  │  │  └ plan.rest
-│  │  ├ pcb1
-│  │  │  ├ test
-│  │  │  ├ pcb1.sch
-│  │  │  └ plan.rest
-│  │  └ test
-│  ├ issues
-│  │  ├ issue1.rest
-│  │  └ issue2.rest
-│  ├ sw
-│  │  ├ android
-│  │  │  ├ app
-│  │  │  ├ testapp
-│  │  │  └ plan.rest
-│  │  ├ fw
-│  │  │  ├ controller1
-│  │  │  │  └ C
-│  │  │  │     └ init.c
-│  │  │  ├ test
-│  │  │  └ plan.rest
-│  │  └ test
-│  └ test
-├ doc
-│  ├ index.rest
-│  └ tutorial.rest
-├ org
-│  ├ contributor
-│  │  └ c1
-│  │     ├ log
-│  │     │  └ 2019.rest
-│  │     └ assigned.rest
-│  ├ discussion
-│  │  └ topic1.rest
-│  ├ mediation
-│  │  └ conflict1.rest
-│  └ process
-│     └ SOP
-│        └ purchase.rest
-├ pdt
-│  └ 000
-│     ├ do.rest
-│     ├ info.rest
-│     ├ plan.rest
-│     └ test.rest
+        assert set(ttv('.').splitlines())==set("""\
+├ dev/
+│ ├ hw/
+│ │ ├ casing/
+│ │ │ ├ plan.rest
+│ │ │ ├ scad/
+│ │ │ └ test/
+│ │ │   └ stability.rest
+│ │ ├ pcb1/
+│ │ │ ├ pcb1.sch
+│ │ │ ├ plan.rest
+│ │ │ └ test/
+│ │ └ test/
+│ ├ issues/
+│ │ ├ issue1.rest
+│ │ └ issue2.rest
+│ ├ sw/
+│ │ ├ android/
+│ │ │ ├ app/
+│ │ │ ├ plan.rest
+│ │ │ └ testapp/
+│ │ ├ fw/
+│ │ │ ├ controller1/
+│ │ │ │ └ C/
+│ │ │ │   └ init.c
+│ │ │ ├ plan.rest
+│ │ │ └ test/
+│ │ └ test/
+│ └ test/
+├ doc/
+│ ├ index.rest
+│ └ tutorial.rest
+├ org/
+│ ├ contributor/
+│ │ └ c1/
+│ │   ├ assigned.rest
+│ │   └ log/
+│ │     └ 2019.rest
+│ ├ discussion/
+│ │ └ topic1.rest
+│ ├ mediation/
+│ │ └ conflict1.rest
+│ └ process/
+│   └ SOP/
+│     └ purchase.rest
+├ pdt/
+│ └ 000/
+│   ├ do.rest
+│   ├ info.rest
+│   ├ plan.rest
+│   └ test.rest
 ├ contribution.rest
 ├ index.rest
 ├ readme.rest
 ├ waf
 ├ waf.bat
 ├ wafw.py
-└ wscript"""
+└ wscript""".splitlines())
 
 def test_dcx_alone_samples(rstinit):
     '''
@@ -580,7 +587,7 @@ def makebuild(request,rstinit):
     os.chdir(oldd)
 
 def tree3(x):
-    tres = tree(x,with_dot_files=False,max_depth=3)
+    tres = ttv(x,with_dot=False,maxdepth=3)
     return tres
 
 def test_make_samples(makebuild):
@@ -594,84 +601,84 @@ def test_make_samples(makebuild):
         return
     elif 'tmp_rest' in dr:
         expected_no_html="""\
-├ doc
-│  └ {0}
-│     ├ dd.{0}
-│     ├ ra.{0}
-│     ├ sr.{0}
-│     └ tp.{0}
-└ tmp_rest
-   └ some_tst.c"""
+├ doc/
+│ └ {0}/
+│   ├ dd.{0}
+│   ├ ra.{0}
+│   ├ sr.{0}
+│   └ tp.{0}
+└ tmp_rest/
+  └ some_tst.c"""
         if target in ['docx','pdf']:
             expected=expected_no_html.format(target)
         elif target=='html':
             expected="""\
-├ doc
-│  ├ doctrees
-│  │  ├ dd.doctree
-│  │  ├ environment.pickle
-│  │  ├ index.doctree
-│  │  ├ ra.doctree
-│  │  ├ sr.doctree
-│  │  └ tp.doctree
-│  └ html
-│     ├ _images
-│     ├ _sources
-│     ├ _static
-│     ├ _traceability_file.svg
-│     ├ dd.html
-│     ├ genindex.html
-│     ├ index.html
-│     ├ objects.inv
-│     ├ ra.html
-│     ├ search.html
-│     ├ searchindex.js
-│     ├ sr.html
-│     └ tp.html
-└ tmp_rest
-   └ some_tst.c"""
+├ doc/
+│ ├ doctrees/
+│ │ ├ dd.doctree
+│ │ ├ environment.pickle
+│ │ ├ index.doctree
+│ │ ├ ra.doctree
+│ │ ├ sr.doctree
+│ │ └ tp.doctree
+│ └ html/
+│   ├ _images/
+│   ├ _sources/
+│   ├ _static/
+│   ├ _traceability_file.svg
+│   ├ dd.html
+│   ├ genindex.html
+│   ├ index.html
+│   ├ objects.inv
+│   ├ ra.html
+│   ├ search.html
+│   ├ searchindex.js
+│   ├ sr.html
+│   └ tp.html
+└ tmp_rest/
+  └ some_tst.c"""
         assert tree3(makebuild[0])==expected
     elif 'tmp_stpl' in dr:
         expected_no_html="""\
-├ doc
-│  └ {0}
-│     ├ dd.{0}
-│     ├ ra.{0}
-│     ├ sr.{0}
-│     ├ sy.{0}
-│     └ tp.{0}
-└ tmp_stpl
-   └ some_tst.c"""
+├ doc/
+│ └ {0}/
+│   ├ dd.{0}
+│   ├ ra.{0}
+│   ├ sr.{0}
+│   ├ sy.{0}
+│   └ tp.{0}
+└ tmp_stpl/
+  └ some_tst.c"""
         if target in ['docx','pdf']:
             expected=expected_no_html.format(target)
         elif target=='html':
             expected="""\
-├ doc
-│  ├ doctrees
-│  │  ├ dd.doctree
-│  │  ├ environment.pickle
-│  │  ├ index.doctree
-│  │  ├ ra.doctree
-│  │  ├ sr.doctree
-│  │  ├ sy.doctree
-│  │  └ tp.doctree
-│  └ html
-│     ├ _images
-│     ├ _sources
-│     ├ _static
-│     ├ _traceability_file.svg
-│     ├ dd.html
-│     ├ genindex.html
-│     ├ index.html
-│     ├ objects.inv
-│     ├ ra.html
-│     ├ search.html
-│     ├ searchindex.js
-│     ├ sr.html
-│     ├ sy.html
-│     └ tp.html
-└ tmp_stpl
-   └ some_tst.c"""
+├ doc/
+│ ├ doctrees/
+│ │ ├ dd.doctree
+│ │ ├ environment.pickle
+│ │ ├ index.doctree
+│ │ ├ ra.doctree
+│ │ ├ sr.doctree
+│ │ ├ sy.doctree
+│ │ └ tp.doctree
+│ └ html/
+│   ├ _images/
+│   ├ _sources/
+│   ├ _static/
+│   ├ _traceability_file.svg
+│   ├ dd.html
+│   ├ genindex.html
+│   ├ index.html
+│   ├ objects.inv
+│   ├ ra.html
+│   ├ search.html
+│   ├ searchindex.js
+│   ├ sr.html
+│   ├ sy.html
+│   └ tp.html
+└ tmp_stpl/
+  └ some_tst.c"""
         assert tree3(makebuild[0])==expected
 
 waf_some = ['docx','odt','pdf','html','latex',
@@ -707,93 +714,93 @@ def test_waf_samples(wafbuild):
         extra = ''
     if 'tmp_over' in drw:
         expected_non_sphinx="""\
-├ dev
-│  ├ hw
-│  │  ├ casing
-│  │  └ pcb1
-│  ├ issues
-│  │  ├ issue1.{0}
-│  │  └ issue2.{0}
-│  └ sw
-│     ├ android
-│     └ fw
-├ doc
-│  └ tutorial.{0}
-├ org
-│  ├ contributor
-│  │  └ c1
-│  ├ discussion
-│  │  └ topic1.{0}
-│  ├ mediation
-│  │  └ conflict1.{0}
-│  └ process
-│     └ SOP
-├ pdt
-│  └ 000
-│     ├ do.{0}
-│     ├ info.{0}
-│     ├ plan.{0}
-│     └ test.{0}
+├ dev/
+│ ├ hw/
+│ │ ├ casing/
+│ │ └ pcb1/
+│ ├ issues/
+│ │ ├ issue1.{0}
+│ │ └ issue2.{0}
+│ └ sw/
+│   ├ android/
+│   └ fw/
+├ doc/
+│ └ tutorial.{0}
+├ org/
+│ ├ contributor/
+│ │ └ c1/
+│ ├ discussion/
+│ │ └ topic1.{0}
+│ ├ mediation/
+│ │ └ conflict1.{0}
+│ └ process/
+│   └ SOP
+├ pdt/
+│ └ 000/
+│   ├ do.{0}
+│   ├ info.{0}
+│   ├ plan.{0}
+│   └ test.{0}
 ├ contribution.{0}
 └ readme.{0}"""
     elif 'tmp_ipdt' in drw:
         expected_non_sphinx="""\
-└ pdt
-   ├ 000
-   │  ├ d.{0}
-   │  ├ i.{0}
-   │  ├ p.{0}
-   │  └ t.{0}
-   └ 001
+└ pdt/
+  ├ 000/
+  │ ├ d.{0}
+  │ ├ i.{0}
+  │ ├ p.{0}
+  │ └ t.{0}
+  └ 001/
       └ i.{0}"""
         if target in waf_non_sphinx:
             expected = expected_non_sphinx.format(ext)
         elif target=='sphinx_html':
             expected="""\
-└ pdt
-   ├ 000
-   │  ├ d.html
-   │  ├ i.html
-   │  ├ p.html
-   │  └ t.html
-   ├ 001
-   │  └ i.html
-   ├ _images
-   │  ├ egcairo.png
-   │  ├ egdot.png
-   │  ├ egeps.png
-   │  ├ egother.png
-   │  ├ egplt.png
-   │  ├ egpygal.png
-   │  ├ egpyx.png
-   │  ├ egsvg.png
-   │  ├ egtikz.png
-   │  ├ egtikz1.png
-   │  ├ eguml.png
-   │  └ repo.png
-   ├ genindex.html
-   ├ index.html
-   ├ _traceability_file.svg
-   └ _traceability_file.png"""
+└ pdt/
+  ├ 000/
+  │ ├ d.html
+  │ ├ i.html
+  │ ├ p.html
+  │ └ t.html
+  ├ 001/
+  │ └ i.html
+  ├ _images/
+  │ ├ egcairo.png
+  │ ├ egdot.png
+  │ ├ egeps.png
+  │ ├ egother.png
+  │ ├ egplt.png
+  │ ├ egpygal.png
+  │ ├ egpyx.png
+  │ ├ egsvg.png
+  │ ├ egtikz.png
+  │ ├ egtikz1.png
+  │ ├ eguml.png
+  │ └ repo.png
+  ├ genindex.html
+  ├ index.html
+  ├ _traceability_file.svg
+  └ _traceability_file.png"""
         elif target=='sphinx_latex':
             expected="""\
-└ pdt
-   ├ Makefile
-   ├ _traceability_file.png
-   ├ egcairo.png
-   ├ egdot.png
-   ├ egeps.png
-   ├ egother.png
-   ├ egplt.png
-   ├ egpygal.png
-   ├ egpyx.png
-   ├ egsvg.png
-   ├ egtikz.png
-   ├ egtikz1.png
-   ├ eguml.png
-   ├ index.tex
-   ├ make.bat
-   └ repo.png"""
+└ pdt/
+  ├ Makefile
+  ├ _traceability_file.png
+  ├ egcairo.png
+  ├ egdot.png
+  ├ egeps.png
+  ├ egother.png
+  ├ egplt.png
+  ├ egpygal.png
+  ├ egpyx.png
+  ├ egsvg.png
+  ├ egtikz.png
+  ├ egtikz1.png
+  ├ eguml.png
+  ├ index.tex
+  ├ make.bat
+  └ repo.png"""
         realout = tree3(target)
         for x in expected.splitlines():
             xchk=x.strip('└│├ ')
@@ -802,65 +809,61 @@ def test_waf_samples(wafbuild):
         is_stpl = 'tmp_stpl' in os.getcwd()
         tmp_xxx = 'tmp_stpl' if is_stpl else 'tmp_rest'
         expected_non_sphinx="""\
-├ c4che
-│  ├ _cache.py
-│  └ build.config.py
-├ build
-├ doc
-│  └ {0}{2}
-│     ├ dd.{1}
-│     ├ ra.{1}
-│     ├ sr.{1}
+├ doc/
+│ └ {0}{2}
+│   ├ dd.{1}
+│   ├ ra.{1}
+│   ├ sr.{1}
 """+("""\
-│     ├ sy.{1}
+│   ├ sy.{1}
 """ if is_stpl else '')+"""\
-│     └ tp.{1}
+│   └ tp.{1}
 ├ {3}
-│  └ some_tst.c
+│ └ some_tst.c
 └ config.log"""
         if target in waf_non_sphinx:
             expected=expected_non_sphinx.format(target,ext,extra,tmp_xxx)
         elif target=='sphinx_latex':
             expected="""\
-├ doc
-│  └ sphinx_latex
-│     ├ Makefile
-│     ├ _traceability_file.png
-│     ├ egcairo.png
-│     ├ egdot.png
-│     ├ egeps.png
-│     ├ egother.png
-│     ├ egplt.png
-│     ├ egpygal.png
-│     ├ egpyx.png
-│     ├ egsvg.png
-│     ├ egtikz.png
-│     ├ egtikz1.png
-│     ├ eguml.png
-│     ├ make.bat
-│     ├ python.ist
-│     ├ index.tex
-├ {}
-│  └ some_tst.c
+├ doc/
+│ └ sphinx_latex/
+│   ├ Makefile
+│   ├ _traceability_file.png
+│   ├ egcairo.png
+│   ├ egdot.png
+│   ├ egeps.png
+│   ├ egother.png
+│   ├ egplt.png
+│   ├ egpygal.png
+│   ├ egpyx.png
+│   ├ egsvg.png
+│   ├ egtikz.png
+│   ├ egtikz1.png
+│   ├ eguml.png
+│   ├ make.bat
+│   ├ python.ist
+│   ├ index.tex
+├ {}/
+│ └ some_tst.c
 └ config.log""".format(tmp_xxx)
         elif target=='sphinx_html':
             expected="""\
-├ doc
-│  └ sphinx_html
-│     ├ _images
-│     ├ _sources
-│     ├ _static
-│     ├ _traceability_file.svg
-│     ├ dd.html
-│     ├ index.html
-│     ├ ra.html
-│     ├ sr.html
+├ doc/
+│ └ sphinx_html/
+│   ├ _images/
+│   ├ _sources/
+│   ├ _static/
+│   ├ _traceability_file.svg
+│   ├ dd.html
+│   ├ index.html
+│   ├ ra.html
+│   ├ sr.html
 """+("""\
-│     ├ sy.html
+│   ├ sy.html
 """ if is_stpl else '')+"""\
-│     └ tp.html
-├ {}
-│  └ some_tst.c
+│   └ tp.html
+├ {}/
+│ └ some_tst.c
 └ config.log""".format(tmp_xxx)
         realout = tree3(drw)
         for x in expected.splitlines():

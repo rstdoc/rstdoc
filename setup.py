@@ -3,6 +3,10 @@
 """
 #install: latex, plantuml, graphviz, inkscape
 
+#pump version:
+doc/conf.py
+rstdoc/_version.py
+
 #test
 rm -rf test/__pycache__
 py.test -vv --doctest-modules --cov=rstdoc --cov-report term-missing
@@ -25,50 +29,18 @@ twine upload ./dist/*.whl
 """
 
 from setuptools import setup
-import os
+from os.path import abspath,dirname,join
 import sys
+from importlib.machinery import SourceFileLoader
 
-#also change ing doc/conf.py
-__version__ = '1.7.4'
+here = abspath(dirname(__file__))
 
-try:
-    sys.path.append('./rstdoc')
-    from dcx import dorst
-except:
-    try:
-        from rstdoc.dcx import dorst
-    except:
-        def dorst(linelist):
-            return linelist
+_version = SourceFileLoader("_version", join(here,'rstdoc','_version.py')).load_module()
 
-def read(fname, separator='\n"""'):
-    with open(os.path.join(os.path.dirname(__file__), fname),
-              encoding='utf-8') as f:
-        return f.read().split(separator)[1]
-
-
-long_description = '\n'.join([
-    open('readme.rst').read(),
-    read('rstdoc/dcx.py'),
-    read('rstdoc/dcx.py', separator="'''\\").split("'''")[0],
-    read('rstdoc/fromdocx.py'),
-    read('rstdoc/listtable.py'),
-    read('rstdoc/untable.py'),
-    read('rstdoc/reflow.py'),
-    read('rstdoc/reimg.py'),
-    read('rstdoc/retable.py')
-    ])
-
-long_description = ''.join([x for i,x in enumerate(
-                        dorst(long_description.splitlines()))
-                        if not x.startswith('.. _`') and i>0])
-
-##to check with ``restview --pypi-strict long_description.rst``
-#with open('long_description.rst','w',encoding='utf-8') as f:
-#    f.write(long_description)
+long_description = SourceFileLoader("long_description", join(here,'long_description.py')).load_module()
 
 setup(name='rstdoc',
-      version=__version__,
+      version=_version.__version__,
       description='rstdoc - support documentation in restructedText (rst)',
       license='MIT',
       author='Roland Puntaier',
@@ -92,10 +64,10 @@ setup(name='rstdoc',
                         'numpy', 'matplotlib','sympy','pint','drawsvg',
                         'svgwrite', 'stpl', 'pypandoc', 'docutils',
                         'sphinx', 'sphinx_bootstrap_theme',
-                        'gitpython', 'pyyaml'],
+                        'gitpython', 'pyyaml','txdir'],
       extras_require={'develop': ['mock', 'virtualenv', 'pytest-coverage'],
                       'build': ['waf']},
-      long_description=long_description,
+      long_description=long_description.long_description,
       packages=['rstdoc'],
       package_data={'rstdoc': ['../readme.rst','reference.tex', 'reference.docx',
                                'reference.odt', 'wafw.py']},
