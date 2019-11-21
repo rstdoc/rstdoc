@@ -193,6 +193,19 @@ def tmpworkdir(tmpdir):
     yield tmpdir
     os.chdir(cwd)
 
+#@pytest.yield_fixture(params=[(0,'rest'),(0,'stpl'),(0,'ipdt'),(0,'over'),(1,'rest'),(1,'stpl'),(1,'ipdt'),(1,'over'])
+#def rstinit(request,tmpworkdir):
+#    smpl='tmp_%s'%request.param[1]
+#    rstrest = []
+#    if request.param[0] == 1:
+#        rstrest = ['--rstrest']
+#    r=run(['rstdcx','--'+request.param]+rstrest+[smpl])
+#    assert r.returncode == 0
+#    oldd=os.getcwd()
+#    os.chdir(os.path.join(tmpworkdir,smpl))
+#    yield os.getcwd()
+#    os.chdir(oldd)
+
 @pytest.yield_fixture(params=['rest','stpl','ipdt','over'])
 def rstinit(request,tmpworkdir):
     smpl='tmp_%s'%request.param

@@ -146,10 +146,12 @@ Conventions
 
 - Files
 
-  - main docs end in ``.rest``
-  - ``.rst`` are included and ignored by Sphinx (see ``conf.py``).
+  - Main docs end in ``.rest``, while ``.rst`` files are used for ``.. include::`` and ignored by Sphinx.
+    This can be reversed by setting ``source_suffix='.rst'`` in ``conf.py`` at the project root.
+    If ``source_suffix`` is not defined,
+    a successful grep for ``.. include:: _links_sphinx.rest`` also reverses the convention.
   - ``.txt`` are literally included (use :literal: option).
-  - templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately.
+  - Templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately.
   - ``some.rst.tpl`` are template included
     Template lookup is done in
     ``.`` and ``..`` with respect to the current file.

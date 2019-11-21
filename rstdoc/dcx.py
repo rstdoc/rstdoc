@@ -418,6 +418,7 @@ _rest = '.rest'
 _rst = '.rst'
 _txt = '.txt'
 
+#a_rest is the main extension (default .rest)
 def _set_rstrest(a_rest):
     global _rest
     global _rst
@@ -430,8 +431,10 @@ def _get_rstrest(config=None):
         config = conf_py(cwd())
     if 'source_suffix' not in config:
         try:
-            next(grep('\.\. include:: .*_links_sphinx.rest'))
-            _set_rstrest('.rest')
+            grepgen = grep('^\.\. include:: .*_links_sphinx.rest$',
+                           exts=set(['.rst','.rest','.stpl','.tpl']))
+            resg = next(grepgen)
+            _set_rstrest('.rst') #found incuded .rest, so main .rst
             if '__file__' in config:
                 with opnappend(config['__file__']) as f:
                     f.write('\nsource_suffix = "%s"'%_rest)
@@ -535,22 +538,17 @@ def _rst_id_fix(linktxt):
     return _rstlinkfixer.sub(_rst_id_fixer, linktxt, re.MULTILINE)
 
 @lru_cache()
-def here_or_updir(fldr, file):
-    """
-    return type:
-      - fldr/file or fldr/../file, depending on where file is
-      - 0 not there, 1 in fldr, 2 updir
-    """
+def _here_or_updir(fldr, file):
     filepth = normjoin(fldr, file)
     there = 1
     if not exists(filepth):
-        filepth = updir(filepth)
-        if exists(filepth):
-            there = 2
-        else:
+        filedir = up_dir(lambda x:x==file or x=='.git', start=abspath(fldr))
+        if not filedir:
             there = 0
+        else:
+            filepth = normjoin(filedir, file)
+            there = 2
     return (filepth, there)
-
 
 # master_doc and latex_documents is determined automatically
 sphinx_config_keys = """
@@ -682,7 +680,6 @@ and is overriden by a ``./conf.py`` or ``../conf.py`` relative to the in file.
 '''
 g_config = None
 
-
 @lru_cache()
 def conf_py(fldr):
     """
@@ -693,13 +690,16 @@ def conf_py(fldr):
     config.update(config_defaults)
     if g_config:
         config.update(g_config)
-    confpydir = up_dir(lambda x:x=='conf.py',start=abspath(fldr))
+    confpydir = up_dir(lambda x:x=='conf.py' or x=='.git',start=abspath(fldr))
     if confpydir:
         confpypath = normjoin(confpydir,'conf.py')
-        with opn(confpypath) as f:
-            config['__file__'] = abspath(confpypath)
-            eval(compile(f.read(), abspath(confpypath), 'exec'), config)
-    elif g_include:
+        if exists(confpypath):
+            with opn(confpypath) as f:
+                config['__file__'] = abspath(confpypath)
+                eval(compile(f.read(), abspath(confpypath), 'exec'), config)
+                config.update(sphinx_enforced)
+                return config
+    if g_include:
         for gi in g_include:
             confpypath = normjoin(gi,'conf.py')
             if exists(confpypath):
@@ -769,7 +769,7 @@ def _imgout(inf):
     infn, infe = stem_ext(inname)
     if not _is_graphic(infe) and not _is_graphic(stem_ext(infn)[1]):
         raise ValueError('%s is not an image source' % inf)
-    outp, there = here_or_updir(inp, _images)
+    outp, there = _here_or_updir(inp, _images)
     if not there:
         outp = inp
     outname = infn + _png
@@ -1111,6 +1111,7 @@ def rst_sphinx(
         and 'latex' not in k and k != 'html_extra_path'
     })
     cfg.setdefault('source_suffix','.rest')
+    #cfg['source_suffix'] = '.rest'
     if not outtype or outtype=='html':
         if outne == '.html':
             if infn.startswith('index.'):
@@ -1176,7 +1177,7 @@ def rst_sphinx(
 def _copy_images_for(infile, outfile, with_trace):
     indr = dirname(infile)
     outdr = dirname(outfile)
-    imgdir, there = here_or_updir(indr, _images)
+    imgdir, there = _here_or_updir(indr, _images)
     if there == 1:
         imgdir_tgt = normjoin(outdr, _images)
     elif there == 2:
@@ -1236,7 +1237,7 @@ def rst_pandoc(
             opt_refdoc = opt_refdoc.get(base(infile), '')
         if opt_refdoc:
             refoption, refdoc = opt_refdoc.split()
-            refdocfound, there = here_or_updir('.', refdoc)
+            refdocfound, there = _here_or_updir('.', refdoc)
             if there:
                 pandoccmd.append(refoption)
                 pandoccmd.append(abspath(refdocfound))
@@ -3438,7 +3439,7 @@ def grep(
       regexp=rexkw,
       dir=None,
       exts=set(['.rst','.rest','.stpl','.tpl','.py']),
-      rexkwsplit=rexkwsplit
+      **kwargs
 ):
     '''
     .. {grep}
@@ -3450,7 +3451,6 @@ def grep(
     :param regexp: default is '^\s*\.\. {'
     :param dir: default is current dir
     :param exts: the extension of files searched
-    :param rexkwsplit: defaults to '[\W_]+'
 
     ::
 
@@ -3871,7 +3871,7 @@ try:
     def gen_ext_tsk(tskgen, node,
                     ext):  # into _images or ../_images in source path
         srcfldr = node.parent.get_src()
-        _imgpath, there = here_or_updir(srcfldr.abspath(), _images)
+        _imgpath, there = _here_or_updir(srcfldr.abspath(), _images)
         if not there:
             _imgpath = normjoin(srcfldr.abspath(), _images)
             mkdir(_imgpath)
@@ -3959,9 +3959,7 @@ try:
                     'SphinxTask', [node],
                     out_node(doctgt,doctype.replace('latex','tex')),
                     scan=rstscan,
-                    doctype=doctype,
-                    config_py_try=(tskgen.path.abspath(),
-                                   tskgen.bld.path.get_src().abspath()))
+                    doctype=doctype)
 
     class NonSphinxTask(Task.Task):
         def run(self):
@@ -3972,10 +3970,8 @@ try:
         always_run = True
 
         def run(self):
-            for atry in self.config_py_try:
-                confpypath, there = here_or_updir(atry, 'conf.py')
-                if there:
-                    break
+            inpth = self.inputs[0].abspath()
+            confpypath, _ = _here_or_updir(dirname(inpth), 'conf.py')
             config = conf_py(dirname(confpypath))
             # rst_sphinx needs it relative to infile
             if 'html_extra_path' in config:
@@ -3985,7 +3981,7 @@ try:
                 ]
             else:
                 config['html_extra_path'] = html_extra_path
-            rst_sphinx(self.inputs[0].abspath(), self.outputs[0].abspath(),
+            rst_sphinx(inpth, self.outputs[0].abspath(),
                        self.doctype, **config)
 
     def options(opt):

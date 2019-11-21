@@ -82,9 +82,15 @@ Extends the Python startfile to non-Windows platforms
    def up_dir(match,start=None):
 
 Find a parent path producing a match on one of its entries.
+Without a match an empty string is returned.
 
->>> up_dir(lambda x: False).replace('\\\\','/').strip('/').find('/')
--1
+:param match: a function returning a bool on a directory entry
+:param start: absolute path or None
+:return: directory with a match on one of its entries
+
+>>> up_dir(lambda x: False)
+''
+
 
 .. _`dcx.tempdir`:
 
@@ -130,7 +136,7 @@ Uses ``inkscape`` commandline to convert to ``.png``
 
 Run Sphinx on infile.
 
-:param infile: .txt, .rst, .rest filename (normally index.rest)
+:param infile: .txt, .rst, .rest filename
 :param outfile: the path to the target file (not target directory)
 :param outtype: html, latex,... or any other sphinx writer
 :param config: keys from config_defaults
@@ -522,14 +528,14 @@ The whole ``rstdoc.dcx`` namespace is forwarded to the template code.
            ):
 
 Default interpreted text role is set to math.
-The link lines are added to the .rest file or .rest lines
+The link lines are added to the rest file or rst lines
 
 :param infile: a .rest, .rst, .txt file name or list of lines
 
 :param outfile: None and '-' mean standard out.
 
     If io.StringIO, then the lines are returned.
-    For .rest ``|xxx|`` substitutions for reST link targets
+    ``|xxx|`` substitutions for reST link targets
     in infile are appended if no ``_links_sphinx.rst`` there
 
 :param outinfo: specifies the tool to use.
@@ -717,7 +723,7 @@ but creates temporary dir for a list of lines infile argument.
     >>> tmpfile = convert_in_tempdir("""
     ... This is re{{'st'.upper()}}
     ...
-    ... .. `xx`:
+    ... .. _`xx`:
     ...
     ... xx:
     ...     text
@@ -835,7 +841,7 @@ Yield the files recursively included from an RST file.
 
 :param fn: file name without path
 :param paths: paths where to look for fn
-:param withimg: also yield image files, not just other rst files
+:param withimg: also yield image files, not just other RST files
 :param withrest: rest files are not supposed to be included
 
 ::
@@ -954,7 +960,7 @@ The yields are used for the |dcx.gen| function.
 
 Contains the targets for a ``.rst`` or ``.rest`` file.
 
-:param reststem: .rest file this doc belongs to (without extension)
+:param reststem: rest file this doc belongs to (without extension)
 :param doc: doc belonging to reststem,
     either included or itself (.rest, .rst, .stpl)
 :param tgts: list of Tgt objects yielded by |dcx.RstFile.make_tgts|.
@@ -979,7 +985,7 @@ Contains the targets for a ``.rst`` or ``.rest`` file.
 
 Yields ``((line index, tag address), target, link name)``
 of ``lns`` of a restructureText file.
-For a .stpl file the linkname comes from the generated .rest file.
+For a .stpl file the linkname comes from the generated RST file.
 
 :param lns: lines of the document
 :param doc: the rst/rest document for tags
@@ -988,17 +994,17 @@ For a .stpl file the linkname comes from the generated .rest file.
 :fn_i_ln: (fn, i, ln) of the .stpl with all stpl includes sequenced
 
 
-.. _`dcx.scanroot`:
+.. _`dcx.links_and_tags`:
 
-:dcx.scanroot:
+:dcx.links_and_tags:
 
 .. code-block:: py
 
    def links_and_tags(
-       scanroot = g_scanroot
+       scanroot='.'
        ):
 
-Creates _links_xxx.rst`` files and a ``.tags``.
+Creates ``_links_xxx.rst`` files and a ``.tags``.
 
 :param scanroot: directory for which to create links and tags
 
@@ -1026,7 +1032,7 @@ Creates _links_xxx.rst`` files and a ``.tags``.
          regexp=rexkw,
          dir=None,
          exts=set(['.rst','.rest','.stpl','.tpl','.py']),
-         rexkwsplit=rexkwsplit
+         **kwargs
    ):
 
 .. {grep}
@@ -1038,7 +1044,6 @@ in *dir* (default: os.getcwd()) for ``exts`` files
 :param regexp: default is '^\s*\.\. {'
 :param dir: default is current dir
 :param exts: the extension of files searched
-:param rexkwsplit: defaults to '[\W_]+'
 
 ::
 
@@ -1193,88 +1198,6 @@ The generated macros do not work for indented text, as they produce line breaks 
     '\\nd003 x y\\n========'
 
 
-.. _`dcx.mktree`:
-
-:dcx.mktree:
-
-.. code-block:: py
-
-   def mktree(treelist,rootdir=None):
-
-Build a directory tree from a string as returned by the tree tool.
-
-:param treelist: tree string as list of lines
-
-The level is determined by the identation.
-
-This is not thread-safe.
-
-Leafs:
-
-- ending in ``/`` or ``\\`` to make a directory leaf
-
-- starting with ``/`` to make a symlink to the file (``/path/relative/to/cwd``).
-  Append ``<- othername`` if link has another name.
-
-- ``<<`` to copy file from internet using ``http://`` or locally using ``file:///``
-
-- use indented lines as file content
-
-Example::
-
-    >>> treelist="""
-    ...          a
-    ...          ├/b/e/f.txt
-    ...          ├aa.txt
-    ...            this is aa
-    ...          └u.txt<<http://docutils.sourceforge.net/docs/user/rst/quickstart.txt
-    ...          b
-    ...          ├c
-    ...          │└d/
-    ...          ├u
-    ...          │└/b/e
-    ...          ├e
-    ...          │└f.txt
-    ...          └g.txt
-    ...            this is g
-    ...       """.splitlines()
-    >>> #mktree(treelist)
-
-
-.. _`dcx.subprefix`:
-
-:dcx.subprefix:
-
-.. code-block:: py
-
-   def tree(
-            path
-            ,with_content=False
-            ,with_files=True
-            ,with_dot_files=True
-            ,max_depth=100
-            ,entryprefix = ['├ ', '└ '] #├─ └─ not understood by mktree
-            ,subprefix = ['│  ', '   ']
-            ):
-
-Inverse of mktree.
-Like the linux tree tool, but optionally with content of files
-
-:param path: path of which to create the tree string
-:param with_content: use this only if all the files are text
-:param with_files: else only directories are listed
-:param with_dot_files: also include files starting with .
-:param max_depth: max directory depth to list
-:param entryprefix: prefix for entries
-:param subprefix: prefix for sub-entries
-
-::
-
-    >>> path = dirname(__file__)
-    >>> tree(path,False,max_depth=1).startswith('├')
-    True
-
-
 .. _`dcx.initroot`:
 
 :dcx.initroot:
@@ -1301,7 +1224,7 @@ See ``example_rest_tree``, ``example_stpl_subtree``, ``example_ipdt_tree``, ``ex
 .. code-block:: py
 
    def index_dir(
-       root=g_scanroot
+       root='.'
        ):
 
 Index a directory.

@@ -3,9 +3,9 @@
 """
 #install: latex, plantuml, graphviz, inkscape
 
-#pump version:
+#version:
 doc/conf.py
-rstdoc/_version.py
+rstdoc/__init__.py
 
 #test
 rm -rf test/__pycache__
@@ -30,17 +30,60 @@ twine upload ./dist/*.whl
 
 from setuptools import setup
 from os.path import abspath,dirname,join
+import os
 import sys
-from importlib.machinery import SourceFileLoader
+import re
+import ast
 
 here = abspath(dirname(__file__))
+os.chdir(here)
 
-_version = SourceFileLoader("_version", join(here,'rstdoc','_version.py')).load_module()
+_version_re = re.compile(r'__version__\s*=\s*(.*)')
+with open(os.path.join(here, 'rstdoc','__init__.py'), 'rb') as f:
+    version = str(ast.literal_eval(_version_re.search(
+        f.read().decode('utf-8')).group(1)))
 
-long_description = SourceFileLoader("long_description", join(here,'long_description.py')).load_module()
+def long_description():
+      def read(fname, separator='\n"""'):
+          with open(join(here, fname),
+                    encoding='utf-8') as f:
+              return f.read().split(separator)[1]
+      ld = '\n'.join([
+          open('readme.rst').read(),
+          read('rstdoc/dcx.py'),
+          read('rstdoc/dcx.py', separator="'''\\").split("'''")[0],
+          read('rstdoc/fromdocx.py'),
+          read('rstdoc/listtable.py'),
+          read('rstdoc/untable.py'),
+          read('rstdoc/reflow.py'),
+          read('rstdoc/reimg.py'),
+          read('rstdoc/retable.py')
+          ])
+      try:
+          sys.path.append(join(here, 'rstdoc'))
+          from dcx import dorst
+      except:
+          try:
+              from rstdoc.dcx import dorst
+          except:
+              def dorst(linelist):
+                  return linelist
+      ld = ''.join([x for i,x in enumerate(
+                        dorst(ld.splitlines())
+                        ) if not x.startswith('.. _`') and i>0])
+      return ld
 
-setup(name='rstdoc',
-      version=_version.__version__,
+
+if __name__ == '__main__':
+    if sys.argv[1] == '--print':
+        try:
+            sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+        except:
+            pass
+        print(long_description())
+    else:
+        setup(name='rstdoc',
+      version=version,
       description='rstdoc - support documentation in restructedText (rst)',
       license='MIT',
       author='Roland Puntaier',
@@ -58,7 +101,6 @@ setup(name='rstdoc',
           'Intended Audience :: Information Technology',
           'Topic :: Utilities',
           ],
-
       install_requires=['cffi','cairocffi','cairosvg',
                         'pillow', 'pyx', 'pyfca', 'pygal',
                         'numpy', 'matplotlib','sympy','pint','drawsvg',
@@ -67,7 +109,7 @@ setup(name='rstdoc',
                         'gitpython', 'pyyaml','txdir'],
       extras_require={'develop': ['mock', 'virtualenv', 'pytest-coverage'],
                       'build': ['waf']},
-      long_description=long_description.long_description,
+      long_description=long_description(),
       packages=['rstdoc'],
       package_data={'rstdoc': ['../readme.rst','reference.tex', 'reference.docx',
                                'reference.odt', 'wafw.py']},
@@ -85,5 +127,4 @@ setup(name='rstdoc',
               'rstuntable=rstdoc.untable:main',
               ]
       },
-
-      )
+)

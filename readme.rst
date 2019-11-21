@@ -43,21 +43,21 @@ The conventions used are shown
 
 ``pip install rstdoc`` installs:
 
-+-----------+------------------+--------------------------------------------+
-| Module    | CLI Script       | Description                                |
-+===========+==================+============================================+
-| dcx       | `rstdcx`_, rstoc | create ``.tags``, labels and links         |
-+-----------+------------------+--------------------------------------------+
-| fromdocx  | `rstfromdocx`_   | Convert DOCX to RST using Pandoc           |
-+-----------+------------------+--------------------------------------------+
-| listtable | `rstlisttable`_  | Convert RST grid tables to list-tables     |
-+-----------+------------------+--------------------------------------------+
-| untable   | `rstuntable`_    | Converts certain list-tables to paragraphs |
-+-----------+------------------+--------------------------------------------+
-| reflow    | `rstreflow`_     | Reflow paragraphs and tables               |
-+-----------+------------------+--------------------------------------------+
-| reimg     | `rstreimg`_      | Rename images referenced in the RST file   |
-+-----------+------------------+--------------------------------------------+
-| retable   | `rstretable`_    | Transforms list tables to grid tables      |
-+-----------+------------------+--------------------------------------------+
++-----------+-------------------+--------------------------------------------+
+| Module    | CLI Script        | Description                                |
++===========+===================+============================================+
+| dcx       | `rstdcx`_, rstdoc | create ``.tags``, labels and links         |
++-----------+-------------------+--------------------------------------------+
+| fromdocx  | `rstfromdocx`_    | Convert DOCX to RST using Pandoc           |
++-----------+-------------------+--------------------------------------------+
+| listtable | `rstlisttable`_   | Convert RST grid tables to list-tables     |
++-----------+-------------------+--------------------------------------------+
+| untable   | `rstuntable`_     | Converts certain list-tables to paragraphs |
++-----------+-------------------+--------------------------------------------+
+| reflow    | `rstreflow`_      | Reflow paragraphs and tables               |
++-----------+-------------------+--------------------------------------------+
+| reimg     | `rstreimg`_       | Rename images referenced in the RST file   |
++-----------+-------------------+--------------------------------------------+
+| retable   | `rstretable`_     | Transforms list tables to grid tables      |
++-----------+-------------------+--------------------------------------------+
 

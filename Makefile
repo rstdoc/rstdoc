@@ -3,16 +3,20 @@
 test:
 	py.test -vv --doctest-modules --cov=rstdoc --cov-report term-missing
 
+doctest:
+	waf configure && waf --docs sphinx_html --tests
+
 man:
-	./long_description.py | pandoc -s -f rst -t man -o rstdoc.1
+	python setup.py --print | pandoc -s -f rst -t man -o rstdoc.1
 
 check:
-	./long_description.py --check
+	restview --long_description --strict
 
 dist: man
 	sudo python setup.py bdist_wheel
 
 up:
 	twine upload dist/`ls dist -rt | tail -1`
+
 
 
