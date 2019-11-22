@@ -541,11 +541,12 @@ def _here_or_updir(fldr, file):
     there = 1
     if not exists(filepth):
         filedir = up_dir(lambda x:x==file or x=='.git', start=abspath(fldr))
-        if not filedir:
-            there = 0
-        else:
+        if filedir:
             filepth = normjoin(filedir, file)
-            there = 2
+            if exists(filepth):
+                there = 2
+            else:
+                there = 0
     return (filepth, there)
 
 # master_doc and latex_documents is determined automatically
@@ -674,14 +675,14 @@ sphinx_enforced = {
 '''
 ``g_config`` can be used to inject a global config.
 This overrides the defaults
-and is overriden by a ``./conf.py`` or ``../conf.py`` relative to the in file.
+and is overriden by an updir ``conf.py``.
 '''
 g_config = None
 
 @lru_cache()
 def conf_py(fldr):
     """
-    ``defaults``, ``g_config``, ``./conf.py`` or ``../conf.py`` is used.
+    ``defaults``, ``g_config``, updir ``conf.py``
 
     """
     config = {}
@@ -1783,7 +1784,8 @@ def dorst(
         infile,
         outfile=io.StringIO,
         outinfo=None,
-        fn_i_ln=None
+        fn_i_ln=None,
+        **kwargs
         ):
     r'''
     Default interpreted text role is set to math.
@@ -1840,6 +1842,7 @@ def dorst(
         <!DOCTYPE html>
         ...
 
+        >>> drst=lambda x,y: dorst(x,y,None,pandoc_doc_optref={'docx':'--reference-doc doc/reference.'+y.split('.')[1]})
         >>> dorst('ra.rest.stpl','ra.docx') #doctest: +ELLIPSIS
         >>> exists('ra.docx')
         True
@@ -2015,6 +2018,7 @@ def dorst(
 
         if rsttool:
             config = conf_py(dirname(infile))
+            config.update(kwargs)
             if sysout:
                 sysout.close()
                 sysout = None
@@ -2090,7 +2094,8 @@ def convert(
         >>> convert('ra.rest.stpl') #doctest: +ELLIPSIS
         ['<!DOCTYPE html>\n', ...
 
-        >>> convert('ra.rest.stpl','ra.docx') #doctest: +ELLIPSIS
+        >>> cnvrt=lambda x,y: convert(x,y,None,pandoc_doc_optref={'docx':'--reference-doc doc/reference.'+y.split('.')[1]})
+        >>> cnvrt('ra.rest.stpl','ra.docx')
         >>> exists('ra.rest.rest')
         True
         >>> rmrf('ra.rest.rest')
@@ -2169,7 +2174,10 @@ def convert(
         out_ = lambda:outfile if not fextnext else None
         thisconverter = converters[fext]
         if thisconverter == dorst:
-            infile = thisconverter(infile, out_(), outinfo, fn_i_ln)
+            kwargs['fn_i_ln'] = fn_i_ln
+            kwargs.pop('outfile',None)
+            kwargs.pop('outinfo',None)
+            infile = thisconverter(infile, out_(), outinfo, **kwargs)
         else:
             if thisconverter == dostpl:
                 kwargs['outinfo'] = outinfo
@@ -4179,11 +4187,11 @@ example_rest_tree = r'''
              target_id_group = lambda targetid: targetid[0]
              target_id_color={"ra":("r","lightblue"), "sr":("s","red"),
                 "dd":("d","yellow"), "tp":("t","green")}
-             pandoc_doc_optref={'latex': '--template ../reference.tex',
+             pandoc_doc_optref={'latex': '--template reference.tex',
                               'html': {},#each can also be dict of file:template
-                              'pdf': '--template ../reference.tex',
-                              'docx': '--reference-doc ../reference.docx',
-                              'odt': '--reference-doc ../reference.odt'
+                              'pdf': '--template reference.tex',
+                              'docx': '--reference-doc reference.docx',
+                              'odt': '--reference-doc reference.odt'
                               }
              _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine',
                 'xelatex','-V','titlepage','-V','papersize=a4',
@@ -5384,11 +5392,11 @@ example_ipdt_tree = r'''
                  rextrace_target_id="^[ipdt][0-9A-Z]{3}[a-z]+$"
                  target_id_color={"inform":("i","lightblue"), "plan":("p","red"),
                     "do":("d","yellow"), "test":("t","green")}
-                 pandoc_doc_optref={'latex': '--template ../reference.tex',
+                 pandoc_doc_optref={'latex': '--template reference.tex',
                                   'html': {},#each can also be dict of file:template
-                                  'pdf': '--template ../reference.tex',
-                                  'docx': '--reference-doc ../reference.docx',
-                                  'odt': '--reference-doc ../reference.odt'
+                                  'pdf': '--template reference.tex',
+                                  'docx': '--reference-doc reference.docx',
+                                  'odt': '--reference-doc reference.odt'
                                   }
                  _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine',
                     'xelatex','-V','titlepage','-V','papersize=a4',

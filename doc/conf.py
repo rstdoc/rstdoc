@@ -70,11 +70,11 @@ if not on_rtd:
     DPI = 600
     target_id_group = lambda targetid: targetid[0]
     target_id_color={"ra":("r","lightblue"), "sr":("s","red"), "dd":("d","yellow"), "tp":("t","green")}
-    pandoc_doc_optref={'latex': '--template ../reference.tex',
+    pandoc_doc_optref={'latex': '--template reference.tex',
                      'html': {},#each can also be dict of file:template
-                     'pdf': '--template ../reference.tex',
-                     'docx': '--reference-doc ../reference.docx',
-                     'odt': '--reference-doc ../reference.odt'
+                     'pdf': '--template reference.tex',
+                     'docx': '--reference-doc reference.docx',
+                     'odt': '--reference-doc reference.odt'
                      }
     _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine','xelatex','-V','titlepage','-V','papersize=a4','-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
     pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,'docx':[],'odt':[],'html':['--mathml','--highlight-style','pygments']}
