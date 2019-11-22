@@ -24,6 +24,7 @@ from itertools import product
 sys.path = ['test/mocks'] + sys.path
 import pytest
 import re
+import rstdoc.dcx as dcx
 from rstdoc.dcx import *
 from txdir import tree_to_view
 import time
@@ -193,61 +194,67 @@ def tmpworkdir(tmpdir):
     yield tmpdir
     os.chdir(cwd)
 
-#@pytest.yield_fixture(params=[(0,'rest'),(0,'stpl'),(0,'ipdt'),(0,'over'),(1,'rest'),(1,'stpl'),(1,'ipdt'),(1,'over'])
-#def rstinit(request,tmpworkdir):
-#    smpl='tmp_%s'%request.param[1]
-#    rstrest = []
-#    if request.param[0] == 1:
-#        rstrest = ['--rstrest']
-#    r=run(['rstdcx','--'+request.param]+rstrest+[smpl])
-#    assert r.returncode == 0
-#    oldd=os.getcwd()
-#    os.chdir(os.path.join(tmpworkdir,smpl))
-#    yield os.getcwd()
-#    os.chdir(oldd)
-
-@pytest.yield_fixture(params=['rest','stpl','ipdt','over'])
-def rstinit(request,tmpworkdir):
-    smpl='tmp_%s'%request.param
-    r=run(['rstdcx','--'+request.param,smpl])
+@pytest.yield_fixture(params=[(0,'rest'),(0,'stpl'),(0,'ipdt'),(0,'over'),(1,'rest'),(1,'stpl'),(1,'ipdt'),(1,'over')])
+def rstinit(request, tmpworkdir):
+    rR, smp = request.param
+    #rR,smp=0,'rst'
+    smpl = 'tmp%i_%s' % (rR,smp)
+    rstrest = ['--rstrest'] if rR else []
+    rcmd = ['rstdcx']+(['--rstrest']if rR else[])+['--'+smp,smpl]
+    r = run(rcmd)
     assert r.returncode == 0
-    oldd=os.getcwd()
-    os.chdir(os.path.join(tmpworkdir,smpl))
+    oldd = os.getcwd()
+    os.chdir(os.path.join(tmpworkdir, smpl))
     yield os.getcwd()
     os.chdir(oldd)
 
+def mkrR(rstinitret): #swap .rest .rst
+    def swap(x):
+        if isinstance(x,list) or isinstance(x,tuple):
+            return [swap(xx) for xx in x]
+        if '1_' in base(rstinitret):
+            x = x.replace('tmp_','tmp1_')
+            x = x.replace('.rst','.rrrr')
+            x = x.replace('.rest','.rst')
+            x = x.replace('.rrrr','.rest')
+        else:
+            x = x.replace('tmp_','tmp0_')
+        return x
+    return swap
 def test_rstincluded(rstinit):
     '''
     Tests |dcx.rstincluded|.
 
     '''
 
-    if 'tmp_stpl' in rstinit:
-        assert list(rstincluded('ra.rest.stpl',(r'./doc',))) == [
-                'ra.rest.stpl', '_links_sphinx.rst']
-        assert list(rstincluded('sy.rest.stpl',(r'./doc',))) == [
-                'sy.rest.stpl', '_links_sphinx.rst']
-        assert list(rstincluded('sr.rest.stpl',(r'./doc',))) == [
-                'sr.rest.stpl', '_links_sphinx.rst']
-        assert list(rstincluded('dd.rest.stpl',(r'./doc',))) == [
+    rR = mkrR(rstinit)
+    if '1_' in base(rstinit): dcx._set_rstrest('.rst')
+    if  rstinit.endswith('stpl'):
+        assert list(rstincluded(rR('ra.rest.stpl'),(r'./doc',))) == rR([
+                'ra.rest.stpl', '_links_sphinx.rst'])
+        assert list(rstincluded(rR('sy.rest.stpl'),(r'./doc',))) == rR([
+                'sy.rest.stpl', '_links_sphinx.rst'])
+        assert list(rstincluded(rR('sr.rest.stpl'),(r'./doc',))) == rR([
+                'sr.rest.stpl', '_links_sphinx.rst'])
+        assert list(rstincluded(rR('dd.rest.stpl'),(r'./doc',))) == rR([
                 'dd.rest.stpl', 'dd_included.rst.stpl', 'dd_tables.rst',
-                'dd_math.tpl', 'dd_diagrams.tpl', '_links_sphinx.rst']
-        assert list(rstincluded('tp.rest.stpl',(r'./doc',))) == [
-                'tp.rest.stpl', '_links_sphinx.rst']
-    elif 'tmp_rest' in rstinit:
-        assert list(rstincluded('ra.rest',(r'./doc',))) == [
-                'ra.rest', '_links_sphinx.rst']
-        assert list(rstincluded('sr.rest',(r'./doc',))) == [
-                'sr.rest', '_links_sphinx.rst', '_links_sphinx.rst']
-        assert list(rstincluded('dd.rest',(r'./doc',))) == [
-                'dd.rest', 'somefile.rst', '_links_sphinx.rst']
-        assert list(rstincluded('tp.rest',(r'./doc',))) == [
-                'tp.rest', '_sometst.rst', '_links_sphinx.rst']
-    elif 'tmp_ipdt' in rstinit:
-        assert list(rstincluded('i.rest.stpl',(r'./pdt/001',))) == [
+                'dd_math.tpl', 'dd_diagrams.tpl', '_links_sphinx.rst'])
+        assert list(rstincluded(rR('tp.rest.stpl'),(r'./doc',))) == rR([
+                'tp.rest.stpl', '_links_sphinx.rst'])
+    elif  rstinit.endswith('rest'):
+        assert list(rstincluded(rR('ra.rest'),(r'./doc',))) == rR([
+                'ra.rest', '_links_sphinx.rst'])
+        assert list(rstincluded(rR('sr.rest'),(r'./doc',))) == rR([
+                'sr.rest', '_links_sphinx.rst', '_links_sphinx.rst'])
+        assert list(rstincluded(rR('dd.rest'),(r'./doc',))) == rR([
+                'dd.rest', 'somefile.rst', '_links_sphinx.rst'])
+        assert list(rstincluded(rR('tp.rest'),(r'./doc',))) == rR([
+                'tp.rest', '_sometst.rst', '_links_sphinx.rst'])
+    elif  rstinit.endswith('ipdt'):
+        assert list(rstincluded(rR('i.rest.stpl'),(r'./pdt/001',))) == rR([
                 'i.rest.stpl', 'i_included.rst.stpl', 'i_tables.rst',
-                'i_math.tpl', 'i_diagrams.tpl']
-    elif 'tmp_over' in rstinit:
+                'i_math.tpl', 'i_diagrams.tpl'])
+    elif  rstinit.endswith('over'):
         assert True
 
 def test_init(rstinit):
@@ -257,8 +264,9 @@ def test_init(rstinit):
 
     '''
 
-    if 'tmp_ipdt' in rstinit:
-        assert set(ttv('.').splitlines())==set("""\
+    rR = mkrR(rstinit)
+    if  rstinit.endswith('ipdt'):
+        assert set(ttv('.').splitlines())==set(rR("""\
 ├ c/
 │ └ some.h
 ├ pdt/
@@ -294,9 +302,9 @@ def test_init(rstinit):
 ├ waf
 ├ waf.bat
 ├ wafw.py
-└ wscript""".splitlines())
-    elif 'tmp_stpl' in rstinit:
-        assert set(ttv('.').splitlines())==set("""\
+└ wscript""").splitlines())
+    elif  rstinit.endswith('stpl'):
+        assert set(ttv('.').splitlines())==set(rR("""\
 ├ build/
 ├ doc/
 │ ├ _images/
@@ -336,9 +344,9 @@ def test_init(rstinit):
 ├ waf
 ├ waf.bat
 ├ wafw.py
-└ wscript""".splitlines())
-    elif 'tmp_rest' in rstinit:
-        assert set(ttv('.').splitlines())==set("""\
+└ wscript""").splitlines())
+    elif  rstinit.endswith('rest'):
+        assert set(ttv('.').splitlines())==set(rR("""\
 ├ Makefile
 ├ build/
 ├ conf.py
@@ -371,9 +379,9 @@ def test_init(rstinit):
 ├ waf
 ├ waf.bat
 ├ wafw.py
-└ wscript""".splitlines())
-    elif 'tmp_over' in rstinit:
-        assert set(ttv('.').splitlines())==set("""\
+└ wscript""").splitlines())
+    elif  rstinit.endswith('over'):
+        assert set(ttv('.').splitlines())==set(rR("""\
 ├ dev/
 │ ├ hw/
 │ │ ├ casing/
@@ -430,7 +438,8 @@ def test_init(rstinit):
 ├ waf
 ├ waf.bat
 ├ wafw.py
-└ wscript""".splitlines())
+└ wscript""").splitlines())
+
 
 def test_dcx_alone_samples(rstinit):
     '''
@@ -438,70 +447,70 @@ def test_dcx_alone_samples(rstinit):
 
     '''
 
-    if 'tmp_ipdt' in rstinit or 'tmp_over' in rstinit: #has no separate dcx.py
-        r=run(['rstdoc'])
+    rR = mkrR(rstinit)
+    if  rstinit.endswith('ipdt') or rstinit.endswith('over'): #has no separate dcx.py
+        r = run(['rstdoc'])
     else:
-        r=run(['python','dcx.py'])
+        r = run(['python', 'dcx.py'])
     assert r.returncode == 0
-    if 'tmp_over' in rstinit:
+    if  rstinit.endswith('over'):
         assert exists(".tags")
-    elif 'tmp_ipdt' in rstinit:
+    elif  rstinit.endswith('ipdt'):
         assert exists("build/c/some_tst.c")
-        assert exists("pdt/000/i.rest")
-        assert exists("pdt/000/p.rest")
-        assert exists("pdt/000/d.rest")
-        assert exists("pdt/000/t.rest")
-        assert exists("pdt/000/_sometst.rst")
-        assert exists("pdt/001/i.rest")
-        assert exists("pdt/001/i_included.rst")
-        assert exists("pdt/001/egdot.dot")
-        assert exists("pdt/001/egsvg.svg")
-        assert exists("pdt/_links_sphinx.rst")
-        assert exists("pdt/_links_latex.rst")
-        assert exists("pdt/_links_html.rst")
-        assert exists("pdt/_links_pdf.rst")
-        assert exists("pdt/_links_docx.rst")
-        assert exists("pdt/_links_odt.rst")
+        assert exists(rR("pdt/000/i.rest"))
+        assert exists(rR("pdt/000/p.rest"))
+        assert exists(rR("pdt/000/d.rest"))
+        assert exists(rR("pdt/000/t.rest"))
+        assert exists(rR("pdt/000/_sometst.rst"))
+        assert exists(rR("pdt/001/i.rest"))
+        assert exists(rR("pdt/001/i_included.rst"))
+        assert exists(rR("pdt/001/egdot.dot"))
+        assert exists(rR("pdt/001/egsvg.svg"))
+        assert exists(rR("pdt/_links_sphinx.rst"))
+        assert exists(rR("pdt/_links_latex.rst"))
+        assert exists(rR("pdt/_links_html.rst"))
+        assert exists(rR("pdt/_links_pdf.rst"))
+        assert exists(rR("pdt/_links_docx.rst"))
+        assert exists(rR("pdt/_links_odt.rst"))
         assert exists(".tags")
         assert '\tpdt/000/' in open(".tags").read()
-        assert '<file:../000/' in open("pdt/_links_html.rst").read()
-
-    elif 'tmp_rest' in rstinit:
+        assert '<file:../000/' in open(rR("pdt/_links_html.rst")).read()
+    elif  rstinit.endswith('rest'):
         assert exists("doc/egdot.dot")
         assert exists("doc/egsvg.svg")
-        assert exists("doc/_sometst.rst")
-        assert exists("build/tmp_rest/some_tst.c")
-        assert exists("doc/_traceability_file.rst")
-        assert exists("doc/_links_sphinx.rst")
-        assert exists("doc/_links_latex.rst")
-        assert exists("doc/_links_html.rst")
-        assert exists("doc/_links_pdf.rst")
-        assert exists("doc/_links_docx.rst")
-        assert exists("doc/_links_odt.rst")
+        assert exists(rR("doc/_sometst.rst"))
+        assert exists(rR("build/tmp_rest/some_tst.c"))
+        assert exists(rR("doc/_traceability_file.rst"))
+        assert exists(rR("doc/_links_sphinx.rst"))
+        assert exists(rR("doc/_links_latex.rst"))
+        assert exists(rR("doc/_links_html.rst"))
+        assert exists(rR("doc/_links_pdf.rst"))
+        assert exists(rR("doc/_links_docx.rst"))
+        assert exists(rR("doc/_links_odt.rst"))
         assert exists(".tags")
         assert '\tdoc/' in open(".tags").read()
-        assert '<file:dd.html' in open("doc/_links_html.rst").read()
-    elif 'tmp_stpl' in rstinit:
-        assert exists("doc/dd.rest")
-        assert exists("doc/dd_included.rst")
-        assert exists("doc/egdot.dot")
-        assert exists("doc/egsvg.svg")
-        assert exists("doc/ra.rest")
-        assert exists("doc/sr.rest")
-        assert exists("doc/sy.rest")
-        assert exists("doc/tp.rest")
-        assert exists("doc/_sometst.rst")
-        assert exists("build/tmp_stpl/some_tst.c")
-        assert exists("doc/_traceability_file.rst")
-        assert exists("doc/_links_sphinx.rst")
-        assert exists("doc/_links_latex.rst")
-        assert exists("doc/_links_html.rst")
-        assert exists("doc/_links_pdf.rst")
-        assert exists("doc/_links_docx.rst")
-        assert exists("doc/_links_odt.rst")
-        assert exists(".tags")
+        assert '<file:dd.html' in open(rR("doc/_links_html.rst")).read()
+    elif  rstinit.endswith('stpl'):
+        assert exists(rR("doc/dd.rest"))
+        assert exists(rR("doc/dd_included.rst"))
+        assert exists(rR("doc/egdot.dot"))
+        assert exists(rR("doc/egsvg.svg"))
+        assert exists(rR("doc/ra.rest"))
+        assert exists(rR("doc/sr.rest"))
+        assert exists(rR("doc/sy.rest"))
+        assert exists(rR("doc/tp.rest"))
+        assert exists(rR("doc/_sometst.rst"))
+        assert exists(rR("build/tmp_stpl/some_tst.c"))
+        assert exists(rR("doc/_traceability_file.rst"))
+        assert exists(rR("doc/_links_sphinx.rst"))
+        assert exists(rR("doc/_links_latex.rst"))
+        assert exists(rR("doc/_links_html.rst"))
+        assert exists(rR("doc/_links_pdf.rst"))
+        assert exists(rR("doc/_links_docx.rst"))
+        assert exists(rR("doc/_links_odt.rst"))
+        assert exists(rR(".tags"))
         assert '\tdoc/' in open(".tags").read()
-        assert '<file:dd.html' in open("doc/_links_html.rst").read()
+        assert '<file:dd.html' in open(rR("doc/_links_html.rst")).read()
 
 @pytest.mark.parametrize('cmd_result',[
     ('rstdcx dd.rest.stpl - rest',['default-role:: math',r'<file:dd.html#'])
@@ -515,16 +524,17 @@ def test_dcx_alone_samples(rstinit):
     ,('stpl dd.rest.stpl | rstdcx - - dd.html.',['default-role:: math',r'<file:dd.html#'])
     ,('stpl dd.rest.stpl | rstdcx - - dd.html',["DOCTYPE html",'ref="file:dd.html#'])
 ])
-
 def test_dcx_in_out(rstinit,cmd_result):
     '''
     Tests calling ``rstdcx``/``dcx.py``
     with in-file or standard in to standard out.
 
     '''
-    if 'tmp_ipdt' in rstinit or 'tmp_over' in rstinit:
+    rR = mkrR(rstinit)
+    if  rstinit.endswith('ipdt') or rstinit.endswith('over'):
         return
     cmd,result = cmd_result
+    cmd = rR(cmd)
     os.chdir('doc')
     if not os.path.exists(cmd.split()[1]):
         if cmd.startswith('stpl'):
@@ -569,7 +579,7 @@ def test_dcx_out_file(rstinit,cmd_exists_not_exists):
     with in-file and out-file and out type parameter.
 
     '''
-    if 'tmp_ipdt' in rstinit or 'tmp_over' in rstinit:
+    if  rstinit.endswith('ipdt') or rstinit.endswith('over'):
         return
     cmd,result,notexists = cmd_exists_not_exists
     tcmd = []
@@ -592,7 +602,7 @@ def test_dcx_out_file(rstinit,cmd_exists_not_exists):
 @pytest.yield_fixture(params=['docx','pdf','html'])
 def makebuild(request,rstinit):
     oldd = os.getcwd()
-    if 'tmp_ipdt' not in rstinit and 'tmp_over' not in rstinit:
+    if not rstinit.endswith('ipdt') and not rstinit.endswith('over'):
         r=run(['make',request.param])
         assert r.returncode == 0
         os.chdir('build')
@@ -609,11 +619,11 @@ def test_make_samples(makebuild):
 
     '''
 
-    dr,target = makebuild
-    if 'tmp_ipdt' in dr or 'tmp_over' in dr:
+    rstinit,target = makebuild
+    if  rstinit.endswith('ipdt') or rstinit.endswith('over'):
         return
-    elif 'tmp_rest' in dr:
-        expected_no_html="""\
+    elif  rstinit.endswith('rest'):
+        expected_no_html=rR("""\
 ├ doc/
 │ └ {0}/
 │   ├ dd.{0}
@@ -621,11 +631,11 @@ def test_make_samples(makebuild):
 │   ├ sr.{0}
 │   └ tp.{0}
 └ tmp_rest/
-  └ some_tst.c"""
+  └ some_tst.c""")
         if target in ['docx','pdf']:
             expected=expected_no_html.format(target)
         elif target=='html':
-            expected="""\
+            expected=rR("""\
 ├ doc/
 │ ├ doctrees/
 │ │ ├ dd.doctree
@@ -649,10 +659,10 @@ def test_make_samples(makebuild):
 │   ├ sr.html
 │   └ tp.html
 └ tmp_rest/
-  └ some_tst.c"""
-        assert tree3(makebuild[0])==expected
-    elif 'tmp_stpl' in dr:
-        expected_no_html="""\
+  └ some_tst.c""")
+        assert tree3(rstinit)==expected
+    elif  rstinit.endswith('stpl'):
+        expected_no_html=rR("""\
 ├ doc/
 │ └ {0}/
 │   ├ dd.{0}
@@ -661,11 +671,11 @@ def test_make_samples(makebuild):
 │   ├ sy.{0}
 │   └ tp.{0}
 └ tmp_stpl/
-  └ some_tst.c"""
+  └ some_tst.c""")
         if target in ['docx','pdf']:
             expected=expected_no_html.format(target)
         elif target=='html':
-            expected="""\
+            expected=rR("""\
 ├ doc/
 │ ├ doctrees/
 │ │ ├ dd.doctree
@@ -691,8 +701,8 @@ def test_make_samples(makebuild):
 │   ├ sy.html
 │   └ tp.html
 └ tmp_stpl/
-  └ some_tst.c"""
-        assert tree3(makebuild[0])==expected
+  └ some_tst.c""")
+        assert tree3(rstinit)==expected
 
 waf_some = ['docx','odt','pdf','html','latex',
             'sphinx_html','sphinx_latex','rst_html','rst_latex','rst_odt']
@@ -715,7 +725,7 @@ def test_waf_samples(wafbuild):
     Tests running Waf on the sample projects.
 
     '''
-    drw,target = wafbuild
+    rstinit,target = wafbuild
     try:
         _,ext = target.split('_')
     except: ext = target
@@ -725,7 +735,7 @@ def test_waf_samples(wafbuild):
             extra += '\n│     ├ _traceability_file.svg'
     else:
         extra = ''
-    if 'tmp_over' in drw:
+    if  rstinit.endswith('over'):
         expected_non_sphinx="""\
 ├ dev/
 │ ├ hw/
@@ -756,7 +766,11 @@ def test_waf_samples(wafbuild):
 │   └ test.{0}
 ├ contribution.{0}
 └ readme.{0}"""
-    elif 'tmp_ipdt' in drw:
+        realout = tree3(rstinit)
+        for x in expected.splitlines():
+            xchk=x.strip('└│├ ')
+            assert realout.find(xchk)>=0, "%s not found"%xchk
+    elif  rstinit.endswith('ipdt'):
         expected_non_sphinx="""\
 └ pdt/
   ├ 000/
@@ -818,9 +832,9 @@ def test_waf_samples(wafbuild):
         for x in expected.splitlines():
             xchk=x.strip('└│├ ')
             assert realout.find(xchk)>=0, "%s not found"%xchk
-    else:
-        is_stpl = 'tmp_stpl' in os.getcwd()
-        tmp_xxx = 'tmp_stpl' if is_stpl else 'tmp_rest'
+    else:#not idpt or over
+        is_stpl = rstinit.endswith('stpl')
+        tmpx_xxx = base(rstinit)
         expected_non_sphinx="""\
 ├ doc/
 │ └ {0}{2}
@@ -835,7 +849,7 @@ def test_waf_samples(wafbuild):
 │ └ some_tst.c
 └ config.log"""
         if target in waf_non_sphinx:
-            expected=expected_non_sphinx.format(target,ext,extra,tmp_xxx)
+            expected=expected_non_sphinx.format(target,ext,extra,tmpx_xxx)
         elif target=='sphinx_latex':
             expected="""\
 ├ doc/
@@ -858,7 +872,7 @@ def test_waf_samples(wafbuild):
 │   ├ index.tex
 ├ {}/
 │ └ some_tst.c
-└ config.log""".format(tmp_xxx)
+└ config.log""".format(tmpx_xxx)
         elif target=='sphinx_html':
             expected="""\
 ├ doc/
@@ -877,8 +891,8 @@ def test_waf_samples(wafbuild):
 │   └ tp.html
 ├ {}/
 │ └ some_tst.c
-└ config.log""".format(tmp_xxx)
-        realout = tree3(drw)
+└ config.log""".format(tmpx_xxx)
+        realout = tree3(rstinit)
         for x in expected.splitlines():
             xchk=x.strip('└│├ ')
             assert realout.find(xchk)>=0, "%s not found"%xchk
@@ -964,3 +978,4 @@ def test_kw():
     for x in outlines:
         assert 'png' in x
 
+# vim: ts=4 sw=4 sts=4 et noai nocin nosi inde=

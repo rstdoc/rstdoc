@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import sys
 sys.path = ['test/mocks'] + sys.path
 import pytest
@@ -561,3 +563,4 @@ def test_reflowemptycells():
    res = ''.join(reflow(rfec))
    assert res == rfecres
 
+# vim: ts=4 sw=4 sts=4 et noai nocin nosi inde=

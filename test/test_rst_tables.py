@@ -1,3 +1,4 @@
+# encoding: utf-8
 
 #def gen_tests(lns,**kw):
 #    yield from doc_parts(lns)
@@ -506,3 +507,5 @@ Qux
 +-----+-----+-------+
 | 1   | 2   | 3     |
 +-----+-----+-------+""")
+
+# vim: ts=4 sw=4 sts=4 et noai nocin nosi inde=

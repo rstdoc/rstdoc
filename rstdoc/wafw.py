@@ -126,3 +126,5 @@ if __name__ == '__main__':
         get_plugins()
         if not USING_WINDOWS: os.system('chmod +x ' + WAF_FILE())
         waf_exec()
+
+# vim: ts=4 sw=4 sts=4 et noai nocin nosi inde=

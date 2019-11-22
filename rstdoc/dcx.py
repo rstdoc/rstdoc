@@ -1,6 +1,5 @@
 # !/usr/bin/env python
 # encoding: utf-8
-# vim: ts=4 sw=4
 
 # #### THIS GETS EXECUTED VIA GEN FILE #######
 # #lns=open(__file__).readlines()
@@ -457,7 +456,6 @@ def _get_rstrest(config=None):
 
 def is_rest(x):
     return x.endswith(_rest) or x.endswith(_rest + _stpl)
-
 
 def is_rst(x):
     return x.endswith(_rst) or x.endswith(_rst + _stpl) or x.endswith(
@@ -1967,14 +1965,16 @@ def dorst(
         if sysout:
             sysout.write(_indented_default_role_math(filelines))
             links_done = False
-            rexincludelinks = re.compile(r'^\.\. include:: (.*)(_links_sphinx'+_rst+')')
+            _links_re = r'^\.\. include:: (.*)(_links_sphinx)(.re?st)'
+            rexincludelinks = re.compile(_links_re)
             for x in filelines:
-                #x = '.. include:: _links_sphinx.rst' #1
-                #x = '.. include:: ../_links_sphinx.rst' #2
+                #x = '.. include:: _links_sphinx.rest' #1
+                #x = '.. include:: ../_links_sphinx.rest' #2
                 #x = '.. include:: /_links_sphinx.rst' #3
                 lim = rexincludelinks.match(x)
                 if lim:
                     limg0 = normjoin(lim.groups()[0])
+                    limg2 = normjoin(lim.groups()[2])
                     if tool == 'sphinx':
                         links_done = True
                     else:
@@ -1984,11 +1984,11 @@ def dorst(
                             if limg0 == '/': #find linkroot
                                 linkroot = up_dir(lambda x: x.startswith('_links_') or x=='.git',
                                                   abspath(dirname(infile)))
-                                linksfilename = normjoin(linkroot, '_links_' + outinfo + _rst)
+                                linksfilename = normjoin(linkroot, '_links_' + outinfo + limg2)
                             else:
-                                linksfilename = normjoin(limg0, '_links_' + outinfo + _rst)
+                                linksfilename = normjoin(limg0, '_links_' + outinfo + limg2)
                         else:
-                            linksfilename = normjoin(dirname(infile), limg0, '_links_' + outinfo + _rst)
+                            linksfilename = normjoin(dirname(infile), limg0, '_links_' + outinfo + limg2)
                         #a/b/_links_docx.rst #1
                         #a/_links_docx.rst #2
                         if exists(linksfilename):
@@ -6256,7 +6256,7 @@ def initroot(
     if txdir is None:
         return
 
-    def _replace_rstrest(instr):
+    def rR(instr):
         if _rest == '.rst':
             #>instr='x.rst y.rest z.rst'
             instr = instr.replace('.rst','.rrrr')
@@ -6282,7 +6282,7 @@ def initroot(
         example_tree=example_over_tree
     else:
         example_tree=example_rest_tree
-    example_tree = _replace_rstrest(example_tree)
+    example_tree = rR(example_tree)
     inittree = [
         l for l in example_tree.replace(
             '__dcx__', thisfile).replace(
@@ -6297,8 +6297,8 @@ def initroot(
             return origlns[:list(rindices(start, origlns))
                            [0]] + insertlns + origlns[list(
                                rindices(stop, origlns))[0]:]
-        inittree = _replace_lines(inittree, '├ index.rest', '├ egtikz.tikz',
-                                  _replace_rstrest(example_stpl_subtree).lstrip('\n').splitlines())
+        inittree = _replace_lines(inittree, rR('├ index.rest'), '├ egtikz.tikz',
+                                  rR(example_stpl_subtree).lstrip('\n').splitlines())
     mkdir(rootfldr)
     with new_cwd(rootfldr):
         txdir.view_to_tree(inittree)
@@ -6599,3 +6599,5 @@ to define variables that can be used in templates."""
 
 if __name__ == '__main__':
     main()
+
+# vim: ts=4 sw=4 sts=4 et noai nocin nosi inde=
