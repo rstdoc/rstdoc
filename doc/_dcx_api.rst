@@ -10,6 +10,21 @@ The functions in ``dcx.py``
 are available to the ``gen_xxx(lns,**kw)`` functions (|dhy|).
 
 
+.. _`dcx.is_project_root_file`:
+
+:dcx.is_project_root_file:
+
+.. code-block:: py
+
+   def is_project_root_file(filename):
+
+.. code-block:: py
+
+       return filename=='.git' or filename=='waf' or filename=='Makefile' or filename.lower().startswith('readme')
+
+Identifies the root of the project by a file name contained there.
+
+
 .. _`dcx.DPI`:
 
 :dcx.DPI:
@@ -30,7 +45,7 @@ Used for png creation.
 
 ``g_config`` can be used to inject a global config.
 This overrides the defaults
-and is overriden by a ``./conf.py`` or ``../conf.py`` relative to the in file.
+and is overriden by an updir ``conf.py``.
 
 .. _`dcx.cmd`:
 
@@ -272,7 +287,7 @@ Converts a .svg file to a png file.
 
 :param infile: a .svg file name or list of lines
 :param outfile: if not provided the input file with new extension
-  ``.png`` either in ``./_images`` or ``../_images`` or ``.``
+      ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
 
 .. _`dcx.texpng`:
@@ -297,8 +312,8 @@ For ``.tikz`` file use |dcx.tikzpng|.
 
 :param infile: a .tex file name or list of lines
     (provide outfile in the latter case)
-:param outfile: if not provided, the input file with .png
-    either in ``./_images`` or ``../_images`` or ``.``
+:param outfile: if not provided, the input file with
+              ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
 
 .. _`dcx.tikzpng`:
@@ -334,7 +349,7 @@ Converts a .dot file to a png file.
 :param infile: a .dot file name or list of lines
     (provide outfile in the latter case)
 :param outfile: if not provided the input file with new extension
-    ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+    ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
 
 .. _`dcx.umlpng`:
@@ -358,7 +373,7 @@ Converts a .uml file to a png file.
 :param infile: a .uml file name or list of lines
     (provide outfile in the latter case)
 :param outfile: if not provided the input file with new extension
-    ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+    ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
 
 .. _`dcx.epspng`:
@@ -381,7 +396,7 @@ Converts an .eps file to a png file using inkscape.
 :param infile: a .eps file name or list of lines
     (provide outfile in the latter case)
 :param outfile: if not provided the input file with new extension
-    ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+    ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
 
 .. _`dcx.pygpng`:
@@ -419,7 +434,7 @@ Else the following is tried
 :param infile: a .pyg file name or list of lines
     (provide outfile in the latter case)
 :param outfile: if not provided the input file with new extension
-    ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+    ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
 
 .. _`dcx.pygsvg`:
@@ -524,7 +539,8 @@ The whole ``rstdoc.dcx`` namespace is forwarded to the template code.
            infile,
            outfile=io.StringIO,
            outinfo=None,
-           fn_i_ln=None
+           fn_i_ln=None,
+           **kwargs
            ):
 
 Default interpreted text role is set to math.
@@ -581,6 +597,7 @@ The link lines are added to the rest file or rst lines
     <!DOCTYPE html>
     ...
 
+    >>> drst=lambda x,y: dorst(x,y,None,pandoc_doc_optref={'docx':'--reference-doc doc/reference.'+y.split('.')[1]})
     >>> dorst('ra.rest.stpl','ra.docx') #doctest: +ELLIPSIS
     >>> exists('ra.docx')
     True
@@ -664,7 +681,8 @@ Examples::
     >>> convert('ra.rest.stpl') #doctest: +ELLIPSIS
     ['<!DOCTYPE html>\n', ...
 
-    >>> convert('ra.rest.stpl','ra.docx') #doctest: +ELLIPSIS
+    >>> cnvrt=lambda x,y: convert(x,y,None,pandoc_doc_optref={'docx':'--reference-doc doc/reference.'+y.split('.')[1]})
+    >>> cnvrt('ra.rest.stpl','ra.docx')
     >>> exists('ra.rest.rest')
     True
     >>> rmrf('ra.rest.rest')

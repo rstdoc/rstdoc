@@ -157,6 +157,8 @@
 .. .. ../doc/_dcx_api.rst
 
 
+.. |dcx.is_project_root_file| replace:: :ref:`dcx.is_project_root_file<dcx.is_project_root_file>`
+
 .. |dcx.DPI| replace:: :ref:`dcx.DPI<dcx.DPI>`
 
 .. |dcx.g_config| replace:: :ref:`dcx.g_config<dcx.g_config>`
@@ -177,10 +179,10 @@
 
 .. |dcx.g_include| replace:: :ref:`dcx.g_include<dcx.g_include>`
 
-.. |dcx.rst_pandoc| replace:: :ref:`dcx.rst_pandoc<dcx.rst_pandoc>`
-
 .. .. rak,dhy
 
+
+.. |dcx.rst_pandoc| replace:: :ref:`dcx.rst_pandoc<dcx.rst_pandoc>`
 
 .. |dcx.rst_rst2| replace:: :ref:`dcx.rst_rst2<dcx.rst_rst2>`
 

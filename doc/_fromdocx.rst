@@ -34,3 +34,5 @@ RST documentation folder, proceed like this:
 ``fromdocx.docx_rst_5`` creates 5 different rst files with different postprocessing.
 
 See |rstreflow| for an alternative proceeding.
+
+

@@ -3,8 +3,13 @@
 rstdcx
 ======
 
-Support script to create documentation (PDF, HTML, DOCX)
-from restructuredText (RST, reST) using either
+restructuredText sources are split into two types of files:
+main files considered by Sphinx, and included files.
+Which of ``.rest``  or ``.rst`` is main or included is determined
+by ``source_suffix`` in a ``<root>/conf.py`` or by the extension of the ``_links_xxx`` files.
+
+``rstdoc`` creates documentation (PDF, HTML, DOCX)
+from restructuredText (``.rst``, ``.rest``) using either
 
 - `Pandoc <https://pandoc.org>`__
 - `Sphinx <http://www.sphinx-doc.org>`__
@@ -14,49 +19,33 @@ from restructuredText (RST, reST) using either
 ``rstdoc`` and ``rstdcx`` command line tools call ``dcx.py``.
 which
 
-- processes ``gen`` files (see examples produced by --rest)
+- creates ``.tags`` to jump around with the editor
 
 - handles `.stpl <https://bottlepy.org/docs/dev/stpl.html>`__ files
 
-- creates ``.tags`` to jump around with the editor
+- processes ``gen`` files (see examples produced by --rest)
 
-- creates links files like
-  ``_links_pdf.rst``, ``_links_docx.rst``, ``_links_sphinx.rst``
-  in link roots, which are folders where the first ``.rest`` is encoutered
-  during depth-first traversal.
-  Non-overlapping link root paths produce separately linked file sets.
-
-  ``.. include:: /_links_sphinx.rst``, with the one initial ``/``
-  instead of a relative or absolute path,
-  will automatically search upward for the ``_links_xxx.rst`` file
-  (``_sphinx`` is replaced by what is needed by the wanted target).
+- creates links files (``_links_docx.r?st``, ``_links_sphinx.r?st``, ...)
 
 - forwards known files to either Pandoc, Sphinx or Docutils
-
-  Sphinx ``conf.py`` is augmented by configuration for Pandoc and Docutils.
-  It should be where the input file is or above. If used with
-  `waf <https://github.com/waf-project/waf>`__,
-  it can also be where the main wscript is.
 
 See example at the end of ``dcx.py``.
 It is supposed to be used with a build tool.
 ``make`` and ``waf`` examples are included.
 
-- Initialize example tree.
-  This copies ``dcx.py`` into the example tree
-  to be independent from possible future changes::
+- Initialize example tree (add ``--rstrest`` to make ``.rst`` main and ``.rest`` included files):
 
   $ ./dcx.py --rest repo #repo/doc/{sy,ra,sr,dd,tp}.rest files OR
   $ ./dcx.py --stpl repo #repo/doc/{sy,ra,sr,dd,tp}.rest.stpl files
   $ ./dcx.py --ipdt repo #repo/pdt/AAA/{i,p,d,t}.rest.stpl files
   $ ./dcx.py --over repo #.rest all over
 
-- Only create .tags and ``_links_xxx.rst``::
+- Only create .tags and ``_links_xxx.r?st``::
 
-  $ cd tmp/doc
-  $ ./dcx.py
+  $ cd repo
+  $ rstdoc
 
-- Create the docs (and .tags and ``_links_xxx.rst``) with **make**::
+- Create the docs (and .tags and ``_links_xxx.r?st``) with **make**::
 
   $ make html #OR
   $ make epub #OR
@@ -66,13 +55,13 @@ It is supposed to be used with a build tool.
 
   The latter two are done by Pandoc, the others by Sphinx.
 
-- Create the docs (and .tags and ``_links_xxx.rst``) with
+- Create the docs (and .tags and ``_links_xxx.r?st``) with
   `waf <https://github.com/waf-project/waf>`__:
 
-  Instead of using ``make`` one can load ``dcx.py`` in
+  Instead of using ``make`` one can load ``dcx.py`` (``rstdoc.dcx``) in
   `waf <https://github.com/waf-project/waf>`__.
   ``waf`` also considers all recursively included files,
-  such that a change in any of them results in a rebuild of the documentation.
+  such that a change in any of them results in a rebuild.
   All files can have an additional ``.stpl`` extension to use
   `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html>`__.
 
@@ -80,15 +69,15 @@ It is supposed to be used with a build tool.
   $ waf --docs docx,sphinx_html,rst_odt
   $ #or you provide --docs during configure to always compile the docs
 
-  - ``rst_xxx`` via
+  - ``rst_xxx``: via
     `rst2xxx.py <http://docutils.sourceforge.net/docs/user/tools.html>`__
-  - ``sphinx_xxx`` via `Sphinx <http://www.sphinx-doc.org>`__ and
-  - just ``xxx`` via `Pandoc <https://pandoc.org>`__.
+  - ``sphinx_xxx``: via `Sphinx <http://www.sphinx-doc.org>`__ and
+  - just ``xxx``: via `Pandoc <https://pandoc.org>`__.
 
 
-The following image language files should be parallel to the ``.rest`` files.
+The following image language files should be parallel to the ``.r?st`` files.
 They are automatically converted to ``.png``
-and placed into ``./_images``, or ``../_images``, if only that exists.
+and placed into ``./_images`` or ``<updir>/_images`` or else parallel to the file.
 
 - ``.tikz`` or ``.tikz.stpl``.
   This needs LaTex.
@@ -125,7 +114,7 @@ and placed into ``./_images``, or ``../_images``, if only that exists.
     If ``matplotlib.pyplot.get_fignums()>1``
     the figures result in ``<name><fignum>.png``
 
-  The same code or the file names can be used in a ``.rest.stpl`` file
+  The same code or the file names can be used in a ``.r?st.stpl`` file
   with ``pngembed()`` or ``dcx.svgembed()`` to embed in html output.
 
   ::
@@ -144,21 +133,20 @@ and placed into ``./_images``, or ``../_images``, if only that exists.
 Conventions
 -----------
 
-- Files
+Files
 
-  - Main docs end in ``.rest``, while ``.rst`` files are used for ``.. include::`` and ignored by Sphinx.
-    This can be reversed by setting ``source_suffix='.rst'`` in ``conf.py`` at the project root.
-    If ``source_suffix`` is not defined,
-    a successful grep for ``.. include:: _links_sphinx.rest`` also reverses the convention.
-  - ``.txt`` are literally included (use :literal: option).
-  - Templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately.
-  - ``some.rst.tpl`` are template included
+  - fain files and included files: ``.rest``, ``.rst`` or vice versa.
+    ``.txt`` are for literally included files (use :literal: option).
+  - templates separately rendered : ``*.rest.stpl`` and ``*.rst.stpl``
+    template included: ``*.rst.tpl``
     Template lookup is done in
     ``.`` and ``..`` with respect to the current file.
 
     - with ``%include('some.rst.tpl', param="test")`` with optional parameters
     - with ``%globals().update(include('utility.rst.tpl'))``
       if it contains only definitions
+
+Links
 
 - ``.. _`id`:`` are *reST targets*.
   reST targets should not be template-generated.
@@ -176,12 +164,24 @@ Conventions
 - If you want an overview of the linking (traceability),
   add ``.. include:: _traceability_file.rst``
   to ``index.rest`` or another ``.rest`` parallel to it.
-  It is there in the generated example project, to include it in tests.
-  You might want to remove that line, if you start with the example project.
+  It is there in the example project, to include it in tests.
   ``_traceability_file.{svg,png,rst}`` are all in the same directory.
 
-See the example project created with ``--rest`` or ``--stpl``
-at the end of this file and the sources of the documentation of
+Link files are created in link roots, which are folders where the first main file
+(``.rest`` or ``.rst``) is encoutered during depth-first traversal.
+Non-overlapping link root paths produce separately linked file sets.
+
+``.. include:: /_links_sphinx.r?st``, with the one initial ``/``
+instead of a relative or absolute path,
+will automatically search upward for the ``_links_xxx.r?st`` file
+(``_sphinx`` is replaced by what is needed by the wanted target when the docs are generated).
+
+Sphinx ``conf.py`` is augmented by configuration for Pandoc and Docutils.
+It should be where the input file is, or better at the project root
+to be usable with `waf <https://github.com/waf-project/waf>`__.
+
+See the example project created with ``--rest/stpl/ipdt/over``
+and the sources of the documentation of
 `rstdoc <https://github.com/rpuntaie/rstdoc>`__.
 
 
@@ -210,7 +210,7 @@ Pdf output needs latex. Else you can make odt or docx and use
 - linux: ``lowriter --headless --convert-to pdf Untitled1.odt``
 
 Inkscape (.eps, .svg), Dot (.dot), Planuml (.uml), latex (.tex,.tikz)
-are converted to .png into ``./_images`` or ``../_images``.
+are converted to .png into ``./_images`` or ``<updir>/_images`` or '.'.
 Any of the files can be a SimpleTemplate template (xxx.yyy.stpl).
 
 Configuration is in ``conf.py`` or ``../conf.py``.
@@ -222,12 +222,22 @@ Configuration is in ``conf.py`` or ``../conf.py``.
 ``--ipdt`` with inform-plan-do-test enhancement cycles
 ``--over`` with ``.rest`` files all over the project tree including symbolic links
 
+Examples
+--------
+
+Example folders (see wscript and Makefile there)::
+
+    rstdoc --rest <folder> [--rstrest]
+    rstdoc --stpl <folder> [--rstrest]
+    rstdoc --ipdt <folder> [--rstrest]
+    rstdoc --over <folder> [--rstrest]
+
 Examples usages with the files generated by ``rstdoc --stpl tmp``:
 
 .. code-block:: sh
 
     cd tmp/doc
-    rstdcx   #expand .stpl and produce _links_xxx.rst and .tags
+    rstdcx   #expand .stpl and produce .tag and _links_xxx files
 
     #expand stpl and append substitutions (for simple expansion use ``stpl <file> .``)
     rstdcx dd.rest.stpl - rest           # expand to stdout, appending dd.html substitutions, to pipe to Pandoc
@@ -256,7 +266,7 @@ Examples usages with the files generated by ``rstdoc --stpl tmp``:
     #Directly from ``.stpl`` does not work with Sphinx
     rstdcx index.rest ../build/index.html sphinx_html   # via Sphinx the output directory must be different
 
-    #convert the graphics and place the into _images or ../_images
+    #convert the graphics and place the into _images or <updir>/_images
     #if no _images directory exists they will be placed into the same directory
     rstdcx egcairo.pyg
     rstdcx egdot.dot.stpl
@@ -270,6 +280,39 @@ Examples usages with the files generated by ``rstdoc --stpl tmp``:
     rstdcx egtikz1.tikz
     rstdcx eguml.uml
 
-    #convert graphics to a png here (even if _images directory exists)
+    #Convert graphics to a png (even if _images directory exists):
     rstdcx eguml.uml eguml.png
+
+    #Files to other files:
+
+    rstdoc dd.rest.stpl dd.rest
+    rstdoc dd.rest.stpl dd.html html
+    rstdoc dd.rest.stpl dd.html
+    rstdoc sr.rest.stpl sr.html rst_html
+    rstdoc dd.rest.stpl dd.docx
+    rstdoc dd.rest.stpl dd.odt pandoc
+    rstdoc dd.rest.stpl dd.odt
+    rstdoc sr.rest.stpl sr.odt rst_odt
+    rstdoc sr.rest.stpl sr.odt rst
+    rstdoc index.rest build/index.html sphinx_html
+
+    #Directories to other directories with out info:
+
+    rstdoc . build html
+    rstdoc . build sphinx_html
+
+Grep with python re in .py, .rst, .rest, .stpl, .tpl::
+
+    rstdoc --pygrep inline
+
+Grep for keyword lines containing 'png'::
+
+    rstdoc --kw png
+
+Default keyword lines::
+
+    .. {kw1,kw2}
+    {{_ID3('kw1 kw2')}}
+    %__ID3('kw1 kw2')
+    :ID3: kw1 kw2
 
