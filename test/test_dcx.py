@@ -17,6 +17,82 @@
 #  possibly edit .local to local
 #  sudo wafinstall -v2.0.6 -s --user
 
+"""
+
+Examples
+========
+
+Example folders (see wscript and Makefile there)::
+
+    rstdoc --rest <folder> [--rstrest]
+    rstdoc --stpl <folder> [--rstrest]
+    rstdoc --ipdt <folder> [--rstrest]
+    rstdoc --over <folder> [--rstrest]
+
+Just create .tags and _links_xxx files::
+
+    rstdoc
+
+Single files to stdout::
+
+    rstdoc dd.rest.stpl - rest
+    rstdoc dd.rest.stpl - html.
+    rstdoc dd.rest.stpl - docx.
+    rstdoc dd.rest.stpl - newname.docx.
+    rstdoc dd.rest.stpl - html
+    rstdoc dd.rest.stpl
+    rstdoc sr.rest.stpl - rst_html
+    rstdoc dd.rest.stpl - newname.docx.
+    stpl dd.rest.stpl | rstdoc - - dd.html.
+    stpl dd.rest.stpl | rstdoc - - dd.html
+
+Files to other files::
+
+    rstdoc dd.rest.stpl dd.rest
+    rstdoc dd.rest.stpl dd.html html
+    rstdoc dd.rest.stpl dd.html
+    rstdoc sr.rest.stpl sr.html rst_html
+    rstdoc dd.rest.stpl dd.docx
+    rstdoc dd.rest.stpl dd.odt pandoc
+    rstdoc dd.rest.stpl dd.odt
+    rstdoc sr.rest.stpl sr.odt rst_odt
+    rstdoc sr.rest.stpl sr.odt rst
+    rstdoc index.rest build/index.html sphinx_html
+    rstdoc egcairo.pyg
+    rstdoc egdot.dot.stpl
+    rstdoc egeps.eps
+    rstdoc egother.pyg
+    rstdoc egplt.pyg
+    rstdoc egpygal.pyg
+    rstdoc egpyx.pyg
+    rstdoc egsvg.svg.stpl
+    rstdoc egtikz.tikz
+    rstdoc egtikz1.tikz
+    rstdoc eguml.uml
+    rstdoc eguml.uml eguml.png
+
+Directories to other directories with out info::
+
+    rstdoc . build html
+    rstdoc . build sphinx_html
+
+Grep with python re in .py, .rst, .rest, .stpl, .tpl:
+
+    rstdoc --pygrep inline
+
+Grep for keyword lines containing 'png':
+
+    rstdoc --kw png
+
+Default keyword lines::
+
+    .. {kw1,kw2}
+    {{_ID3('kw1 kw2')}}
+    %__ID3('kw1 kw2')
+    :ID3: kw1 kw2
+
+"""
+
 
 import sys
 import os
@@ -208,11 +284,17 @@ def rstinit(request, tmpworkdir):
     yield os.getcwd()
     os.chdir(oldd)
 
+def initfor(rstinitret,smplk):
+    #rstinitret='/tmp/pytest-of-roland/pytest-684/test_waf_samples_html_rstinit70/tmp1_over/build/'
+    #smplk='over'
+    res = len(re.split('tmp.?_'+smplk,rstinitret))>1
+    return res
+
 def mkrR(rstinitret): #swap .rest .rst
-    def swap(x):
+    def rR(x):
         if isinstance(x,list) or isinstance(x,tuple):
-            return [swap(xx) for xx in x]
-        if '1_' in base(rstinitret):
+            return [rR(xx) for xx in x]
+        if 'tmp1_' in rstinitret:
             x = x.replace('tmp_','tmp1_')
             x = x.replace('.rst','.rrrr')
             x = x.replace('.rest','.rst')
@@ -220,7 +302,7 @@ def mkrR(rstinitret): #swap .rest .rst
         else:
             x = x.replace('tmp_','tmp0_')
         return x
-    return swap
+    return rR
 def test_rstincluded(rstinit):
     '''
     Tests |dcx.rstincluded|.
@@ -229,7 +311,7 @@ def test_rstincluded(rstinit):
 
     rR = mkrR(rstinit)
     if '1_' in base(rstinit): dcx._set_rstrest('.rst')
-    if  rstinit.endswith('stpl'):
+    if  initfor(rstinit,'stpl'):
         assert list(rstincluded(rR('ra.rest.stpl'),(r'./doc',))) == rR([
                 'ra.rest.stpl', '_links_sphinx.rst'])
         assert list(rstincluded(rR('sy.rest.stpl'),(r'./doc',))) == rR([
@@ -241,7 +323,7 @@ def test_rstincluded(rstinit):
                 'dd_math.tpl', 'dd_diagrams.tpl', '_links_sphinx.rst'])
         assert list(rstincluded(rR('tp.rest.stpl'),(r'./doc',))) == rR([
                 'tp.rest.stpl', '_links_sphinx.rst'])
-    elif  rstinit.endswith('rest'):
+    elif  initfor(rstinit,'rest'):
         assert list(rstincluded(rR('ra.rest'),(r'./doc',))) == rR([
                 'ra.rest', '_links_sphinx.rst'])
         assert list(rstincluded(rR('sr.rest'),(r'./doc',))) == rR([
@@ -250,11 +332,11 @@ def test_rstincluded(rstinit):
                 'dd.rest', 'somefile.rst', '_links_sphinx.rst'])
         assert list(rstincluded(rR('tp.rest'),(r'./doc',))) == rR([
                 'tp.rest', '_sometst.rst', '_links_sphinx.rst'])
-    elif  rstinit.endswith('ipdt'):
+    elif  initfor(rstinit,'ipdt'):
         assert list(rstincluded(rR('i.rest.stpl'),(r'./pdt/001',))) == rR([
                 'i.rest.stpl', 'i_included.rst.stpl', 'i_tables.rst',
                 'i_math.tpl', 'i_diagrams.tpl'])
-    elif  rstinit.endswith('over'):
+    elif  initfor(rstinit,'over'):
         assert True
 
 def test_init(rstinit):
@@ -265,7 +347,7 @@ def test_init(rstinit):
     '''
 
     rR = mkrR(rstinit)
-    if  rstinit.endswith('ipdt'):
+    if  initfor(rstinit,'ipdt'):
         assert set(ttv('.').splitlines())==set(rR("""\
 ├ c/
 │ └ some.h
@@ -303,7 +385,7 @@ def test_init(rstinit):
 ├ waf.bat
 ├ wafw.py
 └ wscript""").splitlines())
-    elif  rstinit.endswith('stpl'):
+    elif  initfor(rstinit,'stpl'):
         assert set(ttv('.').splitlines())==set(rR("""\
 ├ build/
 ├ doc/
@@ -345,7 +427,7 @@ def test_init(rstinit):
 ├ waf.bat
 ├ wafw.py
 └ wscript""").splitlines())
-    elif  rstinit.endswith('rest'):
+    elif  initfor(rstinit,'rest'):
         assert set(ttv('.').splitlines())==set(rR("""\
 ├ Makefile
 ├ build/
@@ -380,7 +462,7 @@ def test_init(rstinit):
 ├ waf.bat
 ├ wafw.py
 └ wscript""").splitlines())
-    elif  rstinit.endswith('over'):
+    elif  initfor(rstinit,'over'):
         assert set(ttv('.').splitlines())==set(rR("""\
 ├ dev/
 │ ├ hw/
@@ -448,14 +530,14 @@ def test_dcx_alone_samples(rstinit):
     '''
 
     rR = mkrR(rstinit)
-    if  rstinit.endswith('ipdt') or rstinit.endswith('over'): #has no separate dcx.py
+    if  initfor(rstinit,'ipdt') or initfor(rstinit,'over'): #has no separate dcx.py
         r = run(['rstdoc'])
     else:
         r = run(['python', 'dcx.py'])
     assert r.returncode == 0
-    if  rstinit.endswith('over'):
+    if  initfor(rstinit,'over'):
         assert exists(".tags")
-    elif  rstinit.endswith('ipdt'):
+    elif  initfor(rstinit,'ipdt'):
         assert exists("build/c/some_tst.c")
         assert exists(rR("pdt/000/i.rest"))
         assert exists(rR("pdt/000/p.rest"))
@@ -475,7 +557,7 @@ def test_dcx_alone_samples(rstinit):
         assert exists(".tags")
         assert '\tpdt/000/' in open(".tags").read()
         assert '<file:../000/' in open(rR("pdt/_links_html.rst")).read()
-    elif  rstinit.endswith('rest'):
+    elif  initfor(rstinit,'rest'):
         assert exists("doc/egdot.dot")
         assert exists("doc/egsvg.svg")
         assert exists(rR("doc/_sometst.rst"))
@@ -490,7 +572,7 @@ def test_dcx_alone_samples(rstinit):
         assert exists(".tags")
         assert '\tdoc/' in open(".tags").read()
         assert '<file:dd.html' in open(rR("doc/_links_html.rst")).read()
-    elif  rstinit.endswith('stpl'):
+    elif  initfor(rstinit,'stpl'):
         assert exists(rR("doc/dd.rest"))
         assert exists(rR("doc/dd_included.rst"))
         assert exists(rR("doc/egdot.dot"))
@@ -531,17 +613,17 @@ def test_dcx_in_out(rstinit,cmd_result):
 
     '''
     rR = mkrR(rstinit)
-    if  rstinit.endswith('ipdt') or rstinit.endswith('over'):
+    if  initfor(rstinit,'ipdt') or initfor(rstinit,'over'):
         return
     cmd,result = cmd_result
-    cmd = rR(cmd)
+    tcmd = rR(cmd)
     os.chdir('doc')
-    if not os.path.exists(cmd.split()[1]):
-        if cmd.startswith('stpl'):
+    if not os.path.exists(tcmd.split()[1]):
+        if tcmd.startswith('stpl'):
             return
         else:
-            cmd = cmd.replace('.stpl','')
-    r = subprocess.run(cmd,shell=True,stdout=subprocess.PIPE)
+            tcmd = tcmd.replace('.stpl','')
+    r = subprocess.run(tcmd,shell=True,stdout=subprocess.PIPE)
     assert r.returncode == 0
     out = r.stdout.decode('utf-8')
     for res in result:
@@ -579,11 +661,11 @@ def test_dcx_out_file(rstinit,cmd_exists_not_exists):
     with in-file and out-file and out type parameter.
 
     '''
-    if  rstinit.endswith('ipdt') or rstinit.endswith('over'):
+    if  initfor(rstinit,'ipdt') or initfor(rstinit,'over'):
         return
+    rR = mkrR(rstinit)
     cmd,result,notexists = cmd_exists_not_exists
-    tcmd = []
-    tcmd.extend(cmd)
+    tcmd = rR(cmd)
     os.chdir('doc')
     notrest = tcmd[0].replace('.stpl','')
     if not os.path.exists(tcmd[0]):
@@ -594,23 +676,23 @@ def test_dcx_out_file(rstinit,cmd_exists_not_exists):
     ncmd = [r'rstdcx']+tcmd
     r=run(ncmd)
     assert r.returncode == 0
-    assert os.path.exists(result[0])
+    assert os.path.exists(rR(result[0]))
     if notrest:
         for ne in notexists:
-            assert not os.path.exists(ne)
+            assert not os.path.exists(rR(ne))
 
 @pytest.yield_fixture(params=['docx','pdf','html'])
 def makebuild(request,rstinit):
     oldd = os.getcwd()
-    if not rstinit.endswith('ipdt') and not rstinit.endswith('over'):
+    if not initfor(rstinit,'ipdt') and not initfor(rstinit,'over'):
         r=run(['make',request.param])
         assert r.returncode == 0
         os.chdir('build')
     yield (os.getcwd(),request.param)
     os.chdir(oldd)
 
-def tree3(x):
-    tres = ttv(x,with_dot=False,maxdepth=3)
+def tree3(x,maxdepth=3):
+    tres = ttv(x,with_dot=False,maxdepth=maxdepth)
     return tres
 
 def test_make_samples(makebuild):
@@ -620,9 +702,10 @@ def test_make_samples(makebuild):
     '''
 
     rstinit,target = makebuild
-    if  rstinit.endswith('ipdt') or rstinit.endswith('over'):
+    rR = mkrR(rstinit)
+    if  initfor(rstinit,'ipdt') or initfor(rstinit,'over'):
         return
-    elif  rstinit.endswith('rest'):
+    elif  initfor(rstinit,'rest'):
         expected_no_html=rR("""\
 ├ doc/
 │ └ {0}/
@@ -661,7 +744,7 @@ def test_make_samples(makebuild):
 └ tmp_rest/
   └ some_tst.c""")
         assert tree3(rstinit)==expected
-    elif  rstinit.endswith('stpl'):
+    elif  initfor(rstinit,'stpl'):
         expected_no_html=rR("""\
 ├ doc/
 │ └ {0}/
@@ -730,12 +813,12 @@ def test_waf_samples(wafbuild):
         _,ext = target.split('_')
     except: ext = target
     if ext.endswith('latex') or ext.endswith('html'):
-        extra = '\n│     ├ _images'
+        extra = '\n│ ├ _images'
         if ext.endswith('html'):
-            extra += '\n│     ├ _traceability_file.svg'
+            extra += '\n│ ├ _traceability_file.svg'
     else:
         extra = ''
-    if  rstinit.endswith('over'):
+    if  initfor(rstinit,'over'):
         expected_non_sphinx="""\
 ├ dev/
 │ ├ hw/
@@ -766,11 +849,19 @@ def test_waf_samples(wafbuild):
 │   └ test.{0}
 ├ contribution.{0}
 └ readme.{0}"""
-        realout = tree3(rstinit)
+        if target in waf_non_sphinx or target=='sphinx_html':
+            expected=expected_non_sphinx.format(ext)
+        else:
+            expected="""
+└ sphinx_latex/
+  ├ Makefile
+  ├ index.tex
+"""
+        realout = tree3(rstinit,4)
         for x in expected.splitlines():
             xchk=x.strip('└│├ ')
             assert realout.find(xchk)>=0, "%s not found"%xchk
-    elif  rstinit.endswith('ipdt'):
+    elif  initfor(rstinit,'ipdt'):
         expected_non_sphinx="""\
 └ pdt/
   ├ 000/
@@ -833,8 +924,9 @@ def test_waf_samples(wafbuild):
             xchk=x.strip('└│├ ')
             assert realout.find(xchk)>=0, "%s not found"%xchk
     else:#not idpt or over
-        is_stpl = rstinit.endswith('stpl')
-        tmpx_xxx = base(rstinit)
+        is_stpl = initfor(rstinit,'stpl')
+        #rstinit='/tmp/pytest-of-roland/pytest-702/test_waf_samples_sphinx_html_r0/tmp0_rest/build'
+        tmpx_xxx = re.search('(tmp.?_\w+)',rstinit).groups()[0]
         expected_non_sphinx="""\
 ├ doc/
 │ └ {0}{2}

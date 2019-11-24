@@ -1,3 +1,7 @@
+=================================
+rstdoc(1) Version 1.8.0 \| rstdoc
+=================================
+
 See `background and documentation <https://rstdoc.readthedocs.io/en/latest/>`__.
 
 Many companies use `DOCX <http://www.ecma-international.org/publications/standards/Ecma-376.htm>`_
@@ -17,9 +21,9 @@ This python package supports working with
 `RST <http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html>`_
 as documentation format without depending on Sphinx.
 
-- link RST documents (``.rest``) using 
+- link RST documents using 
   `substitutions <http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#substitution-definitions>`__
-  (generated in ``_links_xxx.rst``)
+  (generated in ``_links_xxx.r?st``)
 - create a ``.tags`` file to jump around in an editor that support 
   `ctags <http://ctags.sourceforge.net/FORMAT>`__
 - `RST`_ handling with python: reformat/create `RST`_ tables
@@ -27,17 +31,17 @@ as documentation format without depending on Sphinx.
 - pre-process Pandoc's conversion from `RST`_ to `DOCX`_
 - Support in building with `WAF <https://github.com/waf-project/waf>`_ (or ``Makefile``)
 
-  - expand 
+  - expand
     `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax>`_
     template files ``.stpl``
   - graphics files (``.tikz``, ``.svg``, ``.dot``,  ``.uml``, ``.eps`` or ``.stpl`` thereof, and ``.pyg``)
     are converted to ``.png``
-    and placed into ``./_images`` or ``../_images``
+    and placed into ``./_images`` or ``<updir>/_images``, if there, else into current directory.
   - a ``gen`` file specifies how `RST`_ should be generated from source code files (see ``dcx.py``)
 
 The conventions used are shown
 
-- by the example produced via ``rstdcx --rest samplerstdoc`` or ``rstdcx --stpl sampletemplated``
+- by the example produced via ``rstdcx --rest smplfldr`` or ``rstdcx --stpl smplfldr``
 - by the documentation sources that can be found at
   https://github.com/rpuntaie/rstdoc/tree/master/doc
 

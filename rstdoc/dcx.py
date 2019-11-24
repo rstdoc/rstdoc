@@ -60,8 +60,13 @@ except:
 rstdcx
 ======
 
-Support script to create documentation (PDF, HTML, DOCX)
-from restructuredText (RST, reST) using either
+restructuredText sources are split into two types of files:
+main files considered by Sphinx, and included files.
+Which of ``.rest``  or ``.rst`` is main or included is determined
+by ``source_suffix`` in a ``<root>/conf.py`` or by the extension of the ``_links_xxx`` files.
+
+``rstdoc`` creates documentation (PDF, HTML, DOCX)
+from restructuredText (``.rst``, ``.rest``) using either
 
 - `Pandoc <https://pandoc.org>`__
 - `Sphinx <http://www.sphinx-doc.org>`__
@@ -71,49 +76,33 @@ from restructuredText (RST, reST) using either
 ``rstdoc`` and ``rstdcx`` command line tools call ``dcx.py``.
 which
 
-- processes ``gen`` files (see examples produced by --rest)
+- creates ``.tags`` to jump around with the editor
 
 - handles `.stpl <https://bottlepy.org/docs/dev/stpl.html>`__ files
 
-- creates ``.tags`` to jump around with the editor
+- processes ``gen`` files (see examples produced by --rest)
 
-- creates links files like
-  ``_links_pdf.rst``, ``_links_docx.rst``, ``_links_sphinx.rst``
-  in link roots, which are folders where the first ``.rest`` is encoutered
-  during depth-first traversal.
-  Non-overlapping link root paths produce separately linked file sets.
-
-  ``.. include:: /_links_sphinx.rst``, with the one initial ``/``
-  instead of a relative or absolute path,
-  will automatically search upward for the ``_links_xxx.rst`` file
-  (``_sphinx`` is replaced by what is needed by the wanted target).
+- creates links files (``_links_docx.r?st``, ``_links_sphinx.r?st``, ...)
 
 - forwards known files to either Pandoc, Sphinx or Docutils
-
-  Sphinx ``conf.py`` is augmented by configuration for Pandoc and Docutils.
-  It should be where the input file is or above. If used with
-  `waf <https://github.com/waf-project/waf>`__,
-  it can also be where the main wscript is.
 
 See example at the end of ``dcx.py``.
 It is supposed to be used with a build tool.
 ``make`` and ``waf`` examples are included.
 
-- Initialize example tree.
-  This copies ``dcx.py`` into the example tree
-  to be independent from possible future changes::
+- Initialize example tree (add ``--rstrest`` to make ``.rst`` main and ``.rest`` included files):
 
   $ ./dcx.py --rest repo #repo/doc/{sy,ra,sr,dd,tp}.rest files OR
   $ ./dcx.py --stpl repo #repo/doc/{sy,ra,sr,dd,tp}.rest.stpl files
   $ ./dcx.py --ipdt repo #repo/pdt/AAA/{i,p,d,t}.rest.stpl files
   $ ./dcx.py --over repo #.rest all over
 
-- Only create .tags and ``_links_xxx.rst``::
+- Only create .tags and ``_links_xxx.r?st``::
 
-  $ cd tmp/doc
-  $ ./dcx.py
+  $ cd repo
+  $ rstdoc
 
-- Create the docs (and .tags and ``_links_xxx.rst``) with **make**::
+- Create the docs (and .tags and ``_links_xxx.r?st``) with **make**::
 
   $ make html #OR
   $ make epub #OR
@@ -123,13 +112,13 @@ It is supposed to be used with a build tool.
 
   The latter two are done by Pandoc, the others by Sphinx.
 
-- Create the docs (and .tags and ``_links_xxx.rst``) with
+- Create the docs (and .tags and ``_links_xxx.r?st``) with
   `waf <https://github.com/waf-project/waf>`__:
 
-  Instead of using ``make`` one can load ``dcx.py`` in
+  Instead of using ``make`` one can load ``dcx.py`` (``rstdoc.dcx``) in
   `waf <https://github.com/waf-project/waf>`__.
   ``waf`` also considers all recursively included files,
-  such that a change in any of them results in a rebuild of the documentation.
+  such that a change in any of them results in a rebuild.
   All files can have an additional ``.stpl`` extension to use
   `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html>`__.
 
@@ -137,15 +126,15 @@ It is supposed to be used with a build tool.
   $ waf --docs docx,sphinx_html,rst_odt
   $ #or you provide --docs during configure to always compile the docs
 
-  - ``rst_xxx`` via
+  - ``rst_xxx``: via
     `rst2xxx.py <http://docutils.sourceforge.net/docs/user/tools.html>`__
-  - ``sphinx_xxx`` via `Sphinx <http://www.sphinx-doc.org>`__ and
-  - just ``xxx`` via `Pandoc <https://pandoc.org>`__.
+  - ``sphinx_xxx``: via `Sphinx <http://www.sphinx-doc.org>`__ and
+  - just ``xxx``: via `Pandoc <https://pandoc.org>`__.
 
 
-The following image language files should be parallel to the ``.rest`` files.
+The following image language files should be parallel to the ``.r?st`` files.
 They are automatically converted to ``.png``
-and placed into ``./_images``, or ``../_images``, if only that exists.
+and placed into ``./_images`` or ``<updir>/_images`` or else parallel to the file.
 
 - ``.tikz`` or ``.tikz.stpl``.
   This needs LaTex.
@@ -182,7 +171,7 @@ and placed into ``./_images``, or ``../_images``, if only that exists.
     If ``matplotlib.pyplot.get_fignums()>1``
     the figures result in ``<name><fignum>.png``
 
-  The same code or the file names can be used in a ``.rest.stpl`` file
+  The same code or the file names can be used in a ``.r?st.stpl`` file
   with ``pngembed()`` or ``dcx.svgembed()`` to embed in html output.
 
   ::
@@ -201,21 +190,20 @@ and placed into ``./_images``, or ``../_images``, if only that exists.
 Conventions
 -----------
 
-- Files
+Files
 
-  - Main docs end in ``.rest``, while ``.rst`` files are used for ``.. include::`` and ignored by Sphinx.
-    This can be reversed by setting ``source_suffix='.rst'`` in ``conf.py`` at the project root.
-    If ``source_suffix`` is not defined,
-    a successful grep for ``.. include:: _links_sphinx.rest`` also reverses the convention.
-  - ``.txt`` are literally included (use :literal: option).
-  - Templates ``x.rest.stpl`` and ``y.rst.stpl`` are rendered separately.
-  - ``some.rst.tpl`` are template included
+  - fain files and included files: ``.rest``, ``.rst`` or vice versa.
+    ``.txt`` are for literally included files (use :literal: option).
+  - templates separately rendered : ``*.rest.stpl`` and ``*.rst.stpl``
+    template included: ``*.rst.tpl``
     Template lookup is done in
     ``.`` and ``..`` with respect to the current file.
 
     - with ``%include('some.rst.tpl', param="test")`` with optional parameters
     - with ``%globals().update(include('utility.rst.tpl'))``
       if it contains only definitions
+
+Links
 
 - ``.. _`id`:`` are *reST targets*.
   reST targets should not be template-generated.
@@ -233,12 +221,24 @@ Conventions
 - If you want an overview of the linking (traceability),
   add ``.. include:: _traceability_file.rst``
   to ``index.rest`` or another ``.rest`` parallel to it.
-  It is there in the generated example project, to include it in tests.
-  You might want to remove that line, if you start with the example project.
+  It is there in the example project, to include it in tests.
   ``_traceability_file.{svg,png,rst}`` are all in the same directory.
 
-See the example project created with ``--rest`` or ``--stpl``
-at the end of this file and the sources of the documentation of
+Link files are created in link roots, which are folders where the first main file
+(``.rest`` or ``.rst``) is encoutered during depth-first traversal.
+Non-overlapping link root paths produce separately linked file sets.
+
+``.. include:: /_links_sphinx.r?st``, with the one initial ``/``
+instead of a relative or absolute path,
+will automatically search upward for the ``_links_xxx.r?st`` file
+(``_sphinx`` is replaced by what is needed by the wanted target when the docs are generated).
+
+Sphinx ``conf.py`` is augmented by configuration for Pandoc and Docutils.
+It should be where the input file is, or better at the project root
+to be usable with `waf <https://github.com/waf-project/waf>`__.
+
+See the example project created with ``--rest/stpl/ipdt/over``
+and the sources of the documentation of
 `rstdoc <https://github.com/rpuntaie/rstdoc>`__.
 
 
@@ -404,6 +404,13 @@ def updir(fn):
 # updir('a.b/a.b') # a.b
 # normjoin(fn) # x\y\a.b
 
+def is_project_root_file(filename):
+    '''
+    Identifies the root of the project by a file name contained there.
+
+    '''
+    return filename=='.git' or filename=='waf' or filename=='Makefile' or filename.lower().startswith('readme')
+
 
 '''
 Used for png creation.
@@ -438,7 +445,7 @@ def _get_rstrest(config=None):
                 with opnappend(config['__file__']) as f:
                     f.write('\nsource_suffix = "%s"'%_rest)
             else:
-                conf_file = up_dir(lambda x: x=='.git')
+                conf_file = up_dir(is_project_root_file)
                 if conf_file:
                     conf_file = normjoin(conf_file,'conf.py')
                     if not exists(conf_file):
@@ -540,11 +547,14 @@ def _here_or_updir(fldr, file):
     filepth = normjoin(fldr, file)
     there = 1
     if not exists(filepth):
-        filedir = up_dir(lambda x:x==file or x=='.git', start=abspath(fldr))
+        there = 0
+        filedir = up_dir(lambda x:x==file or is_project_root_file(x), start=abspath(fldr))
         if filedir:
             filepth = normjoin(filedir, file)
             if exists(filepth):
-                there = 2
+                rthere = relpath(filedir,start = fldr)
+                #rthere = '../..'
+                there = len(rthere.split('..'))
             else:
                 there = 0
     return (filepth, there)
@@ -689,7 +699,7 @@ def conf_py(fldr):
     config.update(config_defaults)
     if g_config:
         config.update(g_config)
-    confpydir = up_dir(lambda x:x=='conf.py' or x=='.git',start=abspath(fldr))
+    confpydir = up_dir(lambda x:x=='conf.py' or is_project_root_file(x),start=abspath(fldr))
     if confpydir:
         confpypath = normjoin(confpydir,'conf.py')
         if exists(confpypath):
@@ -909,8 +919,7 @@ def infile_cwd(f):
 def normoutfile(f, suffix=None):
     """
     Make outfile from infile by appending suffix, or, if None,
-    ``.png`` in ``./_images``
-    or ``../_images``  or ``./`` from infile directory.
+    ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
     The outfile is returned.
     """
 
@@ -1122,9 +1131,11 @@ def rst_sphinx(
         else:
             outtype = outne.strip('.')
     cfg.update({k: v for k, v in sphinx_enforced.items() if 'latex' not in k})
-    cfg['master_doc'] = stem(infn) #rest.rest -> .rest (see rest_rest)
+    cfg['master_doc'] = stem(infn) #.rest.rest -> .rest (see rest_rest)
     # .rest.rest contains temporary modification and is used instead of .rest
     if outtype == 'html' and is_rest(cfg['master_doc']): #... not for index.rest
+        cfg['master_doc'] = stem(cfg['master_doc'])
+    if exists(cfg['master_doc']):
         cfg['master_doc'] = stem(cfg['master_doc'])
     if samedir:
         outdr = normjoin(outdr, 'sphinx_'+outtype)
@@ -1175,14 +1186,15 @@ def rst_sphinx(
 
 def _copy_images_for(infile, outfile, with_trace):
     indr = dirname(infile)
-    outdr = dirname(outfile)
     imgdir, there = _here_or_updir(indr, _images)
-    if there == 1:
-        imgdir_tgt = normjoin(outdr, _images)
-    elif there == 2:
-        imgdir_tgt = normjoin(dirname(outdr), _images)
-    else:
+    imgdir_tgt = outfile
+    while there:
+        imgdir_tgt = dirname(imgdir_tgt)
+        there = there - 1
+    if imgdir_tgt == outfile:
         return
+    imgdir_tgt = normjoin(imgdir_tgt,_images)
+    outdr = dirname(outfile)
     if with_trace:
         tracesvg = normjoin(indr, _traceability_file + _svg)
         if exists(tracesvg):
@@ -1228,7 +1240,7 @@ def rst_pandoc(
     pandoccmd = ['pandoc', '--standalone', '-f', 'rst'] + cfg.get(
         'pandoc_opts', {}).get(outtype, []) + [
             '-t', 'latex'
-            if outtype == 'pdf' else outtype, infile, '-o', outfile
+            if outtype == 'pdf' else outtype.replace('rest','rst'), infile, '-o', outfile
         ]
     opt_refdoc = cfg.get('pandoc_doc_optref', {}).get(outtype, '')
     if opt_refdoc:
@@ -1395,7 +1407,7 @@ def svgpng(infile, outfile=None, *args, **kwargs):
 
     :param infile: a .svg file name or list of lines
     :param outfile: if not provided the input file with new extension
-      ``.png`` either in ``./_images`` or ``../_images`` or ``.``
+          ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
     '''
 
@@ -1421,8 +1433,8 @@ def texpng(infile, outfile=None, *args, **kwargs):
 
     :param infile: a .tex file name or list of lines
         (provide outfile in the latter case)
-    :param outfile: if not provided, the input file with .png
-        either in ``./_images`` or ``../_images`` or ``.``
+    :param outfile: if not provided, the input file with
+                  ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
     '''
 
@@ -1482,7 +1494,7 @@ def dotpng(
     :param infile: a .dot file name or list of lines
         (provide outfile in the latter case)
     :param outfile: if not provided the input file with new extension
-        ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+        ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
     '''
 
@@ -1504,7 +1516,7 @@ def umlpng(
     :param infile: a .uml file name or list of lines
         (provide outfile in the latter case)
     :param outfile: if not provided the input file with new extension
-        ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+        ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
     '''
 
@@ -1527,7 +1539,7 @@ def epspng(
     :param infile: a .eps file name or list of lines
         (provide outfile in the latter case)
     :param outfile: if not provided the input file with new extension
-        ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+        ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
     '''
 
@@ -1563,7 +1575,7 @@ def pygpng(
     :param infile: a .pyg file name or list of lines
         (provide outfile in the latter case)
     :param outfile: if not provided the input file with new extension
-        ``.png`` either in ``./_images`` or ``../_images`` or ``./``
+        ``.png`` in ``./_images``, ``<updir>/_images`` or parallel to infile.
 
     '''
 
@@ -1685,7 +1697,7 @@ def svgembed(
         svgsrc = pygsvg(pyg_or_svg)
     except Exception as e:
         svgsrc = _joinlines(pyg_or_svg)
-    if outinfo.endswith('html') or outinfo.endswith('rest'):
+    if outinfo.endswith('html') or outinfo.endswith('rest') or outinfo.endswith('rst'):
         return '.. raw:: html\n\n'+_indent_text(svgsrc)
     else:
         svgfn = normjoin(tempdir(),'svg.png')
@@ -1710,7 +1722,7 @@ def pngembed(
 
     pngfn = normjoin(tempdir(),'png.png')
     pygpng(pyg_or_pngfile,pngfn,*args,**kwargs)
-    if outinfo.endswith('html') or outinfo.endswith('rest'):
+    if outinfo.endswith('html') or outinfo.endswith('rest') or outinfo.endswith('rest'):
         return '.. raw:: html\n\n'+_indent_text(_png64(pngfn))
     else:
         return ".. image:: {}".format(pngfn)
@@ -1953,7 +1965,7 @@ def dorst(
         except:
             outinfo = 'rest'
 
-        if _rest.endswith(outinfo):
+        if _rest.replace('rest','rst').endswith(outinfo.replace('rest','rst')):
             rsttool = None  # no further processing wanted, sysout is final
         if not rsttool and not sysout:
             sysout = opnwrite(outfile)
@@ -1985,7 +1997,7 @@ def dorst(
                         #outinfo='docx'
                         if limg0.startswith('/'):
                             if limg0 == '/': #find linkroot
-                                linkroot = up_dir(lambda x: x.startswith('_links_') or x=='.git',
+                                linkroot = up_dir(lambda x: x.startswith('_links_') or is_project_root_file(x),
                                                   abspath(dirname(infile)))
                                 linksfilename = normjoin(linkroot, '_links_' + outinfo + limg2)
                             else:
@@ -3352,7 +3364,7 @@ class Fldrs(OrderedDict):
         return super().__str__()
 
     def scandirs(self):
-        #_images, .git, ... excluded
+        #_images, and dot files excluded
         notexcluded = lambda d: not d.startswith('_') and not (len(d)>1 and d[0]=='.' and d[1]!='.')
         linkroot = None
         for p, ds, fs in os.walk(self.scanroot):
@@ -3400,28 +3412,30 @@ def links_and_tags(
     for folder,fldr in reversed(fldrs.items()):
         fldr.create_links_and_tags()
 
-def _kw_from_path(dir,rexkwsplit=rexkwsplit):
-    """use file of path up to ``.git`` as keywords
+def _kw_from_path(kwpth,rexkwsplit=rexkwsplit):
+    """use names of path up to project root as keywords
 
     ::
 
-        >>> dir="/pro jects/me_about-this-1.rst"
-        >>> _kw_from_path(dir)==frozenset({'me', 'this', '1', 'about'})
+        >>> kwpth="/projects/me_about-this-1.rst"
+        >>> _kw_from_path(kwpth)==frozenset({'me', 'this', '1', 'about'})
         True
 
     """
-    fr = dir
+    fr = kwpth
     fn = None
     while True:
         fr,fn = dir_base(fr)
         if not fn:
             break
-        if exists(normjoin(fr,'.git')):
-            break
+        if exists(fr):
+            ipr = any(is_project_root_file(x) for x in os.listdir(fr))
+            if ipr:
+                break
     if fn:
-        fn = relpath(dir,fr)
+        fn = relpath(kwpth,fr)
     else:
-        fn = base(dir)
+        fn = base(kwpth)
     fpth = stem(fn)
     if fpth.endswith(_rst) or fpth.endswith(_rest):
         fpth = stem(fpth)
@@ -3726,7 +3740,7 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid):
         AAA = pdtid(pdtfile)
     except:
         if not pdtfile.endswith('index'+_rest+'.stpl'):
-            print("Maybe OK: pdt id (3,upper,base36) not found in path ", pdtfile)
+            print("Warning: pdt id (3,upper,base36) not found in path ", pdtfile)
         return
     pdtfn = base(pdtfile)
     x = ''
@@ -3844,7 +3858,8 @@ try:
             for anext in 'tikz svg dot uml pyg eps'.split():
                 source=tskgen.path.ant_glob('**/*.'+anext,excl=bldpth+"/**")
                 tskgen.bld(name='build '+anext, source=[x for x in source if _traceability_file not in x.abspath()])
-            tskgen.bld(name='build all rest', source=tskgen.path.ant_glob('**/*'+_rest,excl=bldpth+"/**"))
+            foundfiles = list(tskgen.path.ant_glob('**/*'+_rest,excl=bldpth+"/**"))
+            tskgen.bld(name='build all rest', source=foundfiles)
 
     def render_stpl(tsk, bld):
         bldpath = bld.path.get_bld().abspath()
@@ -3877,7 +3892,7 @@ try:
             pass
 
     def gen_ext_tsk(tskgen, node,
-                    ext):  # into _images or ../_images in source path
+                    ext):  # into _images or <updir>/_images in source path
         srcfldr = node.parent.get_src()
         _imgpath, there = _here_or_updir(srcfldr.abspath(), _images)
         if not there:
@@ -6385,7 +6400,7 @@ Pdf output needs latex. Else you can make odt or docx and use
 - linux: ``lowriter --headless --convert-to pdf Untitled1.odt``
 
 Inkscape (.eps, .svg), Dot (.dot), Planuml (.uml), latex (.tex,.tikz)
-are converted to .png into ``./_images`` or ``../_images``.
+are converted to .png into ``./_images`` or ``<updir>/_images`` or '.'.
 Any of the files can be a SimpleTemplate template (xxx.yyy.stpl).
 
 Configuration is in ``conf.py`` or ``../conf.py``.
@@ -6397,12 +6412,22 @@ Configuration is in ``conf.py`` or ``../conf.py``.
 ``--ipdt`` with inform-plan-do-test enhancement cycles
 ``--over`` with ``.rest`` files all over the project tree including symbolic links
 
+Examples
+--------
+
+Example folders (see wscript and Makefile there)::
+
+    rstdoc --rest <folder> [--rstrest]
+    rstdoc --stpl <folder> [--rstrest]
+    rstdoc --ipdt <folder> [--rstrest]
+    rstdoc --over <folder> [--rstrest]
+
 Examples usages with the files generated by ``rstdoc --stpl tmp``:
 
 .. code-block:: sh
 
     cd tmp/doc
-    rstdcx   #expand .stpl and produce _links_xxx.rst and .tags
+    rstdcx   #expand .stpl and produce .tag and _links_xxx files
 
     #expand stpl and append substitutions (for simple expansion use ``stpl <file> .``)
     rstdcx dd.rest.stpl - rest           # expand to stdout, appending dd.html substitutions, to pipe to Pandoc
@@ -6431,7 +6456,7 @@ Examples usages with the files generated by ``rstdoc --stpl tmp``:
     #Directly from ``.stpl`` does not work with Sphinx
     rstdcx index.rest ../build/index.html sphinx_html   # via Sphinx the output directory must be different
 
-    #convert the graphics and place the into _images or ../_images
+    #convert the graphics and place the into _images or <updir>/_images
     #if no _images directory exists they will be placed into the same directory
     rstdcx egcairo.pyg
     rstdcx egdot.dot.stpl
@@ -6445,8 +6470,41 @@ Examples usages with the files generated by ``rstdoc --stpl tmp``:
     rstdcx egtikz1.tikz
     rstdcx eguml.uml
 
-    #convert graphics to a png here (even if _images directory exists)
+    #Convert graphics to a png (even if _images directory exists):
     rstdcx eguml.uml eguml.png
+
+    #Files to other files:
+
+    rstdoc dd.rest.stpl dd.rest
+    rstdoc dd.rest.stpl dd.html html
+    rstdoc dd.rest.stpl dd.html
+    rstdoc sr.rest.stpl sr.html rst_html
+    rstdoc dd.rest.stpl dd.docx
+    rstdoc dd.rest.stpl dd.odt pandoc
+    rstdoc dd.rest.stpl dd.odt
+    rstdoc sr.rest.stpl sr.odt rst_odt
+    rstdoc sr.rest.stpl sr.odt rst
+    rstdoc index.rest build/index.html sphinx_html
+
+    #Directories to other directories with out info:
+
+    rstdoc . build html
+    rstdoc . build sphinx_html
+
+Grep with python re in .py, .rst, .rest, .stpl, .tpl::
+
+    rstdoc --pygrep inline
+
+Grep for keyword lines containing 'png'::
+
+    rstdoc --kw png
+
+Default keyword lines::
+
+    .. {kw1,kw2}
+    {{_ID3('kw1 kw2')}}
+    %__ID3('kw1 kw2')
+    :ID3: kw1 kw2
 
 """
 
@@ -6573,7 +6631,9 @@ to define variables that can be used in templates."""
         notexistsout = outfile and outfile!='-' and not exists(outfile)
         imgfiles = []
         if isdir(args['infile']):
-            index_dir(args['infile'])
+            with new_cwd(args['infile']):
+                _get_rstrest()
+                index_dir(args['infile'])
             if outfile is None:
                 return
             imgfiles = [x for x in os.listdir(args['infile']) if _is_graphic(stem_ext(x)[1])]
@@ -6594,9 +6654,12 @@ to define variables that can be used in templates."""
         for i in imgfiles:
             convert(i,None)
         for i,o in zip(infiles,outfiles):
+            for rxt in [_rst,_rest]:
+                if i.endswith(rxt) or i.endswith(rxt+_stpl):
+                    _set_rstrest(rxt)
             convert(i,o,outinfo)
     else:
-        myroot = up_dir(lambda x: x=='.git')
+        myroot = up_dir(is_project_root_file)
         if myroot:
             with new_cwd(myroot):
                 _get_rstrest()

@@ -4,6 +4,7 @@
 #install: latex, plantuml, graphviz, inkscape
 
 #version:
+readme.rst
 doc/conf.py
 rstdoc/__init__.py
 
@@ -44,14 +45,17 @@ with open(os.path.join(here, 'rstdoc','__init__.py'), 'rb') as f:
         f.read().decode('utf-8')).group(1)))
 
 def long_description():
-      def read(fname, separator='\n"""'):
+      def read(fname, separator='\n\n"""',sec=[1]):
+          res = []
           with open(join(here, fname),
                     encoding='utf-8') as f:
-              return f.read().split(separator)[1]
+              r = f.read().split(separator)
+              for s in sec:
+                    res.append(r[s])
+          return '\n'.join(res)
       ld = '\n'.join([
           open('readme.rst').read(),
-          read('rstdoc/dcx.py'),
-          read('rstdoc/dcx.py', separator="'''\\").split("'''")[0],
+          read('rstdoc/dcx.py',sec=[1,3]),
           read('rstdoc/fromdocx.py'),
           read('rstdoc/listtable.py'),
           read('rstdoc/untable.py'),
@@ -113,6 +117,7 @@ if __name__ == '__main__':
       packages=['rstdoc'],
       package_data={'rstdoc': ['../readme.rst','reference.tex', 'reference.docx',
                                'reference.odt', 'wafw.py']},
+      data_files=[("man/man1", ["rstdoc.1"])],
       zip_safe=False,
       tests_require=['pytest', 'pytest-coverage', 'mock'],
       entry_points={

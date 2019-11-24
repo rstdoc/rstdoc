@@ -1,4 +1,4 @@
-.PHONY: man test up check dist
+.PHONY: test doctest man check dist up
 
 test:
 	py.test -vv --doctest-modules --cov=rstdoc --cov-report term-missing
@@ -10,7 +10,7 @@ man:
 	python setup.py --print | pandoc -s -f rst -t man -o rstdoc.1
 
 check:
-	restview --long_description --strict
+	restview --long-description --strict
 
 dist: man
 	sudo python setup.py bdist_wheel
