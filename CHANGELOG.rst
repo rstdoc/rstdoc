@@ -9,6 +9,11 @@ TODO
 
 - Run tests with new pandoc, docutils, sphinx version
 
+todo - v1.9.0
+=============
+
+- more flexible ``pdtid()`` and ``pdtAAA()``
+
 20191124 - v1.8.0
 =================
 
@@ -16,10 +21,10 @@ No changelog yet.
 Some later entries from git log:
 
 - fix tests
-- --rstrest to have sample project with .rst main and .rest
+- ``--rstrest`` to have sample project with .rst main and .rest
 - use txdir
-- /_links_sphinx.rst to search up dir
-- --ipdt sample project added
+- ``/_links_sphinx.rst`` to search up dir
+- ``--ipdt`` sample project added
 - support links accross directories
 - allow control over file name in temporary directory
 - targets with relative path
