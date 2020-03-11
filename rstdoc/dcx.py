@@ -3626,9 +3626,14 @@ def _pdtok(fid):
     assert len(fid) == 3
     assert int(fid,base=36) < 36**3
 
-def pdtid(pdtfile):
+def pdtid(pdtfile,pdtok=_pdtok):
     """
-    ``pdtid`` takes the path of the current file and extracts an ID from it.
+    ``pdtid`` takes the path of the current file and extracts an ID
+
+    - either from the directory or
+    - from the file name
+
+    depending on ``pdtok``, which raises if not OK.
 
     ::
 
@@ -3648,13 +3653,13 @@ def pdtid(pdtfile):
         if fid == fido:
             break
     try:
-        _pdtok(fid)
+        pdtok(fid)
     except:
         fid = stem(stem(base(dirname(pdtfile))))
-        _pdtok(fid)
+        pdtok(fid)
     return fid
 
-def pdtAAA(pdtfile,dct,pdtid=pdtid):
+def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
     '''
     ``pdtAAA`` is for use in an ``.stpl`` document::
 
@@ -3667,6 +3672,9 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid):
     :param pdtfile: file path of pdt
     :param dct: dict to take up the generated defines
     :param pdtid: function returning the ID for the ``pdt`` cycle
+    :param pdtfileid: extracts/maps a file base name to one of the letters ipdt.
+                      E.g. to have the files in order one could name them {0,1,2,3}.rest.stpl,
+                      and map each to one of 'ipdt'.
 
     A ``pdt`` is a project enhancement cycle with its own documentation.
     ``pdt`` stands for
@@ -3739,14 +3747,15 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid):
     try:
         AAA = pdtid(pdtfile)
     except:
-        if not pdtfile.endswith('index'+_rest+'.stpl'):
-            print("Warning: pdt id (3,upper,base36) not found in path ", pdtfile)
         return
     pdtfn = base(pdtfile)
     x = ''
     dct['AAA']=AAA
     if not pdtfn.startswith(AAA):
-        x = pdtfn[0]
+        try:
+            x = pdtfileid(pdtfn)
+        except:
+            x = pdtfn[0]
         dct[x+'AAA']=x+AAA
         dct['xAAA']=x+AAA
     dct['PdtItem']=PdtItem
@@ -5910,9 +5919,10 @@ example_ipdt_tree = r'''
              % pdtAAA(__file__,globals())
              %
              %if defined('Title'):
-             {{'#'*len(Title)}}
-             {{AAA+" - " if defined('AAA') else ''}}{{Title}}
-             {{'#'*len(Title)}}
+             %ttl=AAA+" - "+Title if defined('AAA') else Title
+             {{'#'*len(ttl)}}
+             {{ttl}}
+             {{'#'*len(ttl)}}
              %end
              
              %if defined('iAAA'):
