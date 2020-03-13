@@ -965,7 +965,7 @@ def in_temp_if_list(
         suffix='stpl'
         ):
     """
-    Wraps f(infile, outfile) returning None
+
     to produce a temporary directory/file for when infile is a list of strings.
     The temporary directory/file is removed via atexit.
 
@@ -994,7 +994,9 @@ def in_temp_if_list(
             if _is_graphic(outinfo):
                 suf0, suf1 = outinfo, suffix
             else:
-                suf0, suf1 = _suffix(outinfo) + _rest, suffix
+                # see infile_outinfo
+                _, outi = dir_base(outinfo)
+                suf0, suf1 = _suffix(outi) + _rest, suffix
         if not isinstance(infile, str) and infile:
             if outfile and isinstance(outfile, str):
                 outfile = abspath(outfile)
@@ -1895,7 +1897,7 @@ def dorst(
     rsttool = rst_tools[tool]
     dinfo, binfo = None, None
     if outinfo:
-        #in/file/outinfo
+        # see infile_outinfo
         dinfo, binfo = dir_base(outinfo)
         outinfo = binfo
     if not isinstance(outfile, str) and outinfo in rst_tools:
@@ -2201,7 +2203,7 @@ def convert(
                         fn_i_ln = _flatten_stpl_includes(infile)
                     else:
                         fn_i_ln = list(_flatten_stpl_includes_it(infile))
-                    outinfo = nextinfile + '/' + (outinfo or '')
+                    outinfo = nextinfile + '/' + (outinfo or '') # infile_outinfo
             infile = thisconverter(infile, out_(), **kwargs)
         if not infile:
             break
