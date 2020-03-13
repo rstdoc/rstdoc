@@ -2006,6 +2006,8 @@ def dorst(
                             linksfilename = normjoin(dirname(infile), limg0, '_links_' + outinfo + limg2)
                         #a/b/_links_docx.rst #1
                         #a/_links_docx.rst #2
+                        if not exists(linksfilename):
+                            linksfilename = stem(linksfilename)+(_rst if limg2==_rest else _rest)
                         if exists(linksfilename):
                             with opn(linksfilename) as f:
                                 if tool == 'rst' and outinfo == 'html':
@@ -3659,6 +3661,7 @@ def pdtid(pdtfile,pdtok=_pdtok):
         pdtok(fid)
     return fid
 
+gpdtid = pdtid
 def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
     '''
     ``pdtAAA`` is for use in an ``.stpl`` document::
@@ -3671,7 +3674,7 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
 
     :param pdtfile: file path of pdt
     :param dct: dict to take up the generated defines
-    :param pdtid: function returning the ID for the ``pdt`` cycle
+    :param pdtid: function returning the ID for the ``pdt`` cycle or regular expression for ``pdtok``
     :param pdtfileid: extracts/maps a file base name to one of the letters ipdt.
                       E.g. to have the files in order one could name them {0,1,2,3}.rest.stpl,
                       and map each to one of 'ipdt'.
@@ -3746,6 +3749,13 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
 
     try:
         AAA = pdtid(pdtfile)
+    except TypeError:
+        def repdtok(fid):
+            assert re.match(pdtid,fid)
+        try:
+            AAA = gpdtid(pdtfile,pdtok=repdtok)
+        except:
+            return
     except:
         return
     pdtfn = base(pdtfile)
@@ -3767,6 +3777,50 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
     if x:
         eval(compile(dfns.format(x+AAA), "<pdtAAA>", "exec"),dct)
 
+def index_toctree(index_file):
+    '''
+    Construct::
+
+        .. toctree::
+            file1
+            file2
+
+    for the sphinx index file,
+    i.e. ``index.rest.stpl`` or ``index.rst.stpl``.
+    Use like::
+
+        {{! index_toctree(__file__) }}
+
+    '''
+
+    from pathlib import Path
+    thisdir=Path(index_file).parent
+    toctree=['.. toctree::']
+    _get_rstrest()
+    toglob = '*'+_rest+"*"
+    pdtdirs = list(sorted(set(y.parent for y in thisdir.rglob(toglob) if
+                                not y.name.startswith('index'+_rest) and
+                                not y.name.endswith(_tpl) and
+                                not any(x.endswith('build') for x in str(y).split(os.sep))
+                                )))
+    for apdtd in pdtdirs:
+        fs = dict((f.name[0],f) for f in Path(apdtd).glob(toglob) if
+                  not exists(str(f.absolute())+_stpl) and
+                  not f.name.endswith(_tpl)
+                  )
+        for i in "0i1p2d3t":
+            if i in fs:
+                fsi = fs[i]
+                fsi0 = fsi.name.split('.')[0]
+                ipdtf = any(x.startswith(fsi0) for x in 'inform plan do test'.split())
+                if ipdtf or '0123'.find(fsi0)>=0:
+                    relpth = stem(fs[i].relative_to(thisdir))
+                    toctree.append('      '+relpth)
+                    del fs[i]
+        for i in fs:
+            relpth = stem(fs[i].relative_to(thisdir))
+            toctree.append('      '+relpth)
+    return '\n'.join(toctree)
 
 
 # ==============> for building with WAF
@@ -5915,7 +5969,7 @@ example_ipdt_tree = r'''
              % assert Status in "draft final replaced deferred rejected withdrawn".split(), "Wrong PDT Status"
              %
              % #see pdtAAA (__file__ is the main stpl file)
-             % from rstdoc.dcx import pdtAAA, exists, dirname
+             % from rstdoc.dcx import pdtAAA
              % pdtAAA(__file__,globals())
              %
              %if defined('Title'):
