@@ -5,6 +5,8 @@ CHANGELOG
 TODO
 ====
 
+- use docutils make_id() to create the external target in the _links_xxx.rst files
+
 - test tags on vscode, and add to docs
 
 - Run tests with new pandoc, docutils, sphinx version
