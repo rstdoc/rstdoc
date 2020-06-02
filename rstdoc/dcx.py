@@ -513,6 +513,8 @@ restplinclude = re.compile(r"""%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*""")
 #rexkw = re.compile(r'^\s*\.\. {')
 #... combined:
 rexkw = re.compile(r'^\s*(\.\. {|%?\s*{*_+[0-Z]+_*\()|^\s*:[0-Z]+:\s')
+cmmnt = r"""[\.:#%/';"-]"""
+rexkw = re.compile(r'^\s*('+cmmnt+cmmnt+r' {|%?\s*{*_+[0-Z]+_*\()|^\s*:[0-Z]+:\s')
 #rexkw.search("{{_A30('kw1 kw2')}}")
 #rexkw.search("{{_U00___('kw1 kw2')}}")
 #rexkw.search(" % __0A0('kw1 kw2')")
@@ -521,7 +523,11 @@ rexkw = re.compile(r'^\s*(\.\. {|%?\s*{*_+[0-Z]+_*\()|^\s*:[0-Z]+:\s')
 #rexkw.search(" :U00: kw1 kw2")
 #rexkw.search("\t:123: kw1 kw2")
 #rexkw.search("   .. {kw1 kw2}")
-#rexkw.search("   .. {kw1 kw2}")
+#rexkw.search("   -- {kw1 kw2}")
+#rexkw.search("   // {kw1 kw2}")
+#rexkw.search("   ## {kw1 kw2}")
+#rexkw.search("   '' {kw1 kw2}")
+#rexkw.search("   ''' {kw1 kw2}") #NO
 #rexkw.search(" %  .. {kw1 kw2}") #NO
 #rexkw.search(" % fun('kw1 kw2')") #NO
 rexkwsplit = re.compile(r'[\W_]+')
@@ -3512,6 +3518,7 @@ def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
         %__ID3('kw1 kw2')
         :ID3: kw1 kw2
 
+    ``..`` can also be two comment chars of popular programming languages.
     This is due to ``dcx.rexkw``, which you can change.
     See also ``dcx.grep()`` for the keyword parameters.
 
