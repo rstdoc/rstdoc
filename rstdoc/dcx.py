@@ -3470,7 +3470,10 @@ def _kw_from_line(ln,rexkwsplit=rexkwsplit):
 def grep(
       regexp=rexkw,
       dir=None,
-      exts=set(['.rst','.rest','.stpl','.tpl','.py']),
+      exts=set(['.rst','.rest','.stpl','.tpl','.adoc','.md','.wiki','.py','.jl','.lua','.tex',
+                '.js', '.h','.c','.hpp','.cpp','.java','.cs','.vb','.r','.sh','.vim','.el',
+                '.php','.sql','.swift','.go','.rb','.m','.pl','.rs','.f90','.dart',
+                '.yml','.mm','.d','.lsp','.kt','.hs','.lhs','.ex','.scala','.clj']),
       **kwargs
 ):
     '''
