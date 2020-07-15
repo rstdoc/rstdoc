@@ -994,4 +994,4 @@ def test_kw():
     for x in outlines:
         assert 'png' in x
 
-# vim: ts=4 sw=4 sts=4 et noai nocin nosi inde=
+# vim: ts=4 sw=4 sts=4 et noai nocin nosi
