@@ -192,7 +192,7 @@ Conventions
 
 Files
 
-  - fain files and included files: ``.rest``, ``.rst`` or vice versa.
+  - main files and included files: ``.rest``, ``.rst`` or vice versa.
     ``.txt`` are for literally included files (use :literal: option).
   - templates separately rendered : ``*.rest.stpl`` and ``*.rst.stpl``
     template included: ``*.rst.tpl``
@@ -424,6 +424,9 @@ _rest = '.rest'
 _rst = '.rst'
 _txt = '.txt'
 
+_grepinc = lambda inc: grep('^\.\. include:: .*_links_sphinx'+inc+'$',
+               exts=set(['.rst','.rest','.stpl','.tpl']))
+
 #a_rest is the main extension (default .rest)
 def _set_rstrest(a_rest):
     global _rest
@@ -437,9 +440,7 @@ def _get_rstrest(config=None):
         config = conf_py(cwd())
     if 'source_suffix' not in config:
         try:
-            grepgen = grep('^\.\. include:: .*_links_sphinx.rest$',
-                           exts=set(['.rst','.rest','.stpl','.tpl']))
-            resg = next(grepgen)
+            next(_grepinc('.rest'))
             _set_rstrest('.rst') #found incuded .rest, so main .rst
             if '__file__' in config:
                 with opnappend(config['__file__']) as f:
@@ -1109,9 +1110,6 @@ def rst_sphinx(
     cfgt.update(config_defaults)
     cfgt.update(config)
 
-    def dfn(n, v):
-        return ['-D', n + '=' + v]
-
     indr, infn = dir_base(infile)
     outdr, outn = dir_base(outfile)
     outnn, outne = stem_ext(outn)
@@ -1597,7 +1595,7 @@ def pygpng(
         _toolrunner.svg2png(bytestring=pygvars['to_svg'](),
             write_to=outfile, dpi=dpi)
     else:
-        for k, v in pygvars.items():
+        for _, v in pygvars.items():
             if hasattr(v,'_repr_svg_'):
                 _toolrunner.svg2png(
                     bytestring=v._repr_svg_(), write_to=outfile, dpi=dpi)
@@ -1660,7 +1658,7 @@ def pygsvg(infile, *args, **kwargs):
     if 'to_svg' in pygvars:
         return onlysvg(pygvars['to_svg']())
     else:
-        for k, v in pygvars.items():
+        for _, v in pygvars.items():
             if hasattr(v,'_repr_svg_'):
                 return onlysvg(v._repr_svg_())
             elif cairocffi and isinstance(v, cairocffi.SVGSurface):
@@ -1683,7 +1681,7 @@ def pygsvg(infile, *args, **kwargs):
                     return svgsrc
                 except:
                     continue
-        for k, v in pygvars.items():
+        for _, v in pygvars.items():
             if isinstance(v, io.BytesIO):
                 v.seek(0)
                 return onlysvg(v.read().decode('utf-8'))
@@ -1703,7 +1701,7 @@ def svgembed(
 
     try:
         svgsrc = pygsvg(pyg_or_svg)
-    except Exception as e:
+    except Exception:
         svgsrc = _joinlines(pyg_or_svg)
     if outinfo.endswith('html') or outinfo.endswith('rest') or outinfo.endswith('rst'):
         return '.. raw:: html\n\n'+_indent_text(svgsrc)
@@ -3023,7 +3021,7 @@ class RstFile:
         self.nlns = nlns
 
     def __str__(self):
-        return str((self.doc, self.restname))
+        return str((self.doc, self.reststem))
 
     def add_links_and_tags(self, add_tgt, add_linksto):
         iterlnks = iter(self.lnks)
@@ -3093,7 +3091,7 @@ class RstFile:
         lenlns = len(lns)
         lenlns1 = len(lns1)
         for i, i1 in paired_itgts_itgts1:
-            ii, iis, iilen = (i, lns, lenlns) if i else (i1, lns1, lenlns1)
+            ii, iis, _ = (i, lns, lenlns) if i else (i1, lns1, lenlns1)
             cur = iis[ii]
             tgt = Tgt(ii, rextgt.search(cur).group(1))
             if tgt.is_inside_literal(iis):
@@ -6723,9 +6721,9 @@ to define variables that can be used in templates."""
                 mkdir(outfile)
         if outinfo and outfile and isdir(outfile):
             if outinfo.startswith('sphinx'):
-                onlyindex = [x for x in infiles if x.find('index.')>=0];
+                onlyindex = [x for x in infiles if x.find('index.')>=0]
                 if len(onlyindex)>0:
-                    infiles = onlyindex;
+                    infiles = onlyindex
             outfiles = [normjoin(outfile, _in_2_out_name(inf,outinfo)) for inf in infiles]
         for i in imgfiles:
             convert(i,None)
