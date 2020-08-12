@@ -12,6 +12,7 @@
 from .untable import untable
 import textwrap
 import re
+from . import __version__
 
 """
 .. _`rstretable`:
@@ -489,6 +490,7 @@ def main(**args):
     if not args:
         parser = argparse.ArgumentParser(
             description='''Transforms list tables to grid tables.''')
+        parser.add_argument('--version', action='version', version = __version__)
         parser.add_argument(
             'rstfile',
             type=argparse.FileType('r', encoding='utf-8'),

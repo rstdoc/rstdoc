@@ -11,6 +11,7 @@
 
 from textwrap import wrap
 import re
+from . import __version__
 
 
 """
@@ -243,6 +244,7 @@ def main(**args):
             description=
             '''Converts certain column list-table (see paragraph23) to paragraphs.'''
         )
+        parser.add_argument('--version', action='version', version = __version__)
         parser.add_argument(
             'rstfile',
             type=argparse.FileType('r', encoding='utf-8'),

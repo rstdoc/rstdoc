@@ -43,6 +43,7 @@ import re
 import sys
 import codecs
 import numpy as np
+from . import __version__
 
 try:
     import txdir
@@ -6596,6 +6597,7 @@ def main(**args):
     if not args:
         parser = argparse.ArgumentParser(description=description,
                           formatter_class=argparse.RawDescriptionHelpFormatter)
+        parser.add_argument('--version', action='version', version = __version__)
         parser.add_argument(
             '--rstrest',
             dest='rstrest',

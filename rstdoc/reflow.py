@@ -13,6 +13,7 @@ from .retable import retable, titlerex, re_title
 from .listtable import gridtable, row_to_listtable
 from textwrap import wrap
 import re
+from . import __version__
 
 """
 .. _`rstreflow`:
@@ -311,6 +312,7 @@ def main(**args):
             description=
             '''Reflow paragraphs and tables, for the latter using join as for listtable'''
         )
+        parser.add_argument('--version', action='version', version = __version__)
         parser.add_argument(
             'rstfile',
             type=argparse.FileType('r', encoding='utf-8'),

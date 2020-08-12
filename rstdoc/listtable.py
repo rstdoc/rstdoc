@@ -10,6 +10,7 @@
 # def gen_api
 
 import re
+from . import __version__
 
 """
 
@@ -209,6 +210,7 @@ def main(**args):
     if not args:
         parser = argparse.ArgumentParser(
             description='''Convert RST grid tables to list-tables.''')
+        parser.add_argument('--version', action='version', version = __version__)
         parser.add_argument(
             'rstfile',
             type=argparse.FileType('r', encoding='utf-8'),

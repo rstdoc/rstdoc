@@ -14,6 +14,7 @@ import shutil
 import difflib
 import re
 import os
+from . import __version__
 
 
 """
@@ -148,6 +149,7 @@ def main(**args):
     if not args:
         parser = argparse.ArgumentParser(
             description='''Rename images referenced in the RST file.''')
+        parser.add_argument('--version', action='version', version = __version__)
         parser.add_argument(
             'rstfile',
             type=argparse.FileType('r', encoding='utf-8'),

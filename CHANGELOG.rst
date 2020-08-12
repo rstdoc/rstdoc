@@ -14,6 +14,7 @@ TODO
 todo - v1.9.0
 =============
 
+- ``--version`` option
 - more flexible ``pdtid()`` and ``pdtAAA()``
 
 20191124 - v1.8.0

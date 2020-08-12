@@ -22,6 +22,7 @@ import shutil
 import os
 import pypandoc
 from zipfile import ZipFile
+from . import __version__
 
 """
 .. _`rstfromdocx`:
@@ -231,6 +232,7 @@ def main(**args):
             description=
             '''Convert DOCX to RST using Pandoc and additionally copy the images and helper files.'''
         )
+        parser.add_argument('--version', action='version', version = __version__)
         parser.add_argument('docx', action='store', help='DOCX file')
         parser.add_argument(
             '-l',
