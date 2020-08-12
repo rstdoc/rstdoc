@@ -22,7 +22,7 @@ import shutil
 import os
 import pypandoc
 from zipfile import ZipFile
-from . import __version__
+from rstdoc import __version__
 
 """
 .. _`rstfromdocx`:

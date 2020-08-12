@@ -43,7 +43,7 @@ import re
 import sys
 import codecs
 import numpy as np
-from . import __version__
+from rstdoc import __version__
 
 try:
     import txdir
@@ -511,12 +511,9 @@ reximg = re.compile(r'(?:image|figure):: ((?:\.|/|\\|\w).*)')
 rerstinclude = re.compile(r'\.\. include::\s*([\./\w\\].*)')
 restplinclude = re.compile(r"""%\s*include\s*\(\s*["']([^'"]+)['"].*\)\s*""")
 
-#rexkw = re.compile(r'^\s*%?\s*{*_+[0-Z]+_*\(')
-#rexkw = re.compile(r'^\s*\.\. {')
 #... combined:
-rexkw = re.compile(r'^\s*(\.\. {|%?\s*{*_+[0-Z]+_*\()|^\s*:[0-Z]+:\s')
 cmmnt = r"""[\.:#%/';"-]"""
-rexkw = re.compile(r'^\s*('+cmmnt+cmmnt+r' {|%?\s*{*_+[0-Z]+_*\()|^\s*:[0-Z]+:\s')
+rexkw = re.compile(r'^\s*('+cmmnt+cmmnt+r' {|%?\s*{*_+\w+_*\()|^\s*:\w+:\s')
 #rexkw.search("{{_A30('kw1 kw2')}}")
 #rexkw.search("{{_U00___('kw1 kw2')}}")
 #rexkw.search(" % __0A0('kw1 kw2')")
@@ -1060,9 +1057,9 @@ def run_inkscape(infile,  outfile, dpi=DPI):
     '''
 
     cmd([
-        'inkscape', '-z',
-        '--export-dpi=%s' % dpi, '--export-area-drawing',
-        '--export-background-opacity=0', infile, '--export-png=' + outfile
+        'inkscape', '--export-dpi=%s' % dpi, '--export-area-drawing',
+        '--export-background-opacity=0', infile,
+        '--export-filename='+outfile
     ],
         outfile=outfile)
 
@@ -3673,11 +3670,12 @@ def pdtid(pdtfile,pdtok=_pdtok):
     return fid
 
 gpdtid = pdtid
-def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
+def pdtAAA(pdtfile,dct,pdtid=pdtid,
+            pdtfileid=lambda x:'ipdt'[int(x[0])]):
     '''
     ``pdtAAA`` is for use in an ``.stpl`` document::
 
-        % pdtAAA(__file__,globals())
+        % pdtAAA(__main_file__,globals())
 
     See the example generated with::
 
@@ -3685,7 +3683,9 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
 
     :param pdtfile: file path of pdt
     :param dct: dict to take up the generated defines
-    :param pdtid: function returning the ID for the ``pdt`` cycle or regular expression for ``pdtok``
+    :param pdtid: function returning the ID for the ``pdt`` cycle
+        or regular expression with group for full path
+        or regular expression for just the base name without extension (``pdtok``)
     :param pdtfileid: extracts/maps a file base name to one of the letters ipdt.
                       E.g. to have the files in order one could name them {0,1,2,3}.rest.stpl,
                       and map each to one of 'ipdt'.
@@ -3730,7 +3730,7 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
 
     - ``_[x]AAA`` returns next item number as AAABB. Use: ``{{_[x]AAA('kw1')}}``
     - ``_[x]AAA_``, ``_[x]AAA__``, ``_[x]AAA___``, ... returns headers. Use: ``{{_[x]AAA_('header text')}}``
-    - ``__[x]AAA``, same as ``_[x]AAA``, but use: ``%__[x]AAA('kw1')``
+    - ``__[x]AAA``, same as ``_[x]AAA``, but use: ``%__[x]AAA('kw1')`` (needs _printlist in dct)
     - ``__[x]AAA_``, ``__[x]AAA__``, ``__[x]AAA___``, ... Use: ``%__[x]AAA_('header text')``
 
     A, B are base36 letters and x is the initial of the file.
@@ -3738,6 +3738,17 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
 
     ::
 
+        >>> dct={'_printlist':str}
+        >>> pdtfile = "a/b/a.rest.stpl"
+        >>> pdtAAA(pdtfile,dct,pdtid=r'.*/(.)\.rest\.stpl')
+        >>> dct['_a']('x y').strip()
+        'a01: **x y**'
+        >>> dct['__a']('x y').strip() #needs _printlist
+        >>> dct={}
+        >>> pdtfile = "pdt/000/d.rest.stpl"
+        >>> pdtAAA(pdtfile,dct)
+        >>> dct['_d000']('x y').strip()
+        'd00002: **x y**'
         >>> dct={}
         >>> pdtfile = "a/b/003.rest.stpl"
         >>> pdtAAA(pdtfile,dct)
@@ -3761,12 +3772,15 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
     try:
         AAA = pdtid(pdtfile)
     except TypeError:
-        def repdtok(fid):
-            assert re.match(pdtid,fid)
         try:
-            AAA = gpdtid(pdtfile,pdtok=repdtok)
-        except:
-            return
+            AAA = re.match(pdtid,pdtfile).group(1)
+        except AttributeError:
+            def repdtok(fid):
+                assert re.match(pdtid,fid)
+            try:
+                AAA = gpdtid(pdtfile,pdtok=repdtok)
+            except:
+                return
     except:
         return
     pdtfn = base(pdtfile)
@@ -3782,6 +3796,7 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
     dct['PdtItem']=PdtItem
     dfns = "\n".join("_{0}"+"_"*i+"=PdtItem('{0}',"+str(i)+")" for i in range(10))
     if '_printlist' in dct: #define __AAA for direct output
+        #_printlist should come from the separate pkg stpl/stpl.py
         dfns += "\n"
         dfns += "\n".join("__{0}"+"_"*i+"=lambda *args: _printlist([_{0}"+"_"*i+"(*args),'\\n'])" for i in range(10))
     eval(compile(dfns.format(AAA), "<pdtAAA>", "exec"),dct)
@@ -4013,8 +4028,9 @@ try:
         gen_ext_tsk(tskgen, node, '.eps')
 
     class EPS(Task.Task):
-        run_str = ("${inkscape} -z --export-dpi=${DPI} --export-area-drawing" +
-                   " --export-background-opacity=0 ${SRC} --export-png=${TGT}")
+        run_str = ("${inkscape} --export-dpi=${DPI} --export-area-drawing" +
+                   " --export-background-opacity=0 ${SRC} " +
+                   " --export-filename=${TGT}")
 
     @TaskGen.extension('.pyg')
     def pyg_to_png_taskgen(tskgen, node):
@@ -5979,9 +5995,9 @@ example_ipdt_tree = r'''
              % assert Type in "pdt inform".split(), "Wrong PDT Type"
              % assert Status in "draft final replaced deferred rejected withdrawn".split(), "Wrong PDT Status"
              %
-             % #see pdtAAA (__file__ is the main stpl file)
+             % #see pdtAAA (__main_file__ is the main stpl file)
              % from rstdoc.dcx import pdtAAA
-             % pdtAAA(__file__,globals())
+             % pdtAAA(__main_file__,globals()) #,pdtid=".*/(.).\w+.stpl")
              %
              %if defined('Title'):
              %ttl=AAA+" - "+Title if defined('AAA') else Title

@@ -35,6 +35,7 @@ import os
 import sys
 import re
 import ast
+import codecs
 
 here = abspath(dirname(__file__))
 os.chdir(here)
@@ -107,8 +108,8 @@ if __name__ == '__main__':
           ],
       install_requires=['cffi','cairocffi','cairosvg',
                         'pillow', 'pyx', 'pyfca', 'pygal',
-                        'numpy', 'matplotlib','sympy','pint','drawsvg',
-                        'svgwrite', 'stpl', 'pypandoc', 'docutils',
+                        'numpy', 'matplotlib','sympy','pint>=0.14','drawsvg',
+                        'svgwrite', 'stpl>=1.13.6', 'pypandoc', 'docutils',
                         'sphinx', 'sphinx_bootstrap_theme',
                         'gitpython', 'pyyaml','txdir'],
       extras_require={'develop': ['mock', 'virtualenv', 'pytest-coverage'],

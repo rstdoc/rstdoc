@@ -13,7 +13,7 @@ from .retable import retable, titlerex, re_title
 from .listtable import gridtable, row_to_listtable
 from textwrap import wrap
 import re
-from . import __version__
+from rstdoc import __version__
 
 """
 .. _`rstreflow`:

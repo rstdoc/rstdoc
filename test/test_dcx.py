@@ -199,7 +199,6 @@ def rstinit(request, tmpworkdir):
     rR, smp = request.param
     #rR,smp=0,'rst'
     smpl = 'tmp%i_%s' % (rR,smp)
-    rstrest = ['--rstrest'] if rR else []
     rcmd = ['rstdcx']+(['--rstrest']if rR else[])+['--'+smp,smpl]
     r = run(rcmd)
     assert r.returncode == 0

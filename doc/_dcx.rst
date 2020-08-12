@@ -135,7 +135,7 @@ Conventions
 
 Files
 
-  - fain files and included files: ``.rest``, ``.rst`` or vice versa.
+  - main files and included files: ``.rest``, ``.rst`` or vice versa.
     ``.txt`` are for literally included files (use :literal: option).
   - templates separately rendered : ``*.rest.stpl`` and ``*.rst.stpl``
     template included: ``*.rst.tpl``

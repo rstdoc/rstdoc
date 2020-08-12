@@ -14,7 +14,12 @@ TODO
 todo - v1.9.0
 =============
 
+
+todo - v1.8.1
+=============
+
 - ``--version`` option
+- fix regression tests
 - more flexible ``pdtid()`` and ``pdtAAA()``
 
 20191124 - v1.8.0

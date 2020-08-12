@@ -14,7 +14,7 @@ import shutil
 import difflib
 import re
 import os
-from . import __version__
+from rstdoc import __version__
 
 
 """

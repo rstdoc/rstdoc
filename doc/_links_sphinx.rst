@@ -242,6 +242,8 @@
 
 .. |dcx.pdtAAA| replace:: :ref:`dcx.pdtAAA<dcx.pdtAAA>`
 
+.. |dcx.index_toctree| replace:: :ref:`dcx.index_toctree<dcx.index_toctree>`
+
 .. |dcx.initroot| replace:: :ref:`dcx.initroot<dcx.initroot>`
 
 .. |dcx.index_dir| replace:: :ref:`dcx.index_dir<dcx.index_dir>`

@@ -1049,7 +1049,10 @@ Creates ``_links_xxx.rst`` files and a ``.tags``.
    def grep(
          regexp=rexkw,
          dir=None,
-         exts=set(['.rst','.rest','.stpl','.tpl','.py']),
+         exts=set(['.rst','.rest','.stpl','.tpl','.adoc','.md','.wiki','.py','.jl','.lua','.tex',
+                   '.js', '.h','.c','.hpp','.cpp','.java','.cs','.vb','.r','.sh','.vim','.el',
+                   '.php','.sql','.swift','.go','.rb','.m','.pl','.rs','.f90','.dart',
+                   '.yml','.mm','.d','.lsp','.kt','.hs','.lhs','.ex','.scala','.clj']),
          **kwargs
    ):
 
@@ -1082,6 +1085,7 @@ Keyword line are either of::
     %__ID3('kw1 kw2')
     :ID3: kw1 kw2
 
+``..`` can also be two comment chars of popular programming languages.
 This is due to ``dcx.rexkw``, which you can change.
 See also ``dcx.grep()`` for the keyword parameters.
 
@@ -1135,7 +1139,8 @@ Counter object.
 
 .. code-block:: py
 
-   def pdtAAA(pdtfile,dct,pdtid=pdtid):
+   gpdtid = pdtid
+   def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
 
 ``pdtAAA`` is for use in an ``.stpl`` document::
 
@@ -1147,7 +1152,10 @@ See the example generated with::
 
 :param pdtfile: file path of pdt
 :param dct: dict to take up the generated defines
-:param pdtid: function returning the ID for the ``pdt`` cycle
+:param pdtid: function returning the ID for the ``pdt`` cycle or regular expression for ``pdtok``
+:param pdtfileid: extracts/maps a file base name to one of the letters ipdt.
+                  E.g. to have the files in order one could name them {0,1,2,3}.rest.stpl,
+                  and map each to one of 'ipdt'.
 
 A ``pdt`` is a project enhancement cycle with its own documentation.
 ``pdt`` stands for
@@ -1214,6 +1222,27 @@ The generated macros do not work for indented text, as they produce line breaks 
     '\\n003 x y\\n======='
     >>> dct['_d003_']('x y')
     '\\nd003 x y\\n========'
+
+
+.. _`dcx.index_toctree`:
+
+:dcx.index_toctree:
+
+.. code-block:: py
+
+   def index_toctree(index_file):
+
+Construct::
+
+    .. toctree::
+        file1
+        file2
+
+for the sphinx index file,
+i.e. ``index.rest.stpl`` or ``index.rst.stpl``.
+Use like::
+
+    {{! index_toctree(__file__) }}
 
 
 .. _`dcx.initroot`:

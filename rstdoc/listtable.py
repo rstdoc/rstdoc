@@ -10,7 +10,7 @@
 # def gen_api
 
 import re
-from . import __version__
+from rstdoc import __version__
 
 """
 
