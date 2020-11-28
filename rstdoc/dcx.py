@@ -3512,6 +3512,7 @@ def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
 
     Keyword line are either of::
 
+        .. {{{kw1,kw2
         .. {kw1,kw2}
         {{_ID3('kw1 kw2')}}
         %__ID3('kw1 kw2')
@@ -6404,7 +6405,8 @@ def initroot(
             '__docx_ref__', docx_ref).replace(
             '__odt_ref__', odt_ref).replace(
             '__wafw__', wafw).replace(
-            '__code__', rootfldr).splitlines()
+            '__code__', rootfldr.strip()=='.' and base(cwd()) or rootfldr
+            ).splitlines()
     ]
     if sampletype == 'stpl':
         def _replace_lines(origlns, start, stop, insertlns):
@@ -6597,6 +6599,7 @@ Grep for keyword lines containing 'png'::
 
 Default keyword lines::
 
+    .. {{{kw1,kw2
     .. {kw1,kw2}
     {{_ID3('kw1 kw2')}}
     %__ID3('kw1 kw2')

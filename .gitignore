@@ -36,6 +36,17 @@ test/fixtures/*
 !test/fixtures/svg_embed.rest.stpl
 !test/fixtures/with_images.rest.stpl
 
+doc/dcx.py
+doc/doc/
+doc/docutils.conf
+doc/reference.docx
+doc/reference.odt
+doc/reference.tex
+doc/waf
+doc/waf.bat
+doc/wafw.py
+doc/wscript
+
 #waf
 .waf????????*
 **/waf*-*-*/
