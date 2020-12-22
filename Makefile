@@ -1,6 +1,21 @@
 .PHONY: test doctest man check dist up
 
 test:
+	rm -rf build
+	rm -rf doc/build
+	rm -rf doc/dcx.py
+	rm -rf doc/doc/
+	rm -rf doc/docutils.conf
+	rm -rf doc/reference.docx
+	rm -rf doc/reference.odt
+	rm -rf doc/reference.tex
+	rm -rf doc/waf
+	rm -rf doc/waf.bat
+	rm -rf doc/wafw.py
+	rm -rf doc/wscript
+	rm -rf doc/_links_*
+	rm -rf doc/_images
+	rm -rf doc/_traceability_*
 	py.test -vv --doctest-modules --cov=rstdoc --cov-report term-missing
 
 doctest:

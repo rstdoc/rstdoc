@@ -10,7 +10,7 @@
 
 |dhy|, |r1p|, |r62|, |r8d|, |r90|, |r9g|, |r9h|, |rak|, |rbc|, |rj4|, |roc|, |rpn|, |rstdcx|, |rvd|, |rvl|, |rwj|, |s0t|, |s10|, |s1g|, |s45|, |s8c|, |scs|, |seo|, |sgt|, |sim|, |son|, |sxr|, |test_lnkname|
 
-Up: |tr2|, |tr4|, |tr5|, |tr6|, |tr9|, |tr10|, |tr12|, |tr13|, |tr14|, |tr15|, |tr16|, |tr17|
+Up: |tr2|, |tr4|, |tr5|, |tr7|, |tr9|, |tr10|, |tr12|, |tr13|, |tr14|, |tr15|, |tr16|, |tr17|
 
 Down: 
 
@@ -22,15 +22,15 @@ Down:
 
 Up: 
 
-Down: |tr3|, |tr7|, |tr8|, |tr11|, |tr14|, |tr15|, |tr16|, |tr17|
+Down: |tr3|, |tr6|, |tr8|, |tr11|, |tr14|, |tr15|, |tr16|, |tr17|
 
 .. _`tr2`:
 
 :tr2:
 
-|r1p|, |roc|, |sgt|
+|rvd|, |scs|
 
-Up: |tr3|, |tr7|
+Up: |tr3|
 
 Down: |tr0|
 
@@ -38,7 +38,7 @@ Down: |tr0|
 
 :tr3:
 
-|roc|
+|rvd|
 
 Up: |tr1|
 
@@ -48,9 +48,9 @@ Down: |tr2|, |tr4|, |tr5|
 
 :tr4:
 
-|r8d|, |roc|, |s8c|
+|r62|, |r9g|, |r9h|, |rbc|, |rj4|, |rpn|, |rstdcx|, |rvd|, |rwj|, |s45|, |sgt|
 
-Up: |tr3|
+Up: |tr3|, |tr6|, |tr11|
 
 Down: |tr0|
 
@@ -58,7 +58,7 @@ Down: |tr0|
 
 :tr5:
 
-|roc|, |s1g|
+|rvd|, |sim|
 
 Up: |tr3|
 
@@ -68,39 +68,39 @@ Down: |tr0|
 
 :tr6:
 
-|rvd|, |scs|
+|sgt|
 
-Up: |tr8|
+Up: |tr1|
 
-Down: |tr0|
+Down: |tr4|, |tr7|
 
 .. _`tr7`:
 
 :tr7:
 
-|sgt|
+|r1p|, |roc|, |sgt|
 
-Up: |tr1|
+Up: |tr6|, |tr8|
 
-Down: |tr2|, |tr9|
+Down: |tr0|
 
 .. _`tr8`:
 
 :tr8:
 
-|rvd|
+|roc|
 
 Up: |tr1|
 
-Down: |tr6|, |tr9|, |tr10|
+Down: |tr7|, |tr9|, |tr10|
 
 .. _`tr9`:
 
 :tr9:
 
-|r62|, |r9g|, |r9h|, |rbc|, |rj4|, |rpn|, |rstdcx|, |rvd|, |rwj|, |s45|, |sgt|
+|r8d|, |roc|, |s8c|
 
-Up: |tr7|, |tr8|, |tr11|
+Up: |tr8|
 
 Down: |tr0|
 
@@ -108,7 +108,7 @@ Down: |tr0|
 
 :tr10:
 
-|rvd|, |sim|
+|roc|, |s1g|
 
 Up: |tr8|
 
@@ -122,7 +122,7 @@ Down: |tr0|
 
 Up: |tr1|
 
-Down: |tr9|, |tr12|, |tr13|
+Down: |tr4|, |tr12|, |tr13|
 
 .. _`tr12`:
 
@@ -148,7 +148,7 @@ Down: |tr0|
 
 :tr14:
 
-|r90|, |seo|
+|son|, |test_lnkname|
 
 Up: |tr1|
 
@@ -178,7 +178,7 @@ Down: |tr0|
 
 :tr17:
 
-|son|, |test_lnkname|
+|r90|, |seo|
 
 Up: |tr1|
 

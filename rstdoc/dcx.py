@@ -215,8 +215,8 @@ Links
   then this should better happen in a previous step,
   e.g. with ``gen`` files mentioned above.
 
-- References use replacement `substitutions \
-  <http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text>`__:
+- References use replacement
+  `substitutions <http://docutils.sourceforge.net/docs/ref/rst/directives.html#replacement-text>`__:
   ``|id|``.
 
 - If you want an overview of the linking (traceability),
@@ -1570,8 +1570,8 @@ def pygpng(
       `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or
     - ``svgwrite.drawing.Drawing`` from the
       `svgwrite <https://svgwrite.readthedocs.io>`__ library or
-    - ``cairocffi.Surface`` from `cairocffi \
-      <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
+    - ``cairocffi.Surface`` from
+      `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
     - `matplotlib <https://matplotlib.org>`__.
       If ``matplotlib.pyplot.get_fignums()>1``
       the figures result ``<name><fignum>.png``
@@ -1641,8 +1641,8 @@ def pygsvg(infile, *args, **kwargs):
     - object with attribute ``_repr_svg_``
     - ``svgwrite.drawing.Drawing`` from the
       `svgwrite <https://svgwrite.readthedocs.io>`__ library or
-    - ``cairocffi.SVGSurface`` from `cairocffi \
-      <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
+    - ``cairocffi.SVGSurface`` from
+      `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
     - `matplotlib <https://matplotlib.org>`__.
 
     :param infile: a .pyg file name or list of lines
@@ -1932,8 +1932,7 @@ def dorst(
                 outinfo = 'rest'
             # outinfo='docx.'
             if outinfo.strip('.').find('.') < 0:
-                outfile = stem(base(infile))+'.' + \
-                    outinfo.strip('.')
+                outfile = stem(base(infile))+'.' + outinfo.strip('.')
             #=> outfile=infile.docx
             #equivalent to input params: infile.rest - docx
             else: # - - otherfile.docx
@@ -3483,10 +3482,6 @@ def grep(
     :param dir: default is current dir
     :param exts: the extension of files searched
 
-    ::
-
-        >>> list(grep(dir=dirname(__file__))) [0][2]
-        '.. {grep}'
 
     '''
 
@@ -3745,11 +3740,12 @@ def pdtAAA(pdtfile,dct,pdtid=pdtid,
         >>> dct['_a']('x y').strip()
         'a01: **x y**'
         >>> dct['__a']('x y').strip() #needs _printlist
+        "['\\\\na02: **x y**', '\\\\n']"
         >>> dct={}
         >>> pdtfile = "pdt/000/d.rest.stpl"
         >>> pdtAAA(pdtfile,dct)
         >>> dct['_d000']('x y').strip()
-        'd00002: **x y**'
+        'd00001: **x y**'
         >>> dct={}
         >>> pdtfile = "a/b/003.rest.stpl"
         >>> pdtAAA(pdtfile,dct)
@@ -4623,7 +4619,7 @@ example_rest_tree = r'''
                +--------+--------+
                | A      | B      |
                +========+========+
-               | |eps1| | |eps|  |
+               | |eps|  | |eps|  |
                +--------+--------+
 
             .. _`dta`:
@@ -4968,10 +4964,10 @@ example_stpl_subtree = r'''
 
             {{RA('Restructured Text')}}
 
-              We use `restructuredText \
-              <http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html>`_
-              together with `SimpleTemplate \
-              <https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax>`_.
+              We use
+              `restructuredText <http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html>`_
+              together with
+              `SimpleTemplate <https://bottlepy.org/docs/dev/stpl.html#simpletemplate-syntax>`_.
 
               This is very flexible:
 
@@ -5119,8 +5115,7 @@ example_stpl_subtree = r'''
 
             %include('dd_diagrams.tpl',DD=DD) # you optionally can provide python definitions
 
-            Pandoc does not know about `definitions in included files \
-            <https://github.com/jgm/pandoc/issues/4160>`__.
+            Pandoc does not know about `definitions in included files <https://github.com/jgm/pandoc/issues/4160>`__.
 
             .. |eps| image:: _images/egeps.png
 
@@ -5163,7 +5158,7 @@ example_stpl_subtree = r'''
                +--------+--------+
                | A      | B      |
                +========+========+
-               | |eps1| | |eps|  |
+               | |eps|  | |eps|  |
                +--------+--------+
 
             .. _`dd_list_table`:
@@ -5935,7 +5930,7 @@ example_ipdt_tree = r'''
                    +--------+--------+
                    | A      | B      |
                    +========+========+
-                   | |eps1| | |eps|  |
+                   | |eps|  | |eps|  |
                    +--------+--------+
                 
                 .. _`i001table2`:
