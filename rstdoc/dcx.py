@@ -64,7 +64,11 @@ rstdcx
 restructuredText sources are split into two types of files:
 main files considered by Sphinx, and included files.
 Which of ``.rest``  or ``.rst`` is main or included is determined
-by ``source_suffix`` in a ``<root>/conf.py`` or by the extension of the ``_links_xxx`` files.
+by ``source_suffix`` in a ``<root>/conf.py``
+or opposite to the extension of the included ``_links_sphinx.r?st`` file:
+
+- if you have ``.. include:: /_links_sphinx.rest``,
+  then the main file extension is ``.rst``
 
 ``rstdoc`` creates documentation (PDF, HTML, DOCX)
 from restructuredText (``.rst``, ``.rest``) using either
@@ -3817,8 +3821,11 @@ def index_toctree(index_file):
     '''
 
     from pathlib import Path
-    thisdir=Path(index_file).parent
-    toctree=['.. toctree::']
+    thisdir = Path(index_file).parent
+    indexlines = open(index_file).readlines()
+    alreadyi = lambda x: rlines(r'\.\. include::.*'+stem(stem(x)),indexlines)
+    toctree = ['.. toctree::']
+    totoctree = lambda x: alreadyi(x) or toctree.append('      '+x)
     _get_rstrest()
     toglob = '*'+_rest+"*"
     pdtdirs = list(sorted(set(y.parent for y in thisdir.rglob(toglob) if
@@ -3827,22 +3834,25 @@ def index_toctree(index_file):
                                 not any(x.endswith('build') for x in str(y).split(os.sep))
                                 )))
     for apdtd in pdtdirs:
-        fs = dict((f.name[0],f) for f in Path(apdtd).glob(toglob) if
+        fs = [f for f in sorted(Path(apdtd).glob(toglob)) if
+                  not f.name.startswith('index'+_rest) and
                   not exists(str(f.absolute())+_stpl) and
-                  not f.name.endswith(_tpl)
-                  )
+                  not f.name.endswith(_tpl)]
+        fsdict = dict((f.name[0],f) for f in fs)
+        fsdone = set()
         for i in "0i1p2d3t":
-            if i in fs:
-                fsi = fs[i]
+            if i in fsdict:
+                fsi = fsdict[i]
                 fsi0 = fsi.name.split('.')[0]
                 ipdtf = any(x.startswith(fsi0) for x in 'inform plan do test'.split())
                 if ipdtf or '0123'.find(fsi0)>=0:
-                    relpth = stem(fs[i].relative_to(thisdir))
-                    toctree.append('      '+relpth)
-                    del fs[i]
-        for i in fs:
-            relpth = stem(fs[i].relative_to(thisdir))
-            toctree.append('      '+relpth)
+                    relpth = stem(fsi.relative_to(thisdir))
+                    totoctree(relpth)
+                    fsdone.add(fsi)
+        for f in fs:
+            if f not in fsdone:
+                relpth = stem(f.relative_to(thisdir))
+                totoctree(relpth)
     return '\n'.join(toctree)
 
 
