@@ -15,8 +15,8 @@ todo - v1.9.0
 =============
 
 
-todo - v1.8.1
-=============
+20201231- v1.8.1
+================
 
 - ``--version`` option
 - fix regression tests

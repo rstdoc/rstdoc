@@ -425,8 +425,8 @@ Else the following is tried
   `pyx <http://pyx.sourceforge.net/manual/graphics.html>`__ library or
 - ``svgwrite.drawing.Drawing`` from the
   `svgwrite <https://svgwrite.readthedocs.io>`__ library or
-- ``cairocffi.Surface`` from `cairocffi \
-  <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
+- ``cairocffi.Surface`` from
+  `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
 - `matplotlib <https://matplotlib.org>`__.
   If ``matplotlib.pyplot.get_fignums()>1``
   the figures result ``<name><fignum>.png``
@@ -458,8 +458,8 @@ the following is tried
 - object with attribute ``_repr_svg_``
 - ``svgwrite.drawing.Drawing`` from the
   `svgwrite <https://svgwrite.readthedocs.io>`__ library or
-- ``cairocffi.SVGSurface`` from `cairocffi \
-  <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
+- ``cairocffi.SVGSurface`` from
+  `cairocffi <https://cairocffi.readthedocs.io/en/stable/overview.html#basic-usage>`__
 - `matplotlib <https://matplotlib.org>`__.
 
 :param infile: a .pyg file name or list of lines
@@ -1066,10 +1066,6 @@ in *dir* (default: os.getcwd()) for ``exts`` files
 :param dir: default is current dir
 :param exts: the extension of files searched
 
-::
-
-    >>> list(grep(dir=dirname(__file__))) [0][2]
-    '.. {grep}'
 
 .. code-block:: py
 
@@ -1080,6 +1076,7 @@ that contain the keywords in kws.
 
 Keyword line are either of::
 
+    .. {{{kw1,kw2
     .. {kw1,kw2}
     {{_ID3('kw1 kw2')}}
     %__ID3('kw1 kw2')
@@ -1133,18 +1130,19 @@ Counter object.
     2
 
 
-.. _`dcx.pdtAAA`:
+.. _`dcx.x`:
 
-:dcx.pdtAAA:
+:dcx.x:
 
 .. code-block:: py
 
    gpdtid = pdtid
-   def pdtAAA(pdtfile,dct,pdtid=pdtid,pdtfileid=lambda x:x[0]):
+   def pdtAAA(pdtfile,dct,pdtid=pdtid,
+               pdtfileid=lambda x:'ipdt'[int(x[0])]):
 
 ``pdtAAA`` is for use in an ``.stpl`` document::
 
-    % pdtAAA(__file__,globals())
+    % pdtAAA(__main_file__,globals())
 
 See the example generated with::
 
@@ -1152,7 +1150,9 @@ See the example generated with::
 
 :param pdtfile: file path of pdt
 :param dct: dict to take up the generated defines
-:param pdtid: function returning the ID for the ``pdt`` cycle or regular expression for ``pdtok``
+:param pdtid: function returning the ID for the ``pdt`` cycle
+    or regular expression with group for full path
+    or regular expression for just the base name without extension (``pdtok``)
 :param pdtfileid: extracts/maps a file base name to one of the letters ipdt.
                   E.g. to have the files in order one could name them {0,1,2,3}.rest.stpl,
                   and map each to one of 'ipdt'.
@@ -1197,7 +1197,7 @@ Further reading: `pdt <https://github.com/rpuntaie/pdt>`__
 
 - ``_[x]AAA`` returns next item number as AAABB. Use: ``{{_[x]AAA('kw1')}}``
 - ``_[x]AAA_``, ``_[x]AAA__``, ``_[x]AAA___``, ... returns headers. Use: ``{{_[x]AAA_('header text')}}``
-- ``__[x]AAA``, same as ``_[x]AAA``, but use: ``%__[x]AAA('kw1')``
+- ``__[x]AAA``, same as ``_[x]AAA``, but use: ``%__[x]AAA('kw1')`` (needs _printlist in dct)
 - ``__[x]AAA_``, ``__[x]AAA__``, ``__[x]AAA___``, ... Use: ``%__[x]AAA_('header text')``
 
 A, B are base36 letters and x is the initial of the file.
@@ -1205,6 +1205,18 @@ The generated macros do not work for indented text, as they produce line breaks 
 
 ::
 
+    >>> dct={'_printlist':str}
+    >>> pdtfile = "a/b/a.rest.stpl"
+    >>> pdtAAA(pdtfile,dct,pdtid=r'.*/(.)\.rest\.stpl')
+    >>> dct['_a']('x y').strip()
+    'a01: **x y**'
+    >>> dct['__a']('x y').strip() #needs _printlist
+    "['\\\\na02: **x y**', '\\\\n']"
+    >>> dct={}
+    >>> pdtfile = "pdt/000/d.rest.stpl"
+    >>> pdtAAA(pdtfile,dct)
+    >>> dct['_d000']('x y').strip()
+    'd00001: **x y**'
     >>> dct={}
     >>> pdtfile = "a/b/003.rest.stpl"
     >>> pdtAAA(pdtfile,dct)

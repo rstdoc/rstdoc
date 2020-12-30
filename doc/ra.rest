@@ -777,7 +777,7 @@ Result
 
 The assumed 1 year project with 5 developers would take only 0.7 years.
 
-- Effort without RST: 486min=1.0day
+- Effort without RST: 486min=1.00000000000000day
 - Effort with RST: 332min=0.7day
 - Less effort (|sa7|): -154min=-0.3day
 
