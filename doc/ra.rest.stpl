@@ -834,9 +834,9 @@ It is due to a good exploitation of all the possibilities opened by pure text (|
 .. _`Sphinx`: http://www.sphinx-doc.org/en/stable/
 .. _`RST`: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
 .. _`light markup`: https://en.wikipedia.org/wiki/Lightweight_markup_language
-.. _`rstdoc`: https://github.com/rpuntaie/rstdoc
-.. _`dcx.py`: https://github.com/rpuntaie/rstdoc/blob/master/rstdoc/dcx.py
-.. _`rstdcx`: https://github.com/rpuntaie/rstdoc/blob/master/rstdoc/dcx.py
+.. _`rstdoc`: https://github.com/rstdoc/rstdoc
+.. _`dcx.py`: https://github.com/rstdoc/rstdoc/blob/master/rstdoc/dcx.py
+.. _`rstdcx`: https://github.com/rstdoc/rstdoc/blob/master/rstdoc/dcx.py
 .. _`waf`: https://github.com/waf-project/waf
 .. _`tikz`: http://mirror.kumi.systems/ctan/graphics/pgf/base/doc/pgfmanual.pdf
 .. _`LaTex`: https://en.wikipedia.org/wiki/LaTeX

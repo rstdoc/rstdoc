@@ -94,7 +94,7 @@ if __name__ == '__main__':
       author='Roland Puntaier',
       keywords=['Documentation'],
       author_email='roland.puntaier@gmail.com',
-      url='https://github.com/rpuntaie/rstdoc',
+      url='https://github.com/rstdoc/rstdoc',
       classifiers=[
           'Development Status :: 4 - Beta',
           'Environment :: Console',

@@ -186,7 +186,7 @@ to be usable with `waf <https://github.com/waf-project/waf>`__.
 
 See the example project created with ``--rest/stpl/ipdt/over``
 and the sources of the documentation of
-`rstdoc <https://github.com/rpuntaie/rstdoc>`__.
+`rstdoc <https://github.com/rstdoc/rstdoc>`__.
 
 
 ``rstdcx`` CLI
