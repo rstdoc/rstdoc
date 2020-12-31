@@ -1,4 +1,4 @@
-.PHONY: test doctest man check dist up
+.PHONY: test doctest man check dist up devinstall tag
 
 test:
 	rm -rf build
@@ -33,5 +33,12 @@ dist: man
 up:
 	twine upload dist/`ls dist -rt | tail -1`
 
+devinstall:
+	sudo pip install -e .
 
-
+tag: devinstall
+	$(eval TAGMSG="v$(shell rstdoc --version | cut -d ' ' -f 2)")
+	echo $(TAGMSG)
+	git tag -s $(TAGMSG) -m"$(TAGMSG)"
+	git verify-tag $(TAGMSG)
+	git push origin $(TAGMSG) --follow-tags
