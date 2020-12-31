@@ -6476,6 +6476,8 @@ description = (
 ``rstdcx`` CLI
 --------------
 
+``rstdcx`` is the same as ``rstdoc``.
+
 Without parameters: creates ``|substitution|`` links and .tags ctags for reST targets.
 
 With two or three parameters: process file or dir to out file or dir
