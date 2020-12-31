@@ -41,7 +41,7 @@ as documentation format without depending on Sphinx.
 
 The conventions used are shown
 
-- by the example produced via ``rstdcx --rest smplfldr`` or ``rstdcx --stpl smplfldr``
+- by the example produced via ``rstdcx --rest/--stpl/--over/--ipdt smplfldr``
 - by the documentation sources that can be found at
   https://github.com/rstdoc/rstdoc/tree/master/doc
 

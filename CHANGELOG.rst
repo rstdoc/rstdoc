@@ -32,7 +32,7 @@ Some later entries from git log:
 - ``--rstrest`` to have sample project with .rst main and .rest
 - use txdir
 - ``/_links_sphinx.rst`` to search up dir
-- ``--ipdt`` sample project added
+- ``--ipdt`` and ``--over`` sample project added
 - support links accross directories
 - allow control over file name in temporary directory
 - targets with relative path
