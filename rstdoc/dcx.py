@@ -3491,6 +3491,10 @@ def grep(
 
     if dir is None:
         dir = os.getcwd()
+    dir = up_dir(is_project_root_file,start=dir)
+    if not dir:
+        print('Not in a repo')
+        return
     regexp = re.compile(regexp)
     for root, dirs, files in os.walk(dir):
         for name in files:
