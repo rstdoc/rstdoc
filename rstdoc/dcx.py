@@ -3635,10 +3635,14 @@ class PdtItem(Counter):
             lines = ['',lin,c*lenlin]
         return "\n".join(lines)
 
-def _pdtok(fid):
-    assert fid.upper() == fid
-    assert len(fid) == 3
-    assert int(fid,base=36) < 36**3
+try:
+    _pdtok # sys.modules['builtins']._pdtok = _pdtok
+except NameError:
+    def _pdtok(fid):
+        assert fid.upper() == fid
+        lfid = len(fid)
+        assert lfid==2 or lfid == 3
+        assert int(fid,base=36) < 36**lfid
 
 def pdtid(pdtfile,pdtok=_pdtok):
     """
