@@ -2325,7 +2325,7 @@ def doc_parts(
         prefix=''
         ):
     r'''
-    ``doc_parts()`` yields doc parts delimeted by ``relim`` regular expression
+    ``doc_parts()`` yields doc parts delimited by ``relim`` regular expression
     possibly with id, if ``reid`` matches
 
     If start and stop differ use regulare expression ``|`` in ``relim``.
