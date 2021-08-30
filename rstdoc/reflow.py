@@ -9,7 +9,7 @@
 #    yield from doc_parts(lns,signature='py',prefix='reflow.')
 # def gen_api
 
-from .retable import retable, titlerex, re_title
+from .retable import retable, titlerex, re_title, title_some
 from .listtable import gridtable, row_to_listtable
 from textwrap import wrap
 import re
@@ -253,6 +253,55 @@ def noblankend(lns):
         yield nbe.sub('', d)
 
 
+def atx_to_rst_header(line):
+    """
+
+    Convert atx-style header to underlining header.
+
+    :param line: a atx-style header
+
+    ::
+
+        >>> line = '# xxx'
+        >>> atx_to_rst_header(line).splitlines()
+        ['xxx', '===']
+        >>> line = '## xxx'
+        >>> atx_to_rst_header(line).splitlines()
+        ['xxx', '---']
+        >>> line = '*** xx'
+        >>> atx_to_rst_header(line).splitlines()
+        ['xx', '^^^']
+        >>> line = '++++xyz go'
+        >>> atx_to_rst_header(line).splitlines()
+        ['xyz go', '""""""']
+        >>> line = '=========='
+        >>> atx_to_rst_header(line).splitlines()
+        ['==========']
+        >>> line = '*#* xx'
+        >>> atx_to_rst_header(line).splitlines()
+        ['*#* xx']
+        >>> line = '#) xx'
+        >>> atx_to_rst_header(line).splitlines()
+        ['#) xx']
+
+    """
+    re_atx = re.compile(r"^(([=#\*!+])\2*)\s*(\w+.*)$")
+    m = re_atx.match(line)
+    if m is None:
+      return line
+    levelstr, _, contentstr = m.groups()
+    level = len(levelstr)
+    c = title_some[level-1]
+    lenlin = max(len(contentstr),3)
+    lines = [contentstr,c*lenlin]
+    return "\n".join(lines)
+
+
+def noatx(lns):
+    for d in lns:
+        yield atx_to_rst_header(d)
+
+
 class reflowrow():
     '''
     This replaces |listtable.row_to_listtable| in |listtable.gridtable| to reflow a grid table.
@@ -283,11 +332,11 @@ def reflow(lns, join='1', sentence=False):
     '''
 
     r = reflowrow()
-    for ln in noblankend(
+    for ln in noatx(noblankend(
             rmextrablankline(
                 no3star(
                     reflowparagraphs(
-                        nostrikeout(gridtable(lns, join, r)), sentence)))):
+                        nostrikeout(gridtable(lns, join, r)), sentence))))):
         yield ln + '\n'
 
 

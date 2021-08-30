@@ -54,6 +54,10 @@ try:
     from rstdoc.retable import title_some
 except:
     title_some = """=-^"'`._~+:;,"""
+try:
+    from rstdoc.reflow import atx_to_rst_header
+except:
+    atx_to_rst_header = lambda x:x
 
 """
 .. _`rstdcx`:
@@ -2023,7 +2027,8 @@ def dorst(
                                     sysout.write(f.read())
                                 links_done = True
                 else:
-                    sysout.write(x if x.endswith('\n') else x+'\n')
+                    y = atx_to_rst_header(x)
+                    sysout.write(y if y.endswith('\n') else y+'\n')
             if not links_done:
                 sysout.write('\n')
                 try:
