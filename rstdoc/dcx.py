@@ -3611,12 +3611,12 @@ class PdtItem(Counter):
 
             >>> pdt=PdtItem('032')
             >>> pdt()
-            '\\n03201:'
+            '\\n.. {03201}\\n\\n03201:'
             >>> pdt('kw1 kw2','kw3')
-            '\\n03202: **kw1 kw2 kw3**'
+            '\\n.. {03203 kw1 kw2 kw3}\\n\\n03203: **kw1 kw2 kw3**'
             >>> hdr2=PdtItem('032',level=2)
             >>> hdr2('header text')
-            '\\n032 header text\\n---------------'
+            '\\n.. {032 header text}\\n\\n032 header text\\n---------------'
 
         """
 
@@ -3629,15 +3629,15 @@ class PdtItem(Counter):
             BB = np.base_repr(self.cnt,36)
             Id = "{}{:0>2}".format(self.AAA,BB)
             if args:
-                lines = ['\n{}: **{}**'.format(Id,' '.join(args))]
+                lines = ['','.. {%s %s}'%(Id,' '.join(args)),'','{}: **{}**'.format(Id,' '.join(args))]
             else:
-                lines = ['\n{}:'.format(Id)]
+                lines = ['','.. {%s}'%Id,'','{}:'.format(Id)]
         else:
             c = title_some[self.level-1]
             assert args, "a header cannot be empty"
             lin = ' '.join([self.AAA]+list(args))
             lenlin = len(lin)
-            lines = ['',lin,c*lenlin]
+            lines = ['','.. {%s}'%lin,'',lin,c*lenlin]
         return "\n".join(lines)
 
 try:
