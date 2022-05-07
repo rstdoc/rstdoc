@@ -1993,7 +1993,8 @@ def dorst(
             links_done = False
             _links_re = r'^\.\. include:: (.*)(_links_sphinx)(.re?st)'
             rexincludelinks = re.compile(_links_re)
-            for x in filelines:
+            lenfilelines = len(filelines)
+            for ix, x in enumerate(filelines):
                 #x = '.. include:: _links_sphinx.rest' #1
                 #x = '.. include:: ../_links_sphinx.rest' #2
                 #x = '.. include:: /_links_sphinx.rst' #3
@@ -2026,9 +2027,11 @@ def dorst(
                                 else:
                                     sysout.write(f.read())
                                 links_done = True
-                else:
+                elif ix>0 and ix<lenfilelines-1 and filelines[ix-1].strip()=='' and filelines[ix+1].strip()=='':
                     y = atx_to_rst_header(x)
                     sysout.write(y if y.endswith('\n') else y+'\n')
+                else:
+                    sysout.write(x if x.endswith('\n') else x+'\n')
             if not links_done:
                 sysout.write('\n')
                 try:
@@ -3507,11 +3510,15 @@ def grep(
                 f = normjoin(root,name)
                 if not f.endswith('.py') and not f.endswith(_stpl) and exists(f+_stpl):
                     continue
-                with open(f,encoding="utf-8") as fb:
-                    lines=[l.strip() for l in fb.readlines()]
-                    res = [(i,lines[i]) for i in rindices(regexp, lines)]
-                    for (i,l) in res:
-                        yield (f,i+1,l)
+                try:
+                    with open(f,encoding="utf-8") as fb: 
+                        lines=[l.strip() for l in fb.readlines()] 
+                        res = [(i,lines[i]) for i in rindices(regexp, lines)] 
+                        for (i,l) in res: 
+                            yield (f,i+1,l) 
+                except Exception as e: 
+                    print(f,str(e)) 
+                    continue 
 
 def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
     '''
