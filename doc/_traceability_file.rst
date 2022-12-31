@@ -148,7 +148,7 @@ Down: |tr0|
 
 :tr14:
 
-|dhy|, |rak|
+|r90|, |seo|
 
 Up: |tr1|
 
@@ -158,7 +158,7 @@ Down: |tr0|
 
 :tr15:
 
-|r90|, |seo|
+|rvl|, |sxr|
 
 Up: |tr1|
 
@@ -168,7 +168,7 @@ Down: |tr0|
 
 :tr16:
 
-|rvl|, |sxr|
+|dhy|, |rak|
 
 Up: |tr1|
 

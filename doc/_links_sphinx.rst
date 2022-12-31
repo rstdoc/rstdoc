@@ -240,7 +240,7 @@
 
 .. |dcx.Counter.__init__| replace:: :ref:`dcx.Counter.__init__<dcx.Counter.__init__>`
 
-.. |dcx.pdtAAA| replace:: :ref:`dcx.pdtAAA<dcx.pdtAAA>`
+.. |dcx.x| replace:: :ref:`dcx.x<dcx.x>`
 
 .. |dcx.index_toctree| replace:: :ref:`dcx.index_toctree<dcx.index_toctree>`
 

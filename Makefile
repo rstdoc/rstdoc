@@ -16,7 +16,7 @@ test:
 	rm -rf doc/_links_*
 	rm -rf doc/_images
 	rm -rf doc/_traceability_*
-	py.test -vv --doctest-modules --cov=rstdoc --cov-report term-missing
+	type waf && py.test -vv --doctest-modules --cov=rstdoc --cov-report term-missing
 
 doctest:
 	waf configure && waf --docs sphinx_html --tests
