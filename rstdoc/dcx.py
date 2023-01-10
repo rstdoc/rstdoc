@@ -54,6 +54,10 @@ try:
     from rstdoc.retable import title_some
 except:
     title_some = """=-^"'`._~+:;,"""
+try:
+    from rstdoc.reflow import atx_to_rst_header
+except:
+    atx_to_rst_header = lambda x:x
 
 """
 .. _`rstdcx`:
@@ -1989,7 +1993,8 @@ def dorst(
             links_done = False
             _links_re = r'^\.\. include:: (.*)(_links_sphinx)(.re?st)'
             rexincludelinks = re.compile(_links_re)
-            for x in filelines:
+            lenfilelines = len(filelines)
+            for ix, x in enumerate(filelines):
                 #x = '.. include:: _links_sphinx.rest' #1
                 #x = '.. include:: ../_links_sphinx.rest' #2
                 #x = '.. include:: /_links_sphinx.rst' #3
@@ -2022,6 +2027,9 @@ def dorst(
                                 else:
                                     sysout.write(f.read())
                                 links_done = True
+                elif ix>0 and ix<lenfilelines-1 and filelines[ix-1].strip()=='' and filelines[ix+1].strip()=='':
+                    y = atx_to_rst_header(x)
+                    sysout.write(y if y.endswith('\n') else y+'\n')
                 else:
                     sysout.write(x if x.endswith('\n') else x+'\n')
             if not links_done:
@@ -2325,7 +2333,7 @@ def doc_parts(
         prefix=''
         ):
     r'''
-    ``doc_parts()`` yields doc parts delimeted by ``relim`` regular expression
+    ``doc_parts()`` yields doc parts delimited by ``relim`` regular expression
     possibly with id, if ``reid`` matches
 
     If start and stop differ use regulare expression ``|`` in ``relim``.
@@ -3471,7 +3479,7 @@ def grep(
       dir=None,
       exts=set(['.rst','.rest','.stpl','.tpl','.adoc','.md','.wiki','.py','.jl','.lua','.tex',
                 '.js', '.h','.c','.hpp','.cpp','.java','.cs','.vb','.r','.sh','.vim','.el',
-                '.php','.sql','.swift','.go','.rb','.m','.pl','.rs','.f90','.dart',
+                '.php','.sql','.swift','.go','.rb','.m','.pl','.rs','.f90','.dart','.bib',
                 '.yml','.mm','.d','.lsp','.kt','.hs','.lhs','.ex','.scala','.clj']),
       **kwargs
 ):
@@ -3491,6 +3499,10 @@ def grep(
 
     if dir is None:
         dir = os.getcwd()
+    dir = up_dir(is_project_root_file,start=dir)
+    if not dir:
+        print('Not in a repo')
+        return
     regexp = re.compile(regexp)
     for root, dirs, files in os.walk(dir):
         for name in files:
@@ -3498,11 +3510,15 @@ def grep(
                 f = normjoin(root,name)
                 if not f.endswith('.py') and not f.endswith(_stpl) and exists(f+_stpl):
                     continue
-                with open(f,encoding="utf-8") as fb:
-                    lines=[l.strip() for l in fb.readlines()]
-                    res = [(i,lines[i]) for i in rindices(regexp, lines)]
-                    for (i,l) in res:
-                        yield (f,i+1,l)
+                try:
+                    with open(f,encoding="utf-8") as fb: 
+                        lines=[l.strip() for l in fb.readlines()] 
+                        res = [(i,lines[i]) for i in rindices(regexp, lines)] 
+                        for (i,l) in res: 
+                            yield (f,i+1,l) 
+                except Exception as e: 
+                    print(f,str(e)) 
+                    continue 
 
 def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
     '''
@@ -3602,12 +3618,12 @@ class PdtItem(Counter):
 
             >>> pdt=PdtItem('032')
             >>> pdt()
-            '\\n03201:'
+            '\\n.. {03201}\\n\\n03201:'
             >>> pdt('kw1 kw2','kw3')
-            '\\n03202: **kw1 kw2 kw3**'
+            '\\n.. {03203 kw1 kw2 kw3}\\n\\n03203: **kw1 kw2 kw3**'
             >>> hdr2=PdtItem('032',level=2)
             >>> hdr2('header text')
-            '\\n032 header text\\n---------------'
+            '\\n.. {032 header text}\\n\\n032 header text\\n---------------'
 
         """
 
@@ -3620,21 +3636,25 @@ class PdtItem(Counter):
             BB = np.base_repr(self.cnt,36)
             Id = "{}{:0>2}".format(self.AAA,BB)
             if args:
-                lines = ['\n{}: **{}**'.format(Id,' '.join(args))]
+                lines = ['','.. {%s %s}'%(Id,' '.join(args)),'','{}: **{}**'.format(Id,' '.join(args))]
             else:
-                lines = ['\n{}:'.format(Id)]
+                lines = ['','.. {%s}'%Id,'','{}:'.format(Id)]
         else:
             c = title_some[self.level-1]
             assert args, "a header cannot be empty"
             lin = ' '.join([self.AAA]+list(args))
             lenlin = len(lin)
-            lines = ['',lin,c*lenlin]
+            lines = ['','.. {%s}'%lin,'',lin,c*lenlin]
         return "\n".join(lines)
 
-def _pdtok(fid):
-    assert fid.upper() == fid
-    assert len(fid) == 3
-    assert int(fid,base=36) < 36**3
+try:
+    _pdtok # sys.modules['builtins']._pdtok = _pdtok
+except NameError:
+    def _pdtok(fid):
+        assert fid.upper() == fid
+        lfid = len(fid)
+        assert lfid==2 or lfid == 3
+        assert int(fid,base=36) < 36**lfid
 
 def pdtid(pdtfile,pdtok=_pdtok):
     """
