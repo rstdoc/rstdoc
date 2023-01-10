@@ -327,7 +327,7 @@ The reasons for redundancy are
 - inability to exploit functional dependencies: no `automation`_ available
 - normative boilerplate texts: no `automation`_ available
 
-Firther reading:
+Further reading:
 
 | `DRY <https://en.wikipedia.org/wiki/Don%27t_repeat_yourself>`__
 
