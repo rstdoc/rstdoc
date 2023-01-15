@@ -270,7 +270,7 @@ def atx_to_rst_header(line):
         ['xxx', '---']
         >>> line = '*** xx'
         >>> atx_to_rst_header(line).splitlines()
-        ['xx', '^^^']
+        ['*** xx']
         >>> line = '++++xyz go'
         >>> atx_to_rst_header(line).splitlines()
         ['xyz go', '""""""']
@@ -285,7 +285,7 @@ def atx_to_rst_header(line):
         ['#) xx']
 
     """
-    re_atx = re.compile(r"^(([=#\*!+])\2*)\s*(\w+.*)$")
+    re_atx = re.compile(r"^(([=#!+])\2*)\s*(\w+.*)$")
     m = re_atx.match(line)
     if m is None:
       return line
