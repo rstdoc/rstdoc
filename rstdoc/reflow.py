@@ -257,6 +257,11 @@ def atx_to_rst_header(line):
     """
 
     Convert atx-style header to underlining header.
+    Uses only #:
+
+    # title1
+    ## title2
+    ### title3
 
     :param line: a atx-style header
 
@@ -271,12 +276,12 @@ def atx_to_rst_header(line):
         >>> line = '*** xx'
         >>> atx_to_rst_header(line).splitlines()
         ['*** xx']
-        >>> line = '++++xyz go'
+        >>> line = '++++ xyz go'
         >>> atx_to_rst_header(line).splitlines()
-        ['xyz go', '""""""']
-        >>> line = '=========='
+        ['++++ xyz go']
+        >>> line = '=== ======='
         >>> atx_to_rst_header(line).splitlines()
-        ['==========']
+        ['=== =======']
         >>> line = '*#* xx'
         >>> atx_to_rst_header(line).splitlines()
         ['*#* xx']
@@ -285,7 +290,7 @@ def atx_to_rst_header(line):
         ['#) xx']
 
     """
-    re_atx = re.compile(r"^(([=#!+])\2*)\s*(\w+.*)$")
+    re_atx = re.compile(r"^((#)\2*)\s*(\w+.*)$")
     m = re_atx.match(line)
     if m is None:
       return line
