@@ -1,5 +1,5 @@
 =================================
-rstdoc(1) Version 1.8.1 \| rstdoc
+rstdoc(1) Version 1.8.2 \| rstdoc
 =================================
 
 See `background and documentation <https://rstdoc.readthedocs.io/en/latest/>`__.
