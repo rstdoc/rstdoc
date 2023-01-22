@@ -41,7 +41,7 @@ dist: man
 	sudo python setup.py bdist_wheel
 
 .PHONY: up
-up:
+up: dist
 	twine upload dist/`ls dist -rt | tail -1`
 
 .PHONY: devinstall

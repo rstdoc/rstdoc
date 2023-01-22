@@ -186,11 +186,15 @@ It is supposed to be used with a build tool.
 Initialize example tree (add \f[V]--rstrest\f[R] to make \f[V].rst\f[R]
 main and \f[V].rest\f[R] included files):
 .RS 2
-.PP
-$ ./dcx.py --rest repo #repo/doc/{sy,ra,sr,dd,tp}.rest files OR $
-\&./dcx.py --stpl repo #repo/doc/{sy,ra,sr,dd,tp}.rest.stpl files $
-\&./dcx.py --ipdt repo #repo/pdt/AAA/{i,p,d,t}.rest.stpl files $
-\&./dcx.py --over repo #.rest all over
+.IP
+.nf
+\f[C]
+$ ./dcx.py --rest repo #repo/doc/{sy,ra,sr,dd,tp}.rest files OR
+$ ./dcx.py --stpl repo #repo/doc/{sy,ra,sr,dd,tp}.rest.stpl files
+$ ./dcx.py --ipdt repo #repo/pdt/AAA/{i,p,d,t}.rest.stpl files
+$ ./dcx.py --over repo #.rest all over
+\f[R]
+.fi
 .RE
 .IP \[bu] 2
 Only create .tags and \f[V]_links_xxx.r?st\f[R]:
