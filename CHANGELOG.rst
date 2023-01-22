@@ -9,11 +9,12 @@ TODO
 
 - test tags on vscode, and add to docs
 
-- Run tests with new pandoc, docutils, sphinx version
 
-todo - v1.9.0
-=============
+20230122 - v1.8.2
+=================
 
+- allow atx headers starting with a number of # chars
+- run and fix tests with new pandoc, docutils, sphinx version
 
 20201231- v1.8.1
 ================
