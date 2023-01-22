@@ -3335,7 +3335,7 @@ class Fldr(OrderedDict):
                 add_links_comments(linksto)
 
         for rstfile in self.values():
-            add_links_comments('\n.. .. {0}\n\n'.format(rstfile.doc))
+            add_links_comments('\n.. .. {0}\n\n'.format(relpath(rstfile.doc,start=self.scanroot)))
             rstfile.add_links_and_tags(add_tgt, add_linksto)
         if _traceability_instance and self.linkroot==self.folder:
             tlines = _traceability_instance.create_traceability_file(self.linkroot)
