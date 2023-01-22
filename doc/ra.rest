@@ -343,7 +343,7 @@ Scripting
 
 :r1p: |sgt|, |s8c|
 
-Why don't we write code in MS Word or Libre Office? Because it would be hard to parse away all the formatting.
+Why don't we write code in MS Word or LibreOffice? Because it would be hard to parse away all the formatting.
 
 It does not help to have a library like `Office-XML-SDK`_ or `DOM`_, because the additional complexity
 through formatting elements still needs to be dealt with when parsing or creating documentation parts.
@@ -411,7 +411,7 @@ because there are
 - unknown probabilities
 
 Because the frequencies will be inaccurate,
-instead of numbers one can use more unprecise but realistic values,
+instead of numbers one can use more imprecise but realistic values,
 that need to be defined for the special area (|rd7|).
 
 .. _`rd7`:

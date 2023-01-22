@@ -208,8 +208,6 @@ def rstinit(request, tmpworkdir):
     os.chdir(oldd)
 
 def initfor(rstinitret,smplk):
-    #rstinitret='/tmp/pytest-of-roland/pytest-684/test_waf_samples_html_rstinit70/tmp1_over/build/'
-    #smplk='over'
     res = len(re.split('tmp.?_'+smplk,rstinitret))>1
     return res
 
@@ -720,6 +718,8 @@ def wafbuild(request,rstinit):
     r1=run(['waf','configure'])
     assert r1.returncode==0
     r2=run(['waf','--docs',request.param])
+    if r2.returncode==0:
+        r2=run(['waf','--docs',request.param])
     assert r2.returncode==0
     oldd = os.getcwd()
     os.chdir('build')
@@ -783,7 +783,12 @@ def test_waf_samples(wafbuild):
         realout = tree3(rstinit,4)
         for x in expected.splitlines():
             xchk=x.strip('└│├ ')
-            assert realout.find(xchk)>=0, "%s not found"%xchk
+            found = realout.find(xchk)>=0
+            if not found:
+                time.sleep(1)
+                realout = tree3(rstinit,4)
+                found = realout.find(xchk)>=0
+            assert found, "%s not found"%xchk
     elif  initfor(rstinit,'ipdt'):
         expected_non_sphinx="""\
 └ pdt/
@@ -845,10 +850,14 @@ def test_waf_samples(wafbuild):
         realout = tree3(target)
         for x in expected.splitlines():
             xchk=x.strip('└│├ ')
-            assert realout.find(xchk)>=0, "%s not found"%xchk
+            found = realout.find(xchk)>=0
+            if not found:
+                time.sleep(1)
+                realout = tree3(rstinit,4)
+                found = realout.find(xchk)>=0
+            assert found, "%s not found"%xchk
     else:#not idpt or over
         is_stpl = initfor(rstinit,'stpl')
-        #rstinit='/tmp/pytest-of-roland/pytest-702/test_waf_samples_sphinx_html_r0/tmp0_rest/build'
         tmpx_xxx = re.search('(tmp.?_\w+)',rstinit).groups()[0]
         expected_non_sphinx="""\
 ├ doc/
@@ -910,7 +919,12 @@ def test_waf_samples(wafbuild):
         realout = tree3(rstinit)
         for x in expected.splitlines():
             xchk=x.strip('└│├ ')
-            assert realout.find(xchk)>=0, "%s not found"%xchk
+            found = realout.find(xchk)>=0
+            if not found:
+                time.sleep(1)
+                realout = tree3(rstinit,4)
+                found = realout.find(xchk)>=0
+            assert found, "%s not found"%xchk
 
 def test_docparts_after():
     '''

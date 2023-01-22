@@ -101,23 +101,29 @@ It is supposed to be used with a build tool.
 
 - Initialize example tree (add ``--rstrest`` to make ``.rst`` main and ``.rest`` included files):
 
-  $ ./dcx.py --rest repo #repo/doc/{sy,ra,sr,dd,tp}.rest files OR
-  $ ./dcx.py --stpl repo #repo/doc/{sy,ra,sr,dd,tp}.rest.stpl files
-  $ ./dcx.py --ipdt repo #repo/pdt/AAA/{i,p,d,t}.rest.stpl files
-  $ ./dcx.py --over repo #.rest all over
+  ::
 
-- Only create .tags and ``_links_xxx.r?st``::
+      $ ./dcx.py --rest repo #repo/doc/{sy,ra,sr,dd,tp}.rest files OR
+      $ ./dcx.py --stpl repo #repo/doc/{sy,ra,sr,dd,tp}.rest.stpl files
+      $ ./dcx.py --ipdt repo #repo/pdt/AAA/{i,p,d,t}.rest.stpl files
+      $ ./dcx.py --over repo #.rest all over
 
-  $ cd repo
-  $ rstdoc
+- Only create .tags and ``_links_xxx.r?st``:
 
-- Create the docs (and .tags and ``_links_xxx.r?st``) with **make**::
+  ::
 
-  $ make html #OR
-  $ make epub #OR
-  $ make latex #OR
-  $ make docx #OR
-  $ make pdf
+    $ cd repo
+    $ rstdoc
+
+- Create the docs (and .tags and ``_links_xxx.r?st``) with **make**:
+
+  ::
+
+      $ make html #OR
+      $ make epub #OR
+      $ make latex #OR
+      $ make docx #OR
+      $ make pdf
 
   The latter two are done by Pandoc, the others by Sphinx.
 
@@ -1130,8 +1136,7 @@ def rst_sphinx(
         for k, v in cfgt.items() if k in sphinx_config_keys
         and 'latex' not in k and k != 'html_extra_path'
     })
-    cfg.setdefault('source_suffix','.rest')
-    #cfg['source_suffix'] = '.rest'
+    cfg.setdefault('source_suffix',_rest)
     if not outtype or outtype=='html':
         if outne == '.html':
             if infn.startswith('index.'):
@@ -3397,7 +3402,7 @@ class Fldrs(OrderedDict):
                         for linktype in g_links_types:
                             with opnwrite(normjoin(linkroot,
                                    '_links_'+linktype+_rst)) as f:
-                                f.write('.. .. .. %s'%linkroot)
+                                f.write('.. .. .. %s'%relpath(linkroot,start=self.scanroot))
                             rmrf(normjoin(self.scanroot, '.tags'))
 
 def links_and_tags(

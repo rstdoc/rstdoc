@@ -800,7 +800,7 @@ Return the lines matched by ``regex``.
            prefix=''
            ):
 
-``doc_parts()`` yields doc parts delimeted by ``relim`` regular expression
+``doc_parts()`` yields doc parts delimited by ``relim`` regular expression
 possibly with id, if ``reid`` matches
 
 If start and stop differ use regulare expression ``|`` in ``relim``.
@@ -1051,7 +1051,7 @@ Creates ``_links_xxx.rst`` files and a ``.tags``.
          dir=None,
          exts=set(['.rst','.rest','.stpl','.tpl','.adoc','.md','.wiki','.py','.jl','.lua','.tex',
                    '.js', '.h','.c','.hpp','.cpp','.java','.cs','.vb','.r','.sh','.vim','.el',
-                   '.php','.sql','.swift','.go','.rb','.m','.pl','.rs','.f90','.dart',
+                   '.php','.sql','.swift','.go','.rb','.m','.pl','.rs','.f90','.dart','.bib',
                    '.yml','.mm','.d','.lsp','.kt','.hs','.lhs','.ex','.scala','.clj']),
          **kwargs
    ):
@@ -1209,31 +1209,31 @@ The generated macros do not work for indented text, as they produce line breaks 
     >>> pdtfile = "a/b/a.rest.stpl"
     >>> pdtAAA(pdtfile,dct,pdtid=r'.*/(.)\.rest\.stpl')
     >>> dct['_a']('x y').strip()
-    'a01: **x y**'
+    '.. {a01 x y}\\n\\na01: **x y**'
     >>> dct['__a']('x y').strip() #needs _printlist
-    "['\\\\na02: **x y**', '\\\\n']"
+    "['\\\\n.. {a02 x y}\\\\n\\\\na02: **x y**', '\\\\n']"
     >>> dct={}
     >>> pdtfile = "pdt/000/d.rest.stpl"
     >>> pdtAAA(pdtfile,dct)
     >>> dct['_d000']('x y').strip()
-    'd00001: **x y**'
+    '.. {d00001 x y}\\n\\nd00001: **x y**'
     >>> dct={}
     >>> pdtfile = "a/b/003.rest.stpl"
     >>> pdtAAA(pdtfile,dct)
     >>> dct['_003']('x y').strip()
-    '00301: **x y**'
+    '.. {00301 x y}\\n\\n00301: **x y**'
     >>> dct['_003_']('x y')
-    '\\n003 x y\\n======='
+    '\\n.. {003 x y}\\n\\n003 x y\\n======='
     >>> pdtfile="a/b/003/d.rest.stpl"
     >>> pdtAAA(pdtfile,dct)
     >>> dct['_003']('x y').strip()
-    '00301: **x y**'
+    '.. {00301 x y}\\n\\n00301: **x y**'
     >>> dct['_d003']('x y').strip()
-    'd00301: **x y**'
+    '.. {d00301 x y}\\n\\nd00301: **x y**'
     >>> dct['_003_']('x y')
-    '\\n003 x y\\n======='
+    '\\n.. {003 x y}\\n\\n003 x y\\n======='
     >>> dct['_d003_']('x y')
-    '\\nd003 x y\\n========'
+    '\\n.. {d003 x y}\\n\\nd003 x y\\n========'
 
 
 .. _`dcx.index_toctree`:

@@ -1,5 +1,4 @@
-.PHONY: test doctest man check dist up devinstall tag
-
+.PHONY: test
 test:
 	rm -rf build
 	rm -rf doc/build
@@ -18,24 +17,38 @@ test:
 	rm -rf doc/_traceability_*
 	type waf && py.test -vv --doctest-modules --cov=rstdoc --cov-report term-missing
 
+.PHONY: doc
+doc:
+	waf configure --docs sphinx_html,rst_html,rst_odt,html,odt,docx
+	waf
+	waf --docs pdf
+
+.PHONY: doctest
 doctest:
 	waf configure && waf --docs sphinx_html --tests
 
+.PHONY: man
 man:
 	python setup.py --print | pandoc -s -f rst -t man -o rstdoc.1
 
+.PHONY: check
 check:
+	/usr/bin/man -l rstdoc.1
 	restview --long-description --strict
 
+.PHONY: dist
 dist: man
 	sudo python setup.py bdist_wheel
 
+.PHONY: up
 up:
 	twine upload dist/`ls dist -rt | tail -1`
 
+.PHONY: devinstall
 devinstall:
 	sudo pip install -e .
 
+.PHONY: tag
 tag: devinstall
 	$(eval TAGMSG="v$(shell rstdoc --version | cut -d ' ' -f 2)")
 	echo $(TAGMSG)
