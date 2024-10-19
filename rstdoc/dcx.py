@@ -636,14 +636,13 @@ html_extra_path = [_traceability_file + '.svg']
 pandoc_doc_optref = {
     'latex': '--template reference.tex',
     'html': {},  # each can also be dict of file:template
-    'pdf': '--template reference.tex',
+    'pdf': '',
     'docx': '--reference-doc reference.docx',
     'odt': '--reference-doc reference.odt'
 }
 _pandoc_latex_pdf = [
     '--listings', '--number-sections', '--pdf-engine', 'xelatex', '-V',
-    'titlepage', '-V', 'papersize=a4', '-V', 'toc', '-V', 'toc-depth=3', '-V',
-    'geometry:margin=2.5cm'
+    'titlepage', '-V', 'papersize=a4', '-V', 'geometry:margin=2.5cm'
 ]
 pandoc_opts = {
     'pdf': _pandoc_latex_pdf,
@@ -2795,7 +2794,7 @@ def gen(
 
 def parsegenfile(genpth):
     '''
-    Parse the file ``genpth`` which is either 
+    Parse the file ``genpth`` which is either
 
     - python code or
 
@@ -3516,14 +3515,14 @@ def grep(
                 if not f.endswith('.py') and not f.endswith(_stpl) and exists(f+_stpl):
                     continue
                 try:
-                    with open(f,encoding="utf-8") as fb: 
-                        lines=[l.strip() for l in fb.readlines()] 
-                        res = [(i,lines[i]) for i in rindices(regexp, lines)] 
-                        for (i,l) in res: 
-                            yield (f,i+1,l) 
-                except Exception as e: 
-                    print(f,str(e)) 
-                    continue 
+                    with open(f,encoding="utf-8") as fb:
+                        lines=[l.strip() for l in fb.readlines()]
+                        res = [(i,lines[i]) for i in rindices(regexp, lines)]
+                        for (i,l) in res:
+                            yield (f,i+1,l)
+                except Exception as e:
+                    print(f,str(e))
+                    continue
 
 def yield_with_kw (kws, fn_ln_kw=None, **kwargs):
     '''
@@ -4331,8 +4330,7 @@ example_rest_tree = r'''
                               'odt': '--reference-doc reference.odt'
                               }
              _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine',
-                'xelatex','-V','titlepage','-V','papersize=a4',
-                '-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
+                'xelatex','-V','titlepage','-V','papersize=a4', '-V','geometry:margin=2.5cm']
              pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,
                 'docx':[],'odt':[],
                 'html':['--mathml','--highlight-style','pygments']}
@@ -5432,14 +5430,14 @@ example_ipdt_tree = r'''
            #def gen_tstdoc(lns,**kw):
            #  return ['#) '+l.split('**')[1] for l in rlines(r'^/\*\*',lns)]
            #def gen_tstdoc
-           
+
            @//generated from some.h
            @#include <assert.h>
            @#include "some.h"
            @int main()
            @{
            */
-           
+
            /**Test add1()
            @assert(add1(1)==2);
            */
@@ -5447,7 +5445,7 @@ example_ipdt_tree = r'''
            {
              return a+1;
            }
-           
+
            /**Test add2()
            @assert(add2(1)==3);
            */
@@ -5455,7 +5453,7 @@ example_ipdt_tree = r'''
            {
              return a+2;
            }
-           
+
            /*
            @}
            */
@@ -5535,8 +5533,7 @@ example_ipdt_tree = r'''
                                   'odt': '--reference-doc reference.odt'
                                   }
                  _pandoc_latex_pdf = ['--listings','--number-sections','--pdf-engine',
-                    'xelatex','-V','titlepage','-V','papersize=a4',
-                    '-V','toc','-V','toc-depth=3','-V','geometry:margin=2.5cm']
+                    'xelatex','-V','titlepage','-V','papersize=a4','-V','geometry:margin=2.5cm']
                  pandoc_opts = {'pdf':_pandoc_latex_pdf,'latex':_pandoc_latex_pdf,
                     'docx':[],'odt':[],
                     'html':['--mathml','--highlight-style','pygments']}
@@ -5561,116 +5558,116 @@ example_ipdt_tree = r'''
                 ]
             ├ i.rest.stpl
                 .. vim: ft=rst
-                
+
                 .. _`i000`:
-                
+
                 % globals().update(include('pdt.rst.tpl',
                 % Title="pdt inform"
                 % ))
-                
+
                 .. _`i000inform`:
                 %__i000('inform')
-                
+
                 Purpose is non-technical, from or for externals.
-                
+
                 The purpose of the ``__i000`` python function is to count the entries.
                 If you don't care about counted items, you can use normal RST, or provide your own ``__i000``.
-                
+
                 plan-do-test: `pdt <https://github.com/rpuntaie/pdt>`__.
-                
+
                 %epilog()
             ├ p.rest.stpl
                 .. vim: ft=rst
-                
+
                 .. _`p000`:
-                
+
                 % globals().update(include('pdt.rst.tpl',
                 % Title="pdt plan"
                 % ))
-                
-                
+
+
                 .. _`p000grouping`:
                 %__p000_('Grouping') ############################################################
-                
+
                 .. _`p000headers`:
                 %__p000('headers')
                 |i000inform|
-                
+
                 Headers are groupings of content items,
                 but are not as important as content items.
-                
+
                 .. _`p000subproject`:
                 %__p000('sub-project')
                 |i000inform|
-                
+
                 For a sub-project prefer a new ``pdt`` over headers.
-                
-                
+
+
                 %epilog()
             ├ d.rest.stpl
                 .. vim: ft=rst
-                
+
                 .. _`d000`:
-                
+
                 % globals().update(include('pdt.rst.tpl',
                 % Title="pdt do"
                 % ))
-                
-                
+
+
                 .. _`d000repo`:
                 %__d000('repo')
                 |p000headers| is an example of a link to another item.
-                
+
                 - ``pdt`` documents the development
                 - ``doc`` documents the SW
-                
+
                 .. _`000repofigure`:
-                
+
                 .. figure:: _images/repo.png
                    :name:
                    :width: 50%
-                
+
                    |000repofigure|: Example project repo.
-                
+
                 .. _`d000notrace`:
                 %__d000('notrace')
                 |p000subproject|
-                
+
                 The figure target above does not start with 'd'.
                 ``rextrace_target_id`` is set to ignore such targets.
-                
+
                 %epilog()
             ├ t.rest.stpl
                 .. vim: ft=rst
-                
+
                 .. _`t000`:
-                
+
                 % globals().update(include('pdt.rst.tpl',
                 % Title="pdt test"
                 % ))
-                
-                
+
+
                 .. _`t000testitem1`:
                 %__t000('test item 1')
-                
+
                 Link *plan* and *do* items that are tested here, e.g.
-                
+
                 - |p000headers| fits to |d000repo|
-                
+
                 .. _`t000testitem2`:
                 %__t000('test item 2')
                 |d000notrace|
-                
+
                 Tests manually.
-                
+
                 .. _`t000codegeneratedtestitems`:
                 %__t000('code generated test items')
-                
+
                 .. include:: _sometst.rst
-                
+
                 %epilog()
-                
-                
+
+
             └ repo.pyg
                 # vim: ft=python ts=4
                 import drawSvg
@@ -5732,274 +5729,274 @@ example_ipdt_tree = r'''
             __imgs__
             ├ i.rest.stpl
                 .. vim: ft=rst
-                
+
                 .. _`i001`:
-                
+
                 %globals().update(include('pdt.rst.tpl',
                 %Title="Information on Diagrams",
                 %Type="inform"
                 %))
-                
+
                 .. _`i001figure`:
                 %__i001('figure')
-                
+
                 An item is not included in the traceabilty diagram unless with links to other items.
                 Ref to |i000inform| to test inclusion.
-                
+
                 .. _`001fig1`:
-                
+
                 .. figure:: _images/egtikz.png
                    :name:
                    :width: 50%
-                
+
                    |001fig1|: Caption here.
                    Reference this via ``|001fig1|``.
-                
+
                 .. _`i001rstinclude`:
                 %__i001('rst include')
                 |i000inform|
-                
+
                 .. include:: i_included.rst
-                
+
                 .. _`i001stplincludetpl`:
                 %__i001('stpl include (tpl)')
                 |i000inform|
-                
+
                 %include('i_diagrams.tpl',_i001=_i001)
-                
+
                 Following definitions here, as
                 Pandoc does accept
                 `definitions in included files <https://github.com/jgm/pandoc/issues/4160>`__.
-                
+
                 .. |eps| image:: _images/egeps.png
-                
+
                 %epilog()
-                
+
             ├ i_diagrams.tpl
                 .. vim: ft=rst
-                
+
                 .. _`i001diagrams`:
                 %__i001('diagrams')
                 |i000inform|
-                
+
                 .. _`exampletikz1`:
-                
+
                 .. figure:: _images/egtikz1.png
                    :name:
                    :width: 30%
-                
+
                    |exampletikz1|: Create from egtikz1.tikz
-                
+
                 ``.tikz``, ``.svg``, ``.dot``,  ``.uml``, ``.eps`` or ``.stpl``
                 thereof and ``.pyg``, are converted to ``.png``.
-                
+
                 .. _`examplesvg`:
-                
+
                 .. figure:: _images/egsvg.png
                    :name:
-                
+
                    |examplesvg|: Created from egsvg.svg.stpl
-                
+
                 .. _`exampledot`:
-                
+
                 .. figure:: _images/egdot.png
                    :name:
-                
+
                    |exampledot|: Created from egdot.dot.stpl
-                
+
                 .. _`exampleuml`:
-                
+
                 .. figure:: _images/eguml.png
                    :name:
-                
+
                    |exampleuml|: Created from eguml.uml
-                
+
                 .. _`exampleplt`:
-                
+
                 .. figure:: _images/egplt.png
                    :name:
                    :width: 30%
-                
+
                    |exampleplt|: Created from egplt.pyg
-                
+
                 .. _`examplepyx`:
-                
+
                 .. figure:: _images/egpyx.png
                    :name:
-                
+
                    |examplepyx|: Created from egpyx.pyg
-                
+
                 .. _`examplecairo`:
-                
+
                 .. figure:: _images/egcairo.png
                    :name:
-                
+
                    |examplecairo|: Created from egcairo.pyg
-                
+
                 .. _`examplepygal`:
-                
+
                 .. figure:: _images/egpygal.png
                    :name:
                    :width: 30%
-                
+
                    |examplepygal|: Created from egpygal.pyg
-                
+
                 .. _`exampleother`:
-                
+
                 .. figure:: _images/egother.png
                    :name:
-                
+
                    |exampleother|: Created from egother.pyg
-                
+
                 .. _`exampleeps`:
-                
+
                 .. figure:: _images/egeps.png
                    :name:
-                
+
                    |exampleeps|: Created from egeps.eps
-                
+
                 %if False:
                 .. _`target_more_than_in_rest`:
-                
+
                    It is OK to have more targets in the .stpl file.
                 %end
-                
+
                 Make a reference to |exampletikz1|.
-                
+
             ├ i_included.rst
                 .. vim: ft=rst
-                
-                
-                
+
+
+
                 .. _`i001code`:
-                
+
                 |i001code|: Listing showing struct.
-                
+
                 .. code-block:: cpp
                    :name:
-                
+
                    struct xxx{
                       int yyy; //yyy for zzz
                    }
-                
+
                 .. _`i001table`:
-                
+
                 i00101: **table**
-                
+
                 Include normal ``.rst``.
-                
+
                 .. include:: i_tables.rst
-                
+
                 .. _`i001math`:
-                
+
                 i00102: **math**
-                
+
                 Again include the stpl way.
-                
+
                 .. vim: ft=rst
-                
+
                 .. _`i001math1`:
-                
+
                 .. math::
                    :name:
-                
+
                    V = \frac{K}{r^2}
-                
+
                 ``:math:`` is the default inline role: `mc^2`
-                
-                
+
+
             ├ i_included.rst.stpl
                 .. vim: ft=rst
-                
+
                 %globals().update(include('pdt.rst.tpl'))
-                
+
                 .. _`i001code`:
-                
+
                 |i001code|: Listing showing struct.
-                
+
                 .. code-block:: cpp
                    :name:
-                
+
                    struct xxx{
                       int yyy; //yyy for zzz
                    }
-                
+
                 .. _`i001table`:
                 %__001('table')
                 |i000inform|
-                
+
                 Include normal ``.rst``.
-                
+
                 .. include:: i_tables.rst
-                
+
                 .. _`i001math`:
                 %__i001('math')
                 |i000inform|
-                
+
                 Again include the stpl way.
-                
+
                 %include('i_math.tpl')
-                
+
             ├ i_math.tpl
                 .. vim: ft=rst
-                
+
                 .. _`i001math1`:
-                
+
                 .. math::
                    :name:
-                
+
                    V = \frac{K}{r^2}
-                
+
                 ``:math:`` is the default inline role: `mc^2`
-                
+
             └ i_tables.rst
                 .. vim: ft=rst
-                
+
                 .. _`i001table1`:
-                
+
                 |i001table1|: Table legend
-                
+
                 .. table::
                    :name:
-                
+
                    +--------+--------+
                    | A      | B      |
                    +========+========+
                    | |eps|  | |eps|  |
                    +--------+--------+
-                
+
                 .. _`i001table2`:
-                
+
                 |i001table2|: Table legend
-                
+
                 .. list-table::
                    :name:
                    :widths: 20 80
                    :header-rows: 1
-                
+
                    * - Bit
                      - Function
-                
+
                    * - 0
                      - xxx
-                
+
                 Reference |i001table1| or |i001table2| does not show
                 ``i001table1`` or ``i001table2``.
          ├ index.rest.stpl
              .. vim: ft=rst
-             
+
              %globals().update(include('pdt.rst.tpl'
              %,Title="rstdoc - pdt example"
              %,Type="inform"
              %))
-             
+
              %from pathlib import Path
              %thisdir=Path(__file__).parent
              %stem = lambda x:os.path.splitext(x)[0].replace('\\', '/')
              %from os.path import dirname, basename
-             
+
              .. toctree::
-             
+
              %for x in sorted(set(y.parent for y in thisdir.rglob("*.rest*") if not y.name.startswith('index.rest'))):
              %  fs = dict((f.name[0],f) for f in Path(x).rglob("*.rest*"))
              %  for i in "ipdt":
@@ -6012,12 +6009,12 @@ example_ipdt_tree = r'''
                    {{stem(fs[i].relative_to(thisdir))}}
              %  end
              %  end
-             
+
              .. REMOVE THIS IF NO LINKING OVERVIEW WANTED
              .. include:: _traceability_file.rst
-             
+
              .. include:: _links_sphinx.rst
-             
+
          ├ pdt.rst.tpl
              % #expect Title and optionally
              % setdefault('Contact','roland.puntaier@gmail.com')
@@ -6036,7 +6033,7 @@ example_ipdt_tree = r'''
              {{ttl}}
              {{'#'*len(ttl)}}
              %end
-             
+
              %if defined('iAAA'):
              :PDT: {{AAA}}
              :Contact: {{!Contact}}
@@ -6045,31 +6042,31 @@ example_ipdt_tree = r'''
              %end
              %def pagebreak():
              .. raw:: openxml
-             
+
                  <w:p>
                    <w:r>
                      <w:br w:type="page"/>
                    </w:r>
                  </w:p>
-             
+
              .. raw:: html
-             
+
                  <p style="page-break-before: always;">&nbsp;</p>
-             
+
              .. raw:: latex
-             
+
                  \pagebreak
-             
+
              .. for docutils
              .. raw:: odt
-             
+
                  <text:p text:style-name="PageBreak"/>
-             
+
              .. for pandoc
              .. raw:: opendocument
-             
+
                  <text:p text:style-name="PageBreak"/>
-             
+
              %end
              %def epilog():
              .. include:: /_links_sphinx.rst
@@ -6155,16 +6152,16 @@ example_over_tree = r'''
                └ 2019.rest
                    2019
                    ====
-            
+
                    .. _`c1_20191101`
-            
+
                    |issue1|
-            
+
                    .. _`c1_20191102`
-            
+
                    |issue1|
                    It was necessary to refactor ...
-            
+
                    .. include:: /_links_sphinx.rst
   doc
     ├ index.rest
