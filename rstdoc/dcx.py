@@ -3460,7 +3460,7 @@ def _kw_from_path(kwpth,rexkwsplit=rexkwsplit):
     fpth = stem(fn)
     if fpth.endswith(_rst) or fpth.endswith(_rest):
         fpth = stem(fpth)
-    res = re.split(rexkwsplit,fpth)
+    res = [x.lower() for x in re.split(rexkwsplit,fpth)]
     return frozenset(res)
 
 def _kw_from_line(ln,rexkwsplit=rexkwsplit):
