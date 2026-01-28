@@ -212,6 +212,97 @@ def _write_dcx(adocx):
         os.path.split(str(Path(__file__).resolve()))[0], 'dcx.py')
     shutil.copy2(dcxfile, _fldrhere(adocx))
 
+## The below function converts notes, admonitions etc into their respective .rst directives
+
+def process_rst_admonitions(rst_text):
+    """
+    Correctly converts multi-line admonitions (e.g., "**Note**: ...") into properly 
+    indented RST directives. Removes bold/italic markers added by Pandoc.
+
+    Args:
+        rst_text (str): The input RST text generated from Pandoc.
+
+    Returns:
+        str: The processed RST text with correctly formatted multi-line directives.
+    """
+    directive_mappings = {
+        "note": "note",
+        "see also": "seealso", 
+        "attention": "attention",
+        "caution": "caution",
+        "error": "error",
+        "danger": "danger",
+        "hint": "hint",
+        "tip": "tip",
+        "important": "important",
+        "warning": "warning",
+    }
+
+    # More flexible regex pattern to match various formatting
+    keywords_pattern = "|".join(re.escape(key) for key in directive_mappings.keys())
+    
+    # Pattern to match the directive line
+    pattern = re.compile(
+        rf"^\s*[\*_]*\s*({keywords_pattern})\s*[\*_]*\s*:\s*(.*)",
+        re.IGNORECASE
+    )
+
+    # Split into paragraphs but preserve empty lines
+    paragraphs = re.split(r'\n\s*\n', rst_text)
+    processed_paragraphs = []
+
+    for paragraph in paragraphs:
+        if not paragraph.strip():
+            processed_paragraphs.append(paragraph)
+            continue
+
+        lines = paragraph.split('\n')
+        first_line = lines[0].strip()
+        match = pattern.match(first_line)
+
+        if match:
+            # Extract the keyword and normalize it
+            keyword = match.group(1).lower().strip()
+            rest_of_first_line = match.group(2).strip()
+            
+            # Remove ONLY leading/trailing ** or * markers (not internal ones)
+            # This handles: "** This is text **" -> "This is text"
+            while rest_of_first_line.startswith('**') or rest_of_first_line.startswith('*'):
+                if rest_of_first_line.startswith('**'):
+                    rest_of_first_line = rest_of_first_line[2:].lstrip()
+                else:
+                    rest_of_first_line = rest_of_first_line[1:].lstrip()
+            
+            while rest_of_first_line.endswith('**') or rest_of_first_line.endswith('*'):
+                if rest_of_first_line.endswith('**'):
+                    rest_of_first_line = rest_of_first_line[:-2].rstrip()
+                else:
+                    rest_of_first_line = rest_of_first_line[:-1].rstrip()
+            
+            # Get the directive name
+            directive = directive_mappings.get(keyword, "note")
+
+            # Create the directive line
+            if rest_of_first_line:
+                # If there's content on the first line, include it
+                new_lines = [f".. {directive}:: {rest_of_first_line}"]
+            else:
+                # If no content on first line, just create the directive
+                new_lines = [f".. {directive}::"]
+            
+            # Process remaining lines with proper indentation
+            for line in lines[1:]:
+                if line.strip():  # Non-empty line
+                    new_lines.append(f"   {line.rstrip()}")
+                else:  # Empty line - preserve but with minimal indentation
+                    new_lines.append("   ")
+
+            processed_paragraphs.append('\n'.join(new_lines))
+        else:
+            # This paragraph is not a directive, leave unchanged
+            processed_paragraphs.append(paragraph)
+    
+    return '\n\n'.join(processed_paragraphs)
 
 def main(**args):
     '''
@@ -272,6 +363,7 @@ def main(**args):
     extract_media(adocx)
     fnrst = _docxrest(adocx)
     rst = pypandoc.convert_file(adocx, 'rst', 'docx')
+    rst = process_rst_admonitions(rst)  # ← Added this line
     with open(fnrst, 'w', encoding='utf-8', newline='\n') as f:
         f.write('.. vim: syntax=rst\n\n')
         f.writelines([x + '\n' for x in rst.splitlines()])
